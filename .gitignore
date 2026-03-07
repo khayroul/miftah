@@ -30,11 +30,18 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
+!.env.local.example
 
 # vercel
 .vercel
+
+# Miftah assets (large binaries — stored in Supabase Storage / CDN)
+/assets/pages/*.png
+/assets/ayat/*.png
+/assets/words/*.png
+!/assets/**/.gitkeep
 
 # typescript
 *.tsbuildinfo
