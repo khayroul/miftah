@@ -1,0 +1,277 @@
+[
+  {
+    "id_text": "berakal/mengerti",
+    "bm_old": "berakal/mengerti",
+    "bm_new": "berakal/memahami",
+    "reason": "mengerti → memahami (BM register)",
+    "positions_affected": 1,
+    "sample_keys": [
+      "2:170:19"
+    ]
+  },
+  {
+    "id_text": "mereka mengerti",
+    "bm_old": "mereka mengerti",
+    "bm_new": "mereka memahami",
+    "reason": "mengerti → memahami (BM register)",
+    "positions_affected": 8,
+    "sample_keys": [
+      "2:171:18",
+      "8:22:10",
+      "9:81:27"
+    ]
+  },
+  {
+    "id_text": "Maha Mengerti",
+    "bm_old": "Maha Mengerti",
+    "bm_new": "Maha Mengetahui",
+    "reason": "Al-Khabir = Maha Mengetahui in standard BM Quranic usage",
+    "positions_affected": 1,
+    "sample_keys": [
+      "4:35:22"
+    ]
+  },
+  {
+    "id_text": "kamu mengetahui/mengerti",
+    "bm_old": "kamu mengetahui/mengerti",
+    "bm_new": "kamu mengetahui/memahami",
+    "reason": "mengerti → memahami (BM register)",
+    "positions_affected": 1,
+    "sample_keys": [
+      "4:43:10"
+    ]
+  },
+  {
+    "id_text": "mengerti",
+    "bm_old": "mengerti",
+    "bm_new": "memahami",
+    "reason": "mengerti → memahami (BM register)",
+    "positions_affected": 5,
+    "sample_keys": [
+      "8:65:26",
+      "17:44:16",
+      "49:4:9"
+    ]
+  },
+  {
+    "id_text": "mereka mau mengerti",
+    "bm_old": "mereka mau mengerti",
+    "bm_new": "mereka mahu memahami",
+    "reason": "mengerti → memahami; mau → mahu (BM register)",
+    "positions_affected": 1,
+    "sample_keys": [
+      "10:42:11"
+    ]
+  },
+  {
+    "id_text": "kami mengerti",
+    "bm_old": "kami mengerti",
+    "bm_new": "kami memahami",
+    "reason": "mengerti → memahami (BM register)",
+    "positions_affected": 1,
+    "sample_keys": [
+      "11:91:4"
+    ]
+  },
+  {
+    "id_text": "mereka merasa/mengerti",
+    "bm_old": "mereka merasa/mengerti",
+    "bm_new": "mereka merasa/memahami",
+    "reason": "mengerti → memahami (BM register)",
+    "positions_affected": 1,
+    "sample_keys": [
+      "16:21:5"
+    ]
+  },
+  {
+    "id_text": "kamu ingat/mengerti",
+    "bm_old": "kamu ingat/mengerti",
+    "bm_new": "kamu ingat/memahami",
+    "reason": "mengerti → memahami (BM register)",
+    "positions_affected": 1,
+    "sample_keys": [
+      "16:90:16"
+    ]
+  },
+  {
+    "id_text": "terang/mengerti",
+    "bm_old": "terang/mengerti",
+    "bm_new": "terang/memahami",
+    "reason": "mengerti → memahami (BM register)",
+    "positions_affected": 1,
+    "sample_keys": [
+      "24:31:59"
+    ]
+  },
+  {
+    "id_text": "menyadari/mengerti",
+    "bm_old": "menyadari/mengerti",
+    "bm_new": "menyedari/memahami",
+    "reason": "menyadari → menyedari (BM spelling); mengerti → memahami",
+    "positions_affected": 1,
+    "sample_keys": [
+      "26:113:7"
+    ]
+  },
+  {
+    "id_text": "mereka memahami/mengerti",
+    "bm_old": "mereka memahami/mengerti",
+    "bm_new": "mereka memahami",
+    "reason": "Remove redundant mengerti, keep memahami",
+    "positions_affected": 1,
+    "sample_keys": [
+      "63:7:20"
+    ]
+  },
+  {
+    "id_text": "dan sungguh budak wanita",
+    "bm_old": "dan sungguh budak wanita",
+    "bm_new": "dan sungguh hamba wanita",
+    "reason": "budak (ID:slave) → hamba (BM:slave). BM 'budak' means child.",
+    "positions_affected": 1,
+    "sample_keys": [
+      "2:221:6"
+    ]
+  },
+  {
+    "id_text": "dan sungguh budak",
+    "bm_old": "dan sungguh budak",
+    "bm_new": "dan sungguh hamba",
+    "reason": "budak (ID:slave) → hamba (BM:slave)",
+    "positions_affected": 1,
+    "sample_keys": [
+      "2:221:18"
+    ]
+  },
+  {
+    "id_text": "tangan kananmu/budak-budakmu",
+    "bm_old": "tangan kananmu/budak-budakmu",
+    "bm_new": "tangan kananmu/hamba-hambamu",
+    "reason": "budak (ID:slave) → hamba (BM:slave). 'ma malakat aimanukum'",
+    "positions_affected": 1,
+    "sample_keys": [
+      "4:24:7"
+    ]
+  },
+  {
+    "id_text": "budak-budakmu",
+    "bm_old": "budak-budakmu",
+    "bm_new": "hamba-hambamu",
+    "reason": "budak (ID:slave) → hamba (BM:slave)",
+    "positions_affected": 1,
+    "sample_keys": [
+      "4:36:24"
+    ]
+  },
+  {
+    "id_text": "seorang budak",
+    "bm_old": "seorang budak",
+    "bm_new": "seorang hamba",
+    "reason": "budak (ID:slave) → hamba (BM:slave). Context: freeing a slave",
+    "positions_affected": 2,
+    "sample_keys": [
+      "5:89:25",
+      "58:3:10"
+    ]
+  },
+  {
+    "id_text": "memerdekakan budak",
+    "bm_old": "memerdekakan budak",
+    "bm_new": "memerdekakan hamba",
+    "reason": "budak (ID:slave) → hamba (BM:slave). Context: freeing slaves (riqab)",
+    "positions_affected": 1,
+    "sample_keys": [
+      "9:60:10"
+    ]
+  },
+  {
+    "id_text": "apa (budak)",
+    "bm_old": "apa (budak)",
+    "bm_new": "apa (hamba)",
+    "reason": "budak (ID:slave) → hamba (BM:slave). Context: 'ma malakat aimanuhum'",
+    "positions_affected": 1,
+    "sample_keys": [
+      "23:6:5"
+    ]
+  },
+  {
+    "id_text": "budak/tidak",
+    "bm_old": "budak/tidak",
+    "bm_new": "hamba/tidak",
+    "reason": "budak (ID:slave) → hamba (BM:slave)",
+    "positions_affected": 1,
+    "sample_keys": [
+      "23:6:9"
+    ]
+  },
+  {
+    "id_text": "budak-budak mereka",
+    "bm_old": "budak-budak mereka",
+    "bm_new": "hamba-hamba mereka",
+    "reason": "budak (ID:slave) → hamba (BM:slave). Context: those whom their right hands possess",
+    "positions_affected": 1,
+    "sample_keys": [
+      "24:31:47"
+    ]
+  },
+  {
+    "id_text": "budak-budak lelakimu",
+    "bm_old": "budak-budak lelakimu",
+    "bm_new": "hamba-hamba lelakimu",
+    "reason": "budak (ID:slave) → hamba (BM:slave). EN: your male slaves",
+    "positions_affected": 1,
+    "sample_keys": [
+      "24:32:6"
+    ]
+  },
+  {
+    "id_text": "dan budak-budak perempuan",
+    "bm_old": "dan budak-budak perempuan",
+    "bm_new": "dan hamba-hamba perempuan",
+    "reason": "budak (ID:slave) → hamba (BM:slave). EN: your female slaves",
+    "positions_affected": 1,
+    "sample_keys": [
+      "24:32:7"
+    ]
+  },
+  {
+    "id_text": "budak-budak kamu",
+    "bm_old": "budak-budak kamu",
+    "bm_new": "hamba-hamba kamu",
+    "reason": "budak (ID:slave) → hamba (BM:slave)",
+    "positions_affected": 1,
+    "sample_keys": [
+      "24:33:16"
+    ]
+  },
+  {
+    "id_text": "budak-budak perempuan",
+    "bm_old": "budak-budak perempuan",
+    "bm_new": "hamba-hamba perempuan",
+    "reason": "budak (ID:slave) → hamba (BM:slave). EN: your slave girls",
+    "positions_affected": 1,
+    "sample_keys": [
+      "24:33:30"
+    ]
+  },
+  {
+    "id_text": "budak",
+    "bm_old": "budak",
+    "bm_new": "hamba",
+    "reason": "budak (ID:slave) → hamba (BM:slave). EN: a neck (90:13, freeing slaves)",
+    "positions_affected": 1,
+    "sample_keys": [
+      "90:13:2"
+    ]
+  },
+  {
+    "id_text": "tidak punya ibu-bapak dan anak",
+    "bm_old": "tidak punya ibu-bapak dan anak",
+    "bm_new": "tidak mempunyai ibu-bapak dan anak",
+    "reason": "punya (informal) → mempunyai (formal BM)",
+    "positions_affected": 1,
+    "sample_keys": [
+      "4:12:54"
+    ]
+  }
+]

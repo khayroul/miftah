@@ -43,6 +43,14 @@ yarn-error.log*
 /assets/words/*.png
 !/assets/**/.gitkeep
 
+# Large data files (QUL dump, zips)
+data/qul/mini_quran_dev.sql
+data/qul/*.zip
+data/qul/indonesian-word-by-word-translation.json.zip
+
+# Seed split files (generated, keep only seed.sql)
+data/seed/seed_part*.sql
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

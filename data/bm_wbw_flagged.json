@@ -1,0 +1,1162 @@
+[
+  {
+    "id_text": "dan mereka mengerjakan",
+    "bm_text_auto": "dan mereka mengerjakan",
+    "en_text": "and did",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 5,
+    "sample_keys": [
+      "2:82:3",
+      "4:57:3",
+      "16:50:5"
+    ]
+  },
+  {
+    "id_text": "bertawaf/mengerjakan sa'i",
+    "bm_text_auto": "bertawaf/mengerjakan sa'i",
+    "en_text": "he walks",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "2:158:16"
+    ]
+  },
+  {
+    "id_text": "mengerjakan dengan kerelaan",
+    "bm_text_auto": "mengerjakan dengan kerelaan",
+    "en_text": "voluntarily does",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "2:158:19"
+    ]
+  },
+  {
+    "id_text": "berakal/mengerti",
+    "bm_text_auto": "berakal/mengerti",
+    "en_text": "understand",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerti"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "2:170:19"
+    ]
+  },
+  {
+    "id_text": "mereka mengerti",
+    "bm_text_auto": "mereka mengerti",
+    "en_text": "understand",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerti"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 8,
+    "sample_keys": [
+      "2:171:18",
+      "8:22:10",
+      "9:81:27"
+    ]
+  },
+  {
+    "id_text": "ia mengerjakan",
+    "bm_text_auto": "ia mengerjakan",
+    "en_text": "volunteers",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "2:184:21"
+    ]
+  },
+  {
+    "id_text": "masa mengerjakan haji",
+    "bm_text_auto": "masa mengerjakan haji",
+    "en_text": "the Hajj",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "2:197:15"
+    ]
+  },
+  {
+    "id_text": "dan sungguh budak wanita",
+    "bm_text_auto": "dan sungguh budak wanita",
+    "en_text": "And a bondwoman",
+    "flag_reasons": [
+      {
+        "category": "false_cognates",
+        "word": "budak"
+      },
+      {
+        "category": "context_dependent",
+        "word": "budak"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "2:221:6"
+    ]
+  },
+  {
+    "id_text": "dan sungguh budak",
+    "bm_text_auto": "dan sungguh budak",
+    "en_text": "and a bondman",
+    "flag_reasons": [
+      {
+        "category": "false_cognates",
+        "word": "budak"
+      },
+      {
+        "category": "context_dependent",
+        "word": "budak"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "2:221:18"
+    ]
+  },
+  {
+    "id_text": "mereka mengerjakan",
+    "bm_text_auto": "mereka mengerjakan",
+    "en_text": "they did",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 4,
+    "sample_keys": [
+      "3:135:3",
+      "21:27:6",
+      "23:63:14"
+    ]
+  },
+  {
+    "id_text": "tidak punya ibu-bapak dan anak",
+    "bm_text_auto": "tidak punya ibu-bapak dan anak",
+    "en_text": "(has) no parent or child",
+    "flag_reasons": [
+      {
+        "category": "context_dependent",
+        "word": "punya"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "4:12:54"
+    ]
+  },
+  {
+    "id_text": "tangan kananmu/budak-budakmu",
+    "bm_text_auto": "tangan kananmu/budak-budakmu",
+    "en_text": "rightfully",
+    "flag_reasons": [
+      {
+        "category": "false_cognates",
+        "word": "budak"
+      },
+      {
+        "category": "context_dependent",
+        "word": "budak"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "4:24:7"
+    ]
+  },
+  {
+    "id_text": "kamu dilarang (mengerjakan)",
+    "bm_text_auto": "kamu dilarang (mengerjakan)",
+    "en_text": "you are forbidden",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "4:31:5"
+    ]
+  },
+  {
+    "id_text": "Maha Mengerti",
+    "bm_text_auto": "Maha Mengerti",
+    "en_text": "All-Aware",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerti"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "4:35:22"
+    ]
+  },
+  {
+    "id_text": "budak-budakmu",
+    "bm_text_auto": "budak-budakmu",
+    "en_text": "your right hands",
+    "flag_reasons": [
+      {
+        "category": "false_cognates",
+        "word": "budak"
+      },
+      {
+        "category": "context_dependent",
+        "word": "budak"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "4:36:24"
+    ]
+  },
+  {
+    "id_text": "kamu mengetahui/mengerti",
+    "bm_text_auto": "kamu mengetahui/mengerti",
+    "en_text": "you know",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerti"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "4:43:10"
+    ]
+  },
+  {
+    "id_text": "mengerjakan",
+    "bm_text_auto": "mengerjakan",
+    "en_text": "does",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 11,
+    "sample_keys": [
+      "4:110:2",
+      "4:111:2",
+      "4:112:2"
+    ]
+  },
+  {
+    "id_text": "ihram/mengerjakan haji",
+    "bm_text_auto": "ihram/mengerjakan haji",
+    "en_text": "(are in) Ihram",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "5:1:18"
+    ]
+  },
+  {
+    "id_text": "berdiri/mengerjakan",
+    "bm_text_auto": "berdiri/mengerjakan",
+    "en_text": "you stand up",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "5:6:5"
+    ]
+  },
+  {
+    "id_text": "seorang budak",
+    "bm_text_auto": "seorang budak",
+    "en_text": "a slave",
+    "flag_reasons": [
+      {
+        "category": "false_cognates",
+        "word": "budak"
+      },
+      {
+        "category": "context_dependent",
+        "word": "budak"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 2,
+    "sample_keys": [
+      "5:89:25",
+      "58:3:10"
+    ]
+  },
+  {
+    "id_text": "orang-orang yang mengerjakan",
+    "bm_text_auto": "orang-orang yang mengerjakan",
+    "en_text": "(are) committing",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "6:113:12"
+    ]
+  },
+  {
+    "id_text": "(mereka) mengerjakan",
+    "bm_text_auto": "(mereka) mengerjakan",
+    "en_text": "earn",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 5,
+    "sample_keys": [
+      "6:120:7",
+      "7:153:2",
+      "10:27:2"
+    ]
+  },
+  {
+    "id_text": "bisa jadi",
+    "bm_text_auto": "boleh jadi",
+    "en_text": "perhaps",
+    "flag_reasons": [
+      {
+        "category": "context_dependent",
+        "word": "bisa"
+      }
+    ],
+    "changes_applied": [
+      {
+        "type": "substitution",
+        "category": "verbs_and_words",
+        "from": "bisa",
+        "to": "boleh"
+      }
+    ],
+    "occurrences": 1,
+    "sample_keys": [
+      "7:185:13"
+    ]
+  },
+  {
+    "id_text": "dengan mengerjakan kebaikan",
+    "bm_text_auto": "dengan mengerjakan kebaikan",
+    "en_text": "the good",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "7:199:4"
+    ]
+  },
+  {
+    "id_text": "mengerti",
+    "bm_text_auto": "mengerti",
+    "en_text": "understand",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerti"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 5,
+    "sample_keys": [
+      "8:65:26",
+      "17:44:16",
+      "49:4:9"
+    ]
+  },
+  {
+    "id_text": "orang-orang yang mengerjakan haji",
+    "bm_text_auto": "orang-orang yang mengerjakan haji",
+    "en_text": "(to) the pilgrims",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "9:19:3"
+    ]
+  },
+  {
+    "id_text": "mereka datang/mengerjakan",
+    "bm_text_auto": "mereka datang/mengerjakan",
+    "en_text": "they come",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "9:54:13"
+    ]
+  },
+  {
+    "id_text": "memerdekakan budak",
+    "bm_text_auto": "memerdekakan budak",
+    "en_text": "the (freeing of) the necks",
+    "flag_reasons": [
+      {
+        "category": "false_cognates",
+        "word": "budak"
+      },
+      {
+        "category": "context_dependent",
+        "word": "budak"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "9:60:10"
+    ]
+  },
+  {
+    "id_text": "(mereka) mengambil/mengerjakan",
+    "bm_text_auto": "(mereka) mengambil/mengerjakan",
+    "en_text": "take",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "9:107:2"
+    ]
+  },
+  {
+    "id_text": "mereka mau mengerti",
+    "bm_text_auto": "mereka mau mengerti",
+    "en_text": "use reason",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerti"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "10:42:11"
+    ]
+  },
+  {
+    "id_text": "kamu mengerjakan",
+    "bm_text_auto": "kamu mengerjakan",
+    "en_text": "you do",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 2,
+    "sample_keys": [
+      "10:61:11",
+      "59:18:17"
+    ]
+  },
+  {
+    "id_text": "kami mengerti",
+    "bm_text_auto": "kami mengerti",
+    "en_text": "we understand",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerti"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "11:91:4"
+    ]
+  },
+  {
+    "id_text": "mereka merasa/mengerti",
+    "bm_text_auto": "mereka merasa/mengerti",
+    "en_text": "they perceive",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerti"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "16:21:5"
+    ]
+  },
+  {
+    "id_text": "kamu ingat/mengerti",
+    "bm_text_auto": "kamu ingat/mengerti",
+    "en_text": "take heed",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerti"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "16:90:16"
+    ]
+  },
+  {
+    "id_text": "(mereka) mengerjakan/beramal",
+    "bm_text_auto": "(mereka) mengerjakan/beramal",
+    "en_text": "do",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "18:2:10"
+    ]
+  },
+  {
+    "id_text": "dan mengerjakan/beramal",
+    "bm_text_auto": "dan mengerjakan/beramal",
+    "en_text": "and did",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 4,
+    "sample_keys": [
+      "18:30:4",
+      "19:96:4",
+      "34:37:12"
+    ]
+  },
+  {
+    "id_text": "dan mereka mengerjakan/beramal",
+    "bm_text_auto": "dan mereka mengerjakan/beramal",
+    "en_text": "and did",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 3,
+    "sample_keys": [
+      "18:107:4",
+      "22:56:8",
+      "34:4:4"
+    ]
+  },
+  {
+    "id_text": "maka hendaklah ia mengerjakan",
+    "bm_text_auto": "maka hendaklah ia mengerjakan",
+    "en_text": "let him do",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "18:110:17"
+    ]
+  },
+  {
+    "id_text": "dan mengerjakan",
+    "bm_text_auto": "dan mengerjakan",
+    "en_text": "and do",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 2,
+    "sample_keys": [
+      "22:14:6",
+      "25:70:5"
+    ]
+  },
+  {
+    "id_text": "untuk mengerjakan haji",
+    "bm_text_auto": "untuk mengerjakan haji",
+    "en_text": "[of] the Pilgrimage",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "22:27:4"
+    ]
+  },
+  {
+    "id_text": "mengerjakan/menunaikan",
+    "bm_text_auto": "mengerjakan/menunaikan",
+    "en_text": "(are) doers",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "23:4:4"
+    ]
+  },
+  {
+    "id_text": "apa (budak)",
+    "bm_text_auto": "apa (budak)",
+    "en_text": "what",
+    "flag_reasons": [
+      {
+        "category": "false_cognates",
+        "word": "budak"
+      },
+      {
+        "category": "context_dependent",
+        "word": "budak"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "23:6:5"
+    ]
+  },
+  {
+    "id_text": "budak/tidak",
+    "bm_text_auto": "budak/tidak",
+    "en_text": "(are) not",
+    "flag_reasons": [
+      {
+        "category": "false_cognates",
+        "word": "budak"
+      },
+      {
+        "category": "context_dependent",
+        "word": "budak"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "23:6:9"
+    ]
+  },
+  {
+    "id_text": "budak-budak mereka",
+    "bm_text_auto": "budak-budak mereka",
+    "en_text": "their right hands",
+    "flag_reasons": [
+      {
+        "category": "false_cognates",
+        "word": "budak"
+      },
+      {
+        "category": "context_dependent",
+        "word": "budak"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "24:31:47"
+    ]
+  },
+  {
+    "id_text": "terang/mengerti",
+    "bm_text_auto": "terang/mengerti",
+    "en_text": "aware",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerti"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "24:31:59"
+    ]
+  },
+  {
+    "id_text": "budak-budak lelakimu",
+    "bm_text_auto": "budak-budak lelakimu",
+    "en_text": "your male slaves",
+    "flag_reasons": [
+      {
+        "category": "false_cognates",
+        "word": "budak"
+      },
+      {
+        "category": "context_dependent",
+        "word": "budak"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "24:32:6"
+    ]
+  },
+  {
+    "id_text": "dan budak-budak perempuan",
+    "bm_text_auto": "dan budak-budak perempuan",
+    "en_text": "and your female slaves",
+    "flag_reasons": [
+      {
+        "category": "false_cognates",
+        "word": "budak"
+      },
+      {
+        "category": "context_dependent",
+        "word": "budak"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "24:32:7"
+    ]
+  },
+  {
+    "id_text": "budak-budak kamu",
+    "bm_text_auto": "budak-budak kamu",
+    "en_text": "your right hands",
+    "flag_reasons": [
+      {
+        "category": "false_cognates",
+        "word": "budak"
+      },
+      {
+        "category": "context_dependent",
+        "word": "budak"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "24:33:16"
+    ]
+  },
+  {
+    "id_text": "budak-budak perempuan",
+    "bm_text_auto": "budak-budak perempuan",
+    "en_text": "your slave girls",
+    "flag_reasons": [
+      {
+        "category": "false_cognates",
+        "word": "budak"
+      },
+      {
+        "category": "context_dependent",
+        "word": "budak"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "24:33:30"
+    ]
+  },
+  {
+    "id_text": "menyadari/mengerti",
+    "bm_text_auto": "menyadari/mengerti",
+    "en_text": "you perceive",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerti"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "26:113:7"
+    ]
+  },
+  {
+    "id_text": "aku mengerjakan/beramal",
+    "bm_text_auto": "aku mengerjakan/beramal",
+    "en_text": "I may do",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "27:19:17"
+    ]
+  },
+  {
+    "id_text": "mengapa kamu mendatangkan / mengapa kamu mengerjakan",
+    "bm_text_auto": "mengapa kamu mendatangkan / mengapa kamu mengerjakan",
+    "en_text": "Do you commit",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "27:54:5"
+    ]
+  },
+  {
+    "id_text": "benar-benar kamu mengerjakan",
+    "bm_text_auto": "benar-benar kamu mengerjakan",
+    "en_text": "commit",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "29:28:6"
+    ]
+  },
+  {
+    "id_text": "dan kamu mendatangkan/mengerjakan",
+    "bm_text_auto": "dan kamu mendatangkan/mengerjakan",
+    "en_text": "and commit",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "29:29:6"
+    ]
+  },
+  {
+    "id_text": "kami akan mengerjakan",
+    "bm_text_auto": "kami akan mengerjakan",
+    "en_text": "we will do",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "32:12:13"
+    ]
+  },
+  {
+    "id_text": "niscaya mereka mengerjakan",
+    "bm_text_auto": "pasti mereka mengerjakan",
+    "en_text": "they (would) have certainly done it",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [
+      {
+        "type": "substitution",
+        "category": "verbs_and_words",
+        "from": "niscaya",
+        "to": "pasti"
+      }
+    ],
+    "occurrences": 1,
+    "sample_keys": [
+      "33:14:9"
+    ]
+  },
+  {
+    "id_text": "mendatangkan/mengerjakan",
+    "bm_text_auto": "mendatangkan/mengerjakan",
+    "en_text": "commits",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "33:30:4"
+    ]
+  },
+  {
+    "id_text": "dan mengerjakan/amal",
+    "bm_text_auto": "dan mengerjakan/amal",
+    "en_text": "and does",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "33:31:6"
+    ]
+  },
+  {
+    "id_text": "Kami akan mengerjakan",
+    "bm_text_auto": "Kami akan mengerjakan",
+    "en_text": "we will do",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "35:37:6"
+    ]
+  },
+  {
+    "id_text": "mengerjakan/menciptakan",
+    "bm_text_auto": "mengerjakan/menciptakan",
+    "en_text": "have made",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "36:71:7"
+    ]
+  },
+  {
+    "id_text": "orang-orang yang mengerjakan kebathilan",
+    "bm_text_auto": "orang-orang yang mengerjakan kebathilan",
+    "en_text": "the falsifiers",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "45:27:10"
+    ]
+  },
+  {
+    "id_text": "mereka memahami/mengerti",
+    "bm_text_auto": "mereka memahami/mengerti",
+    "en_text": "understand",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerti"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "63:7:20"
+    ]
+  },
+  {
+    "id_text": "orang-orang yang mengerjakan sholat",
+    "bm_text_auto": "orang-orang yang mengerjakan solat",
+    "en_text": "those who prayed",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [
+      {
+        "type": "substitution",
+        "category": "religious_terms",
+        "from": "sholat",
+        "to": "solat"
+      }
+    ],
+    "occurrences": 1,
+    "sample_keys": [
+      "74:43:5"
+    ]
+  },
+  {
+    "id_text": "dia mengerjakan sholat",
+    "bm_text_auto": "dia mengerjakan solat",
+    "en_text": "he prayed",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [
+      {
+        "type": "substitution",
+        "category": "religious_terms",
+        "from": "sholat",
+        "to": "solat"
+      }
+    ],
+    "occurrences": 1,
+    "sample_keys": [
+      "75:31:4"
+    ]
+  },
+  {
+    "id_text": "budak",
+    "bm_text_auto": "budak",
+    "en_text": "a neck",
+    "flag_reasons": [
+      {
+        "category": "false_cognates",
+        "word": "budak"
+      },
+      {
+        "category": "context_dependent",
+        "word": "budak"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 1,
+    "sample_keys": [
+      "90:13:2"
+    ]
+  },
+  {
+    "id_text": "dia mengerjakan/beramal",
+    "bm_text_auto": "dia mengerjakan/beramal",
+    "en_text": "does",
+    "flag_reasons": [
+      {
+        "category": "register_sensitive",
+        "word": "mengerjakan"
+      }
+    ],
+    "changes_applied": [],
+    "occurrences": 2,
+    "sample_keys": [
+      "99:7:2",
+      "99:8:2"
+    ]
+  }
+]

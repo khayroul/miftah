@@ -1,0 +1,67 @@
+{
+  "_comment": "Indonesian → BM word-by-word normalization map for Quranic translations",
+  "_version": "1.0",
+
+  "substitutions": {
+    "_comment": "Direct word/phrase replacements. Applied as whole-word or phrase match.",
+
+    "pronouns": {
+      "kalian": "kamu",
+      "kamu sekalian": "kamu semua",
+      "mereka sekalian": "mereka semua",
+      "engkau sekalian": "kamu semua"
+    },
+
+    "religious_terms": {
+      "shalat": "solat",
+      "sholat": "solat",
+      "mushalla": "musolla",
+      "insya Allah": "insya-Allah",
+      "insya allah": "insya-Allah",
+      "Al Quran": "Al-Quran",
+      "al Quran": "Al-Quran",
+      "Alquran": "Al-Quran",
+      "alquran": "Al-Quran"
+    },
+
+    "verbs_and_words": {
+      "niscaya": "pasti",
+      "bisa": "boleh",
+      "polisi": "polis"
+    }
+  },
+
+  "flag_for_review": {
+    "_comment": "Words that need human/AI review because meaning differs between ID and BM",
+
+    "false_cognates": [
+      "budak",
+      "percuma",
+      "seronok",
+      "buntung",
+      "kereta",
+      "butuh"
+    ],
+
+    "register_sensitive": [
+      "mengerjakan",
+      "mengertinya",
+      "mengerti",
+      "paham",
+      "bikin"
+    ],
+
+    "context_dependent": [
+      "bisa",
+      "budak",
+      "punya"
+    ]
+  },
+
+  "passthrough_patterns": {
+    "_comment": "Patterns that are always identical in ID and BM — skip processing",
+    "ayah_numbers": "^\\(\\d+\\)$",
+    "arabic_names": "^(Allah|Ibrahim|Musa|Isa|Nuh|Yusuf|Dawud|Sulaiman|Harun|Ismail|Ishaq|Yaqub|Ayyub|Yunus|Ilyas|Ilyasa|Dzulkifli|Zakaria|Yahya|Muhammad|Luth|Hud|Shalih|Syu'aib|Idris|Adam|Maryam|Fir'aun|Qarun|Haman|Jalut|Thalut|Dzulqarnain|Luqman|Khidir)$",
+    "common_particles": "^(dan|atau|di|ke|dari|yang|ini|itu|dengan|untuk|pada|oleh|bagi|agar|lalu|maka|jika|juga|serta|pun|lah|kah|tah|pula)$"
+  }
+}

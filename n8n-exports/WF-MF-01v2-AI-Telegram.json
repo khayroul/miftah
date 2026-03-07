@@ -1,0 +1,29 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message", "callback_query"],
+        "additionalFields": {}
+      },
+      "id": "t1",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2
+    },
+    { "id": "t2", "name": "Extract Message", "type": "n8n-nodes-base.code" },
+    { "id": "t3", "name": "Build AI Request", "type": "n8n-nodes-base.code" },
+    { "id": "t4", "name": "Need AI?", "type": "n8n-nodes-base.if" },
+    { "id": "t5", "name": "Call OpenAI", "type": "n8n-nodes-base.httpRequest" },
+    { "id": "t6", "name": "Parse AI Response", "type": "n8n-nodes-base.code" },
+    { "id": "t7", "name": "Route Action", "type": "n8n-nodes-base.switch" },
+    { "id": "t8", "name": "Do Study", "type": "n8n-nodes-base.code" },
+    { "id": "t30", "name": "Do Vocab", "type": "n8n-nodes-base.code" },
+    { "id": "t11", "name": "Do Memorized", "type": "n8n-nodes-base.httpRequest" },
+    { "id": "t13", "name": "Do Review", "type": "n8n-nodes-base.httpRequest" },
+    { "id": "t15", "name": "Do Progress", "type": "n8n-nodes-base.httpRequest" },
+    { "id": "t17", "name": "Do Next", "type": "n8n-nodes-base.httpRequest" },
+    { "id": "t20", "name": "Send Menu", "type": "n8n-nodes-base.httpRequest" },
+    { "id": "t21", "name": "Do Sambung", "type": "n8n-nodes-base.code" }
+  ],
+  "_note": "Simplified index. Full JSON pasted by user in conversation."
+}
