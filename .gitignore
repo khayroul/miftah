@@ -54,3 +54,4 @@ data/seed/seed_part*.sql
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+supabase/.temp/
