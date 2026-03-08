@@ -76,6 +76,13 @@ GOLDEN_PAGES = [1, 2, 77, 489, 604]
 # Ayah end marker
 AYAH_MARKER = "\u06DD"  # ۝
 
+# Eastern Arabic digits for ayah numbers inside the stop mark
+EASTERN_DIGITS = "٠١٢٣٤٥٦٧٨٩"
+
+def to_eastern_arabic(n):
+    """Convert integer to Eastern Arabic numeral string."""
+    return "".join(EASTERN_DIGITS[int(d)] for d in str(n))
+
 
 def find_font():
     """Find the KFGQPC font file."""
@@ -329,7 +336,7 @@ def render_page(page_number, page_ayat, quran_text, output_dir, debug=False):
     for surah, ayah in page_ayat:
         text = quran_text.get((surah, ayah), '')
         if text:
-            page_text_parts.append(f"{text} {AYAH_MARKER}{ayah}")
+            page_text_parts.append(f"{text} {AYAH_MARKER}{to_eastern_arabic(ayah)}")
             ayat_on_page.append((surah, ayah))
 
     full_text = " ".join(page_text_parts)

@@ -46,12 +46,14 @@ export function formatVocabAnswer(word: Word): string {
 export function buildRatingKeyboard(
   prefix: string,
   itemId: number,
+  block?: string,
 ): InlineKeyboard {
+  const suffix = block ? `:${block}` : "";
   return new InlineKeyboard()
-    .text("Lupa (1)", `${prefix}:${itemId}:1`)
-    .text("Susah (2)", `${prefix}:${itemId}:2`)
-    .text("Baik (3)", `${prefix}:${itemId}:3`)
-    .text("Mudah (4)", `${prefix}:${itemId}:4`);
+    .text("Lupa (1)", `${prefix}:${itemId}:1${suffix}`)
+    .text("Susah (2)", `${prefix}:${itemId}:2${suffix}`)
+    .text("Baik (3)", `${prefix}:${itemId}:3${suffix}`)
+    .text("Mudah (4)", `${prefix}:${itemId}:4${suffix}`);
 }
 
 // ── Daily plan ──

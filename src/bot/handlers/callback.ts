@@ -1,4 +1,5 @@
 import type { Context } from "grammy";
+import { InlineKeyboard } from "grammy";
 import { USER_ID } from "../config.js";
 import { applyRating } from "@/lib/fsrs";
 import type { FsrsRating, FsrsState } from "@/types/database";
@@ -21,14 +22,14 @@ import { blankAyah, type BlankingLevel } from "../services/blanking.js";
 import {
   formatBlankedAyah,
   buildBlankingKeyboard,
-  buildSabakKeyboard,
 } from "../services/formatter.js";
 import { showNextVocab } from "./vocab.js";
+import { showNextHifzItem } from "./hifz.js";
 
 export async function handleCallback(ctx: Context): Promise<void> {
   const data = ctx.callbackQuery?.data;
   if (!data) return;
-  await ctx.answerCallbackQuery();
+  await ctx.answerCallbackQuery().catch(() => {});
 
   const parts = data.split(":");
   const action = parts[0];
@@ -36,7 +37,7 @@ export async function handleCallback(ctx: Context): Promise<void> {
   try {
     switch (action) {
       case "ra":
-        await handleRateAyah(ctx, parseInt(parts[1]), parseInt(parts[2]) as FsrsRating);
+        await handleRateAyah(ctx, parseInt(parts[1]), parseInt(parts[2]) as FsrsRating, parts[3]);
         break;
       case "rv":
         await handleRateVocab(ctx, parseInt(parts[1]), parseInt(parts[2]) as FsrsRating);
@@ -59,8 +60,17 @@ export async function handleCallback(ctx: Context): Promise<void> {
       case "next_vocab":
         await showNextVocab(ctx);
         break;
+      case "next_hifz":
+        await showNextHifzItem(ctx, parts[1] as "sabqi" | "sabak" | "manzil");
+        break;
       case "hifz_block":
         await handleHifzBlock(ctx, parts[1]);
+        break;
+      case "page_vocab":
+        await handlePageVocab(ctx, parseInt(parts[1]));
+        break;
+      case "page_nav":
+        await handlePageNav(ctx, parseInt(parts[1]));
         break;
       default:
         console.log(`[callback] Unknown action: ${action}`);
@@ -77,6 +87,7 @@ async function handleRateAyah(
   ctx: Context,
   progressId: number,
   rating: FsrsRating,
+  block?: string,
 ): Promise<void> {
   const progress = await getProgressById(progressId);
   if (!progress) return;
@@ -102,12 +113,22 @@ async function handleRateAyah(
   // Manzil rated Again → demote to sabqi
   if (progress.hifz_status === "manzil" && rating === 1) {
     await demoteManzilToSabqi(progressId, new Date());
-    await ctx.reply("⚠️ Ayat ini dikembalikan ke Sabqi untuk ulangkaji semula.");
   }
 
   const ratingLabels = ["", "Lupa", "Susah", "Baik", "Mudah"];
   const nextDue = new Date(newFields.due).toLocaleDateString("ms-MY");
-  await ctx.reply(`✅ ${ratingLabels[rating]} — seterusnya due: ${nextDue}`);
+  const msg = rating === 1 && progress.hifz_status === "manzil"
+    ? `⚠️ ${ratingLabels[rating]} — dikembalikan ke Sabqi`
+    : `✅ ${ratingLabels[rating]} — due: ${nextDue}`;
+
+  // Auto-advance button
+  const hifzBlock = block || progress.hifz_status;
+  if (hifzBlock === "sabqi" || hifzBlock === "manzil") {
+    const kb = new InlineKeyboard().text("Seterusnya →", `next_hifz:${hifzBlock}`);
+    await ctx.reply(msg, { reply_markup: kb });
+  } else {
+    await ctx.reply(msg);
+  }
 }
 
 // ── Rate vocab ──
@@ -117,8 +138,6 @@ async function handleRateVocab(
   progressId: number,
   rating: FsrsRating,
 ): Promise<void> {
-  // We store vocab progress id in the callback, but we need the full row
-  // For simplicity, look it up via supabase
   const { supabaseAdmin } = await import("../supabase-admin.js");
   const { data: progress } = await supabaseAdmin
     .from("vocab_progress")
@@ -146,10 +165,8 @@ async function handleRateVocab(
   });
 
   const ratingLabels = ["", "Lupa", "Susah", "Baik", "Mudah"];
-  await ctx.reply(`✅ ${ratingLabels[rating]}`);
-
-  // Show next vocab card
-  await showNextVocab(ctx);
+  const kb = new InlineKeyboard().text("Seterusnya →", "next_vocab");
+  await ctx.reply(`✅ ${ratingLabels[rating]}`, { reply_markup: kb });
 }
 
 // ── Blanking ──
@@ -192,17 +209,17 @@ async function handleReveal(ctx: Context, ayahId: number): Promise<void> {
   const surah = await getSurahById(ayah.surah_id);
   const text = formatAyah(ayah, surah?.name_transliteration ?? "");
 
-  // Find the study_progress for rating
   const { supabaseAdmin } = await import("../supabase-admin.js");
   const { data: sp } = await supabaseAdmin
     .from("study_progress")
-    .select("id")
+    .select("id, hifz_status")
     .eq("user_id", USER_ID)
     .eq("ayah_id", ayahId)
     .single();
 
   if (sp) {
-    const kb = buildRatingKeyboard("ra", sp.id);
+    const block = sp.hifz_status === "sabqi" ? "sabqi" : sp.hifz_status === "manzil" ? "manzil" : undefined;
+    const kb = buildRatingKeyboard("ra", sp.id, block);
     await ctx.reply(text, { reply_markup: kb });
   } else {
     await ctx.reply(text);
@@ -218,7 +235,6 @@ async function handleSabakDone(
   const progress = await getProgressById(progressId);
   if (!progress) return;
 
-  // Apply first rating as Good (3) and move to sabqi
   const card = dbRowToCard(progress);
   const result = applyRating(card, 3);
   const newFields = cardToDbRow(result.card);
@@ -237,7 +253,8 @@ async function handleSabakDone(
     scheduledDays: result.card.scheduled_days,
   });
 
-  await ctx.reply("✅ Dah hafal! Ayat dipindahkan ke Sabqi.");
+  const kb = new InlineKeyboard().text("Seterusnya →", "next_hifz:sabak");
+  await ctx.reply("✅ Dah hafal! Dipindahkan ke Sabqi.", { reply_markup: kb });
 }
 
 async function handleSabakStruggle(
@@ -247,7 +264,6 @@ async function handleSabakStruggle(
   const progress = await getProgressById(progressId);
   if (!progress) return;
 
-  // Rate as Again (1) but keep in sabak
   const card = dbRowToCard(progress);
   const result = applyRating(card, 1);
   await updateFsrsFields(progressId, cardToDbRow(result.card));
@@ -263,7 +279,8 @@ async function handleSabakStruggle(
     scheduledDays: result.card.scheduled_days,
   });
 
-  await ctx.reply("📖 Teruskan ulang. Ayat kekal dalam Sabak.");
+  const kb = new InlineKeyboard().text("Seterusnya →", "next_hifz:sabak");
+  await ctx.reply("📖 Teruskan ulang. Kekal dalam Sabak.", { reply_markup: kb });
 }
 
 // ── Vocab reveal ──
@@ -281,8 +298,6 @@ async function handleVocabReveal(
   if (!word) return;
 
   const { formatVocabAnswer } = await import("../services/formatter.js");
-
-  // Get or create vocab progress for rating buttons
   const { getOrCreateVocabProgress } = await import("../db/vocab-progress.js");
   const vp = await getOrCreateVocabProgress(USER_ID, wordId);
 
@@ -294,7 +309,105 @@ async function handleVocabReveal(
 // ── Hifz block navigation ──
 
 async function handleHifzBlock(ctx: Context, block: string): Promise<void> {
-  // Delegate to the hifz handler
   const { startHifzBlock } = await import("./hifz.js");
   await startHifzBlock(ctx, block as "sabqi" | "sabak" | "manzil");
+}
+
+// ── Page vocab ──
+
+async function handlePageVocab(ctx: Context, pageNum: number): Promise<void> {
+  const { supabaseAdmin } = await import("../supabase-admin.js");
+
+  // Get ayat text for this page
+  const { data: ayat } = await supabaseAdmin
+    .from("ayat")
+    .select("text_uthmani")
+    .eq("page_number", pageNum);
+
+  if (!ayat || ayat.length === 0) {
+    await ctx.reply(`Tiada data untuk halaman ${pageNum}.`);
+    return;
+  }
+
+  // Extract unique word tokens from ayah text
+  const tokens = new Set<string>();
+  for (const a of ayat) {
+    for (const t of a.text_uthmani.split(/\s+/)) {
+      if (t.length > 0) tokens.add(t);
+    }
+  }
+
+  // Match tokens against words table
+  const tokenArr = [...tokens];
+  const { data: words } = await supabaseAdmin
+    .from("words")
+    .select("text_uthmani, translation_bm, frequency")
+    .in("text_uthmani", tokenArr);
+
+  if (!words || words.length === 0) {
+    await ctx.reply(`Tiada vocab untuk halaman ${pageNum}.`);
+    return;
+  }
+
+  // Build lookup from words table
+  const wordMap = new Map<string, string>();
+  for (const w of words) {
+    if (!wordMap.has(w.text_uthmani)) {
+      wordMap.set(w.text_uthmani, w.translation_bm ?? "—");
+    }
+  }
+
+  // Show in order of appearance (preserve ayah order, deduplicate)
+  const seen = new Set<string>();
+  const ordered: Array<{ text: string; bm: string }> = [];
+  for (const a of ayat) {
+    for (const t of a.text_uthmani.split(/\s+/)) {
+      if (t.length > 0 && !seen.has(t) && wordMap.has(t)) {
+        seen.add(t);
+        ordered.push({ text: t, bm: wordMap.get(t)! });
+      }
+    }
+  }
+
+  const RTL = "\u200F";
+  let text = `📝 *Vocab Halaman ${pageNum}* — ${ordered.length} perkataan\n\n`;
+  for (const w of ordered) {
+    text += `${RTL}${w.text} — ${w.bm}\n`;
+  }
+
+  const { InlineKeyboard } = await import("grammy");
+  const kb = new InlineKeyboard()
+    .text("◀ Kembali", `page_nav:${pageNum}`);
+
+  await ctx.reply(text, {
+    parse_mode: "Markdown",
+    reply_markup: kb,
+  });
+}
+
+// ── Page navigation ──
+
+async function handlePageNav(ctx: Context, pageNum: number): Promise<void> {
+  const { handlePage } = await import("./page.js");
+  // Simulate a /page command by temporarily modifying context
+  // Instead, just call the page handler's core logic
+  const { sendPageAndText } = await import("./page.js");
+  await sendPageAndText(ctx, pageNum);
+}
+
+function splitMsg(text: string, maxLen: number): string[] {
+  if (text.length <= maxLen) return [text];
+  const chunks: string[] = [];
+  let remaining = text;
+  while (remaining.length > 0) {
+    if (remaining.length <= maxLen) {
+      chunks.push(remaining);
+      break;
+    }
+    let splitAt = remaining.lastIndexOf("\n", maxLen);
+    if (splitAt === -1) splitAt = maxLen;
+    chunks.push(remaining.slice(0, splitAt));
+    remaining = remaining.slice(splitAt).trimStart();
+  }
+  return chunks;
 }

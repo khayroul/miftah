@@ -7,6 +7,8 @@ import { handleVocab } from "./handlers/vocab.js";
 import { handleHifz } from "./handlers/hifz.js";
 import { handleStats } from "./handlers/stats.js";
 import { handleCallback } from "./handlers/callback.js";
+import { handlePage } from "./handlers/page.js";
+import { handleAsk } from "./handlers/ask.js";
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) {
@@ -33,21 +35,29 @@ bot.command("start", handleStart);
 bot.command("vocab", handleVocab);
 bot.command("hifz", handleHifz);
 bot.command("stats", handleStats);
+bot.command("page", handlePage);
+bot.command("ask", handleAsk);
 
 // Callback queries (inline keyboard presses)
 bot.on("callback_query:data", handleCallback);
 
-// Catch-all
-bot.on("message:text", async (ctx) => {
-  await ctx.reply(
-    "Perintah tersedia:\n/start — Pelan harian\n/hifz — Sesi hafalan\n/vocab — Latihan vocab\n/stats — Statistik",
-  );
-});
+// Catch-all: route free text through LLM (or show help if no LLM)
+bot.on("message:text", handleAsk);
 
 // Error handler
 bot.catch((err) => {
   console.error("[bot] Error:", err.error);
 });
+
+// Set bot commands (replaces any old menu from previous bot)
+bot.api.setMyCommands([
+  { command: "start", description: "Pelan harian" },
+  { command: "hifz", description: "Sesi hafalan (Sabqi/Sabak/Manzil)" },
+  { command: "vocab", description: "Latihan vocab" },
+  { command: "page", description: "Lihat halaman mushaf" },
+  { command: "stats", description: "Statistik" },
+  { command: "ask", description: "Tanya tentang Al-Quran" },
+]);
 
 // Start polling
 bot.start({
