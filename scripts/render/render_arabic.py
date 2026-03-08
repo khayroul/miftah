@@ -423,10 +423,10 @@ def build_mushaf_page_lines(page_number, page_ayat, quran_text):
             if (s, a) not in ayat_on_page:
                 ayat_on_page.append((s, a))
 
-            # Last word of verse → add ayah end marker
+            # Last word of verse → add ayah end marker (character only, no digits —
+            # digits are drawn inside the custom marker circle in the render pass)
             if p == len(tokens):
-                marker_text = AYAH_MARKER_CHAR + to_eastern_arabic(a)
-                line_tokens.append(marker_text)
+                line_tokens.append(AYAH_MARKER_CHAR)
                 marker_ayah_numbers.append(a)
 
         lines.append(' '.join(line_tokens))
@@ -564,26 +564,19 @@ def render_page(page_number, page_ayat, quran_text, output_dir, debug=False):
                     ayah_num = marker_ayah_numbers[marker_idx]
                     marker_idx += 1
 
-                    byte_start = len(line_text[:ch_i].encode('utf-8'))
-                    digit_str = to_eastern_arabic(ayah_num)
-                    end_char = ch_i + 1 + len(digit_str)
-                    byte_end = min(len(line_text[:end_char].encode('utf-8')), len(text_bytes))
+                    # Get position of the ۝ character (no digits in text anymore)
+                    byte_pos = len(line_text[:ch_i].encode('utf-8'))
+                    pos_rect = layout.index_to_pos(byte_pos)
 
-                    start_rect = layout.index_to_pos(byte_start)
-                    end_rect = layout.index_to_pos(byte_end)
+                    mx = pos_rect.x / Pango.SCALE
+                    mw = abs(pos_rect.width / Pango.SCALE)
+                    sy = pos_rect.y / Pango.SCALE
+                    sh = pos_rect.height / Pango.SCALE
 
-                    sx = start_rect.x / Pango.SCALE
-                    ex = end_rect.x / Pango.SCALE
-                    sy = start_rect.y / Pango.SCALE
-                    sh = start_rect.height / Pango.SCALE
-
-                    left_x = min(sx, ex)
-                    right_x = max(sx, ex)
-                    if right_x - left_x < 2:
-                        right_x = left_x + marker_radius * 2
-
-                    # Store absolute position (add margin + line offset)
-                    abs_cx = margin_x + (left_x + right_x) / 2
+                    # Center marker on the ۝ glyph cell
+                    if mw < marker_radius * 2:
+                        mw = marker_radius * 2
+                    abs_cx = margin_x + mx + mw / 2
                     abs_cy = margin_top + y_pos + sy + sh / 2
 
                     marker_positions.append((abs_cx, abs_cy, ayah_num))
@@ -629,8 +622,7 @@ def render_page(page_number, page_ayat, quran_text, output_dir, debug=False):
                 if ayah == 1 and surah != prev_surah and surah not in NO_BISMILLAH_SURAHS and surah != 1:
                     page_text_parts.append(BISMILLAH_QPC)
                 page_text_parts.append(text)
-                marker_text = AYAH_MARKER_CHAR + to_eastern_arabic(ayah)
-                page_text_parts.append(marker_text)
+                page_text_parts.append(AYAH_MARKER_CHAR)
                 marker_ayah_numbers.append(ayah)
                 ayat_on_page.append((surah, ayah))
                 prev_surah = surah
@@ -675,18 +667,14 @@ def render_page(page_number, page_ayat, quran_text, output_dir, debug=False):
                     break
                 ayah_num = marker_ayah_numbers[m_idx]
                 m_idx += 1
-                byte_start = len(full_text[:ci].encode('utf-8'))
-                digit_str = to_eastern_arabic(ayah_num)
-                end_char = ci + 1 + len(digit_str)
-                byte_end = min(len(full_text[:end_char].encode('utf-8')), len(text_bytes))
-                start_rect = layout.index_to_pos(byte_start)
-                end_rect = layout.index_to_pos(byte_end)
-                sx, ex = start_rect.x / Pango.SCALE, end_rect.x / Pango.SCALE
-                sy, sh = start_rect.y / Pango.SCALE, start_rect.height / Pango.SCALE
-                left_x, right_x = min(sx, ex), max(sx, ex)
-                if right_x - left_x < 2:
-                    right_x = left_x + marker_radius * 2
-                cx, cy = (left_x + right_x) / 2, sy + sh / 2
+                byte_pos = len(full_text[:ci].encode('utf-8'))
+                pos_rect = layout.index_to_pos(byte_pos)
+                mx = pos_rect.x / Pango.SCALE
+                mw = abs(pos_rect.width / Pango.SCALE)
+                sy, sh = pos_rect.y / Pango.SCALE, pos_rect.height / Pango.SCALE
+                if mw < marker_radius * 2:
+                    mw = marker_radius * 2
+                cx, cy = mx + mw / 2, sy + sh / 2
                 cr.save()
                 cr.set_source_rgb(1, 1, 1)
                 cr.arc(cx, cy, marker_radius * 1.2, 0, 2 * math.pi)
