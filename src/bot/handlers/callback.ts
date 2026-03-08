@@ -69,6 +69,9 @@ export async function handleCallback(ctx: Context): Promise<void> {
       case "page_vocab":
         await handlePageVocab(ctx, parseInt(parts[1]));
         break;
+      case "page_vocab_start":
+        await handlePageVocabDrill(ctx, parseInt(parts[1]));
+        break;
       case "page_nav":
         await handlePageNav(ctx, parseInt(parts[1]));
         break;
@@ -377,12 +380,77 @@ async function handlePageVocab(ctx: Context, pageNum: number): Promise<void> {
 
   const { InlineKeyboard } = await import("grammy");
   const kb = new InlineKeyboard()
+    .text("📝 Mula Latih", `page_vocab_start:${pageNum}`)
     .text("◀ Kembali", `page_nav:${pageNum}`);
 
   await ctx.reply(text, {
     parse_mode: "Markdown",
     reply_markup: kb,
   });
+}
+
+// ── Page vocab drill (flashcard mode for page words) ──
+
+async function handlePageVocabDrill(ctx: Context, pageNum: number): Promise<void> {
+  const { supabaseAdmin } = await import("../supabase-admin.js");
+
+  // Get ayat text for this page
+  const { data: ayat } = await supabaseAdmin
+    .from("ayat")
+    .select("text_uthmani")
+    .eq("page_number", pageNum);
+
+  if (!ayat || ayat.length === 0) {
+    await ctx.reply(`Tiada data untuk halaman ${pageNum}.`);
+    return;
+  }
+
+  // Extract unique word tokens and match against words table
+  const tokens = new Set<string>();
+  for (const a of ayat) {
+    for (const t of a.text_uthmani.split(/\s+/)) {
+      if (t.length > 0) tokens.add(t);
+    }
+  }
+
+  const { data: words } = await supabaseAdmin
+    .from("words")
+    .select("id, text_uthmani")
+    .in("text_uthmani", [...tokens]);
+
+  if (!words || words.length === 0) {
+    await ctx.reply(`Tiada vocab untuk latihan halaman ${pageNum}.`);
+    return;
+  }
+
+  // Build ordered word ID queue (order of appearance, deduplicated)
+  const seen = new Set<string>();
+  const queue: number[] = [];
+  const wordLookup = new Map(words.map((w: any) => [w.text_uthmani, w.id]));
+
+  for (const a of ayat) {
+    for (const t of a.text_uthmani.split(/\s+/)) {
+      if (t.length > 0 && !seen.has(t) && wordLookup.has(t)) {
+        seen.add(t);
+        queue.push(wordLookup.get(t)!);
+      }
+    }
+  }
+
+  // Create vocab progress for each word
+  const { getOrCreateVocabProgress } = await import("../db/vocab-progress.js");
+  for (const wid of queue) {
+    await getOrCreateVocabProgress(USER_ID, wid);
+  }
+
+  // Set up vocab queue and start drill
+  const { setVocabQueue } = await import("./vocab.js");
+  const chatId = ctx.chat?.id;
+  if (!chatId) return;
+
+  setVocabQueue(chatId, queue);
+  await ctx.reply(`📝 Latihan vocab halaman ${pageNum}: ${queue.length} perkataan\n`);
+  await showNextVocab(ctx);
 }
 
 // ── Page navigation ──

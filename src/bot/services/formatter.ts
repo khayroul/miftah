@@ -92,21 +92,62 @@ export function buildPlanKeyboard(): InlineKeyboard {
 
 export function formatStats(stats: UserStats): string {
   const { ayatByStatus: s } = stats;
-  return [
-    "*Statistik Miftah*\n",
-    "*Hifz:*",
-    `  Sabak (baru): ${s.sabak} ayat`,
-    `  Sabqi (minggu ini): ${s.sabqi} ayat`,
-    `  Manzil (hafal): ${s.manzil} ayat`,
-    `  Belum mula: ${6236 - stats.totalAyatStarted} ayat`,
+  const pct = (n: number, total: number) =>
+    total > 0 ? `${Math.round((n / total) * 100)}%` : "0%";
+
+  const lines = [
+    `*Statistik Miftah* ${stats.streak > 0 ? `🔥 ${stats.streak} hari berturut` : ""}`,
     "",
-    "*Vocab:*",
-    `  Dipelajari: ${stats.totalVocab} perkataan`,
-    "",
-    "*Ulangkaji:*",
-    `  Hari ini: ${stats.reviewsToday}`,
-    `  Minggu ini: ${stats.reviewsThisWeek}`,
-  ].join("\n");
+  ];
+
+  // Due now
+  const totalDue = stats.dueAyatToday + stats.dueVocabToday;
+  if (totalDue > 0) {
+    lines.push(`⏰ *Perlu ulangkaji sekarang:* ${totalDue}`);
+    if (stats.dueAyatToday > 0) lines.push(`  Hifz: ${stats.dueAyatToday} ayat`);
+    if (stats.dueVocabToday > 0) lines.push(`  Vocab: ${stats.dueVocabToday} perkataan`);
+    lines.push("");
+  }
+
+  // Hifz progress
+  lines.push("*Hifz:*");
+  lines.push(`  Sabak (baru): ${s.sabak} ayat`);
+  lines.push(`  Sabqi (minggu ini): ${s.sabqi} ayat`);
+  lines.push(`  Manzil (hafal): ${s.manzil} ayat`);
+  lines.push(`  Jumlah mula: ${stats.totalAyatStarted} / 6,236 (${pct(stats.totalAyatStarted, 6236)})`);
+
+  // Juz breakdown if any progress
+  if (stats.juzProgress.length > 0) {
+    const juzSummary = stats.juzProgress
+      .map((j) => `Juz ${j.juz}: ${j.count}`)
+      .join(", ");
+    lines.push(`  Juz: ${juzSummary}`);
+  }
+
+  // Vocab
+  lines.push("");
+  lines.push("*Vocab:*");
+  lines.push(`  Dipelajari: ${stats.totalVocab} perkataan`);
+  if (stats.totalVocab > 0) {
+    const stateLabels = ["Baru", "Sedang belajar", "Ulangkaji", "Belajar semula"];
+    const active = [1, 2, 3]
+      .filter((i) => stats.vocabByState[i] > 0)
+      .map((i) => `${stateLabels[i]}: ${stats.vocabByState[i]}`)
+      .join(", ");
+    if (active) lines.push(`  ${active}`);
+  }
+
+  // Reviews
+  lines.push("");
+  lines.push("*Ulangkaji:*");
+  lines.push(`  Hari ini: ${stats.reviewsToday}`);
+  lines.push(`  Minggu ini: ${stats.reviewsThisWeek}`);
+  lines.push(`  Keseluruhan: ${stats.reviewsAllTime}`);
+  if (stats.retentionRate > 0) {
+    lines.push(`  Kadar ingat (30 hari): ${stats.retentionRate}%`);
+  }
+
+  return lines.join("\n");
 }
 
 // ── Blanking controls ──

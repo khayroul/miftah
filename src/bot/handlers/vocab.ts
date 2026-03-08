@@ -11,6 +11,11 @@ import { formatVocabQuestion } from "../services/formatter.js";
 // Simple session state: current vocab queue per chat
 const vocabQueues = new Map<number, number[]>();
 
+/** Set a vocab queue externally (for page-filtered drills) */
+export function setVocabQueue(chatId: number, queue: number[]): void {
+  vocabQueues.set(chatId, [...queue]);
+}
+
 export async function handleVocab(ctx: Context): Promise<void> {
   const chatId = ctx.chat?.id;
   if (!chatId) return;

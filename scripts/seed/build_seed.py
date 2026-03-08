@@ -154,9 +154,9 @@ def build_ayat_sql(ayat, sahih, basmeih, id_wbw):
         bm = basmeih.get(key, {})
         meta = verse_meta.get(key, {})
 
-        # Prefer QUL dump Arabic, fall back to tanzil.net
-        text_uthmani = qul.get('text_uthmani', '') or tanzil_uthmani.get(key, '')
-        text_simple = qul.get('text_simple', '') or tanzil_simple.get(key, '')
+        # Prefer tanzil/QPC text (has waqf marks + consistent orthography), fall back to QUL dump
+        text_uthmani = tanzil_uthmani.get(key, '') or qul.get('text_uthmani', '')
+        text_simple = tanzil_simple.get(key, '') or qul.get('text_simple', '')
         if text_uthmani:
             ayat_with_arabic += 1
 

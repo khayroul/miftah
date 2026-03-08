@@ -55,7 +55,7 @@ PAGE_HEIGHT = int(PAGE_HEIGHT_MM * MM_TO_PT)   # ~2185 px at 300 DPI
 THUMB_SCALE = 72 / 300  # 72 DPI thumbnails
 
 # Margins (fraction of page dimension)
-MARGIN_X_FRAC = 0.07
+MARGIN_X_FRAC = 0.08    # increased from 0.07 for Arabic diacritical overflow
 MARGIN_TOP_FRAC = 0.05
 MARGIN_BOTTOM_FRAC = 0.05
 
@@ -66,6 +66,7 @@ AYAH_PADDING = 40   # px
 # Font settings
 FONT_FAMILY = "KFGQPC Uthman Taha Naskh"
 FONT_SIZE_AYAH = 32  # pt for ayah strips (larger, one ayah)
+FONT_SIZE_PAGE_MAX = 48  # pt cap for page rendering (dense pages ~48pt)
 
 # Quran page layout (standard Madinah mushaf: 15 lines per page)
 LINES_PER_PAGE = 15
@@ -73,8 +74,16 @@ LINES_PER_PAGE = 15
 # Golden test pages per BUILD_PLAN
 GOLDEN_PAGES = [1, 2, 77, 489, 604]
 
-# Ayah end marker
-AYAH_MARKER = "\u06DD"  # ۝
+# Ayah end marker — we use the real Unicode ۝ character in text so Pango allocates space,
+# then overpaint the fallback glyph with a custom Cairo-drawn ornamental circle + number
+AYAH_MARKER_CHAR = "\u06DD"  # End of Ayah mark (enclosing, digits go inside)
+
+# Bismillah (QPC orthography, matching our text source)
+BISMILLAH_QPC = "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ"
+
+# Surahs that do NOT get Bismillah: At-Tawbah (9)
+# Al-Fatihah (1) already has Bismillah as verse 1 in the text
+NO_BISMILLAH_SURAHS = {9}
 
 # Eastern Arabic digits for ayah numbers inside the stop mark
 EASTERN_DIGITS = "٠١٢٣٤٥٦٧٨٩"
@@ -82,6 +91,52 @@ EASTERN_DIGITS = "٠١٢٣٤٥٦٧٨٩"
 def to_eastern_arabic(n):
     """Convert integer to Eastern Arabic numeral string."""
     return "".join(EASTERN_DIGITS[int(d)] for d in str(n))
+
+
+def draw_ayah_marker(cr, cx, cy, radius, number_str, font_size):
+    """Draw a custom end-of-ayah marker: ornamental circle with number inside.
+
+    Args:
+        cr: Cairo context
+        cx, cy: Center position
+        radius: Radius of the marker circle
+        number_str: Eastern Arabic digit string
+        font_size: Font size for the number
+    """
+    # Draw ornamental circle (double ring)
+    cr.save()
+    cr.set_source_rgb(0, 0, 0)
+    cr.set_line_width(1.5)
+
+    # Outer circle
+    cr.arc(cx, cy, radius, 0, 2 * math.pi)
+    cr.stroke()
+
+    # Inner circle (slightly smaller)
+    cr.arc(cx, cy, radius * 0.78, 0, 2 * math.pi)
+    cr.stroke()
+
+    # Small decorative dots at cardinal points
+    dot_r = radius * 0.08
+    for angle in [0, math.pi/2, math.pi, 3*math.pi/2]:
+        dx = cx + radius * 0.89 * math.cos(angle)
+        dy = cy + radius * 0.89 * math.sin(angle)
+        cr.arc(dx, dy, dot_r, 0, 2 * math.pi)
+        cr.fill()
+
+    # Draw number centered inside using Cairo toy text API
+    # (Avoids PangoCairo.create_layout which corrupts font resolution state
+    #  when called with a different font size inside a per-line rendering loop)
+    num_font_size = font_size * 0.55
+    cr.select_font_face(FONT_FAMILY, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+    cr.set_font_size(num_font_size)
+    extents = cr.text_extents(number_str)
+    tx = cx - extents.width / 2 - extents.x_bearing
+    ty = cy - extents.height / 2 - extents.y_bearing
+    cr.move_to(tx, ty)
+    cr.show_text(number_str)
+
+    cr.restore()
 
 
 def find_font():
@@ -313,6 +368,118 @@ def extract_word_boxes(layout, offset_x, offset_y):
     return result
 
 
+def load_mushaf_layout(page_number):
+    """Load mushaf line-break data from zonetecde/mushaf-layout."""
+    layout_path = DATA_DIR / "mushaf-layout" / "mushaf" / f"page-{page_number:03d}.json"
+    if not layout_path.exists():
+        return None
+    with open(layout_path) as f:
+        return json.load(f)
+
+
+def build_mushaf_page_lines(page_number, page_ayat, quran_text):
+    """Build per-line text using mushaf layout line breaks with our QPC tokens.
+
+    Returns (lines, marker_ayah_numbers, ayat_on_page) or None.
+    """
+    layout_data = load_mushaf_layout(page_number)
+    if not layout_data:
+        return None
+
+    # Pre-split verse texts into tokens
+    verse_tokens = {}
+    for surah, ayah in page_ayat:
+        text = quran_text.get((surah, ayah), '')
+        if text:
+            verse_tokens[(surah, ayah)] = text.split()
+
+    lines = []
+    marker_ayah_numbers = []
+    ayat_on_page = []
+
+    for line_obj in layout_data.get('lines', []):
+        line_type = line_obj.get('type', 'text')
+
+        if line_type == 'surah-header':
+            lines.append('')  # Placeholder (decorative header rendered later)
+            continue
+
+        if line_type == 'basmala':
+            lines.append(BISMILLAH_QPC)
+            continue
+
+        # Text line: map word locations to our QPC tokens
+        line_tokens = []
+        for w in line_obj.get('words', []):
+            parts = w['location'].split(':')
+            if len(parts) != 3:
+                continue
+            s, a, p = int(parts[0]), int(parts[1]), int(parts[2])
+
+            tokens = verse_tokens.get((s, a), [])
+            if p <= len(tokens):
+                line_tokens.append(tokens[p - 1])
+
+            if (s, a) not in ayat_on_page:
+                ayat_on_page.append((s, a))
+
+            # Last word of verse → add ayah end marker
+            if p == len(tokens):
+                marker_text = AYAH_MARKER_CHAR + to_eastern_arabic(a)
+                line_tokens.append(marker_text)
+                marker_ayah_numbers.append(a)
+
+        lines.append(' '.join(line_tokens))
+
+    return lines, marker_ayah_numbers, ayat_on_page
+
+
+def compute_font_size_for_lines(cr, lines, text_width, text_height):
+    """Find largest font size where every line fits within text_width and
+    line height fits within text_height / LINES_PER_PAGE, capped at FONT_SIZE_PAGE_MAX."""
+    lo, hi = 8.0, FONT_SIZE_PAGE_MAX
+    best_size = 16.0
+    max_line_h = text_height / LINES_PER_PAGE
+
+    non_empty = [l for l in lines if l.strip()]
+    if not non_empty:
+        return best_size
+
+    for _ in range(20):
+        mid = (lo + hi) / 2.0
+        fits = True
+
+        for line_text in non_empty:
+            layout = PangoCairo.create_layout(cr)
+            desc = Pango.FontDescription.new()
+            desc.set_family(FONT_FAMILY)
+            desc.set_size(int(mid * Pango.SCALE))
+            layout.set_font_description(desc)
+            layout.set_auto_dir(True)
+            layout.set_width(int(text_width * Pango.SCALE))
+            layout.set_wrap(Pango.WrapMode.WORD)
+            layout.set_text(line_text, -1)
+
+            # Check horizontal: no line should wrap
+            if layout.get_line_count() > 1:
+                fits = False
+                break
+
+            # Check vertical: line height must fit the 15-line grid
+            _, logical = layout.get_pixel_extents()
+            if logical.height > max_line_h:
+                fits = False
+                break
+
+        if fits:
+            best_size = mid
+            lo = mid
+        else:
+            hi = mid
+
+    return best_size
+
+
 def render_page(page_number, page_ayat, quran_text, output_dir, debug=False):
     """Render a single mushaf page with justified text filling 15 lines."""
     surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, PAGE_WIDTH, PAGE_HEIGHT)
@@ -329,66 +496,208 @@ def render_page(page_number, page_ayat, quran_text, output_dir, debug=False):
     text_width = PAGE_WIDTH - (2 * margin_x)
     text_height = PAGE_HEIGHT - margin_top - margin_bottom
 
-    # Collect all text for this page
-    page_text_parts = []
-    ayat_on_page = []
+    # Try mushaf layout for accurate line breaks (matches Madinah mushaf)
+    mushaf_result = build_mushaf_page_lines(page_number, page_ayat, quran_text)
 
-    for surah, ayah in page_ayat:
-        text = quran_text.get((surah, ayah), '')
-        if text:
-            page_text_parts.append(f"{text} {AYAH_MARKER}{to_eastern_arabic(ayah)}")
-            ayat_on_page.append((surah, ayah))
+    if mushaf_result:
+        page_lines, marker_ayah_numbers, ayat_on_page = mushaf_result
 
-    full_text = " ".join(page_text_parts)
+        # Per-line rendering with forced line breaks
+        font_size = compute_font_size_for_lines(cr, page_lines, text_width, text_height)
+        line_height = text_height / LINES_PER_PAGE
+        word_boxes = []
+        marker_idx = 0
+        marker_radius = font_size * 0.55
+        line_count = len([l for l in page_lines if l.strip()])
 
-    if not full_text.strip():
-        return None
+        # Two-pass rendering: text first, then markers.
+        # Rendering any text (PangoCairo or Cairo toy API) inside the per-line
+        # PangoCairo loop corrupts font resolution state, causing subsequent
+        # lines to render at wrong sizes. Splitting into passes avoids this.
 
-    # Compute optimal font size to fill ~15 lines
-    font_size = compute_font_size(cr, full_text, text_width, text_height, LINES_PER_PAGE)
+        # Collect marker positions and word boxes during pass 1
+        marker_positions = []  # (abs_cx, abs_cy, ayah_num)
+        marker_idx = 0
 
-    # Create layout
-    cr.save()
-    cr.translate(margin_x, margin_top)
-    cr.set_source_rgb(0, 0, 0)
+        # --- Pass 1: Render all text lines (PangoCairo) ---
+        cr.save()
+        cr.translate(margin_x, margin_top)
+        cr.set_source_rgb(0, 0, 0)
 
-    layout = create_page_layout(cr, full_text, font_size, text_width)
-    line_count = layout.get_line_count()
+        for i, line_text in enumerate(page_lines):
+            if not line_text.strip():
+                continue
 
-    # Vertically distribute: compute line spacing to fill text_height
-    ink_rect, logical_rect = layout.get_pixel_extents()
-    natural_height = logical_rect.height
+            y_pos = i * line_height
 
-    if natural_height > 0 and line_count > 1:
-        # Set line spacing to fill the available height
-        target_spacing = (text_height - natural_height) / line_count
-        if target_spacing > 0:
-            layout.set_line_spacing(1.0 + (target_spacing * Pango.SCALE) / layout.get_font_description().get_size())
+            # Create per-line layout
+            is_basmala = (line_text == BISMILLAH_QPC)
+            layout = PangoCairo.create_layout(cr)
+            desc = Pango.FontDescription.new()
+            desc.set_family(FONT_FAMILY)
+            desc.set_size(int(font_size * Pango.SCALE))
+            layout.set_font_description(desc)
+            layout.set_auto_dir(True)
+            layout.set_width(int(text_width * Pango.SCALE))
+            if is_basmala:
+                layout.set_alignment(Pango.Alignment.CENTER)
+            else:
+                layout.set_alignment(Pango.Alignment.RIGHT)
+                layout.set_justify(True)
+                layout.set_justify_last_line(True)
+            layout.set_text(line_text, -1)
 
-    # Re-measure after spacing adjustment
-    ink_rect, logical_rect = layout.get_pixel_extents()
+            cr.save()
+            cr.translate(0, y_pos)
+            PangoCairo.show_layout(cr, layout)
 
-    # Center vertically if text doesn't fill the page (e.g. short surahs)
-    y_offset = 0
-    if logical_rect.height < text_height * 0.8:
-        y_offset = (text_height - logical_rect.height) // 2
-        cr.translate(0, y_offset)
+            # Locate ayah markers on this line (positions only, no drawing yet)
+            if AYAH_MARKER_CHAR in line_text:
+                text_bytes = line_text.encode('utf-8')
 
-    PangoCairo.show_layout(cr, layout)
+                for ch_i, ch in enumerate(line_text):
+                    if ch != AYAH_MARKER_CHAR:
+                        continue
+                    if marker_idx >= len(marker_ayah_numbers):
+                        break
 
-    # Extract word bounding boxes
-    word_boxes = extract_word_boxes(layout, margin_x, margin_top + y_offset)
+                    ayah_num = marker_ayah_numbers[marker_idx]
+                    marker_idx += 1
 
-    # Debug overlay: draw word hitbox rectangles
-    if debug and word_boxes:
-        cr.set_source_rgba(1, 0, 0, 0.3)
-        cr.set_line_width(1)
-        for box in word_boxes:
-            cr.rectangle(box["x"] - margin_x, box["y"] - margin_top - y_offset,
-                         box["w"], box["h"])
-            cr.stroke()
+                    byte_start = len(line_text[:ch_i].encode('utf-8'))
+                    digit_str = to_eastern_arabic(ayah_num)
+                    end_char = ch_i + 1 + len(digit_str)
+                    byte_end = min(len(line_text[:end_char].encode('utf-8')), len(text_bytes))
 
-    cr.restore()
+                    start_rect = layout.index_to_pos(byte_start)
+                    end_rect = layout.index_to_pos(byte_end)
+
+                    sx = start_rect.x / Pango.SCALE
+                    ex = end_rect.x / Pango.SCALE
+                    sy = start_rect.y / Pango.SCALE
+                    sh = start_rect.height / Pango.SCALE
+
+                    left_x = min(sx, ex)
+                    right_x = max(sx, ex)
+                    if right_x - left_x < 2:
+                        right_x = left_x + marker_radius * 2
+
+                    # Store absolute position (add margin + line offset)
+                    abs_cx = margin_x + (left_x + right_x) / 2
+                    abs_cy = margin_top + y_pos + sy + sh / 2
+
+                    marker_positions.append((abs_cx, abs_cy, ayah_num))
+
+            # Extract word boxes for this line
+            line_boxes = extract_word_boxes(layout, margin_x, margin_top + y_pos)
+            line_boxes = [w for w in line_boxes if AYAH_MARKER_CHAR not in w.get('text', '')]
+            word_boxes.extend(line_boxes)
+
+            if debug and line_boxes:
+                cr.set_source_rgba(1, 0, 0, 0.3)
+                cr.set_line_width(1)
+                for box in line_boxes:
+                    cr.rectangle(box["x"] - margin_x, box["y"] - margin_top - y_pos,
+                                 box["w"], box["h"])
+                    cr.stroke()
+
+            cr.restore()
+
+        cr.restore()
+
+        # --- Pass 2: Draw ayah markers (uses absolute coordinates) ---
+        for abs_cx, abs_cy, ayah_num in marker_positions:
+            # White circle to overpaint fallback glyph
+            cr.save()
+            cr.set_source_rgb(1, 1, 1)
+            cr.arc(abs_cx, abs_cy, marker_radius * 1.2, 0, 2 * math.pi)
+            cr.fill()
+            cr.restore()
+
+            draw_ayah_marker(cr, abs_cx, abs_cy, marker_radius,
+                             to_eastern_arabic(ayah_num), font_size)
+    else:
+        # Fallback: auto-wrap when mushaf layout is unavailable
+        page_text_parts = []
+        ayat_on_page = []
+        marker_ayah_numbers = []
+        prev_surah = None
+
+        for surah, ayah in page_ayat:
+            text = quran_text.get((surah, ayah), '')
+            if text:
+                if ayah == 1 and surah != prev_surah and surah not in NO_BISMILLAH_SURAHS and surah != 1:
+                    page_text_parts.append(BISMILLAH_QPC)
+                page_text_parts.append(text)
+                marker_text = AYAH_MARKER_CHAR + to_eastern_arabic(ayah)
+                page_text_parts.append(marker_text)
+                marker_ayah_numbers.append(ayah)
+                ayat_on_page.append((surah, ayah))
+                prev_surah = surah
+
+        full_text = " ".join(page_text_parts)
+        if not full_text.strip():
+            return None
+
+        font_size = compute_font_size(cr, full_text, text_width, text_height, LINES_PER_PAGE)
+
+        cr.save()
+        cr.translate(margin_x, margin_top)
+        cr.set_source_rgb(0, 0, 0)
+
+        layout = create_page_layout(cr, full_text, font_size, text_width)
+        line_count = layout.get_line_count()
+
+        ink_rect, logical_rect = layout.get_pixel_extents()
+        natural_height = logical_rect.height
+        if natural_height > 0 and line_count > 1:
+            target_spacing = (text_height - natural_height) / line_count
+            if target_spacing > 0:
+                layout.set_line_spacing(1.0 + (target_spacing * Pango.SCALE) / layout.get_font_description().get_size())
+
+        ink_rect, logical_rect = layout.get_pixel_extents()
+        y_offset = 0
+        if logical_rect.height < text_height * 0.8:
+            y_offset = (text_height - logical_rect.height) // 2
+            cr.translate(0, y_offset)
+
+        PangoCairo.show_layout(cr, layout)
+
+        # Draw markers (fallback path)
+        if marker_ayah_numbers:
+            text_bytes = full_text.encode('utf-8')
+            marker_radius = font_size * 0.55
+            m_idx = 0
+            for ci, ch in enumerate(full_text):
+                if ch != AYAH_MARKER_CHAR:
+                    continue
+                if m_idx >= len(marker_ayah_numbers):
+                    break
+                ayah_num = marker_ayah_numbers[m_idx]
+                m_idx += 1
+                byte_start = len(full_text[:ci].encode('utf-8'))
+                digit_str = to_eastern_arabic(ayah_num)
+                end_char = ci + 1 + len(digit_str)
+                byte_end = min(len(full_text[:end_char].encode('utf-8')), len(text_bytes))
+                start_rect = layout.index_to_pos(byte_start)
+                end_rect = layout.index_to_pos(byte_end)
+                sx, ex = start_rect.x / Pango.SCALE, end_rect.x / Pango.SCALE
+                sy, sh = start_rect.y / Pango.SCALE, start_rect.height / Pango.SCALE
+                left_x, right_x = min(sx, ex), max(sx, ex)
+                if right_x - left_x < 2:
+                    right_x = left_x + marker_radius * 2
+                cx, cy = (left_x + right_x) / 2, sy + sh / 2
+                cr.save()
+                cr.set_source_rgb(1, 1, 1)
+                cr.arc(cx, cy, marker_radius * 1.2, 0, 2 * math.pi)
+                cr.fill()
+                cr.restore()
+                draw_ayah_marker(cr, cx, cy, marker_radius, to_eastern_arabic(ayah_num), font_size)
+
+        word_boxes = extract_word_boxes(layout, margin_x, margin_top + y_offset)
+        word_boxes = [w for w in word_boxes if AYAH_MARKER_CHAR not in w.get('text', '')]
+
+        cr.restore()
 
     # Save page image
     page_path = output_dir / "pages" / f"page_{page_number:03d}.png"
@@ -531,6 +840,7 @@ def main():
     parser = argparse.ArgumentParser(description="Miftah Arabic Rendering Pipeline")
     parser.add_argument("--golden-only", action="store_true", help="Only render 5 golden test pages")
     parser.add_argument("--page", type=int, help="Render specific page number")
+    parser.add_argument("--pages", type=str, help="Render page range, e.g. '1-61' for Juz 1-3")
     parser.add_argument("--surah", type=int, help="Render specific surah")
     parser.add_argument("--ayah", type=int, help="Render specific ayah (requires --surah)")
     parser.add_argument("--debug", action="store_true", help="Draw word hitbox debug overlay")
@@ -559,8 +869,25 @@ def main():
     page_mapping = load_page_mapping()
     print(f"  Page mapping: {len(page_mapping)} pages")
 
-    if args.golden_only or (not args.page and not args.surah):
+    if args.golden_only or (not args.page and not args.pages and not args.surah):
         render_golden_pages(quran_text, page_mapping, debug=args.debug)
+    elif args.pages:
+        # Parse range like "1-61"
+        parts = args.pages.split('-')
+        start_page = int(parts[0])
+        end_page = int(parts[1]) if len(parts) > 1 else start_page
+        print(f"\n--- Rendering pages {start_page}-{end_page} ---")
+        rendered = 0
+        for page_num in range(start_page, end_page + 1):
+            ayat = page_mapping.get(page_num, [])
+            if not ayat:
+                continue
+            path = render_page(page_num, ayat, quran_text, ASSETS_DIR, debug=args.debug)
+            if path:
+                rendered += 1
+                if rendered % 10 == 0:
+                    print(f"  Rendered {rendered} pages (current: {page_num})")
+        print(f"  Done: {rendered} pages rendered to {ASSETS_DIR / 'pages'}")
     elif args.page:
         ayat = page_mapping.get(args.page, [])
         if ayat:

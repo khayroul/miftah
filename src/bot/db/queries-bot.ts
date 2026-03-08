@@ -176,52 +176,182 @@ export interface UserStats {
   totalAyatStarted: number;
   ayatByStatus: Record<HifzStatus, number>;
   totalVocab: number;
+  vocabByState: Record<number, number>; // 0=New 1=Learning 2=Review 3=Relearning
   reviewsToday: number;
   reviewsThisWeek: number;
+  reviewsAllTime: number;
+  dueAyatToday: number;
+  dueVocabToday: number;
+  retentionRate: number; // 0-100%
+  streak: number; // consecutive days with reviews
+  juzProgress: { juz: number; count: number }[]; // ayat started per juz
 }
 
 export async function getUserStats(userId: string): Promise<UserStats> {
-  // Ayat by status
-  const { data: spData, error: spErr } = await supabaseAdmin
-    .from("study_progress")
-    .select("hifz_status")
-    .eq("user_id", userId);
-  if (spErr) throw spErr;
+  const now = new Date();
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const weekStart = new Date(now);
+  weekStart.setDate(weekStart.getDate() - 7);
 
+  // Parallel queries
+  const [
+    spData,
+    vocabCount,
+    vocabStates,
+    reviewsToday,
+    reviewsThisWeek,
+    reviewsAllTime,
+    dueAyatToday,
+    dueVocabToday,
+    retentionData,
+    streakDays,
+    juzData,
+  ] = await Promise.all([
+    // Ayat by hifz status
+    supabaseAdmin
+      .from("study_progress")
+      .select("hifz_status")
+      .eq("user_id", userId)
+      .then(({ data, error }) => {
+        if (error) throw error;
+        return data ?? [];
+      }),
+    // Vocab total
+    supabaseAdmin
+      .from("vocab_progress")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .then(({ count }) => count ?? 0),
+    // Vocab by state
+    supabaseAdmin
+      .from("vocab_progress")
+      .select("state")
+      .eq("user_id", userId)
+      .then(({ data }) => data ?? []),
+    // Review counts
+    getReviewCount(userId, todayStart),
+    getReviewCount(userId, weekStart),
+    getReviewCount(userId, new Date(0)),
+    // Due today
+    supabaseAdmin
+      .from("study_progress")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .lte("due", now.toISOString())
+      .neq("hifz_status", "not_started")
+      .then(({ count }) => count ?? 0),
+    supabaseAdmin
+      .from("vocab_progress")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .lte("due", now.toISOString())
+      .then(({ count }) => count ?? 0),
+    // Retention: count Again(1) vs total in last 30 days
+    (() => {
+      const thirtyDaysAgo = new Date(now);
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return Promise.all([
+        supabaseAdmin
+          .from("review_log")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .gte("reviewed_at", thirtyDaysAgo.toISOString())
+          .then(({ count }) => count ?? 0),
+        supabaseAdmin
+          .from("review_log")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .gte("reviewed_at", thirtyDaysAgo.toISOString())
+          .eq("rating", 1)
+          .then(({ count }) => count ?? 0),
+      ]);
+    })(),
+    // Streak: get distinct review dates (last 60 days)
+    (() => {
+      const sixtyDaysAgo = new Date(now);
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+      return supabaseAdmin
+        .from("review_log")
+        .select("reviewed_at")
+        .eq("user_id", userId)
+        .gte("reviewed_at", sixtyDaysAgo.toISOString())
+        .order("reviewed_at", { ascending: false })
+        .then(({ data }) => {
+          const dates = new Set(
+            (data ?? []).map((r: any) =>
+              new Date(r.reviewed_at).toISOString().slice(0, 10),
+            ),
+          );
+          // Count consecutive days from today backwards
+          let streak = 0;
+          const d = new Date(now);
+          // Check today first; if no reviews today, check if yesterday had reviews (still counts)
+          const todayStr = d.toISOString().slice(0, 10);
+          if (!dates.has(todayStr)) {
+            d.setDate(d.getDate() - 1);
+          }
+          while (dates.has(d.toISOString().slice(0, 10))) {
+            streak++;
+            d.setDate(d.getDate() - 1);
+          }
+          return streak;
+        });
+    })(),
+    // Juz progress: join study_progress → ayat for juz numbers
+    supabaseAdmin
+      .from("study_progress")
+      .select("ayah_id, ayat!inner(juz_number)")
+      .eq("user_id", userId)
+      .neq("hifz_status", "not_started")
+      .then(({ data }) => {
+        const juzCounts = new Map<number, number>();
+        for (const row of data ?? []) {
+          const juz = (row as any).ayat?.juz_number;
+          if (juz) juzCounts.set(juz, (juzCounts.get(juz) ?? 0) + 1);
+        }
+        return [...juzCounts.entries()]
+          .sort((a, b) => a[0] - b[0])
+          .map(([juz, count]) => ({ juz, count }));
+      }),
+  ]);
+
+  // Compute derived values
   const ayatByStatus: Record<HifzStatus, number> = {
     not_started: 0,
     sabak: 0,
     sabqi: 0,
     manzil: 0,
   };
-  for (const row of spData ?? []) {
+  for (const row of spData) {
     ayatByStatus[row.hifz_status as HifzStatus]++;
   }
   const totalAyatStarted =
     ayatByStatus.sabak + ayatByStatus.sabqi + ayatByStatus.manzil;
 
-  // Vocab count
-  const { count: totalVocab } = await supabaseAdmin
-    .from("vocab_progress")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId);
+  const vocabByState: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0 };
+  for (const row of vocabStates) {
+    vocabByState[row.state] = (vocabByState[row.state] ?? 0) + 1;
+  }
 
-  // Reviews
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const weekStart = new Date();
-  weekStart.setDate(weekStart.getDate() - 7);
-
-  const [reviewsToday, reviewsThisWeek] = await Promise.all([
-    getReviewCount(userId, todayStart),
-    getReviewCount(userId, weekStart),
-  ]);
+  const [totalReviews30d, againCount] = retentionData;
+  const retentionRate =
+    totalReviews30d > 0
+      ? Math.round(((totalReviews30d - againCount) / totalReviews30d) * 100)
+      : 0;
 
   return {
     totalAyatStarted,
     ayatByStatus,
-    totalVocab: totalVocab ?? 0,
+    totalVocab: vocabCount,
+    vocabByState,
     reviewsToday,
     reviewsThisWeek,
+    reviewsAllTime,
+    dueAyatToday,
+    dueVocabToday,
+    retentionRate,
+    streak: streakDays,
+    juzProgress: juzData,
   };
 }
