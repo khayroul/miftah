@@ -1,0 +1,84 @@
+{
+  "round": 1,
+  "pages_count": 7,
+  "validated_count": 7,
+  "avg_ssim": 0.6749,
+  "min_ssim": 0.574,
+  "max_ssim": 0.8256,
+  "quality_distribution": {
+    "good": 3,
+    "fair": 4
+  },
+  "results": [
+    {
+      "page": 1,
+      "status": "validated",
+      "ssim": 0.8256,
+      "quality": "good",
+      "diff_path": "/Users/Executor/miftah/test/diffs/round1/diff_page_001.png",
+      "issues": [
+        "excessive_whitespace"
+      ]
+    },
+    {
+      "page": 2,
+      "status": "validated",
+      "ssim": 0.8091,
+      "quality": "good",
+      "diff_path": "/Users/Executor/miftah/test/diffs/round1/diff_page_002.png",
+      "issues": [
+        "excessive_whitespace"
+      ]
+    },
+    {
+      "page": 3,
+      "status": "validated",
+      "ssim": 0.5887,
+      "quality": "fair",
+      "diff_path": "/Users/Executor/miftah/test/diffs/round1/diff_page_003.png",
+      "issues": [
+        "excessive_whitespace"
+      ]
+    },
+    {
+      "page": 6,
+      "status": "validated",
+      "ssim": 0.574,
+      "quality": "fair",
+      "diff_path": "/Users/Executor/miftah/test/diffs/round1/diff_page_006.png",
+      "issues": [
+        "excessive_whitespace"
+      ]
+    },
+    {
+      "page": 586,
+      "status": "validated",
+      "ssim": 0.6028,
+      "quality": "fair",
+      "diff_path": "/Users/Executor/miftah/test/diffs/round1/diff_page_586.png",
+      "issues": [
+        "excessive_whitespace"
+      ]
+    },
+    {
+      "page": 590,
+      "status": "validated",
+      "ssim": 0.5974,
+      "quality": "fair",
+      "diff_path": "/Users/Executor/miftah/test/diffs/round1/diff_page_590.png",
+      "issues": [
+        "excessive_whitespace"
+      ]
+    },
+    {
+      "page": 604,
+      "status": "validated",
+      "ssim": 0.7264,
+      "quality": "good",
+      "diff_path": "/Users/Executor/miftah/test/diffs/round1/diff_page_604.png",
+      "issues": [
+        "excessive_whitespace"
+      ]
+    }
+  ]
+}

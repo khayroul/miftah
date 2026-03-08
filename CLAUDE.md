@@ -14,14 +14,14 @@ Full specification: `BUILD_PLAN.md` (Harmonized Plan v1.5)
 | Frontend         | Next.js 16 + Tailwind CSS 4        |
 | Database         | Supabase (PostgreSQL, v2 schema)    |
 | Hosting          | Vercel                              |
-| Arabic Rendering | Pre-rendered images (Cairo + Pango) |
+| Arabic Rendering | QCF V2 fonts + PIL (pre-rendered)   |
 | SRS Engine       | FSRS via ts-fsrs                    |
 | Audio            | Mishari Rashid via EveryAyah.com    |
 
 ## Directory Structure
 ```
 /src                    Next.js app (App Router, TypeScript)
-/scripts/render         Cairo/Pango rendering pipeline
+/scripts/render         QCF V2 rendering pipeline (PIL)
 /scripts/translate      BM translation batch resolution
 /assets/pages           Mushaf page PNGs + thumbnails
 /assets/ayat            Per-ayah PNGs
@@ -62,10 +62,19 @@ Full specification: `BUILD_PLAN.md` (Harmonized Plan v1.5)
 - Commits: conventional commits (`feat:`, `fix:`, `chore:`, `docs:`)
 - Khairul is dispatcher and merge authority
 
+## Arabic Rendering (QCF V2)
+- 604 QCF V2 TTF fonts (one per mushaf page) in `assets/fonts/qcf-v2/`
+- Font files: `QCF2_P001.TTF` – `QCF2_P604.TTF` (converted from WOFF2 via fonttools)
+- Glyph codepoints from `data/mushaf-layout/mushaf/page-NNN.json` (`qpcV2` field)
+- Codepoint range: U+FC41+ (Arabic Presentation Forms, page-specific mapping)
+- Renderer: `scripts/render/render_arabic.py` — PIL/FreeType, word-by-word justified RTL
+- No Pango/Cairo — QCF pre-shaped glyphs must bypass Arabic text shapers
+- Style: clean modern (white bg, Juz/Surah header, no border, page number)
+
 ## Key Rules
 - FSRS only. Never implement SM-2.
 - ts-fsrs library. Do not implement FSRS math from scratch.
-- Arabic rendering is pre-rendered images, never web fonts at runtime.
+- Arabic rendering uses QCF V2 fonts, never web fonts at runtime.
 - Reading mode stays sacred — minimal UI chrome.
 - Missing manifest → image without hitboxes (never crash).
 - Missing word → text fallback (never crash).

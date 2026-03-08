@@ -43,6 +43,13 @@ yarn-error.log*
 /assets/words/*.png
 !/assets/**/.gitkeep
 
+# QCF fonts (604 TTF files per version, ~94MB each — download via script)
+/assets/fonts/qcf-v2/*.TTF
+/assets/fonts/qcf-v2-woff2/
+
+# Test renders (proof-of-concept output)
+/test/qcf_*.png
+
 # Large data files (QUL dump, zips)
 data/qul/mini_quran_dev.sql
 data/qul/*.zip

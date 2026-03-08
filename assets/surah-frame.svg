@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 80" fill="none">
+  <!-- Outer frame -->
+  <rect x="2" y="2" width="676" height="76" rx="4" stroke="#4a4030" stroke-width="1.5" fill="none"/>
+  <rect x="6" y="6" width="668" height="68" rx="3" stroke="#4a4030" stroke-width="0.8" fill="none"/>
+
+  <!-- Left decorative endcap -->
+  <g transform="translate(10,10)">
+    <!-- Arabesque corner left -->
+    <path d="M0,30 C0,15 8,4 20,2 C12,8 8,18 8,30 C8,42 12,52 20,58 C8,56 0,45 0,30Z" fill="#4a4030" opacity="0.7"/>
+    <path d="M20,2 C28,0 36,4 40,12 C36,8 30,6 24,8 C18,10 14,16 12,24 C10,16 14,6 20,2Z" fill="#4a4030" opacity="0.5"/>
+    <path d="M20,58 C28,60 36,56 40,48 C36,52 30,54 24,52 C18,50 14,44 12,36 C10,44 14,54 20,58Z" fill="#4a4030" opacity="0.5"/>
+    <!-- Scroll element -->
+    <ellipse cx="44" cy="30" rx="14" ry="20" stroke="#4a4030" stroke-width="1" fill="none"/>
+    <ellipse cx="44" cy="30" rx="8" ry="14" stroke="#4a4030" stroke-width="0.6" fill="none"/>
+  </g>
+
+  <!-- Right decorative endcap (mirrored) -->
+  <g transform="translate(670,70) scale(-1,-1)">
+    <path d="M0,30 C0,15 8,4 20,2 C12,8 8,18 8,30 C8,42 12,52 20,58 C8,56 0,45 0,30Z" fill="#4a4030" opacity="0.7"/>
+    <path d="M20,2 C28,0 36,4 40,12 C36,8 30,6 24,8 C18,10 14,16 12,24 C10,16 14,6 20,2Z" fill="#4a4030" opacity="0.5"/>
+    <path d="M20,58 C28,60 36,56 40,48 C36,52 30,54 24,52 C18,50 14,44 12,36 C10,44 14,54 20,58Z" fill="#4a4030" opacity="0.5"/>
+    <ellipse cx="44" cy="30" rx="14" ry="20" stroke="#4a4030" stroke-width="1" fill="none"/>
+    <ellipse cx="44" cy="30" rx="8" ry="14" stroke="#4a4030" stroke-width="0.6" fill="none"/>
+  </g>
+
+  <!-- Center cartouche for surah name -->
+  <rect x="200" y="10" width="280" height="60" rx="30" stroke="#4a4030" stroke-width="1.2" fill="none"/>
+  <rect x="204" y="14" width="272" height="52" rx="26" stroke="#4a4030" stroke-width="0.6" fill="none"/>
+
+  <!-- Decorative line fills between endcaps and cartouche -->
+  <line x1="72" y1="25" x2="196" y2="25" stroke="#4a4030" stroke-width="0.6" opacity="0.4"/>
+  <line x1="72" y1="40" x2="196" y2="40" stroke="#4a4030" stroke-width="0.8" opacity="0.6"/>
+  <line x1="72" y1="55" x2="196" y2="55" stroke="#4a4030" stroke-width="0.6" opacity="0.4"/>
+
+  <line x1="484" y1="25" x2="608" y2="25" stroke="#4a4030" stroke-width="0.6" opacity="0.4"/>
+  <line x1="484" y1="40" x2="608" y2="40" stroke="#4a4030" stroke-width="0.8" opacity="0.6"/>
+  <line x1="484" y1="55" x2="608" y2="55" stroke="#4a4030" stroke-width="0.6" opacity="0.4"/>
+
+  <!-- Small diamond accents -->
+  <polygon points="134,37 140,30 146,37 140,44" fill="#4a4030" opacity="0.3"/>
+  <polygon points="534,37 540,30 546,37 540,44" fill="#4a4030" opacity="0.3"/>
+</svg>

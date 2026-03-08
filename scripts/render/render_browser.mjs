@@ -1,0 +1,586 @@
+#!/usr/bin/env node
+/**
+ * Miftah — Browser-based QCF V2 Mushaf Renderer
+ *
+ * Uses Playwright (headless Chromium) to render Quran pages with QCF V2 fonts.
+ * This is the same rendering approach quran.com uses — browsers handle QCF
+ * pre-shaped PUA glyphs correctly without any HarfBuzz interference.
+ *
+ * Usage:
+ *   node render_browser.mjs --page 6
+ *   node render_browser.mjs --pages 1-604
+ *   node render_browser.mjs --golden-only
+ */
+
+import { chromium } from 'playwright';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+// XML parsing done with regex (no xml2js dependency needed)
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = join(__dirname, '..', '..');
+const DATA_DIR = join(PROJECT_ROOT, 'data');
+const ASSETS_DIR = join(PROJECT_ROOT, 'assets');
+const FONT_DIR = join(ASSETS_DIR, 'fonts', 'qcf-v2');
+const WOFF2_DIR = join(ASSETS_DIR, 'fonts', 'qcf-v2-woff2');
+const SURAH_NAMES_FONT = join(ASSETS_DIR, 'fonts', 'surah-names', 'sura_names.woff2');
+const TEST_DIR = join(PROJECT_ROOT, 'test');
+
+// Page dimensions — mobile-first (portrait phone)
+const PAGE_WIDTH = 768;
+const PAGE_HEIGHT = 1280;
+
+// Theme presets — easily extensible for paper color / font color changes
+const THEMES = {
+  light: {
+    pageBg: '#f5f4f0',
+    textColor: '#111',
+    headerColor: '#555',
+    surahArColor: '#333',
+    bannerBg: '#efede8',
+    bannerBorder: '#c8c3b9',
+    bannerText: '#3d3525',
+    borderColor: '#dddcd8',
+    pageNumColor: '#888',
+  },
+  dark: {
+    pageBg: '#1a1a1a',
+    textColor: '#e8e4df',
+    headerColor: '#999',
+    surahArColor: '#ccc',
+    bannerBg: '#2a2a2a',
+    bannerBorder: '#444',
+    bannerText: '#c8c3b9',
+    borderColor: '#333',
+    pageNumColor: '#666',
+  },
+  paper: {
+    // Clean white — matches reference mushaf app light mode
+    pageBg: '#ffffff',
+    textColor: '#1a1a1a',
+    headerColor: '#666',
+    surahArColor: '#333',
+    bannerBg: '#f5f5f5',
+    bannerBorder: '#d0d0d0',
+    bannerText: '#333',
+    borderColor: '#e0e0e0',
+    pageNumColor: '#999',
+  },
+  sepia: {
+    // Warm parchment / old paper feel
+    pageBg: '#f4e8d1',
+    textColor: '#2c1e0e',
+    headerColor: '#6b5a47',
+    surahArColor: '#3d2e1a',
+    bannerBg: '#efe0c8',
+    bannerBorder: '#c8b090',
+    bannerText: '#3d2e1a',
+    borderColor: '#d4c4a8',
+    pageNumColor: '#8a7a64',
+  },
+  night: {
+    // Deep navy — easy on eyes at night
+    pageBg: '#0d1b2a',
+    textColor: '#c8d6e5',
+    headerColor: '#6b8299',
+    surahArColor: '#a0b8d0',
+    bannerBg: '#152238',
+    bannerBorder: '#2a3f5f',
+    bannerText: '#8fa8c8',
+    borderColor: '#1b2d44',
+    pageNumColor: '#4a6580',
+  },
+};
+
+// Juz boundaries
+const JUZ_START_PAGES = [
+  1, 22, 42, 62, 82, 102, 121, 142, 162, 182,
+  201, 222, 242, 262, 282, 302, 322, 342, 362, 382,
+  402, 422, 442, 462, 482, 502, 522, 542, 562, 582
+];
+
+function getJuz(page) {
+  for (let i = JUZ_START_PAGES.length - 1; i >= 0; i--) {
+    if (page >= JUZ_START_PAGES[i]) return i + 1;
+  }
+  return 1;
+}
+
+// Load surah metadata from XML
+function loadSurahMeta() {
+  const xmlPath = join(DATA_DIR, 'qul', 'quran-data.xml');
+  if (!existsSync(xmlPath)) return {};
+
+  const xml = readFileSync(xmlPath, 'utf-8');
+  const surahs = {};
+
+  // Simple regex-based XML parsing (avoid xml2js dependency)
+  const matches = xml.matchAll(/<sura\s+([^>]+)\/>/g);
+  for (const m of matches) {
+    const attrs = m[1];
+    const idx = attrs.match(/index="(\d+)"/)?.[1];
+    const name = attrs.match(/name="([^"]+)"/)?.[1];
+    const tname = attrs.match(/tname="([^"]+)"/)?.[1];
+    const ayas = attrs.match(/ayas="(\d+)"/)?.[1];
+    if (idx) {
+      surahs[parseInt(idx)] = {
+        name_ar: name || '',
+        name_en: tname || '',
+        ayas: parseInt(ayas || '0'),
+      };
+    }
+  }
+  return surahs;
+}
+
+// Load mushaf layout for one page
+function loadLayout(pageNum) {
+  const p = join(DATA_DIR, 'mushaf-layout', 'mushaf', `page-${String(pageNum).padStart(3, '0')}.json`);
+  if (!existsSync(p)) return null;
+  return JSON.parse(readFileSync(p, 'utf-8'));
+}
+
+// Get surahs present on a page
+function getPageSurahs(layout) {
+  const surahs = new Set();
+  for (const line of layout.lines || []) {
+    if (line.type === 'surah-header') surahs.add(parseInt(line.surah || '0'));
+    if (line.type === 'text' && line.verseRange) {
+      for (const part of line.verseRange.split('-')) {
+        if (part.includes(':')) surahs.add(parseInt(part.split(':')[0]));
+      }
+    }
+  }
+  return [...surahs].sort((a, b) => a - b);
+}
+
+// Find the WOFF2 font path for a page
+function getWoff2Path(pageNum) {
+  // Try both naming conventions
+  const candidates = [
+    join(WOFF2_DIR, `p${pageNum}.woff2`),
+    join(WOFF2_DIR, `p${String(pageNum).padStart(3, '0')}.woff2`),
+  ];
+  for (const c of candidates) {
+    if (existsSync(c)) return c;
+  }
+  return null;
+}
+
+// Build the HTML for one page
+function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
+  const t = THEMES[theme] || THEMES.light;
+  const juz = getJuz(pageNum);
+  const pageSurahs = getPageSurahs(layout);
+  const primarySurah = pageSurahs[pageSurahs.length - 1] || 1;
+  const sm = surahMeta[primarySurah] || {};
+
+  // Read font file as base64 for embedding
+  const woff2Path = getWoff2Path(pageNum);
+  const ttfPath = join(FONT_DIR, `QCF2_P${String(pageNum).padStart(3, '0')}.TTF`);
+
+  let fontSrc = '';
+  if (woff2Path) {
+    const fontData = readFileSync(woff2Path).toString('base64');
+    fontSrc = `url(data:font/woff2;base64,${fontData}) format('woff2')`;
+  } else if (existsSync(ttfPath)) {
+    const fontData = readFileSync(ttfPath).toString('base64');
+    fontSrc = `url(data:font/truetype;base64,${fontData}) format('truetype')`;
+  } else {
+    throw new Error(`No font found for page ${pageNum}`);
+  }
+
+  const fontFamily = `QCF2_P${String(pageNum).padStart(3, '0')}`;
+
+  // Embed surah names font (ornamental frame with calligraphic surah name)
+  let surahNamesFontSrc = '';
+  if (existsSync(SURAH_NAMES_FONT)) {
+    const snData = readFileSync(SURAH_NAMES_FONT).toString('base64');
+    surahNamesFontSrc = `url(data:font/woff2;base64,${snData}) format('woff2')`;
+  }
+
+  // Count total line elements for spacing logic
+  const lineCount = (layout.lines || []).length;
+  const isOpeningPage = (pageNum === 1 || pageNum === 2); // Special circular layout
+  const isShortPage = !isOpeningPage && lineCount < 15;
+
+  // Build line HTML
+  const linesHTML = [];
+  for (const line of layout.lines || []) {
+    if (line.type === 'surah-header') {
+      const sn = parseInt(line.surah || '0');
+      const name = surahMeta[sn]?.name_ar || `سورة ${sn}`;
+      // surah_names font: render padded 3-digit surah number → ornamental frame
+      const surahCode = String(sn).padStart(3, '0');
+      linesHTML.push(`<div class="surah-banner"><div class="surah-frame"><span class="surah-icon">${surahCode}</span></div></div>`);
+    } else if (line.type === 'basmala') {
+      const qpc = line.qpcV2 || '';
+      linesHTML.push(`<div class="basmala"><span class="qcf">${qpc}</span></div>`);
+    } else if (line.type === 'text') {
+      const words = (line.words || []).map(w => {
+        const g = w.qpcV2 || '';
+        const loc = w.location || '';
+        // QCF glyph may contain space (word + ayah marker), keep as single unit
+        const safeG = g.replace(/ /g, '\u00A0'); // non-breaking space
+        return `<span class="word" data-loc="${loc}">${safeG}</span>`;
+      });
+      // Join words with a regular space for justification to work
+      linesHTML.push(`<div class="text-line">${words.join(' ')}</div>`);
+    }
+  }
+
+  return `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: '${fontFamily}';
+    src: ${fontSrc};
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+  }
+  ${surahNamesFontSrc ? `
+  @font-face {
+    font-family: 'surah_names';
+    src: ${surahNamesFontSrc};
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+  }` : ''}
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: ${PAGE_WIDTH}px;
+    height: ${PAGE_HEIGHT}px;
+    background: ${t.pageBg};
+    overflow: hidden;
+    font-family: sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .page {
+    width: ${PAGE_WIDTH}px;
+    height: ${PAGE_HEIGHT}px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Header bar */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 18px 28px 12px;
+    border-bottom: 1px solid ${t.borderColor};
+    direction: ltr;
+  }
+  .header .juz {
+    font-size: 18px;
+    color: ${t.headerColor};
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    font-weight: 400;
+  }
+  .header .surah-name {
+    font-size: 18px;
+    color: ${t.headerColor};
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    direction: rtl;
+    font-weight: 400;
+  }
+  .header .surah-ar {
+    font-family: 'Geeza Pro', 'Traditional Arabic', serif;
+    font-size: 24px;
+    color: ${t.surahArColor};
+    font-weight: 700;
+  }
+
+  /* Text area — fills the page between header and page number */
+  .text-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 28px 0;
+  }
+
+  /* Short pages (<15 elements): use fixed gap matching 15-line spacing, content at top */
+  .text-area.short-page {
+    justify-content: flex-start;
+    gap: 41px;
+  }
+
+  /* Opening pages (1-2): circular/oval text arrangement — centered, larger font */
+  .text-area.opening-page {
+    justify-content: center;
+    gap: 28px;
+    padding: 0 60px;
+  }
+  .opening-page .text-line {
+    justify-content: center;
+    gap: 12px;
+    font-size: 54px;
+  }
+  .opening-page .basmala {
+    font-size: 54px;
+  }
+  .opening-page .surah-banner .surah-icon {
+    font-size: 90px;
+  }
+
+  /* Each text line — flexbox RTL with space-between for mushaf justification */
+  .text-line {
+    direction: rtl;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: '${fontFamily}', serif;
+    font-size: 40px;
+    line-height: 1.0;
+    color: ${t.textColor};
+  }
+
+  /* Individual word spans */
+  .word {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Basmala — centered */
+  .basmala {
+    direction: rtl;
+    text-align: center;
+    font-family: '${fontFamily}', serif;
+    font-size: 40px;
+    line-height: 1.0;
+    color: ${t.textColor};
+  }
+
+  .basmala .qcf {
+    white-space: nowrap;
+  }
+
+  /* Surah banner — ornamental frame with calligraphic surah name */
+  .surah-banner {
+    text-align: center;
+    direction: ltr;
+    padding: 0;
+    margin: 2px 12px;
+  }
+  .surah-banner .surah-frame {
+    display: inline-block;
+    position: relative;
+    padding: 6px 40px;
+    border: 2.5px solid ${t.textColor};
+    border-radius: 4px;
+    min-width: 85%;
+  }
+  .surah-banner .surah-frame::before {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px; right: 3px; bottom: 3px;
+    border: 1px solid ${t.textColor};
+    border-radius: 2px;
+    opacity: 0.5;
+  }
+  /* Decorative endcaps — left and right */
+  .surah-banner .surah-frame::after {
+    content: '';
+    position: absolute;
+    top: -6px; bottom: -6px;
+    left: 12px; right: 12px;
+    border-left: 8px solid ${t.pageBg};
+    border-right: 8px solid ${t.pageBg};
+    pointer-events: none;
+  }
+  .surah-banner .surah-icon {
+    font-family: 'surah_names', serif;
+    font-size: 68px;
+    color: ${t.textColor};
+    line-height: 1.0;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Page number */
+  .page-number {
+    text-align: center;
+    padding: 6px 0 14px;
+    font-size: 18px;
+    color: ${t.pageNumColor};
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <span class="juz">Juz' ${juz}</span>
+      <span class="surah-name">${sm.name_en || ''} <span class="surah-ar">${sm.name_ar || ''}</span></span>
+    </div>
+    <div class="text-area${isOpeningPage ? ' opening-page' : isShortPage ? ' short-page' : ''}">
+      ${linesHTML.join('\n      ')}
+    </div>
+    <div class="page-number">${pageNum}</div>
+  </div>
+</body>
+</html>`;
+}
+
+async function renderPage(browser, pageNum, layout, surahMeta, outputDir, theme = 'light') {
+  const html = buildPageHTML(pageNum, layout, surahMeta, theme);
+
+  // Save HTML for debugging
+  const htmlPath = join(TEST_DIR, `page_${String(pageNum).padStart(3, '0')}.html`);
+  writeFileSync(htmlPath, html);
+
+  // Use 2x DPI for sharp, crisp text rendering (retina-quality)
+  const page = await browser.newPage({ deviceScaleFactor: 2 });
+  await page.setViewportSize({ width: PAGE_WIDTH, height: PAGE_HEIGHT });
+
+  // Load the HTML
+  await page.setContent(html, { waitUntil: 'networkidle' });
+
+  // Wait for fonts to load
+  await page.waitForFunction(() => document.fonts.ready.then(() => true), { timeout: 10000 });
+
+  // Extract word bounding boxes for manifest (word-by-word interactivity)
+  // Note: getBoundingClientRect returns CSS pixels; PNG is rendered at 2x DPI
+  // so we multiply by deviceScaleFactor for accurate tap coordinates on the PNG
+  const DPI_SCALE = 2;
+  const wordBoxes = await page.evaluate((scale) => {
+    const boxes = [];
+    document.querySelectorAll('.word').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      const loc = el.getAttribute('data-loc') || '';
+      const text = el.textContent || '';
+      boxes.push({
+        location: loc,
+        text: text,
+        x: Math.round(rect.x * scale),
+        y: Math.round(rect.y * scale),
+        w: Math.round(rect.width * scale),
+        h: Math.round(rect.height * scale),
+      });
+    });
+    return boxes;
+  }, DPI_SCALE);
+
+  // Take screenshot
+  const pagesDir = join(outputDir, 'pages');
+  mkdirSync(pagesDir, { recursive: true });
+  const pngPath = join(pagesDir, `page_${String(pageNum).padStart(3, '0')}.png`);
+  await page.screenshot({ path: pngPath, type: 'png' });
+
+  // Save manifest with word hitboxes
+  const ayatOnPage = new Set();
+  for (const wb of wordBoxes) {
+    if (wb.location) {
+      const parts = wb.location.split(':');
+      if (parts.length >= 2) ayatOnPage.add(`${parts[0]}:${parts[1]}`);
+    }
+  }
+  const ayatSorted = [...ayatOnPage].sort((a, b) => {
+    const [sa, aa] = a.split(':').map(Number);
+    const [sb, ab] = b.split(':').map(Number);
+    return sa !== sb ? sa - sb : aa - ab;
+  });
+  const firstAyah = ayatSorted[0]?.split(':').map(Number) || [0, 0];
+  const lastAyah = ayatSorted[ayatSorted.length - 1]?.split(':').map(Number) || [0, 0];
+
+  const manifest = {
+    page: pageNum,
+    surah_start: firstAyah[0],
+    ayah_start: firstAyah[1],
+    surah_end: lastAyah[0],
+    ayah_end: lastAyah[1],
+    schema_version: '1.0.0',
+    image_width: PAGE_WIDTH * DPI_SCALE,
+    image_height: PAGE_HEIGHT * DPI_SCALE,
+    renderer: 'qcf-v2-browser',
+    words: wordBoxes,
+  };
+  const manifestDir = join(outputDir, 'manifests');
+  mkdirSync(manifestDir, { recursive: true });
+  const manifestPath = join(manifestDir, `page_${String(pageNum).padStart(3, '0')}.manifest.json`);
+  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+
+  // Thumbnail
+  const thumbPath = join(pagesDir, `page_${String(pageNum).padStart(3, '0')}_thumb.png`);
+  await page.setViewportSize({ width: PAGE_WIDTH / 4, height: PAGE_HEIGHT / 4 });
+  await page.evaluate(({w, h}) => {
+    document.body.style.transform = `scale(0.25)`;
+    document.body.style.transformOrigin = 'top left';
+    document.body.style.width = `${w}px`;
+    document.body.style.height = `${h}px`;
+  }, {w: PAGE_WIDTH, h: PAGE_HEIGHT});
+  await page.screenshot({ path: thumbPath, type: 'png', clip: { x: 0, y: 0, width: PAGE_WIDTH / 4, height: PAGE_HEIGHT / 4 } });
+
+  await page.close();
+  return pngPath;
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  let pageArg = null;
+  let pagesArg = null;
+  let goldenOnly = false;
+  let theme = 'light';
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--page') pageArg = parseInt(args[++i]);
+    if (args[i] === '--pages') pagesArg = args[++i];
+    if (args[i] === '--golden-only') goldenOnly = true;
+    if (args[i] === '--theme') theme = args[++i] || 'light';
+  }
+
+  console.log('='.repeat(60));
+  console.log('Miftah — Browser-based QCF V2 Renderer (Playwright)');
+  console.log('='.repeat(60));
+
+  const surahMeta = loadSurahMeta();
+  console.log(`Surahs loaded: ${Object.keys(surahMeta).length}`);
+
+  const browser = await chromium.launch({ headless: true });
+  console.log('Browser launched');
+
+  try {
+    console.log(`Theme: ${theme}`);
+
+    if (pageArg) {
+      const layout = loadLayout(pageArg);
+      if (!layout) { console.error(`No layout for page ${pageArg}`); return; }
+      const path = await renderPage(browser, pageArg, layout, surahMeta, TEST_DIR, theme);
+      console.log(`Rendered page ${pageArg}: ${path}`);
+    } else if (pagesArg) {
+      const [s, e] = pagesArg.split('-').map(Number);
+      const end = e || s;
+      let count = 0;
+      for (let p = s; p <= end; p++) {
+        const layout = loadLayout(p);
+        if (!layout) continue;
+        await renderPage(browser, p, layout, surahMeta, join(ASSETS_DIR), theme);
+        count++;
+        if (count % 20 === 0) console.log(`  Rendered ${count} pages (current: ${p})`);
+      }
+      console.log(`Done: ${count} pages`);
+    } else {
+      // Default: render page 6 as test
+      const layout = loadLayout(6);
+      if (!layout) { console.error('No layout for page 6'); return; }
+      const path = await renderPage(browser, 6, layout, surahMeta, join(TEST_DIR), theme);
+      console.log(`Test render page 6: ${path}`);
+    }
+  } finally {
+    await browser.close();
+  }
+
+  console.log('Done.');
+}
+
+main().catch(err => { console.error(err); process.exit(1); });
