@@ -3,6 +3,7 @@ import type { Context } from "grammy";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
+import { getRemotePageImageUrl } from "@/lib/mushafAssets";
 import { supabaseAdmin } from "../supabase-admin.js";
 import type { Ayah } from "@/types/database";
 
@@ -100,6 +101,16 @@ async function sendPageImage(
   ctx: Context,
   pageNum: number,
 ): Promise<boolean> {
+  const remoteUrl = getRemotePageImageUrl(pageNum);
+  if (remoteUrl) {
+    try {
+      await ctx.replyWithPhoto(remoteUrl, { caption: `Halaman ${pageNum}` });
+      return true;
+    } catch (err) {
+      console.warn(`[page] CDN image failed for page ${pageNum}:`, err);
+    }
+  }
+
   const padded = String(pageNum).padStart(3, "0");
   const filename = `page_${padded}.png`;
 

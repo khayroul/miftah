@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { resolvePageImagePath } from "@/lib/mushafAssets";
+import { resolvePageImageSource } from "@/lib/mushafAssets";
 
 export const runtime = "nodejs";
 
@@ -28,14 +28,24 @@ export async function GET(
 
   const url = new URL(request.url);
   const variant = url.searchParams.get("variant") === "thumb" ? "thumb" : "page";
-  const imagePath = await resolvePageImagePath(pageNumber, variant);
+  const imageSource = await resolvePageImageSource(pageNumber, variant);
 
-  if (!imagePath) {
+  if (!imageSource) {
     return Response.json({ error: "Page image not found" }, { status: 404 });
   }
 
+  if (imageSource.kind === "remote") {
+    return new Response(null, {
+      status: 307,
+      headers: {
+        Location: imageSource.url,
+        "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+      },
+    });
+  }
+
   try {
-    const imageBuffer = await readFile(imagePath);
+    const imageBuffer = await readFile(imageSource.path);
     return new Response(imageBuffer, {
       headers: {
         "Content-Type": "image/png",
@@ -46,4 +56,3 @@ export async function GET(
     return Response.json({ error: "Failed to read page image" }, { status: 500 });
   }
 }
-

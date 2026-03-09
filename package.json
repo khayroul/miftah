@@ -11,6 +11,7 @@
     "render:check-ios-parity": "python3 scripts/render/check_ios_parity.py",
     "render:extract-official-subassets": "python3 scripts/render/extract_official_subassets.py",
     "render:check-official-completeness": "python3 scripts/render/check_official_completeness.py",
+    "render:upload-cdn": "tsx scripts/render/upload_supabase_assets.ts",
     "qa:mobile-tap": "node scripts/render/mobile_tap_qa.mjs",
     "bot": "tsx src/bot/index.ts",
     "bot:dev": "tsx watch src/bot/index.ts"

@@ -31,9 +31,9 @@ Reference: `BUILD_PLAN.md` v1.5
 | Regression criterion (<0.5%) | Done (exceeded) | New checker reports exact parity (`0 px`) for all 604 pages |
 | Exact iOS parity | Done | `test/reports/ios_parity_report_full.json` shows 604/604 exact match |
 | B6 completeness check for all asset classes | Done | `official_completeness_report_full.json` => pages 604, thumbs 604, page manifests 604, ayah images/manifests 6236, word images 85104, all missing=0 |
-| B7 CDN upload | Pending | No deployment/upload step recorded in repo |
+| B7 CDN upload | Done | Supabase Storage buckets `mushaf-pages` + `mushaf-manifests` populated via `npm run render:upload-cdn` (1812 objects) |
 | B8 mobile tap tests (3+ pages) | Partial | Automated iPhone emulation passed on 4 pages (`test/reports/mobile_tap_qa/report.json`); real-device checklist created at `test/reports/mobile_tap_qa/manual_checklist.md` |
-| Gate B pass criteria | Near-complete | All technical checks pass; real-device tap signoff + CDN upload remain |
+| Gate B pass criteria | Near-complete | All technical checks pass; remaining item is real-device tap signoff |
 
 ## Phase 0.5 — Telegram Bot
 
@@ -60,5 +60,5 @@ Reference: `BUILD_PLAN.md` v1.5
 
 1. Exact Quran.com iOS page parity is now solved for all 604 pages.
 2. Gate A data looks complete from DB counts, pending manual-signoff criteria.
-3. Gate B is almost closed; remaining operational items are real-device tap signoff and CDN upload.
+3. Gate B is almost closed; remaining operational item is real-device tap signoff.
 4. Bot MVP core flows plus T8 are implemented; T3/T4/T6 remain.

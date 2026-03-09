@@ -75,6 +75,41 @@ npm run qa:mobile-tap -- --base-url http://127.0.0.1:3000 --pages 1,77,586,604
 Outputs:
 - screenshots + JSON report: `test/reports/mobile_tap_qa/`
 
+## Upload Gate B Assets to Supabase CDN
+Upload page PNGs (+thumbs) and page manifests to public Supabase Storage buckets:
+
+```bash
+npm run render:upload-cdn
+```
+
+Options:
+
+```bash
+# Preview only (no upload)
+npm run render:upload-cdn -- --dry-run
+
+# Skip thumbnails
+npm run render:upload-cdn -- --no-thumbs
+
+# Increase concurrency
+npm run render:upload-cdn -- --concurrency 16
+```
+
+Required env:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+Optional env:
+- `MUSHAF_PAGES_BUCKET` (default: `mushaf-pages`)
+- `MUSHAF_MANIFESTS_BUCKET` (default: `mushaf-manifests`)
+- `MUSHAF_UPLOAD_CONCURRENCY` (default: `8`)
+- `MUSHAF_UPLOAD_UPSERT` (default: `true`)
+
+After upload, enable CDN reads for web + bot:
+- `MUSHAF_CDN_ENABLED=true`
+- `MUSHAF_PAGES_BASE_URL=.../storage/v1/object/public/<pages-bucket>`
+- `MUSHAF_MANIFESTS_BASE_URL=.../storage/v1/object/public/<manifests-bucket>`
+
 ## Outputs
 - `/assets/pages/` — 604 Mushaf page PNGs + thumbnails
 - `/assets/ayat/` — 6,236 per-ayah PNGs
