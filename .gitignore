@@ -73,4 +73,5 @@ supabase/.temp/
 # Claude Code — track rules/settings, ignore personal data
 .claude/*
 !.claude/rules/
+!.claude/commands/
 !.claude/settings.json
