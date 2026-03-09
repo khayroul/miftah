@@ -1,0 +1,39 @@
+# Miftah — Codex CLI Configuration
+
+model = "o4-mini"
+model_provider = "openai"
+
+[permissions]
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[history]
+persistent_instructions = """
+Read AGENTS.md in the project root for full project context, file map, conventions, and rules.
+
+Key reminders:
+- FSRS only (ts-fsrs library). Never implement SM-2 or raw FSRS math.
+- QCF V2 fonts for Arabic — no Pango/HarfBuzz/Cairo, they break pre-shaped glyphs.
+- Reading mode stays sacred — minimal UI chrome.
+- Graceful degradation — missing assets = fallback, never crash.
+- Run `npm run build` after frontend changes.
+"""
+
+[notify]
+command = "terminal-notifier -title 'Codex Miftah' -message 'Task completed!' -sound default"
+on_complete = true
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp@latest"]
+
+[features]
+web_search_request = true
+
+[profiles.strict]
+approval_policy = "on-request"
+sandbox_mode = "workspace-read"
+
+[profiles.yolo]
+approval_policy = "never"
+sandbox_mode = "workspace-write"

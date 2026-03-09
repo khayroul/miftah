@@ -1,80 +1,10 @@
-# Miftah (مفتاح) — Claude Code Context
+# CLAUDE.md
 
-## Project Overview
-Miftah is a Quran memorization app: "Memorize the Quran by understanding, not just repetition."
-Target: Malaysian Muslims. Primary language: Bahasa Malaysia + English.
-**Current Phase: 0 — Foundation (Gate A + Gate B + Infrastructure)**
+Read `AGENTS.md` in this project root for full project context, file map, conventions, and rules.
 
-## Build Plan
-Full specification: `BUILD_PLAN.md` (Harmonized Plan v1.5)
+## Claude Code Specific
 
-## Tech Stack
-| Component        | Choice                              |
-|------------------|-------------------------------------|
-| Frontend         | Next.js 16 + Tailwind CSS 4        |
-| Database         | Supabase (PostgreSQL, v2 schema)    |
-| Hosting          | Vercel                              |
-| Arabic Rendering | QCF V2 fonts + PIL (pre-rendered)   |
-| SRS Engine       | FSRS via ts-fsrs                    |
-| Audio            | Mishari Rashid via EveryAyah.com    |
-
-## Directory Structure
-```
-/src                    Next.js app (App Router, TypeScript)
-/scripts/render         QCF V2 rendering pipeline (PIL)
-/scripts/translate      BM translation batch resolution
-/assets/pages           Mushaf page PNGs + thumbnails
-/assets/ayat            Per-ayah PNGs
-/assets/words           Per-word PNGs
-/assets/manifests       JSON position manifests
-/test/golden            Baseline golden pages + manifests
-/supabase/migrations    Schema migration files
-```
-
-## Naming Conventions
-| Asset           | Pattern                          | Example                |
-|-----------------|----------------------------------|------------------------|
-| Mushaf page     | page_{NNN}.png                   | page_001.png           |
-| Thumbnail       | page_{NNN}_thumb.png             | page_001_thumb.png     |
-| Page manifest   | page_{NNN}.manifest.json         | page_001.manifest.json |
-| Ayah image      | ayah_{SSS}_{AAA}.png             | ayah_002_255.png       |
-| Ayah manifest   | ayah_{SSS}_{AAA}.manifest.json   | ayah_002_255.manifest.json |
-| Word image      | word_{WWWWW}.png                 | word_00042.png         |
-
-## File Naming (Code)
-- Components: PascalCase (`MushafView.tsx`)
-- Utilities: camelCase (`fsrsScheduler.ts`)
-- Routes: kebab-case (`/surah/[id]/page.tsx`)
-
-## Database
-- Supabase project with 6 data layers (already built)
-- Migrations go in `/supabase/migrations/` with timestamp prefix
-- FSRS fields: stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review
-- user_id: hardcoded UUID for single-user. RLS written now, activated with auth later.
-
-## Testing
-- Golden page tests in `/test/golden/`
-- Rendering regression: pixel diff <0.5% against baselines
-- Component tests alongside components
-
-## Git Conventions
-- Branch: `phase-{N}/{feature-name}` (e.g., `phase-0/repo-scaffold`)
-- Commits: conventional commits (`feat:`, `fix:`, `chore:`, `docs:`)
-- Khairul is dispatcher and merge authority
-
-## Arabic Rendering (QCF V2)
-- 604 QCF V2 TTF fonts (one per mushaf page) in `assets/fonts/qcf-v2/`
-- Font files: `QCF2_P001.TTF` – `QCF2_P604.TTF` (converted from WOFF2 via fonttools)
-- Glyph codepoints from `data/mushaf-layout/mushaf/page-NNN.json` (`qpcV2` field)
-- Codepoint range: U+FC41+ (Arabic Presentation Forms, page-specific mapping)
-- Renderer: `scripts/render/render_arabic.py` — PIL/FreeType, word-by-word justified RTL
-- No Pango/Cairo — QCF pre-shaped glyphs must bypass Arabic text shapers
-- Style: clean modern (white bg, Juz/Surah header, no border, page number)
-
-## Key Rules
-- FSRS only. Never implement SM-2.
-- ts-fsrs library. Do not implement FSRS math from scratch.
-- Arabic rendering uses QCF V2 fonts, never web fonts at runtime.
-- Reading mode stays sacred — minimal UI chrome.
-- Missing manifest → image without hitboxes (never crash).
-- Missing word → text fallback (never crash).
+- Run `npm run build` after frontend changes to catch Next.js build errors
+- QCF rendering is complex — always read the Arabic Rendering section in AGENTS.md before touching render scripts
+- Prefer `Edit` over `Write` for existing files
+- Component tests go alongside components, not in a separate test directory
