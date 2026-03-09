@@ -10,6 +10,12 @@ Input:  data/seed/surahs.json       (from extract_qul_data.py)
         data/seed/ayat.json
         data/seed/words.json
         data/seed/word_occurrences.json
+        data/seed/themes.json
+        data/seed/theme_ayat.json
+        data/seed/ayah_theme_chunks.json
+        data/seed/mutashabihat.json
+        data/seed/mutashabihat_ayat.json
+        data/seed/tafsir_notes.json
         data/qul/bm_wbw translations
         data/qul/en-sahih-international-simple.json
         data/qul/abdullah-basamia-simple.json
@@ -43,6 +49,21 @@ def escape_sql(val):
 def load_json(path):
     with open(path, encoding='utf-8') as f:
         return json.load(f)
+
+
+def load_json_optional(path, default):
+    if not path.exists():
+        return default
+    return load_json(path)
+
+
+def to_sql_text_array(values):
+    if not values:
+        return "ARRAY[]::TEXT[]"
+    escaped = ", ".join(escape_sql(v) for v in values if v is not None and str(v).strip())
+    if not escaped:
+        return "ARRAY[]::TEXT[]"
+    return f"ARRAY[{escaped}]"
 
 
 def build_surahs_sql(surahs, surah_meta=None):
@@ -323,6 +344,261 @@ def build_word_occurrences_sql(occurrences):
     return "\n".join(lines)
 
 
+def build_themes_sql(themes):
+    """Generate INSERT for themes table."""
+    lines = ["-- Themes"]
+    lines.append(f"-- Total: {len(themes)}")
+    if not themes:
+        return "\n".join(lines)
+
+    batch_size = 500
+    batch = []
+
+    for t in themes:
+        parent = t.get("parent_id")
+        batch.append(
+            f"({t['id']}, {escape_sql(t.get('name_bm') or t.get('name_en') or '')}, "
+            f"{escape_sql(t.get('name_en') or t.get('name_bm') or '')}, "
+            f"{escape_sql(t['category'])}, "
+            f"{escape_sql(t.get('description_bm'))}, {escape_sql(t.get('description_en'))}, "
+            f"{parent if parent else 'NULL'})"
+        )
+
+        if len(batch) >= batch_size:
+            lines.append(
+                "INSERT INTO themes (id, name_bm, name_en, category, description_bm, description_en, parent_id) VALUES"
+            )
+            lines.append(",\n".join(batch) + ";")
+            batch = []
+
+    if batch:
+        lines.append(
+            "INSERT INTO themes (id, name_bm, name_en, category, description_bm, description_en, parent_id) VALUES"
+        )
+        lines.append(",\n".join(batch) + ";")
+
+    return "\n".join(lines)
+
+
+def build_theme_ayat_sql(theme_ayat):
+    """Generate INSERT for theme_ayat table."""
+    lines = ["-- Theme Ayat Links"]
+
+    deduped = []
+    seen = set()
+    for link in theme_ayat:
+        key = (link.get("theme_id"), link.get("surah_id"), link.get("ayah_number"))
+        if None in key or key in seen:
+            continue
+        seen.add(key)
+        deduped.append(link)
+
+    lines.append(f"-- Total: {len(deduped)}")
+    if not deduped:
+        return "\n".join(lines)
+
+    batch_size = 1000
+    batch = []
+
+    for link in deduped:
+        batch.append(
+            f"({link['theme_id']}, "
+            f"(SELECT id FROM ayat WHERE surah_id = {link['surah_id']} AND ayah_number = {link['ayah_number']}), "
+            f"{escape_sql(link.get('relevance') or 'secondary')}, "
+            f"{escape_sql(link.get('notes'))})"
+        )
+
+        if len(batch) >= batch_size:
+            lines.append("INSERT INTO theme_ayat (theme_id, ayah_id, relevance, notes) VALUES")
+            lines.append(",\n".join(batch) + ";")
+            batch = []
+
+    if batch:
+        lines.append("INSERT INTO theme_ayat (theme_id, ayah_id, relevance, notes) VALUES")
+        lines.append(",\n".join(batch) + ";")
+
+    return "\n".join(lines)
+
+
+def build_mutashabihat_sql(mutashabihat):
+    """Generate INSERT for mutashabihat table."""
+    lines = ["-- Mutashabihat Patterns"]
+    lines.append(f"-- Total: {len(mutashabihat)}")
+    if not mutashabihat:
+        return "\n".join(lines)
+
+    batch_size = 500
+    batch = []
+
+    for m in mutashabihat:
+        batch.append(
+            f"({m['id']}, {escape_sql(m['pattern_text'])}, "
+            f"{escape_sql(m.get('description_bm'))}, {escape_sql(m.get('description_en'))}, "
+            f"{m.get('ayah_count', 0)}, {m.get('difficulty_rating') or 'NULL'})"
+        )
+
+        if len(batch) >= batch_size:
+            lines.append(
+                "INSERT INTO mutashabihat (id, pattern_text, description_bm, description_en, ayah_count, difficulty_rating) VALUES"
+            )
+            lines.append(",\n".join(batch) + ";")
+            batch = []
+
+    if batch:
+        lines.append(
+            "INSERT INTO mutashabihat (id, pattern_text, description_bm, description_en, ayah_count, difficulty_rating) VALUES"
+        )
+        lines.append(",\n".join(batch) + ";")
+
+    return "\n".join(lines)
+
+
+def build_mutashabihat_ayat_sql(mutashabihat_ayat):
+    """Generate INSERT for mutashabihat_ayat table."""
+    lines = ["-- Mutashabihat Ayat Links"]
+
+    deduped = []
+    seen = set()
+    for link in mutashabihat_ayat:
+        key = (link.get("mutashabihat_id"), link.get("surah_id"), link.get("ayah_number"))
+        if None in key or key in seen:
+            continue
+        seen.add(key)
+        deduped.append(link)
+
+    lines.append(f"-- Total: {len(deduped)}")
+    if not deduped:
+        return "\n".join(lines)
+
+    batch_size = 1000
+    batch = []
+
+    for link in deduped:
+        batch.append(
+            f"({link['mutashabihat_id']}, "
+            f"(SELECT id FROM ayat WHERE surah_id = {link['surah_id']} AND ayah_number = {link['ayah_number']}), "
+            f"{int(link.get('word_start') or 1)}, {int(link.get('word_end') or 1)}, "
+            f"{escape_sql(link.get('variation_note'))})"
+        )
+
+        if len(batch) >= batch_size:
+            lines.append(
+                "INSERT INTO mutashabihat_ayat (mutashabihat_id, ayah_id, word_start, word_end, variation_note) VALUES"
+            )
+            lines.append(",\n".join(batch) + ";")
+            batch = []
+
+    if batch:
+        lines.append(
+            "INSERT INTO mutashabihat_ayat (mutashabihat_id, ayah_id, word_start, word_end, variation_note) VALUES"
+        )
+        lines.append(",\n".join(batch) + ";")
+
+    return "\n".join(lines)
+
+
+def build_ayah_theme_chunks_sql(chunks):
+    """Generate INSERT for ayah_theme_chunks table."""
+    lines = ["-- Ayah Theme Chunks"]
+
+    deduped = []
+    seen = set()
+    for chunk in chunks:
+        key = (
+            chunk.get("surah_id"),
+            chunk.get("ayah_from"),
+            chunk.get("ayah_to"),
+            (chunk.get("theme") or "").strip(),
+        )
+        if None in key[:3] or not key[3] or key in seen:
+            continue
+        seen.add(key)
+        deduped.append(chunk)
+
+    lines.append(f"-- Total: {len(deduped)}")
+    if not deduped:
+        return "\n".join(lines)
+
+    batch_size = 1000
+    batch = []
+
+    for chunk in deduped:
+        batch.append(
+            f"({chunk.get('source_chunk_id') or 'NULL'}, "
+            f"{chunk['surah_id']}, {chunk['ayah_from']}, {chunk['ayah_to']}, "
+            f"(SELECT id FROM ayat WHERE surah_id = {chunk['surah_id']} AND ayah_number = {chunk['ayah_from']}), "
+            f"(SELECT id FROM ayat WHERE surah_id = {chunk['surah_id']} AND ayah_number = {chunk['ayah_to']}), "
+            f"{escape_sql(chunk.get('verse_key_from'))}, {escape_sql(chunk.get('verse_key_to'))}, "
+            f"{chunk.get('verses_count') or (chunk['ayah_to'] - chunk['ayah_from'] + 1)}, "
+            f"{escape_sql(chunk['theme'])}, {escape_sql(chunk.get('theme_bm'))}, "
+            f"{to_sql_text_array(chunk.get('keywords') or [])}, "
+            f"{chunk.get('book_id') or 'NULL'})"
+        )
+
+        if len(batch) >= batch_size:
+            lines.append(
+                "INSERT INTO ayah_theme_chunks "
+                "(source_chunk_id, surah_id, ayah_from, ayah_to, ayah_id_from, ayah_id_to, "
+                "verse_key_from, verse_key_to, verses_count, theme, theme_bm, keywords, book_id) VALUES"
+            )
+            lines.append(",\n".join(batch) + ";")
+            batch = []
+
+    if batch:
+        lines.append(
+            "INSERT INTO ayah_theme_chunks "
+            "(source_chunk_id, surah_id, ayah_from, ayah_to, ayah_id_from, ayah_id_to, "
+            "verse_key_from, verse_key_to, verses_count, theme, theme_bm, keywords, book_id) VALUES"
+        )
+        lines.append(",\n".join(batch) + ";")
+
+    return "\n".join(lines)
+
+
+def build_tafsir_notes_sql(tafsir_notes):
+    """Generate INSERT for tafsir_notes table."""
+    lines = ["-- Tafsir Notes"]
+
+    deduped = []
+    seen = set()
+    for note in tafsir_notes:
+        key = (
+            note.get("surah_id"),
+            note.get("ayah_number"),
+            (note.get("source") or "").strip(),
+        )
+        if None in key[:2] or not key[2] or key in seen:
+            continue
+        seen.add(key)
+        deduped.append(note)
+
+    lines.append(f"-- Total: {len(deduped)}")
+    if not deduped:
+        return "\n".join(lines)
+
+    batch_size = 1000
+    batch = []
+
+    for note in deduped:
+        batch.append(
+            f"((SELECT id FROM ayat WHERE surah_id = {note['surah_id']} AND ayah_number = {note['ayah_number']}), "
+            f"{escape_sql(note['source'])}, "
+            f"{escape_sql(note.get('text_bm'))}, {escape_sql(note.get('text_en'))}, "
+            f"{escape_sql(note.get('text_arabic'))})"
+        )
+
+        if len(batch) >= batch_size:
+            lines.append("INSERT INTO tafsir_notes (ayah_id, source, text_bm, text_en, text_arabic) VALUES")
+            lines.append(",\n".join(batch) + ";")
+            batch = []
+
+    if batch:
+        lines.append("INSERT INTO tafsir_notes (ayah_id, source, text_bm, text_en, text_arabic) VALUES")
+        lines.append(",\n".join(batch) + ";")
+
+    return "\n".join(lines)
+
+
 def main():
     print("=" * 60)
     print("Miftah — Build Supabase Seed SQL")
@@ -333,6 +609,12 @@ def main():
     ayat = load_json(SEED_DIR / "ayat.json")
     words = load_json(SEED_DIR / "words.json")
     occurrences = load_json(SEED_DIR / "word_occurrences.json")
+    themes = load_json_optional(SEED_DIR / "themes.json", [])
+    theme_ayat = load_json_optional(SEED_DIR / "theme_ayat.json", [])
+    ayah_theme_chunks = load_json_optional(SEED_DIR / "ayah_theme_chunks.json", [])
+    mutashabihat = load_json_optional(SEED_DIR / "mutashabihat.json", [])
+    mutashabihat_ayat = load_json_optional(SEED_DIR / "mutashabihat_ayat.json", [])
+    tafsir_notes = load_json_optional(SEED_DIR / "tafsir_notes.json", [])
 
     # Load translations
     sahih = load_json(QUL_DIR / "en-sahih-international-simple.json")
@@ -341,6 +623,12 @@ def main():
     en_wbw = load_json(QUL_DIR / "english-wbw-translation.json")
 
     print(f"\nLoaded: {len(surahs)} surahs, {len(ayat)} ayat (QUL), {len(words)} words")
+    print(
+        f"Thematic: themes={len(themes)}, theme_ayat={len(theme_ayat)} | "
+        f"Mutashabihat: patterns={len(mutashabihat)}, links={len(mutashabihat_ayat)}"
+    )
+    print(f"Ayah theme chunks: {len(ayah_theme_chunks)}")
+    print(f"Tafsir notes: {len(tafsir_notes)}")
     print(f"Translations: Sahih={len(sahih)}, Basmeih={len(basmeih)}, BM-WBW={len(bm_wbw)}, EN-WBW={len(en_wbw)}")
 
     # Load tanzil metadata for surahs
@@ -358,7 +646,7 @@ def main():
 
     sql_parts.append("-- Miftah Supabase Seed Data")
     sql_parts.append("-- Generated from QUL data + tanzil.net metadata + BM translations")
-    sql_parts.append("-- Run AFTER 001_initial_schema.sql migration")
+    sql_parts.append("-- Run AFTER latest schema migrations")
     sql_parts.append("BEGIN;\n")
 
     # Surahs
@@ -394,11 +682,35 @@ WHERE surahs.id = sub.surah_id;""")
     sql_parts.append(build_word_occurrences_sql(occurrences))
     sql_parts.append("")
 
+    # Themes + links
+    sql_parts.append(build_themes_sql(themes))
+    sql_parts.append("")
+    sql_parts.append(build_theme_ayat_sql(theme_ayat))
+    sql_parts.append("")
+    sql_parts.append(build_ayah_theme_chunks_sql(ayah_theme_chunks))
+    sql_parts.append("")
+
+    # Mutashabihat + links
+    sql_parts.append(build_mutashabihat_sql(mutashabihat))
+    sql_parts.append("")
+    sql_parts.append(build_mutashabihat_ayat_sql(mutashabihat_ayat))
+    sql_parts.append("")
+
+    # Tafsir notes
+    sql_parts.append(build_tafsir_notes_sql(tafsir_notes))
+    sql_parts.append("")
+
     # Reset sequences
     sql_parts.append("-- Reset sequences")
     sql_parts.append("SELECT setval('ayat_id_seq', (SELECT MAX(id) FROM ayat));")
     sql_parts.append("SELECT setval('words_id_seq', (SELECT MAX(id) FROM words));")
     sql_parts.append("SELECT setval('word_occurrences_id_seq', (SELECT MAX(id) FROM word_occurrences));")
+    sql_parts.append("SELECT setval('themes_id_seq', (SELECT MAX(id) FROM themes));")
+    sql_parts.append("SELECT setval('theme_ayat_id_seq', (SELECT MAX(id) FROM theme_ayat));")
+    sql_parts.append("SELECT setval('ayah_theme_chunks_id_seq', (SELECT MAX(id) FROM ayah_theme_chunks));")
+    sql_parts.append("SELECT setval('mutashabihat_id_seq', (SELECT MAX(id) FROM mutashabihat));")
+    sql_parts.append("SELECT setval('mutashabihat_ayat_id_seq', (SELECT MAX(id) FROM mutashabihat_ayat));")
+    sql_parts.append("SELECT setval('tafsir_notes_id_seq', (SELECT MAX(id) FROM tafsir_notes));")
     sql_parts.append("")
 
     sql_parts.append("COMMIT;")
@@ -413,13 +725,30 @@ WHERE surahs.id = sub.surah_id;""")
     print(f"\nWritten: {seed_path} ({sql_size:.1f} MB)")
 
     # Write stats
+    missing_ayat = total_ayat - ayat_with_arabic
+    if missing_ayat > 0:
+        arabic_note = (
+            f"NOTE: {missing_ayat} ayat still missing Arabic text after merge. "
+            "Use full QUL dump and/or verify Tanzil source files."
+        )
+    else:
+        arabic_note = (
+            "NOTE: Arabic text coverage is complete via Tanzil + QUL merge."
+        )
+
     stats = f"""Miftah — Seed Data Statistics
 ==============================
 Surahs: {len(surahs)}
-Ayat: {total_ayat} total ({ayat_with_arabic} with Arabic text from QUL)
-  → {total_ayat - ayat_with_arabic} ayat need Arabic text (missing from mini dump)
+Ayat: {total_ayat} total ({ayat_with_arabic} with Arabic text from Tanzil/QUL)
+  → {missing_ayat} ayat need Arabic text
 Unique words: {len(words)}
 Word occurrences: {len(occurrences)}
+Themes: {len(themes)}
+Theme-ayah links: {len(theme_ayat)}
+Ayah theme chunks: {len(ayah_theme_chunks)}
+Mutashabihat patterns: {len(mutashabihat)}
+Mutashabihat links: {len(mutashabihat_ayat)}
+Tafsir notes: {len(tafsir_notes)}
 
 Translations loaded:
   Basmeih (BM ayah): {len(basmeih)} ayat
@@ -427,9 +756,7 @@ Translations loaded:
   BM WBW: {len(bm_wbw)} word positions
   EN WBW: {len(en_wbw)} word positions
 
-NOTE: Mini QUL dump only contains ~31% of verses.
-Arabic text (text_uthmani, text_simple) is empty for remaining ~69%.
-Full data available from QUL full download or tanzil.net.
+{arabic_note}
 """
     stats_path = SEED_DIR / "seed_stats.txt"
     with open(stats_path, 'w') as f:

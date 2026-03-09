@@ -69,6 +69,7 @@ data/seed/seed_part*.sql
 *.tsbuildinfo
 next-env.d.ts
 supabase/.temp/
+.tmp/
 
 # Claude Code — track rules/settings, ignore personal data
 .claude/*

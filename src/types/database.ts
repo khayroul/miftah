@@ -90,6 +90,23 @@ export interface ThemeAyah {
   notes: string | null;
 }
 
+export interface AyahThemeChunk {
+  id: number;
+  source_chunk_id: number | null;
+  surah_id: number;
+  ayah_from: number;
+  ayah_to: number;
+  ayah_id_from: number | null;
+  ayah_id_to: number | null;
+  verse_key_from: string | null;
+  verse_key_to: string | null;
+  verses_count: number;
+  theme: string;
+  theme_bm: string | null;
+  keywords: string[] | null;
+  book_id: number | null;
+}
+
 export interface AsbabNuzul {
   id: number;
   ayah_id: number;

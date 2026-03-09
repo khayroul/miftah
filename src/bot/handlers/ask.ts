@@ -30,7 +30,10 @@ Perintah bot tersedia:
 /hifz sabak — Mula blok Sabak sahaja
 /vocab — Latihan vocab (default 10, boleh /vocab 20)
 /quiz — MCQ vocab (boleh /quiz 15, /quiz page 586, /quiz surah 2)
+/mutashabihat — Alert ayat serupa (boleh /mutashabihat 2:255)
+/trreview — Semak BM translation (boleh /trreview 20)
 /page <num> — Lihat halaman mushaf (golden: 1, 2, 77, 489, 604)
+/themes <num> [summary|full] — Paparan chunk tema untuk halaman
 /stats — Statistik kemajuan
 /aotd — Ayat harian
 
@@ -51,7 +54,7 @@ export async function handleAsk(ctx: Context): Promise<void> {
   if (!OPENAI_API_KEY) {
     await ctx.reply(
       "LLM belum dikonfigurasi. Set OPENAI_API_KEY dalam .env.local.\n\n" +
-        "Sementara itu, guna perintah:\n/hifz — Sesi hafalan\n/vocab — Latihan vocab\n/quiz — MCQ vocab\n/page 77 — Lihat halaman",
+        "Sementara itu, guna perintah:\n/hifz — Sesi hafalan\n/vocab — Latihan vocab\n/quiz — MCQ vocab\n/mutashabihat — Alert serupa\n/trreview — Semak BM\n/page 77 — Lihat halaman\n/themes 77 summary — Ringkasan tema\n/themes 77 full — Tema + ayat penuh",
     );
     return;
   }

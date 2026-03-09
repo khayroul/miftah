@@ -45,8 +45,9 @@ Reference: `BUILD_PLAN.md` v1.5
 | T7 /stats | Done | `src/bot/handlers/stats.ts` |
 | T8 Ayah-of-the-day | Done | `/aotd` handler in `src/bot/handlers/aotd.ts`, wired in `src/bot/index.ts` |
 | T3 MCQ quiz | Done | `/quiz` command + callback flow in `src/bot/handlers/quiz.ts`, wired in `src/bot/index.ts` and `src/bot/handlers/callback.ts` |
-| T4 Mutashabihat alerts | Pending | No alert flow found |
-| T6 Translation review in bot | Pending | No dedicated review workflow found |
+| T4 Mutashabihat alerts | Done | `/mutashabihat` command + `mut_next` callback in `src/bot/handlers/mutashabihat.ts` and `src/bot/handlers/callback.ts` |
+| T6 Translation review in bot | Done | `/trreview` command + decision callbacks in `src/bot/handlers/translation-review.ts` and `src/bot/handlers/callback.ts` |
+| T9 Theme chunks page-alt view | Done | `/themes <page>` command + `🧩 Theme Chunks` button from `/page`, handlers in `src/bot/handlers/themes.ts` and callback wiring |
 
 ## Phase 1 — Core Reading (current web)
 
@@ -61,4 +62,4 @@ Reference: `BUILD_PLAN.md` v1.5
 1. Exact Quran.com iOS page parity is now solved for all 604 pages.
 2. Gate A data looks complete from DB counts, pending manual-signoff criteria.
 3. Gate B is almost closed; remaining operational item is real-device tap signoff.
-4. Bot MVP core flows plus T8 are implemented; T3/T4/T6 remain.
+4. Bot MVP core flows are implemented, including `/themes` page-alternative view backed by `ayah_theme_chunks`.

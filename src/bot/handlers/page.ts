@@ -39,9 +39,14 @@ export async function sendPageAndText(
 ): Promise<void> {
   try {
     const imageSent = await sendPageImage(ctx, pageNum);
+    const controlsKb = buildPageKeyboard(pageNum);
 
     const ayat = await getAyatByPage(pageNum);
     if (ayat.length > 0) {
+      await ctx.reply(`Pilihan untuk halaman ${pageNum}:`, {
+        reply_markup: controlsKb,
+      });
+
       const surahIds = [...new Set(ayat.map((a) => a.surah_id))];
       const { data: surahs } = await supabaseAdmin
         .from("surahs")
@@ -74,28 +79,34 @@ export async function sendPageAndText(
 
       const chunks = splitMessage(text, 4000);
       for (let i = 0; i < chunks.length; i++) {
-        const isLast = i === chunks.length - 1;
-        if (isLast) {
-          const kb = new InlineKeyboard()
-            .text("📝 Vocab Halaman Ini", `page_vocab:${pageNum}`)
-            .text("🧠 Quiz Halaman", `page_quiz:${pageNum}`)
-            .row();
-          if (pageNum > 1) kb.text("◀ Prev", `page_nav:${pageNum - 1}`);
-          if (pageNum < 604) kb.text("Next ▶", `page_nav:${pageNum + 1}`);
-          await ctx.reply(chunks[i], { reply_markup: kb });
-        } else {
-          await ctx.reply(chunks[i]);
-        }
+        await ctx.reply(chunks[i]);
       }
     } else if (!imageSent) {
       await ctx.reply(
         `Halaman ${pageNum} — imej belum dirender. Pastikan aset halaman 1–604 sudah dijana.`,
       );
+    } else {
+      // Show controls even if ayah rows are missing for this page.
+      await ctx.reply(`Pilihan untuk halaman ${pageNum}:`, {
+        reply_markup: controlsKb,
+      });
     }
   } catch (err) {
     console.error("[page] Error:", err);
     await ctx.reply("Ralat memuatkan halaman. Cuba lagi.");
   }
+}
+
+function buildPageKeyboard(pageNum: number): InlineKeyboard {
+  const kb = new InlineKeyboard()
+    .text("📝 Vocab Halaman Ini", `page_vocab:${pageNum}`)
+    .text("🧠 Quiz Halaman", `page_quiz:${pageNum}`)
+    .row()
+    .text("🧩 Theme Chunks", `page_theme_chunks:${pageNum}`)
+    .row();
+  if (pageNum > 1) kb.text("◀ Prev", `page_nav:${pageNum - 1}`);
+  if (pageNum < 604) kb.text("Next ▶", `page_nav:${pageNum + 1}`);
+  return kb;
 }
 
 async function sendPageImage(

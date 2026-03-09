@@ -30,6 +30,11 @@ import {
   showNextQuizQuestion,
   startPageQuiz,
 } from "./quiz.js";
+import { showRandomPattern } from "./mutashabihat.js";
+import {
+  handleTranslationReviewDecision,
+  showNextTranslationReview,
+} from "./translation-review.js";
 
 export async function handleCallback(ctx: Context): Promise<void> {
   const data = ctx.callbackQuery?.data;
@@ -80,6 +85,15 @@ export async function handleCallback(ctx: Context): Promise<void> {
       case "page_nav":
         await handlePageNav(ctx, parseInt(parts[1]));
         break;
+      case "page_theme_chunks":
+        await handlePageThemeChunks(ctx, parseInt(parts[1]), parseThemeViewMode(parts[2]));
+        break;
+      case "theme_page_nav":
+        await handleThemePageNav(ctx, parseInt(parts[1]), parseThemeViewMode(parts[2]));
+        break;
+      case "theme_mode":
+        await handleThemeMode(ctx, parseInt(parts[1]), parseThemeViewMode(parts[2]));
+        break;
       case "page_quiz":
         await startPageQuiz(ctx, parseInt(parts[1]));
         break;
@@ -88,6 +102,20 @@ export async function handleCallback(ctx: Context): Promise<void> {
         break;
       case "quiz_next":
         await showNextQuizQuestion(ctx);
+        break;
+      case "mut_next":
+        await showRandomPattern(ctx);
+        break;
+      case "tr_dec":
+        if ((parts[1] === "ok" || parts[1] === "flag") && parts[2]) {
+          const ayahId = Number.parseInt(parts[2], 10);
+          if (Number.isInteger(ayahId) && ayahId > 0) {
+            await handleTranslationReviewDecision(ctx, parts[1], ayahId);
+          }
+        }
+        break;
+      case "tr_next":
+        await showNextTranslationReview(ctx);
         break;
       default:
         console.log(`[callback] Unknown action: ${action}`);
@@ -474,4 +502,35 @@ async function handlePageVocabDrill(ctx: Context, pageNum: number): Promise<void
 async function handlePageNav(ctx: Context, pageNum: number): Promise<void> {
   const { sendPageAndText } = await import("./page.js");
   await sendPageAndText(ctx, pageNum);
+}
+
+async function handlePageThemeChunks(
+  ctx: Context,
+  pageNum: number,
+  mode: "summary" | "full",
+): Promise<void> {
+  const { sendThemeChunksByPage } = await import("./themes.js");
+  await sendThemeChunksByPage(ctx, pageNum, mode);
+}
+
+async function handleThemePageNav(
+  ctx: Context,
+  pageNum: number,
+  mode: "summary" | "full",
+): Promise<void> {
+  const { sendThemeChunksByPage } = await import("./themes.js");
+  await sendThemeChunksByPage(ctx, pageNum, mode);
+}
+
+async function handleThemeMode(
+  ctx: Context,
+  pageNum: number,
+  mode: "summary" | "full",
+): Promise<void> {
+  const { sendThemeChunksByPage } = await import("./themes.js");
+  await sendThemeChunksByPage(ctx, pageNum, mode);
+}
+
+function parseThemeViewMode(value: string | undefined): "summary" | "full" {
+  return value === "full" ? "full" : "summary";
 }

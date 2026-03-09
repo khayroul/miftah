@@ -1,10 +1,16 @@
 Miftah — Seed Data Statistics
 ==============================
 Surahs: 114
-Ayat: 6236 total (6236 with Arabic text from QUL)
-  → 0 ayat need Arabic text (missing from mini dump)
+Ayat: 6236 total (6236 with Arabic text from Tanzil/QUL)
+  → 0 ayat need Arabic text
 Unique words: 8354
 Word occurrences: 20298
+Themes: 1261
+Theme-ayah links: 8512
+Ayah theme chunks: 1049
+Mutashabihat patterns: 300
+Mutashabihat links: 810
+Tafsir notes: 3836
 
 Translations loaded:
   Basmeih (BM ayah): 6236 ayat
@@ -12,6 +18,4 @@ Translations loaded:
   BM WBW: 83664 word positions
   EN WBW: 83665 word positions
 
-NOTE: Mini QUL dump only contains ~31% of verses.
-Arabic text (text_uthmani, text_simple) is empty for remaining ~69%.
-Full data available from QUL full download or tanzil.net.
+NOTE: Arabic text coverage is complete via Tanzil + QUL merge.
