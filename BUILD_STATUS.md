@@ -44,7 +44,7 @@ Reference: `BUILD_PLAN.md` v1.5
 | T5 Progressive blanking | Done | `src/bot/services/blanking.ts`, callback `bl:*` |
 | T7 /stats | Done | `src/bot/handlers/stats.ts` |
 | T8 Ayah-of-the-day | Done | `/aotd` handler in `src/bot/handlers/aotd.ts`, wired in `src/bot/index.ts` |
-| T3 MCQ quiz | Pending | No MCQ handler/flow found |
+| T3 MCQ quiz | Done | `/quiz` command + callback flow in `src/bot/handlers/quiz.ts`, wired in `src/bot/index.ts` and `src/bot/handlers/callback.ts` |
 | T4 Mutashabihat alerts | Pending | No alert flow found |
 | T6 Translation review in bot | Pending | No dedicated review workflow found |
 

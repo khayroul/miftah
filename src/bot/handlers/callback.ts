@@ -25,6 +25,11 @@ import {
 } from "../services/formatter.js";
 import { showNextVocab } from "./vocab.js";
 import { showNextHifzItem } from "./hifz.js";
+import {
+  handleQuizAnswerCallback,
+  showNextQuizQuestion,
+  startPageQuiz,
+} from "./quiz.js";
 
 export async function handleCallback(ctx: Context): Promise<void> {
   const data = ctx.callbackQuery?.data;
@@ -74,6 +79,15 @@ export async function handleCallback(ctx: Context): Promise<void> {
         break;
       case "page_nav":
         await handlePageNav(ctx, parseInt(parts[1]));
+        break;
+      case "page_quiz":
+        await startPageQuiz(ctx, parseInt(parts[1]));
+        break;
+      case "quiz_ans":
+        await handleQuizAnswerCallback(ctx, parseInt(parts[1]));
+        break;
+      case "quiz_next":
+        await showNextQuizQuestion(ctx);
         break;
       default:
         console.log(`[callback] Unknown action: ${action}`);
@@ -426,7 +440,9 @@ async function handlePageVocabDrill(ctx: Context, pageNum: number): Promise<void
   // Build ordered word ID queue (order of appearance, deduplicated)
   const seen = new Set<string>();
   const queue: number[] = [];
-  const wordLookup = new Map(words.map((w: any) => [w.text_uthmani, w.id]));
+  const wordLookup = new Map<string, number>(
+    words.map((w) => [String(w.text_uthmani), Number(w.id)]),
+  );
 
   for (const a of ayat) {
     for (const t of a.text_uthmani.split(/\s+/)) {
@@ -456,26 +472,6 @@ async function handlePageVocabDrill(ctx: Context, pageNum: number): Promise<void
 // ── Page navigation ──
 
 async function handlePageNav(ctx: Context, pageNum: number): Promise<void> {
-  const { handlePage } = await import("./page.js");
-  // Simulate a /page command by temporarily modifying context
-  // Instead, just call the page handler's core logic
   const { sendPageAndText } = await import("./page.js");
   await sendPageAndText(ctx, pageNum);
-}
-
-function splitMsg(text: string, maxLen: number): string[] {
-  if (text.length <= maxLen) return [text];
-  const chunks: string[] = [];
-  let remaining = text;
-  while (remaining.length > 0) {
-    if (remaining.length <= maxLen) {
-      chunks.push(remaining);
-      break;
-    }
-    let splitAt = remaining.lastIndexOf("\n", maxLen);
-    if (splitAt === -1) splitAt = maxLen;
-    chunks.push(remaining.slice(0, splitAt));
-    remaining = remaining.slice(splitAt).trimStart();
-  }
-  return chunks;
 }

@@ -78,6 +78,7 @@ export async function sendPageAndText(
         if (isLast) {
           const kb = new InlineKeyboard()
             .text("📝 Vocab Halaman Ini", `page_vocab:${pageNum}`)
+            .text("🧠 Quiz Halaman", `page_quiz:${pageNum}`)
             .row();
           if (pageNum > 1) kb.text("◀ Prev", `page_nav:${pageNum - 1}`);
           if (pageNum < 604) kb.text("Next ▶", `page_nav:${pageNum + 1}`);

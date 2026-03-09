@@ -10,6 +10,7 @@ import { handleCallback } from "./handlers/callback.js";
 import { handlePage } from "./handlers/page.js";
 import { handleAsk } from "./handlers/ask.js";
 import { handleAyahOfTheDay } from "./handlers/aotd.js";
+import { handleQuiz } from "./handlers/quiz.js";
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) {
@@ -39,6 +40,7 @@ bot.command("stats", handleStats);
 bot.command("page", handlePage);
 bot.command("ask", handleAsk);
 bot.command("aotd", handleAyahOfTheDay);
+bot.command("quiz", handleQuiz);
 
 // Callback queries (inline keyboard presses)
 bot.on("callback_query:data", handleCallback);
@@ -59,6 +61,7 @@ bot.api.setMyCommands([
   { command: "page", description: "Lihat halaman mushaf" },
   { command: "stats", description: "Statistik" },
   { command: "aotd", description: "Ayat harian" },
+  { command: "quiz", description: "MCQ vocab" },
   { command: "ask", description: "Tanya tentang Al-Quran" },
 ]);
 
