@@ -158,6 +158,30 @@ npm run seed:fetch-ayah-themes           # Fetch ayah theme chunks
 
 1, 22, 42, 62, 82, 102, 121, 142, 162, 182, 201, 222, 242, 262, 282, 302, 322, 342, 362, 382, 402, 422, 442, 462, 482, 502, 522, 542, 562, 582
 
+## Coding Rules
+
+### Security
+
+- Never hardcode API keys or secrets — always use `process.env`
+- Never use string concatenation for SQL — parameterized queries only
+- Never trust external data without validation
+- Never log passwords, tokens, or PII
+- Use Supabase RLS for row-level access control
+- Sanitize user-generated content before rendering
+- Error messages must not leak internal details to users
+
+### TypeScript
+
+- **Immutability:** always create new objects with spread (`{ ...obj, key: val }`), never mutate
+- **Error handling:** try/catch with `console.error` + user-friendly return, never silently swallow
+- **Graceful degradation:** missing manifest = image without hitboxes, missing word = text fallback — never crash
+- **Input validation:** Zod schemas at system boundaries
+- **File organization:** 200-400 lines typical, 800 max. Functions under 50 lines. No nesting >4 levels.
+- **No `console.log`** in production code
+- **No `any`** when a specific type is possible
+- **No `as` type assertions** unless absolutely necessary
+- **Do not implement FSRS math from scratch** — use ts-fsrs library
+
 ## CLI Tools Available on This Machine
 
 gh, typst, pandoc, ffmpeg, jq, curl, playwright, ollama, imagemagick, edge-tts, tmux, ripgrep, memo (apple-notes), remindctl (apple-reminders), gog (google workspace)
