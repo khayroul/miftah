@@ -1,0 +1,47 @@
+{
+  "summary": {
+    "generated_at": "2026-03-09T05:20:19+00:00",
+    "pages_requested": 2,
+    "pages_checked": 2,
+    "pages_exact_match": 2,
+    "pages_passed": 2,
+    "pages_failed": 0,
+    "missing_rendered": 0,
+    "missing_reference": 0,
+    "size_mismatch": 0,
+    "threshold_mismatch_ratio": 0.0,
+    "avg_mismatch_ratio": 0.0,
+    "max_mismatch_ratio": 0.0,
+    "failing_pages": []
+  },
+  "results": [
+    {
+      "page": 586,
+      "status": "ok",
+      "pass": true,
+      "rendered_path": "/Users/Executor/miftah/assets/pages/page_586.png",
+      "reference_path": "/tmp/quran-ios/Example/QuranEngineApp/Resources/hafs_1405/images_1920/width_1920/page586.png",
+      "width": 1920,
+      "height": 3106,
+      "mismatch_pixels": 0,
+      "total_pixels": 5963520,
+      "mismatch_ratio": 0.0,
+      "max_channel_diff": 0,
+      "mean_channel_diff": 0.0
+    },
+    {
+      "page": 589,
+      "status": "ok",
+      "pass": true,
+      "rendered_path": "/Users/Executor/miftah/assets/pages/page_589.png",
+      "reference_path": "/tmp/quran-ios/Example/QuranEngineApp/Resources/hafs_1405/images_1920/width_1920/page589.png",
+      "width": 1920,
+      "height": 3106,
+      "mismatch_pixels": 0,
+      "total_pixels": 5963520,
+      "mismatch_ratio": 0.0,
+      "max_channel_diff": 0,
+      "mean_channel_diff": 0.0
+    }
+  ]
+}

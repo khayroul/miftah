@@ -3,6 +3,17 @@ import { supabaseAdmin } from "../supabase-admin.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
+interface AyahWithSurahContext {
+  text_uthmani: string;
+  display_bm: string | null;
+  translation_en: string | null;
+  surahs: {
+    name_arabic: string;
+    name_transliteration: string;
+    name_bm: string;
+  };
+}
+
 const SYSTEM_PROMPT = `Anda adalah Miftah, pembantu hafazan Al-Quran dalam Bahasa Malaysia.
 
 Anda boleh membantu pengguna dengan:
@@ -20,6 +31,7 @@ Perintah bot tersedia:
 /vocab — Latihan vocab (default 10, boleh /vocab 20)
 /page <num> — Lihat halaman mushaf (golden: 1, 2, 77, 489, 604)
 /stats — Statistik kemajuan
+/aotd — Ayat harian
 
 Jika pengguna bertanya tentang ayat tertentu, sertakan teks Arab dan terjemahan BM jika ada.
 Jawab dengan ringkas dan mesra. Gunakan BM.`;
@@ -110,11 +122,12 @@ async function fetchQuranContext(query: string): Promise<string | null> {
       .single();
 
     if (ayah) {
-      const s = (ayah as any).surahs;
+      const ayahWithSurah = ayah as unknown as AyahWithSurahContext;
+      const s = ayahWithSurah.surahs;
       parts.push(
         `Ayat ${surahId}:${ayahNum} (${s.name_transliteration} / ${s.name_arabic}):\n` +
-          `Arab: ${ayah.text_uthmani}\n` +
-          `BM: ${ayah.display_bm ?? ayah.translation_en ?? "tiada"}`,
+          `Arab: ${ayahWithSurah.text_uthmani}\n` +
+          `BM: ${ayahWithSurah.display_bm ?? ayahWithSurah.translation_en ?? "tiada"}`,
       );
     }
   }

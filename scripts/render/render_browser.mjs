@@ -25,7 +25,11 @@ const ASSETS_DIR = join(PROJECT_ROOT, 'assets');
 const FONT_DIR = join(ASSETS_DIR, 'fonts', 'qcf-v2');
 const WOFF2_DIR = join(ASSETS_DIR, 'fonts', 'qcf-v2-woff2');
 const SURAH_NAMES_FONT = join(ASSETS_DIR, 'fonts', 'surah-names', 'sura_names.woff2');
+const SURAH_FRAME_REFERENCE = join(ASSETS_DIR, 'surah-frame-reference.png');
+const SURAH_FRAME_SVG = join(ASSETS_DIR, 'surah-frame.svg');
+const BASMALA_FONT = join(FONT_DIR, 'QCF_BSML.TTF');
 const TEST_DIR = join(PROJECT_ROOT, 'test');
+const BASMALA_GLYPHS_QPC2 = 'ﭑﭒﭓ';
 
 // Page dimensions — mobile-first (portrait phone)
 const PAGE_WIDTH = 768;
@@ -35,7 +39,7 @@ const PAGE_HEIGHT = 1280;
 const THEMES = {
   light: {
     pageBg: '#f5f4f0',
-    textColor: '#111',
+    textColor: '#1b1b1b',
     headerColor: '#555',
     surahArColor: '#333',
     bannerBg: '#efede8',
@@ -155,6 +159,105 @@ function getPageSurahs(layout) {
   return [...surahs].sort((a, b) => a - b);
 }
 
+function parseVerseRef(ref) {
+  if (typeof ref !== 'string' || !ref.includes(':')) return null;
+  const [surah, ayah] = ref.split(':').map(Number);
+  if (!Number.isFinite(surah) || !Number.isFinite(ayah)) return null;
+  return { surah, ayah };
+}
+
+function getPageStartSurah(layout) {
+  for (const line of layout.lines || []) {
+    if (line.type === 'surah-header' && line.surah) {
+      const surah = parseInt(line.surah, 10);
+      if (Number.isFinite(surah)) return surah;
+    }
+    if (line.type === 'text' && line.verseRange) {
+      const startRef = line.verseRange.split('-')[0];
+      const parsed = parseVerseRef(startRef);
+      if (parsed) return parsed.surah;
+    }
+  }
+  return null;
+}
+
+function getPageEndVerse(layout) {
+  const lines = layout?.lines || [];
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i];
+    if (line.type !== 'text' || !line.verseRange) continue;
+    const parts = line.verseRange.split('-');
+    const endRef = parts[parts.length - 1];
+    const parsed = parseVerseRef(endRef);
+    if (parsed) return parsed;
+  }
+  return null;
+}
+
+function getTrailingSurah(layout, surahMeta) {
+  if (!layout || !Array.isArray(layout.lines)) return null;
+  if (layout.lines.length >= 15) return null;
+
+  const endVerse = getPageEndVerse(layout);
+  if (!endVerse) return null;
+
+  const ayahCount = surahMeta[endVerse.surah]?.ayas;
+  if (!Number.isFinite(ayahCount) || endVerse.ayah !== ayahCount) return null;
+
+  const nextSurah = endVerse.surah + 1;
+  if (!surahMeta[nextSurah]) return null;
+
+  const alreadyOnPage = layout.lines.some(line =>
+    line.type === 'surah-header' && parseInt(line.surah || '0', 10) === nextSurah
+  );
+  return alreadyOnPage ? null : nextSurah;
+}
+
+function normalizeLayoutForRender(layout, surahMeta) {
+  if (!layout || !Array.isArray(layout.lines)) return layout;
+  const lines = layout.lines.map(line => ({ ...line }));
+
+  const hasSurahHeader = lines.some(line => line.type === 'surah-header');
+  const hasBasmala = lines.some(line => line.type === 'basmala');
+  const firstTextLine = lines.find(
+    line => line.type === 'text' && typeof line.verseRange === 'string',
+  );
+
+  if (!firstTextLine) {
+    return { ...layout, lines };
+  }
+
+  const startRef = firstTextLine.verseRange.split('-')[0];
+  const startVerse = parseVerseRef(startRef);
+
+  // Dataset fallback: pages 586/590 ship with only text lines despite surah start.
+  if (
+    startVerse &&
+    startVerse.ayah === 1 &&
+    !hasSurahHeader &&
+    !hasBasmala &&
+    lines.length <= 12
+  ) {
+    const prefix = [
+      {
+        type: 'surah-header',
+        text: surahMeta[startVerse.surah]?.name_ar || '',
+        surah: String(startVerse.surah).padStart(3, '0'),
+      },
+    ];
+    if (startVerse.surah !== 1 && startVerse.surah !== 9) {
+      prefix.push({
+        type: 'basmala',
+        qpcV2: BASMALA_GLYPHS_QPC2,
+        qpcV1: '#"!',
+      });
+    }
+    return { ...layout, lines: [...prefix, ...lines] };
+  }
+
+  return { ...layout, lines };
+}
+
 // Find the WOFF2 font path for a page
 function getWoff2Path(pageNum) {
   // Try both naming conventions
@@ -170,10 +273,12 @@ function getWoff2Path(pageNum) {
 
 // Build the HTML for one page
 function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
+  const normalizedLayout = normalizeLayoutForRender(layout, surahMeta);
   const t = THEMES[theme] || THEMES.light;
   const juz = getJuz(pageNum);
-  const pageSurahs = getPageSurahs(layout);
-  const primarySurah = pageSurahs[pageSurahs.length - 1] || 1;
+  const pageSurahs = getPageSurahs(normalizedLayout);
+  const primarySurah =
+    getPageStartSurah(normalizedLayout) || pageSurahs[0] || 1;
   const sm = surahMeta[primarySurah] || {};
 
   // Read font file as base64 for embedding
@@ -192,6 +297,8 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
   }
 
   const fontFamily = `QCF2_P${String(pageNum).padStart(3, '0')}`;
+  const hasBasmalaFont = existsSync(BASMALA_FONT);
+  const basmalaFontFamily = hasBasmalaFont ? 'QCF2_BSML' : fontFamily;
 
   // Embed surah names font (ornamental frame with calligraphic surah name)
   let surahNamesFontSrc = '';
@@ -200,24 +307,66 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
     surahNamesFontSrc = `url(data:font/woff2;base64,${snData}) format('woff2')`;
   }
 
+  let surahFrameBg = '';
+  if (existsSync(SURAH_FRAME_REFERENCE)) {
+    const frameData = readFileSync(SURAH_FRAME_REFERENCE).toString('base64');
+    surahFrameBg = `url(data:image/png;base64,${frameData})`;
+  } else if (existsSync(SURAH_FRAME_SVG)) {
+    const frameData = readFileSync(SURAH_FRAME_SVG).toString('base64');
+    surahFrameBg = `url(data:image/svg+xml;base64,${frameData})`;
+  }
+
+  let basmalaFontSrc = '';
+  if (hasBasmalaFont) {
+    const bsmlData = readFileSync(BASMALA_FONT).toString('base64');
+    basmalaFontSrc = `url(data:font/truetype;base64,${bsmlData}) format('truetype')`;
+  }
+
   // Count total line elements for spacing logic
-  const lineCount = (layout.lines || []).length;
+  const lineCount = (normalizedLayout.lines || []).length;
   const isOpeningPage = (pageNum === 1 || pageNum === 2); // Special circular layout
   const isShortPage = !isOpeningPage && lineCount < 15;
+  const trailingSurah = getTrailingSurah(normalizedLayout, surahMeta);
+
+  // Pre-scan: identify "last lines" of each surah — these should NOT be
+  // fully justified (space-between). A text line is a "last line" if:
+  //   (a) the next non-text element is a surah-header, OR
+  //   (b) it's the final text line on the page and the surah ends here
+  const allLines = normalizedLayout.lines || [];
+  const lastLineIndexes = new Set();
+  for (let i = 0; i < allLines.length; i++) {
+    if (allLines[i].type !== 'text') continue;
+    // Look ahead: is this the last text line before a surah-header or end-of-page?
+    let isLastLine = false;
+    // Check if next structured element is surah-header
+    for (let j = i + 1; j < allLines.length; j++) {
+      if (allLines[j].type === 'text') break; // another text line follows — not last
+      if (allLines[j].type === 'surah-header') { isLastLine = true; break; }
+    }
+    // Also check if this is the very last text line on the page
+    if (!isLastLine) {
+      const hasMoreText = allLines.slice(i + 1).some(l => l.type === 'text');
+      if (!hasMoreText) isLastLine = true;
+    }
+    // Only apply natural spacing to short last lines (≤5 words).
+    // Longer last lines (6+ words) still look good justified.
+    const wordCount = (allLines[i].words || []).length;
+    if (isLastLine && wordCount <= 5) lastLineIndexes.add(i);
+  }
 
   // Build line HTML
   const linesHTML = [];
-  for (const line of layout.lines || []) {
+  for (let i = 0; i < allLines.length; i++) {
+    const line = allLines[i];
     if (line.type === 'surah-header') {
       const sn = parseInt(line.surah || '0');
       const name = surahMeta[sn]?.name_ar || `سورة ${sn}`;
-      // surah_names font: render padded 3-digit surah number → ornamental frame
-      const surahCode = String(sn).padStart(3, '0');
-      linesHTML.push(`<div class="surah-banner"><div class="surah-frame"><span class="surah-icon">${surahCode}</span></div></div>`);
+      linesHTML.push(`<div class="surah-banner"><div class="surah-frame"><span class="surah-title">${name}</span></div></div>`);
     } else if (line.type === 'basmala') {
       const qpc = line.qpcV2 || '';
       linesHTML.push(`<div class="basmala"><span class="qcf">${qpc}</span></div>`);
     } else if (line.type === 'text') {
+      const isLast = lastLineIndexes.has(i);
       const words = (line.words || []).map(w => {
         const g = w.qpcV2 || '';
         const loc = w.location || '';
@@ -225,10 +374,15 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
         const safeG = g.replace(/ /g, '\u00A0'); // non-breaking space
         return `<span class="word" data-loc="${loc}">${safeG}</span>`;
       });
-      // Join words with a regular space for justification to work
-      linesHTML.push(`<div class="text-line">${words.join(' ')}</div>`);
+      // Last line of surah: natural spacing (not stretched); others: justified
+      const cls = isLast ? 'text-line last-line' : 'text-line';
+      linesHTML.push(`<div class="${cls}">${words.join(' ')}</div>`);
     }
   }
+
+  const trailingBannerHTML = trailingSurah
+    ? `<div class="surah-banner trailing"><div class="surah-frame"><span class="surah-title">${surahMeta[trailingSurah]?.name_ar || `سورة ${trailingSurah}`}</span></div></div>`
+    : '';
 
   return `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -246,6 +400,14 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
   @font-face {
     font-family: 'surah_names';
     src: ${surahNamesFontSrc};
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+  }` : ''}
+  ${basmalaFontSrc ? `
+  @font-face {
+    font-family: 'QCF2_BSML';
+    src: ${basmalaFontSrc};
     font-weight: normal;
     font-style: normal;
     font-display: block;
@@ -275,27 +437,35 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
   .header {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
-    padding: 18px 28px 12px;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 18px 10px;
     border-bottom: 1px solid ${t.borderColor};
     direction: ltr;
   }
   .header .juz {
-    font-size: 18px;
+    font-size: 17px;
     color: ${t.headerColor};
     font-family: -apple-system, 'Helvetica Neue', sans-serif;
     font-weight: 400;
+    white-space: nowrap;
   }
   .header .surah-name {
-    font-size: 18px;
+    font-size: 15px;
     color: ${t.headerColor};
     font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    flex: 1 1 auto;
+    min-width: 0;
     direction: rtl;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-weight: 400;
   }
   .header .surah-ar {
     font-family: 'Geeza Pro', 'Traditional Arabic', serif;
-    font-size: 24px;
+    font-size: 20px;
     color: ${t.surahArColor};
     font-weight: 700;
   }
@@ -306,13 +476,13 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 20px 28px 0;
+    padding: 16px 26px 0;
   }
 
   /* Short pages (<15 elements): use fixed gap matching 15-line spacing, content at top */
   .text-area.short-page {
     justify-content: flex-start;
-    gap: 41px;
+    gap: 36px;
   }
 
   /* Opening pages (1-2): circular/oval text arrangement — centered, larger font */
@@ -329,8 +499,8 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
   .opening-page .basmala {
     font-size: 54px;
   }
-  .opening-page .surah-banner .surah-icon {
-    font-size: 90px;
+  .opening-page .surah-banner .surah-title {
+    font-size: 56px;
   }
 
   /* Each text line — flexbox RTL with space-between for mushaf justification */
@@ -340,9 +510,17 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
     justify-content: space-between;
     align-items: baseline;
     font-family: '${fontFamily}', serif;
-    font-size: 40px;
+    font-size: 37.2px;
     line-height: 1.0;
     color: ${t.textColor};
+    padding: 0 2px;
+    font-weight: 400;
+  }
+
+  /* Last line of a surah — natural word spacing, not stretched edge-to-edge */
+  .text-line.last-line {
+    justify-content: center;
+    gap: 14px;
   }
 
   /* Individual word spans */
@@ -356,13 +534,16 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
     direction: rtl;
     text-align: center;
     font-family: '${fontFamily}', serif;
-    font-size: 40px;
+    font-size: 37.2px;
     line-height: 1.0;
     color: ${t.textColor};
+    padding: 0 4px;
+    font-weight: 400;
   }
 
   .basmala .qcf {
     white-space: nowrap;
+    font-family: '${basmalaFontFamily}', '${fontFamily}', serif;
   }
 
   /* Surah banner — ornamental frame with calligraphic surah name */
@@ -370,41 +551,46 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
     text-align: center;
     direction: ltr;
     padding: 0;
-    margin: 2px 12px;
+    margin: 2px 0;
   }
   .surah-banner .surah-frame {
-    display: inline-block;
+    display: block;
     position: relative;
-    padding: 6px 40px;
-    border: 2.5px solid ${t.textColor};
-    border-radius: 4px;
-    min-width: 85%;
+    width: 92%;
+    height: 62px;
+    margin: 0 auto;
+    background-image: ${surahFrameBg ? surahFrameBg : 'none'};
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    border: ${surahFrameBg ? 'none' : `2px solid ${t.textColor}`};
   }
   .surah-banner .surah-frame::before {
     content: '';
     position: absolute;
-    top: 3px; left: 3px; right: 3px; bottom: 3px;
-    border: 1px solid ${t.textColor};
-    border-radius: 2px;
-    opacity: 0.5;
+    left: 28%;
+    right: 28%;
+    top: 8px;
+    bottom: 8px;
+    border: 1.5px solid #1f1f1f;
+    border-radius: 999px;
+    background: ${t.pageBg};
   }
-  /* Decorative endcaps — left and right */
-  .surah-banner .surah-frame::after {
-    content: '';
+  .surah-banner .surah-title {
     position: absolute;
-    top: -6px; bottom: -6px;
-    left: 12px; right: 12px;
-    border-left: 8px solid ${t.pageBg};
-    border-right: 8px solid ${t.pageBg};
-    pointer-events: none;
-  }
-  .surah-banner .surah-icon {
-    font-family: 'surah_names', serif;
-    font-size: 68px;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Geeza Pro', 'Traditional Arabic', serif;
+    font-size: 40px;
     color: ${t.textColor};
-    line-height: 1.0;
-    position: relative;
+    font-weight: 700;
+    line-height: 1;
+    transform: translateY(-1px);
     z-index: 1;
+  }
+  .surah-banner.trailing {
+    margin: 8px 0 0;
   }
 
   /* Page number */
@@ -421,11 +607,15 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
   <div class="page">
     <div class="header">
       <span class="juz">Juz' ${juz}</span>
-      <span class="surah-name">${sm.name_en || ''} <span class="surah-ar">${sm.name_ar || ''}</span></span>
+      <span class="surah-name">${pageSurahs.map(s => {
+        const m = surahMeta[s] || {};
+        return `<span class="surah-ar">${m.name_ar || ''}</span> ${m.name_en || ''}`;
+      }).join(' - ')}</span>
     </div>
     <div class="text-area${isOpeningPage ? ' opening-page' : isShortPage ? ' short-page' : ''}">
       ${linesHTML.join('\n      ')}
     </div>
+    ${trailingBannerHTML ? `\n    ${trailingBannerHTML}` : ''}
     <div class="page-number">${pageNum}</div>
   </div>
 </body>
@@ -448,6 +638,49 @@ async function renderPage(browser, pageNum, layout, surahMeta, outputDir, theme 
 
   // Wait for fonts to load
   await page.waitForFunction(() => document.fonts.ready.then(() => true), { timeout: 10000 });
+
+  // Ensure no line overflows the text area. This keeps long lines from clipping.
+  await page.evaluate(() => {
+    const fitTextLine = (line) => {
+      let fontSize = parseFloat(window.getComputedStyle(line).fontSize);
+      if (!Number.isFinite(fontSize)) return;
+      let tries = 0;
+      while (tries < 36) {
+        const lineRect = line.getBoundingClientRect();
+        const words = Array.from(line.querySelectorAll(':scope > .word'));
+        if (!words.length) break;
+
+        let minX = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        for (const word of words) {
+          const r = word.getBoundingClientRect();
+          if (r.width <= 0) continue;
+          minX = Math.min(minX, r.left);
+          maxX = Math.max(maxX, r.right);
+        }
+
+        const overflowLeft = minX < lineRect.left - 0.5;
+        const overflowRight = maxX > lineRect.right + 0.5;
+        if ((!overflowLeft && !overflowRight) || fontSize <= 32) break;
+
+        fontSize -= 0.5;
+        line.style.fontSize = `${fontSize}px`;
+        tries += 1;
+      }
+    };
+
+    document.querySelectorAll('.text-line').forEach(fitTextLine);
+
+    document.querySelectorAll('.basmala').forEach((line) => {
+      let fontSize = parseFloat(window.getComputedStyle(line).fontSize);
+      let tries = 0;
+      while (tries < 20 && line.scrollWidth > line.clientWidth + 1 && fontSize > 30) {
+        fontSize -= 0.5;
+        line.style.fontSize = `${fontSize}px`;
+        tries += 1;
+      }
+    });
+  });
 
   // Extract word bounding boxes for manifest (word-by-word interactivity)
   // Note: getBoundingClientRect returns CSS pixels; PNG is rendered at 2x DPI

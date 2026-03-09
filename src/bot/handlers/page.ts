@@ -2,18 +2,23 @@ import { InputFile, InlineKeyboard } from "grammy";
 import type { Context } from "grammy";
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from "url";
 import { supabaseAdmin } from "../supabase-admin.js";
 import type { Ayah } from "@/types/database";
 
-const GOLDEN_DIR = path.resolve("test/golden/pages");
-const ASSETS_DIR = path.resolve("assets/pages");
+const PROJECT_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../..",
+);
+const GOLDEN_DIR = path.join(PROJECT_ROOT, "test/golden/pages");
+const ASSETS_DIR = path.join(PROJECT_ROOT, "assets/pages");
 
 export async function handlePage(ctx: Context): Promise<void> {
   const arg = ctx.message?.text?.split(" ")[1];
 
   if (!arg) {
     await ctx.reply(
-      "Guna: /page <nombor>\n\nHalaman 1–21 (Juz 1) tersedia.\nContoh: /page 3",
+      "Guna: /page <nombor>\n\nHalaman 1–604 tersedia.\nContoh: /page 586",
     );
     return;
   }
@@ -41,23 +46,29 @@ export async function sendPageAndText(
         .from("surahs")
         .select("id, name_transliteration")
         .in("id", surahIds);
-      const surahMap = new Map(
-        (surahs ?? []).map((s: any) => [s.id, s.name_transliteration]),
+      const surahMap = new Map<number, string>(
+        (surahs ?? [])
+          .filter(
+            (s): s is { id: number; name_transliteration: string } =>
+              typeof s?.id === "number" &&
+              typeof s?.name_transliteration === "string",
+          )
+          .map((s) => [s.id, s.name_transliteration]),
       );
 
       // Arabic is already shown in the page image (Uthmani font).
       // Text message shows only references + BM translations.
-      let text = `📖 *Halaman ${pageNum}* — ${ayat.length} ayat\n\n`;
+      let text = `📖 Halaman ${pageNum} — ${ayat.length} ayat\n\n`;
       let currentSurah = 0;
 
       for (const ayah of ayat) {
         if (ayah.surah_id !== currentSurah) {
           currentSurah = ayah.surah_id;
           const name = surahMap.get(currentSurah) ?? `Surah ${currentSurah}`;
-          text += `\n*${name}*\n`;
+          text += `\n${name}\n`;
         }
         const bm = ayah.display_bm ?? ayah.translation_en ?? "";
-        text += `${ayah.surah_id}:${ayah.ayah_number} — _${bm}_\n`;
+        text += `${ayah.surah_id}:${ayah.ayah_number} — ${bm}\n`;
       }
 
       const chunks = splitMessage(text, 4000);
@@ -69,17 +80,14 @@ export async function sendPageAndText(
             .row();
           if (pageNum > 1) kb.text("◀ Prev", `page_nav:${pageNum - 1}`);
           if (pageNum < 604) kb.text("Next ▶", `page_nav:${pageNum + 1}`);
-          await ctx.reply(chunks[i], {
-            parse_mode: "Markdown",
-            reply_markup: kb,
-          });
+          await ctx.reply(chunks[i], { reply_markup: kb });
         } else {
-          await ctx.reply(chunks[i], { parse_mode: "Markdown" });
+          await ctx.reply(chunks[i]);
         }
       }
     } else if (!imageSent) {
       await ctx.reply(
-        `Halaman ${pageNum} — imej belum dirender. Guna halaman 1–21 (Juz 1).`,
+        `Halaman ${pageNum} — imej belum dirender. Pastikan aset halaman 1–604 sudah dijana.`,
       );
     }
   } catch (err) {

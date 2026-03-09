@@ -83,6 +83,8 @@ JUZ_START_PAGES = [
     201, 222, 242, 262, 282, 302, 322, 342, 362, 382,
     402, 422, 442, 462, 482, 502, 522, 542, 562, 582
 ]
+BASMALA_GLYPHS_QPC2 = "ﭑﭒﭓ"
+BASMALA_FONT_PATH = QCF_FONT_DIR / "QCF_BSML.TTF"
 
 
 # ===================================================================
@@ -176,12 +178,54 @@ def get_page_surahs(layout_data):
     return sorted(surahs)
 
 
+def parse_verse_ref(ref):
+    if not isinstance(ref, str) or ":" not in ref:
+        return None
+    parts = ref.split(":")
+    if len(parts) < 2:
+        return None
+    try:
+        return int(parts[0]), int(parts[1])
+    except (TypeError, ValueError):
+        return None
+
+
+def get_page_start_surah(layout_data):
+    for line in layout_data.get("lines", []):
+        if line.get("type") == "surah-header":
+            try:
+                return int(line.get("surah", "0"))
+            except (TypeError, ValueError):
+                pass
+        if line.get("type") == "text":
+            vr = line.get("verseRange", "")
+            start_ref = vr.split("-")[0] if vr else ""
+            parsed = parse_verse_ref(start_ref)
+            if parsed:
+                return parsed[0]
+    return None
+
+
 def get_qcf_font(page_number, size):
     """Load QCF V2 font for a specific page."""
     p = QCF_FONT_DIR / f"QCF2_P{page_number:03d}.TTF"
     if not p.exists():
         raise FileNotFoundError(f"QCF V2 font missing: {p}")
     return ImageFont.truetype(str(p), size)
+
+
+_basmala_font_cache = {}
+
+def get_basmala_font(size):
+    if size in _basmala_font_cache:
+        return _basmala_font_cache[size]
+    if BASMALA_FONT_PATH.exists():
+        f = ImageFont.truetype(str(BASMALA_FONT_PATH), size)
+        _basmala_font_cache[size] = f
+        return f
+    f = get_arabic_font(size)
+    _basmala_font_cache[size] = f
+    return f
 
 
 _header_font_cache = {}
@@ -243,8 +287,34 @@ def extract_page_lines(layout_data):
         words:  list[dict]   — per-word: glyph, location, word (Arabic)
         surah:  int           (surah-header only)
     """
+    original_lines = list(layout_data.get("lines", []))
     lines = []
-    for obj in layout_data.get("lines", []):
+
+    has_non_text = any(
+        obj.get("type") in ("surah-header", "basmala")
+        for obj in original_lines
+    )
+    first_text = next((obj for obj in original_lines if obj.get("type") == "text"), None)
+    if first_text and not has_non_text and len(original_lines) <= 12:
+        vr = first_text.get("verseRange", "")
+        start_ref = vr.split("-")[0] if vr else ""
+        parsed = parse_verse_ref(start_ref)
+        if parsed and parsed[1] == 1:
+            surah_num = parsed[0]
+            lines.append({
+                "type": "surah-header",
+                "surah": surah_num,
+                "glyphs": "",
+                "words": [],
+            })
+            if surah_num not in (1, 9):
+                lines.append({
+                    "type": "basmala",
+                    "glyphs": BASMALA_GLYPHS_QPC2,
+                    "words": [],
+                })
+
+    for obj in original_lines:
         lt = obj["type"]
         if lt == "surah-header":
             lines.append({"type": "surah-header", "surah": int(obj.get("surah", "0")),
@@ -345,7 +415,8 @@ def render_page(page_number, layout_data, surah_meta, output_dir, debug=False):
     max_glyph_h = 0
     for l in text_lines:
         if l["glyphs"].strip():
-            bb = qcf.getbbox(l["glyphs"])
+            line_font = get_basmala_font(font_size) if l["type"] == "basmala" else qcf
+            bb = line_font.getbbox(l["glyphs"])
             h = bb[3] - bb[1]
             if h > max_glyph_h:
                 max_glyph_h = h
@@ -361,7 +432,7 @@ def render_page(page_number, layout_data, surah_meta, output_dir, debug=False):
 
     # --- Header ---
     page_surahs = get_page_surahs(layout_data)
-    primary_surah = page_surahs[-1] if page_surahs else 1
+    primary_surah = get_page_start_surah(layout_data) or (page_surahs[0] if page_surahs else 1)
     juz = get_juz(page_number)
 
     hdr = get_header_font(HEADER_FONT_SIZE)
@@ -431,10 +502,11 @@ def render_page(page_number, layout_data, surah_meta, output_dir, debug=False):
         words = line.get("words", [])
 
         if line["type"] == "basmala" or not words:
+            line_font = get_basmala_font(font_size) if line["type"] == "basmala" else qcf
             # Center
-            bb = qcf.getbbox(glyphs)
+            bb = line_font.getbbox(glyphs)
             tw = bb[2] - bb[0]
-            draw.text(((PAGE_WIDTH - tw) / 2, y), glyphs, font=qcf, fill=TEXT_COLOR)
+            draw.text(((PAGE_WIDTH - tw) / 2, y), glyphs, font=line_font, fill=TEXT_COLOR)
         else:
             # Justified RTL word-by-word
             widths = []

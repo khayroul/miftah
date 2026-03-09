@@ -1,0 +1,39 @@
+{
+  "summary": {
+    "generated_at": "2026-03-09T05:39:06+00:00",
+    "pages_requested": 2,
+    "expected": {
+      "pages": 2,
+      "thumbnails": 2,
+      "page_manifests": 2,
+      "ayah_images": 56,
+      "ayah_manifests": 56,
+      "word_images": 277
+    },
+    "present": {
+      "pages": 2,
+      "thumbnails": 2,
+      "page_manifests": 2,
+      "ayah_images": 56,
+      "ayah_manifests": 56,
+      "word_images": 277
+    },
+    "missing_counts": {
+      "pages": 0,
+      "thumbnails": 0,
+      "page_manifests": 0,
+      "ayah_images": 0,
+      "ayah_manifests": 0,
+      "word_images": 0
+    }
+  },
+  "pass": true,
+  "missing_samples": {
+    "pages": [],
+    "thumbnails": [],
+    "page_manifests": [],
+    "ayah_images": [],
+    "ayah_manifests": [],
+    "word_images": []
+  }
+}

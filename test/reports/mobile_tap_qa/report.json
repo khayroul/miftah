@@ -1,0 +1,44 @@
+{
+  "summary": {
+    "generated_at": "2026-03-09T05:37:56.585Z",
+    "base_url": "http://127.0.0.1:3001",
+    "pages_tested": 4,
+    "passed": 4,
+    "failed": 0,
+    "pass": true
+  },
+  "results": [
+    {
+      "page": 1,
+      "url": "http://127.0.0.1:3001/read/1",
+      "status": "pass",
+      "errors": [],
+      "tooltipText": "dengan namaIn (the) name1:1:1",
+      "screenshot": "/Users/Executor/miftah/test/reports/mobile_tap_qa/page_001_tap.png"
+    },
+    {
+      "page": 77,
+      "url": "http://127.0.0.1:3001/read/77",
+      "status": "pass",
+      "errors": [],
+      "tooltipText": "wahaiO4:1:1",
+      "screenshot": "/Users/Executor/miftah/test/reports/mobile_tap_qa/page_077_tap.png"
+    },
+    {
+      "page": 586,
+      "url": "http://127.0.0.1:3001/read/586",
+      "status": "pass",
+      "errors": [],
+      "tooltipText": "apabilaWhen81:1:1",
+      "screenshot": "/Users/Executor/miftah/test/reports/mobile_tap_qa/page_586_tap.png"
+    },
+    {
+      "page": 604,
+      "url": "http://127.0.0.1:3001/read/604",
+      "status": "pass",
+      "errors": [],
+      "tooltipText": "katakanlahSay112:1:1",
+      "screenshot": "/Users/Executor/miftah/test/reports/mobile_tap_qa/page_604_tap.png"
+    }
+  ]
+}

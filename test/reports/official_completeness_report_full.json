@@ -1,0 +1,39 @@
+{
+  "summary": {
+    "generated_at": "2026-03-09T05:33:44+00:00",
+    "pages_requested": 604,
+    "expected": {
+      "pages": 604,
+      "thumbnails": 604,
+      "page_manifests": 604,
+      "ayah_images": 6236,
+      "ayah_manifests": 6236,
+      "word_images": 85104
+    },
+    "present": {
+      "pages": 604,
+      "thumbnails": 604,
+      "page_manifests": 604,
+      "ayah_images": 6236,
+      "ayah_manifests": 6236,
+      "word_images": 85104
+    },
+    "missing_counts": {
+      "pages": 0,
+      "thumbnails": 0,
+      "page_manifests": 0,
+      "ayah_images": 0,
+      "ayah_manifests": 0,
+      "word_images": 0
+    }
+  },
+  "pass": true,
+  "missing_samples": {
+    "pages": [],
+    "thumbnails": [],
+    "page_manifests": [],
+    "ayah_images": [],
+    "ayah_manifests": [],
+    "word_images": []
+  }
+}

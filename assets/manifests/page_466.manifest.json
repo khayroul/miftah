@@ -1,1014 +1,1497 @@
 {
   "page": 466,
+  "schema_version": "1.0.0",
   "surah_start": 39,
   "ayah_start": 68,
   "surah_end": 39,
   "ayah_end": 74,
-  "schema_version": "1.0.0",
-  "image_width": 1200,
-  "image_height": 1920,
-  "font_size_pt": 61,
-  "renderer": "qcf-v2",
+  "image_width": 1920,
+  "image_height": 3106,
   "words": [
     {
-      "text": "وَنُفِخَ",
       "location": "39:68:1",
-      "x": 1044,
-      "y": 90,
-      "w": 106,
-      "h": 100
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 1,
+      "word_id": 75601,
+      "x": 1653,
+      "y": 58,
+      "width": 174,
+      "height": 153
     },
     {
-      "text": "فِى",
       "location": "39:68:2",
-      "x": 982,
-      "y": 90,
-      "w": 45,
-      "h": 67
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 2,
+      "word_id": 75602,
+      "x": 1568,
+      "y": 88,
+      "width": 68,
+      "height": 105
     },
     {
-      "text": "ٱلصُّورِ",
       "location": "39:68:3",
-      "x": 835,
-      "y": 90,
-      "w": 131,
-      "h": 81
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 3,
+      "word_id": 75603,
+      "x": 1339,
+      "y": 64,
+      "width": 219,
+      "height": 133
     },
     {
-      "text": "فَصَعِقَ",
       "location": "39:68:4",
-      "x": 693,
-      "y": 90,
-      "w": 125,
-      "h": 75
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 4,
+      "word_id": 75604,
+      "x": 1084,
+      "y": 67,
+      "width": 244,
+      "height": 120
     },
     {
-      "text": "مَن",
       "location": "39:68:5",
-      "x": 622,
-      "y": 90,
-      "w": 55,
-      "h": 62
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 5,
+      "word_id": 75605,
+      "x": 978,
+      "y": 80,
+      "width": 92,
+      "height": 104
     },
     {
-      "text": "فِى",
       "location": "39:68:6",
-      "x": 560,
-      "y": 90,
-      "w": 45,
-      "h": 65
-    },
-    {
-      "text": "ٱلسَّمَـٰوَٰتِ",
-      "location": "39:68:7",
-      "x": 365,
-      "y": 90,
-      "w": 179,
-      "h": 82
-    },
-    {
-      "text": "وَمَن",
-      "location": "39:68:8",
-      "x": 258,
-      "y": 90,
-      "w": 90,
-      "h": 70
-    },
-    {
-      "text": "فِى",
-      "location": "39:68:9",
-      "x": 194,
-      "y": 90,
-      "w": 48,
-      "h": 69
-    },
-    {
-      "text": "ٱلْأَرْضِ",
-      "location": "39:68:10",
-      "x": 50,
-      "y": 90,
-      "w": 127,
-      "h": 82
-    },
-    {
-      "text": "إِلَّا",
-      "location": "39:68:11",
-      "x": 1092,
-      "y": 220,
-      "w": 58,
-      "h": 93
-    },
-    {
-      "text": "مَن",
-      "location": "39:68:12",
-      "x": 1025,
-      "y": 220,
-      "w": 60,
-      "h": 64
-    },
-    {
-      "text": "شَآءَ",
-      "location": "39:68:13",
-      "x": 942,
-      "y": 220,
-      "w": 75,
-      "h": 61
-    },
-    {
-      "text": "ٱللَّهُ ۖ",
-      "location": "39:68:14",
-      "x": 861,
-      "y": 220,
-      "w": 74,
-      "h": 82
-    },
-    {
-      "text": "ثُمَّ",
-      "location": "39:68:15",
-      "x": 816,
-      "y": 220,
-      "w": 38,
-      "h": 84
-    },
-    {
-      "text": "نُفِخَ",
-      "location": "39:68:16",
-      "x": 735,
-      "y": 220,
-      "w": 73,
-      "h": 95
-    },
-    {
-      "text": "فِيهِ",
-      "location": "39:68:17",
-      "x": 654,
-      "y": 220,
-      "w": 74,
-      "h": 58
-    },
-    {
-      "text": "أُخْرَىٰ",
-      "location": "39:68:18",
-      "x": 533,
-      "y": 220,
-      "w": 113,
-      "h": 90
-    },
-    {
-      "text": "فَإِذَا",
-      "location": "39:68:19",
-      "x": 462,
-      "y": 220,
-      "w": 64,
-      "h": 83
-    },
-    {
-      "text": "هُمْ",
-      "location": "39:68:20",
-      "x": 405,
-      "y": 220,
-      "w": 50,
-      "h": 75
-    },
-    {
-      "text": "قِيَامٌۭ",
-      "location": "39:68:21",
-      "x": 303,
-      "y": 220,
-      "w": 94,
-      "h": 64
-    },
-    {
-      "text": "يَنظُرُونَ ٦٨",
-      "location": "39:68:22",
-      "x": 50,
-      "y": 220,
-      "w": 246,
-      "h": 77
-    },
-    {
-      "text": "وَأَشْرَقَتِ",
-      "location": "39:69:1",
-      "x": 1003,
-      "y": 350,
-      "w": 147,
-      "h": 88
-    },
-    {
-      "text": "ٱلْأَرْضُ",
-      "location": "39:69:2",
-      "x": 839,
-      "y": 350,
-      "w": 134,
-      "h": 83
-    },
-    {
-      "text": "بِنُورِ",
-      "location": "39:69:3",
-      "x": 720,
-      "y": 350,
-      "w": 89,
-      "h": 77
-    },
-    {
-      "text": "رَبِّهَا",
-      "location": "39:69:4",
-      "x": 602,
-      "y": 350,
-      "w": 88,
-      "h": 75
-    },
-    {
-      "text": "وَوُضِعَ",
-      "location": "39:69:5",
-      "x": 436,
-      "y": 350,
-      "w": 135,
-      "h": 91
-    },
-    {
-      "text": "ٱلْكِتَـٰبُ",
-      "location": "39:69:6",
-      "x": 208,
-      "y": 350,
-      "w": 198,
-      "h": 80
-    },
-    {
-      "text": "وَجِا۟ىٓءَ",
-      "location": "39:69:7",
-      "x": 50,
-      "y": 350,
-      "w": 128,
-      "h": 84
-    },
-    {
-      "text": "بِٱلنَّبِيِّـۧنَ",
-      "location": "39:69:8",
-      "x": 996,
-      "y": 479,
-      "w": 154,
-      "h": 82
-    },
-    {
-      "text": "وَٱلشُّهَدَآءِ",
-      "location": "39:69:9",
-      "x": 787,
-      "y": 479,
-      "w": 198,
-      "h": 84
-    },
-    {
-      "text": "وَقُضِىَ",
-      "location": "39:69:10",
-      "x": 656,
-      "y": 479,
-      "w": 119,
-      "h": 84
-    },
-    {
-      "text": "بَيْنَهُم",
-      "location": "39:69:11",
-      "x": 533,
-      "y": 479,
-      "w": 112,
-      "h": 74
-    },
-    {
-      "text": "بِٱلْحَقِّ",
-      "location": "39:69:12",
-      "x": 410,
-      "y": 479,
-      "w": 112,
-      "h": 95
-    },
-    {
-      "text": "وَهُمْ",
-      "location": "39:69:13",
-      "x": 311,
-      "y": 479,
-      "w": 88,
-      "h": 68
-    },
-    {
-      "text": "لَا",
-      "location": "39:69:14",
-      "x": 259,
-      "y": 479,
-      "w": 40,
-      "h": 68
-    },
-    {
-      "text": "يُظْلَمُونَ ٦٩",
-      "location": "39:69:15",
-      "x": 50,
-      "y": 479,
-      "w": 198,
-      "h": 78
-    },
-    {
-      "text": "وَوُفِّيَتْ",
-      "location": "39:70:1",
-      "x": 1015,
-      "y": 609,
-      "w": 135,
-      "h": 67
-    },
-    {
-      "text": "كُلُّ",
-      "location": "39:70:2",
-      "x": 930,
-      "y": 609,
-      "w": 63,
-      "h": 87
-    },
-    {
-      "text": "نَفْسٍۢ",
-      "location": "39:70:3",
-      "x": 812,
-      "y": 609,
-      "w": 95,
-      "h": 76
-    },
-    {
-      "text": "مَّا",
-      "location": "39:70:4",
-      "x": 750,
-      "y": 609,
-      "w": 40,
-      "h": 57
-    },
-    {
-      "text": "عَمِلَتْ",
-      "location": "39:70:5",
-      "x": 600,
-      "y": 609,
-      "w": 127,
-      "h": 71
-    },
-    {
-      "text": "وَهُوَ",
-      "location": "39:70:6",
-      "x": 492,
-      "y": 609,
-      "w": 86,
-      "h": 73
-    },
-    {
-      "text": "أَعْلَمُ",
-      "location": "39:70:7",
-      "x": 386,
-      "y": 609,
-      "w": 83,
-      "h": 108
-    },
-    {
-      "text": "بِمَا",
-      "location": "39:70:8",
-      "x": 296,
-      "y": 609,
-      "w": 67,
-      "h": 67
-    },
-    {
-      "text": "يَفْعَلُونَ ٧٠",
-      "location": "39:70:9",
-      "x": 50,
-      "y": 609,
-      "w": 224,
-      "h": 80
-    },
-    {
-      "text": "وَسِيقَ",
-      "location": "39:71:1",
-      "x": 1028,
-      "y": 739,
-      "w": 122,
-      "h": 59
-    },
-    {
-      "text": "ٱلَّذِينَ",
-      "location": "39:71:2",
-      "x": 920,
-      "y": 739,
-      "w": 90,
-      "h": 93
-    },
-    {
-      "text": "كَفَرُوٓا۟",
-      "location": "39:71:3",
-      "x": 782,
-      "y": 739,
-      "w": 120,
-      "h": 84
-    },
-    {
-      "text": "إِلَىٰ",
-      "location": "39:71:4",
-      "x": 705,
-      "y": 739,
-      "w": 59,
-      "h": 85
-    },
-    {
-      "text": "جَهَنَّمَ",
-      "location": "39:71:5",
-      "x": 558,
-      "y": 739,
-      "w": 129,
-      "h": 82
-    },
-    {
-      "text": "زُمَرًا ۖ",
-      "location": "39:71:6",
-      "x": 445,
-      "y": 739,
-      "w": 95,
-      "h": 92
-    },
-    {
-      "text": "حَتَّىٰٓ",
-      "location": "39:71:7",
-      "x": 303,
-      "y": 739,
-      "w": 124,
-      "h": 76
-    },
-    {
-      "text": "إِذَا",
-      "location": "39:71:8",
-      "x": 226,
-      "y": 739,
-      "w": 59,
-      "h": 80
-    },
-    {
-      "text": "جَآءُوهَا",
-      "location": "39:71:9",
-      "x": 50,
-      "y": 739,
-      "w": 158,
-      "h": 72
-    },
-    {
-      "text": "فُتِحَتْ",
-      "location": "39:71:10",
-      "x": 1026,
-      "y": 869,
-      "w": 124,
-      "h": 73
-    },
-    {
-      "text": "أَبْوَٰبُهَا",
-      "location": "39:71:11",
-      "x": 894,
-      "y": 869,
-      "w": 116,
-      "h": 89
-    },
-    {
-      "text": "وَقَالَ",
-      "location": "39:71:12",
-      "x": 782,
-      "y": 869,
-      "w": 95,
-      "h": 71
-    },
-    {
-      "text": "لَهُمْ",
-      "location": "39:71:13",
-      "x": 688,
-      "y": 869,
-      "w": 78,
-      "h": 74
-    },
-    {
-      "text": "خَزَنَتُهَآ",
-      "location": "39:71:14",
-      "x": 530,
-      "y": 869,
-      "w": 141,
-      "h": 71
-    },
-    {
-      "text": "أَلَمْ",
-      "location": "39:71:15",
-      "x": 460,
-      "y": 869,
-      "w": 54,
-      "h": 90
-    },
-    {
-      "text": "يَأْتِكُمْ",
-      "location": "39:71:16",
-      "x": 271,
-      "y": 869,
-      "w": 172,
-      "h": 89
-    },
-    {
-      "text": "رُسُلٌۭ",
-      "location": "39:71:17",
-      "x": 154,
-      "y": 869,
-      "w": 100,
-      "h": 77
-    },
-    {
-      "text": "مِّنكُمْ",
-      "location": "39:71:18",
-      "x": 50,
-      "y": 869,
-      "w": 88,
-      "h": 86
-    },
-    {
-      "text": "يَتْلُونَ",
-      "location": "39:71:19",
-      "x": 1037,
-      "y": 999,
-      "w": 113,
-      "h": 78
-    },
-    {
-      "text": "عَلَيْكُمْ",
-      "location": "39:71:20",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 6,
+      "word_id": 75606,
       "x": 898,
-      "y": 999,
-      "w": 115,
-      "h": 86
+      "y": 89,
+      "width": 70,
+      "height": 103
     },
     {
-      "text": "ءَايَـٰتِ",
-      "location": "39:71:21",
-      "x": 767,
-      "y": 999,
-      "w": 106,
-      "h": 65
+      "location": "39:68:7",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 7,
+      "word_id": 75607,
+      "x": 561,
+      "y": 63,
+      "width": 318,
+      "height": 128
     },
     {
-      "text": "رَبِّكُمْ",
-      "location": "39:71:22",
-      "x": 640,
-      "y": 999,
-      "w": 103,
-      "h": 96
+      "location": "39:68:8",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 8,
+      "word_id": 75608,
+      "x": 414,
+      "y": 80,
+      "width": 137,
+      "height": 107
     },
     {
-      "text": "وَيُنذِرُونَكُمْ",
-      "location": "39:71:23",
-      "x": 325,
-      "y": 999,
-      "w": 291,
-      "h": 76
+      "location": "39:68:9",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 9,
+      "word_id": 75609,
+      "x": 335,
+      "y": 85,
+      "width": 65,
+      "height": 112
     },
     {
-      "text": "لِقَآءَ",
-      "location": "39:71:24",
-      "x": 200,
-      "y": 999,
-      "w": 100,
-      "h": 69
+      "location": "39:68:10",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 10,
+      "word_id": 75610,
+      "x": 106,
+      "y": 45,
+      "width": 217,
+      "height": 148
     },
     {
-      "text": "يَوْمِكُمْ",
-      "location": "39:71:25",
-      "x": 50,
-      "y": 999,
-      "w": 126,
-      "h": 87
+      "location": "39:68:11",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 11,
+      "word_id": 75611,
+      "x": 1735,
+      "y": 251,
+      "width": 91,
+      "height": 152
     },
     {
-      "text": "هَـٰذَا ۚ",
-      "location": "39:71:26",
-      "x": 1071,
-      "y": 1128,
-      "w": 79,
-      "h": 78
+      "location": "39:68:12",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 12,
+      "word_id": 75612,
+      "x": 1622,
+      "y": 283,
+      "width": 97,
+      "height": 100
     },
     {
-      "text": "قَالُوا۟",
-      "location": "39:71:27",
-      "x": 982,
-      "y": 1128,
-      "w": 77,
-      "h": 86
+      "location": "39:68:13",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 13,
+      "word_id": 75613,
+      "x": 1475,
+      "y": 263,
+      "width": 132,
+      "height": 104
     },
     {
-      "text": "بَلَىٰ",
-      "location": "39:71:28",
-      "x": 909,
-      "y": 1128,
-      "w": 60,
-      "h": 76
+      "location": "39:68:14",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 14,
+      "word_id": 75614,
+      "x": 1350,
+      "y": 262,
+      "width": 107,
+      "height": 103
     },
     {
-      "text": "وَلَـٰكِنْ",
-      "location": "39:71:29",
-      "x": 792,
-      "y": 1128,
-      "w": 105,
-      "h": 82
+      "location": "39:68:16",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 16,
+      "word_id": 75616,
+      "x": 1262,
+      "y": 257,
+      "width": 67,
+      "height": 166
     },
     {
-      "text": "حَقَّتْ",
-      "location": "39:71:30",
-      "x": 666,
-      "y": 1128,
-      "w": 113,
-      "h": 67
+      "location": "39:68:17",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 17,
+      "word_id": 75617,
+      "x": 1127,
+      "y": 257,
+      "width": 123,
+      "height": 161
     },
     {
-      "text": "كَلِمَةُ",
-      "location": "39:71:31",
-      "x": 528,
-      "y": 1128,
-      "w": 126,
-      "h": 81
+      "location": "39:68:18",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 18,
+      "word_id": 75618,
+      "x": 999,
+      "y": 295,
+      "width": 112,
+      "height": 94
     },
     {
-      "text": "ٱلْعَذَابِ",
-      "location": "39:71:32",
-      "x": 364,
-      "y": 1128,
-      "w": 152,
-      "h": 86
+      "location": "39:68:19",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 19,
+      "word_id": 75619,
+      "x": 797,
+      "y": 247,
+      "width": 186,
+      "height": 139
     },
     {
-      "text": "عَلَى",
-      "location": "39:71:33",
-      "x": 292,
-      "y": 1128,
-      "w": 59,
-      "h": 72
+      "location": "39:68:20",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 20,
+      "word_id": 75620,
+      "x": 665,
+      "y": 265,
+      "width": 118,
+      "height": 131
     },
     {
-      "text": "ٱلْكَـٰفِرِينَ ٧١",
-      "location": "39:71:34",
-      "x": 50,
-      "y": 1128,
-      "w": 230,
-      "h": 96
+      "location": "39:68:21",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 21,
+      "word_id": 75621,
+      "x": 548,
+      "y": 266,
+      "width": 102,
+      "height": 152
     },
     {
-      "text": "قِيلَ",
-      "location": "39:72:1",
-      "x": 1066,
-      "y": 1258,
-      "w": 84,
-      "h": 74
-    },
-    {
-      "text": "ٱدْخُلُوٓا۟",
-      "location": "39:72:2",
-      "x": 905,
-      "y": 1258,
-      "w": 133,
-      "h": 82
-    },
-    {
-      "text": "أَبْوَٰبَ",
-      "location": "39:72:3",
-      "x": 781,
-      "y": 1258,
-      "w": 97,
-      "h": 91
-    },
-    {
-      "text": "جَهَنَّمَ",
-      "location": "39:72:4",
-      "x": 627,
-      "y": 1258,
-      "w": 126,
-      "h": 81
-    },
-    {
-      "text": "خَـٰلِدِينَ",
-      "location": "39:72:5",
-      "x": 454,
-      "y": 1258,
-      "w": 145,
-      "h": 75
-    },
-    {
-      "text": "فِيهَا ۖ",
-      "location": "39:72:6",
-      "x": 334,
-      "y": 1258,
-      "w": 92,
-      "h": 90
-    },
-    {
-      "text": "فَبِئْسَ",
-      "location": "39:72:7",
-      "x": 189,
-      "y": 1258,
-      "w": 118,
-      "h": 78
-    },
-    {
-      "text": "مَثْوَى",
-      "location": "39:72:8",
-      "x": 50,
-      "y": 1258,
-      "w": 111,
-      "h": 70
-    },
-    {
-      "text": "ٱلْمُتَكَبِّرِينَ ٧٢",
-      "location": "39:72:9",
-      "x": 829,
-      "y": 1388,
-      "w": 321,
-      "h": 85
-    },
-    {
-      "text": "وَسِيقَ",
-      "location": "39:73:1",
-      "x": 643,
-      "y": 1388,
-      "w": 132,
-      "h": 63
-    },
-    {
-      "text": "ٱلَّذِينَ",
-      "location": "39:73:2",
-      "x": 483,
-      "y": 1388,
-      "w": 106,
-      "h": 96
-    },
-    {
-      "text": "ٱتَّقَوْا۟",
-      "location": "39:73:3",
-      "x": 329,
-      "y": 1388,
-      "w": 101,
-      "h": 81
-    },
-    {
-      "text": "رَبَّهُمْ",
-      "location": "39:73:4",
-      "x": 170,
-      "y": 1388,
-      "w": 105,
-      "h": 68
-    },
-    {
-      "text": "إِلَى",
-      "location": "39:73:5",
-      "x": 50,
-      "y": 1388,
-      "w": 66,
-      "h": 79
-    },
-    {
-      "text": "ٱلْجَنَّةِ",
-      "location": "39:73:6",
-      "x": 1034,
-      "y": 1518,
-      "w": 116,
-      "h": 81
-    },
-    {
-      "text": "زُمَرًا ۖ",
-      "location": "39:73:7",
-      "x": 929,
-      "y": 1518,
-      "w": 88,
-      "h": 96
-    },
-    {
-      "text": "حَتَّىٰٓ",
-      "location": "39:73:8",
-      "x": 824,
-      "y": 1518,
-      "w": 87,
-      "h": 73
-    },
-    {
-      "text": "إِذَا",
-      "location": "39:73:9",
-      "x": 752,
-      "y": 1518,
-      "w": 55,
-      "h": 78
-    },
-    {
-      "text": "جَآءُوهَا",
-      "location": "39:73:10",
-      "x": 568,
-      "y": 1518,
-      "w": 167,
-      "h": 71
-    },
-    {
-      "text": "وَفُتِحَتْ",
-      "location": "39:73:11",
-      "x": 384,
-      "y": 1518,
-      "w": 166,
-      "h": 78
-    },
-    {
-      "text": "أَبْوَٰبُهَا",
-      "location": "39:73:12",
-      "x": 255,
-      "y": 1518,
-      "w": 112,
-      "h": 88
-    },
-    {
-      "text": "وَقَالَ",
-      "location": "39:73:13",
-      "x": 146,
-      "y": 1518,
-      "w": 91,
-      "h": 73
-    },
-    {
-      "text": "لَهُمْ",
-      "location": "39:73:14",
-      "x": 50,
-      "y": 1518,
-      "w": 79,
-      "h": 75
-    },
-    {
-      "text": "خَزَنَتُهَا",
-      "location": "39:73:15",
-      "x": 1029,
-      "y": 1648,
-      "w": 121,
-      "h": 73
-    },
-    {
-      "text": "سَلَـٰمٌ",
-      "location": "39:73:16",
-      "x": 896,
-      "y": 1648,
-      "w": 108,
-      "h": 70
-    },
-    {
-      "text": "عَلَيْكُمْ",
-      "location": "39:73:17",
-      "x": 683,
-      "y": 1648,
-      "w": 189,
-      "h": 73
-    },
-    {
-      "text": "طِبْتُمْ",
-      "location": "39:73:18",
-      "x": 542,
-      "y": 1648,
-      "w": 116,
-      "h": 64
-    },
-    {
-      "text": "فَٱدْخُلُوهَا",
-      "location": "39:73:19",
-      "x": 319,
-      "y": 1648,
-      "w": 199,
-      "h": 76
-    },
-    {
-      "text": "خَـٰلِدِينَ ٧٣",
-      "location": "39:73:20",
-      "x": 50,
-      "y": 1648,
-      "w": 244,
-      "h": 78
-    },
-    {
-      "text": "وَقَالُوا۟",
-      "location": "39:74:1",
-      "x": 1051,
-      "y": 1777,
-      "w": 99,
-      "h": 84
-    },
-    {
-      "text": "ٱلْحَمْدُ",
-      "location": "39:74:2",
-      "x": 890,
-      "y": 1777,
-      "w": 154,
-      "h": 65
-    },
-    {
-      "text": "لِلَّهِ",
-      "location": "39:74:3",
-      "x": 814,
-      "y": 1777,
-      "w": 69,
-      "h": 75
-    },
-    {
-      "text": "ٱلَّذِى",
-      "location": "39:74:4",
-      "x": 695,
-      "y": 1777,
-      "w": 112,
-      "h": 95
-    },
-    {
-      "text": "صَدَقَنَا",
-      "location": "39:74:5",
-      "x": 532,
-      "y": 1777,
-      "w": 157,
-      "h": 70
-    },
-    {
-      "text": "وَعْدَهُۥ",
-      "location": "39:74:6",
+      "location": "39:68:22",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 22,
+      "word_id": 75622,
       "x": 385,
-      "y": 1777,
-      "w": 140,
-      "h": 64
+      "y": 273,
+      "width": 150,
+      "height": 149
     },
     {
-      "text": "وَأَوْرَثَنَا",
-      "location": "39:74:7",
+      "location": "39:68:23",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 23,
+      "word_id": 75623,
+      "x": 110,
+      "y": 252,
+      "width": 263,
+      "height": 138
+    },
+    {
+      "location": "39:69:1",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 1,
+      "word_id": 75625,
+      "x": 1372,
+      "y": 456,
+      "width": 302,
+      "height": 136
+    },
+    {
+      "location": "39:69:2",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 2,
+      "word_id": 75626,
+      "x": 1111,
+      "y": 455,
+      "width": 236,
+      "height": 134
+    },
+    {
+      "location": "39:69:3",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 3,
+      "word_id": 75627,
+      "x": 950,
+      "y": 475,
+      "width": 150,
+      "height": 132
+    },
+    {
+      "location": "39:69:4",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 4,
+      "word_id": 75628,
+      "x": 805,
+      "y": 476,
+      "width": 139,
+      "height": 130
+    },
+    {
+      "location": "39:69:5",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 5,
+      "word_id": 75629,
+      "x": 577,
+      "y": 466,
+      "width": 216,
+      "height": 160
+    },
+    {
+      "location": "39:69:6",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 6,
+      "word_id": 75630,
+      "x": 326,
+      "y": 462,
+      "width": 244,
+      "height": 128
+    },
+    {
+      "location": "39:69:7",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 7,
+      "word_id": 75631,
+      "x": 99,
+      "y": 462,
+      "width": 217,
+      "height": 140
+    },
+    {
+      "location": "39:68:24",
+      "surah": 39,
+      "ayah": 68,
+      "word_position": 24,
+      "word_id": 75624,
+      "x": 1673,
+      "y": 454,
+      "width": 153,
+      "height": 142
+    },
+    {
+      "location": "39:69:8",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 8,
+      "word_id": 75632,
+      "x": 1563,
+      "y": 663,
+      "width": 261,
+      "height": 149
+    },
+    {
+      "location": "39:69:9",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 9,
+      "word_id": 75633,
+      "x": 1227,
+      "y": 648,
+      "width": 315,
+      "height": 147
+    },
+    {
+      "location": "39:69:10",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 10,
+      "word_id": 75634,
+      "x": 1000,
+      "y": 655,
+      "width": 210,
+      "height": 140
+    },
+    {
+      "location": "39:69:11",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 11,
+      "word_id": 75635,
+      "x": 815,
+      "y": 680,
+      "width": 165,
+      "height": 136
+    },
+    {
+      "location": "39:69:12",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 12,
+      "word_id": 75636,
+      "x": 596,
+      "y": 664,
+      "width": 198,
+      "height": 151
+    },
+    {
+      "location": "39:69:13",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 13,
+      "word_id": 75637,
+      "x": 450,
+      "y": 664,
+      "width": 137,
+      "height": 152
+    },
+    {
+      "location": "39:69:14",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 14,
+      "word_id": 75638,
+      "x": 369,
+      "y": 663,
+      "width": 65,
+      "height": 103
+    },
+    {
+      "location": "39:69:15",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 15,
+      "word_id": 75639,
+      "x": 114,
+      "y": 659,
+      "width": 241,
+      "height": 133
+    },
+    {
+      "location": "39:70:1",
+      "surah": 39,
+      "ayah": 70,
+      "word_position": 1,
+      "word_id": 75641,
+      "x": 1434,
+      "y": 872,
+      "width": 243,
+      "height": 132
+    },
+    {
+      "location": "39:70:2",
+      "surah": 39,
+      "ayah": 70,
+      "word_position": 2,
+      "word_id": 75642,
+      "x": 1334,
+      "y": 842,
+      "width": 87,
+      "height": 150
+    },
+    {
+      "location": "39:70:3",
+      "surah": 39,
+      "ayah": 70,
+      "word_position": 3,
+      "word_id": 75643,
+      "x": 1176,
+      "y": 869,
+      "width": 155,
+      "height": 144
+    },
+    {
+      "location": "39:70:4",
+      "surah": 39,
+      "ayah": 70,
+      "word_position": 4,
+      "word_id": 75644,
+      "x": 1105,
+      "y": 876,
+      "width": 63,
+      "height": 89
+    },
+    {
+      "location": "39:70:5",
+      "surah": 39,
+      "ayah": 70,
+      "word_position": 5,
+      "word_id": 75645,
+      "x": 876,
+      "y": 867,
+      "width": 220,
+      "height": 124
+    },
+    {
+      "location": "39:70:6",
+      "surah": 39,
+      "ayah": 70,
+      "word_position": 6,
+      "word_id": 75646,
+      "x": 714,
+      "y": 869,
+      "width": 153,
+      "height": 123
+    },
+    {
+      "location": "39:70:7",
+      "surah": 39,
+      "ayah": 70,
+      "word_position": 7,
+      "word_id": 75647,
+      "x": 585,
+      "y": 855,
+      "width": 130,
+      "height": 162
+    },
+    {
+      "location": "39:70:8",
+      "surah": 39,
+      "ayah": 70,
+      "word_position": 8,
+      "word_id": 75648,
+      "x": 485,
+      "y": 886,
+      "width": 89,
+      "height": 116
+    },
+    {
+      "location": "39:70:9",
+      "surah": 39,
+      "ayah": 70,
+      "word_position": 9,
+      "word_id": 75649,
+      "x": 266,
+      "y": 861,
+      "width": 212,
+      "height": 133
+    },
+    {
+      "location": "39:70:10",
+      "surah": 39,
+      "ayah": 70,
+      "word_position": 10,
+      "word_id": 75650,
+      "x": 99,
+      "y": 856,
+      "width": 153,
+      "height": 142
+    },
+    {
+      "location": "39:69:16",
+      "surah": 39,
+      "ayah": 69,
+      "word_position": 16,
+      "word_id": 75640,
+      "x": 1676,
+      "y": 856,
+      "width": 153,
+      "height": 142
+    },
+    {
+      "location": "39:71:1",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 1,
+      "word_id": 75651,
+      "x": 1606,
+      "y": 1087,
+      "width": 221,
+      "height": 111
+    },
+    {
+      "location": "39:71:2",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 2,
+      "word_id": 75652,
+      "x": 1426,
+      "y": 1048,
+      "width": 169,
+      "height": 145
+    },
+    {
+      "location": "39:71:3",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 3,
+      "word_id": 75653,
+      "x": 1061,
+      "y": 1070,
+      "width": 350,
+      "height": 123
+    },
+    {
+      "location": "39:71:4",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 4,
+      "word_id": 75654,
+      "x": 954,
+      "y": 1069,
+      "width": 96,
+      "height": 137
+    },
+    {
+      "location": "39:71:5",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 5,
+      "word_id": 75655,
+      "x": 745,
+      "y": 1067,
+      "width": 194,
+      "height": 169
+    },
+    {
+      "location": "39:71:6",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 6,
+      "word_id": 75656,
+      "x": 601,
+      "y": 1059,
+      "width": 140,
+      "height": 137
+    },
+    {
+      "location": "39:71:7",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 7,
+      "word_id": 75657,
+      "x": 598,
+      "y": 1032,
+      "width": 4,
+      "height": 37
+    },
+    {
+      "location": "39:71:8",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 8,
+      "word_id": 75658,
+      "x": 449,
+      "y": 1071,
+      "width": 147,
+      "height": 127
+    },
+    {
+      "location": "39:71:9",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 9,
+      "word_id": 75659,
+      "x": 360,
+      "y": 1066,
+      "width": 76,
+      "height": 135
+    },
+    {
+      "location": "39:71:10",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 10,
+      "word_id": 75660,
+      "x": 110,
+      "y": 1063,
+      "width": 236,
+      "height": 123
+    },
+    {
+      "location": "39:71:11",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 11,
+      "word_id": 75661,
+      "x": 1603,
+      "y": 1262,
+      "width": 225,
+      "height": 132
+    },
+    {
+      "location": "39:71:12",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 12,
+      "word_id": 75662,
+      "x": 1356,
+      "y": 1252,
+      "width": 223,
+      "height": 143
+    },
+    {
+      "location": "39:71:13",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 13,
+      "word_id": 75663,
+      "x": 1182,
+      "y": 1261,
+      "width": 163,
+      "height": 128
+    },
+    {
+      "location": "39:71:14",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 14,
+      "word_id": 75664,
+      "x": 1025,
+      "y": 1269,
+      "width": 145,
+      "height": 157
+    },
+    {
+      "location": "39:71:15",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 15,
+      "word_id": 75665,
+      "x": 754,
+      "y": 1268,
+      "width": 250,
+      "height": 133
+    },
+    {
+      "location": "39:71:16",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 16,
+      "word_id": 75666,
+      "x": 654,
+      "y": 1262,
+      "width": 97,
+      "height": 164
+    },
+    {
+      "location": "39:71:17",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 17,
+      "word_id": 75667,
+      "x": 439,
+      "y": 1257,
+      "width": 193,
+      "height": 168
+    },
+    {
+      "location": "39:71:18",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 18,
+      "word_id": 75668,
+      "x": 260,
+      "y": 1263,
+      "width": 171,
+      "height": 134
+    },
+    {
+      "location": "39:71:19",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 19,
+      "word_id": 75669,
+      "x": 109,
+      "y": 1257,
+      "width": 141,
+      "height": 191
+    },
+    {
+      "location": "39:71:20",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 20,
+      "word_id": 75670,
+      "x": 1644,
+      "y": 1458,
+      "width": 178,
+      "height": 141
+    },
+    {
+      "location": "39:71:21",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 21,
+      "word_id": 75671,
+      "x": 1419,
+      "y": 1457,
+      "width": 215,
+      "height": 170
+    },
+    {
+      "location": "39:71:22",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 22,
+      "word_id": 75672,
+      "x": 1196,
+      "y": 1481,
+      "width": 197,
+      "height": 118
+    },
+    {
+      "location": "39:71:23",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 23,
+      "word_id": 75673,
+      "x": 974,
+      "y": 1453,
+      "width": 208,
+      "height": 175
+    },
+    {
+      "location": "39:71:24",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 24,
+      "word_id": 75674,
+      "x": 553,
+      "y": 1447,
+      "width": 405,
+      "height": 179
+    },
+    {
+      "location": "39:71:25",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 25,
+      "word_id": 75675,
+      "x": 353,
+      "y": 1473,
+      "width": 164,
+      "height": 122
+    },
+    {
+      "location": "39:71:26",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 26,
+      "word_id": 75676,
+      "x": 127,
+      "y": 1451,
+      "width": 212,
+      "height": 180
+    },
+    {
+      "location": "39:71:27",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 27,
+      "word_id": 75677,
+      "x": 1694,
+      "y": 1674,
+      "width": 136,
+      "height": 97
+    },
+    {
+      "location": "39:71:29",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 29,
+      "word_id": 75679,
+      "x": 1542,
+      "y": 1657,
+      "width": 131,
+      "height": 138
+    },
+    {
+      "location": "39:71:30",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 30,
+      "word_id": 75680,
+      "x": 1430,
+      "y": 1682,
+      "width": 87,
+      "height": 119
+    },
+    {
+      "location": "39:71:31",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 31,
+      "word_id": 75681,
+      "x": 1218,
+      "y": 1667,
+      "width": 201,
+      "height": 129
+    },
+    {
+      "location": "39:71:32",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 32,
+      "word_id": 75682,
+      "x": 998,
+      "y": 1664,
+      "width": 202,
+      "height": 110
+    },
+    {
+      "location": "39:71:33",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 33,
+      "word_id": 75683,
+      "x": 830,
+      "y": 1661,
+      "width": 146,
+      "height": 133
+    },
+    {
+      "location": "39:71:34",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 34,
+      "word_id": 75684,
+      "x": 543,
+      "y": 1667,
+      "width": 266,
+      "height": 140
+    },
+    {
+      "location": "39:71:35",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 35,
+      "word_id": 75685,
+      "x": 414,
+      "y": 1681,
+      "width": 113,
+      "height": 119
+    },
+    {
+      "location": "39:71:36",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 36,
+      "word_id": 75686,
+      "x": 106,
+      "y": 1665,
+      "width": 294,
+      "height": 152
+    },
+    {
+      "location": "39:72:1",
+      "surah": 39,
+      "ayah": 72,
+      "word_position": 1,
+      "word_id": 75688,
+      "x": 1520,
+      "y": 1874,
+      "width": 157,
+      "height": 131
+    },
+    {
+      "location": "39:72:2",
+      "surah": 39,
+      "ayah": 72,
+      "word_position": 2,
+      "word_id": 75689,
+      "x": 1304,
+      "y": 1866,
+      "width": 204,
+      "height": 132
+    },
+    {
+      "location": "39:72:3",
+      "surah": 39,
+      "ayah": 72,
+      "word_position": 3,
+      "word_id": 75690,
+      "x": 1104,
+      "y": 1861,
+      "width": 189,
+      "height": 137
+    },
+    {
+      "location": "39:72:4",
+      "surah": 39,
+      "ayah": 72,
+      "word_position": 4,
+      "word_id": 75691,
+      "x": 869,
+      "y": 1872,
+      "width": 224,
+      "height": 121
+    },
+    {
+      "location": "39:72:5",
+      "surah": 39,
+      "ayah": 72,
+      "word_position": 5,
+      "word_id": 75692,
+      "x": 630,
+      "y": 1876,
+      "width": 240,
+      "height": 123
+    },
+    {
+      "location": "39:72:6",
+      "surah": 39,
+      "ayah": 72,
+      "word_position": 6,
+      "word_id": 75693,
+      "x": 480,
+      "y": 1889,
+      "width": 139,
+      "height": 113
+    },
+    {
+      "location": "39:72:7",
+      "surah": 39,
+      "ayah": 72,
+      "word_position": 7,
+      "word_id": 75694,
+      "x": 466,
+      "y": 1850,
+      "width": 5,
+      "height": 37
+    },
+    {
+      "location": "39:72:8",
+      "surah": 39,
+      "ayah": 72,
+      "word_position": 8,
+      "word_id": 75695,
+      "x": 275,
+      "y": 1873,
+      "width": 190,
+      "height": 138
+    },
+    {
+      "location": "39:72:9",
+      "surah": 39,
+      "ayah": 72,
+      "word_position": 9,
+      "word_id": 75696,
+      "x": 105,
+      "y": 1881,
+      "width": 167,
+      "height": 119
+    },
+    {
+      "location": "39:71:37",
+      "surah": 39,
+      "ayah": 71,
+      "word_position": 37,
+      "word_id": 75687,
+      "x": 1676,
+      "y": 1861,
+      "width": 153,
+      "height": 142
+    },
+    {
+      "location": "39:73:1",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 1,
+      "word_id": 75699,
+      "x": 849,
+      "y": 2088,
+      "width": 241,
+      "height": 112
+    },
+    {
+      "location": "39:73:2",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 2,
+      "word_id": 75700,
+      "x": 581,
+      "y": 2052,
+      "width": 249,
+      "height": 144
+    },
+    {
+      "location": "39:73:3",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 3,
+      "word_id": 75701,
+      "x": 398,
+      "y": 2061,
+      "width": 163,
+      "height": 138
+    },
+    {
+      "location": "39:73:4",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 4,
+      "word_id": 75702,
       "x": 219,
-      "y": 1777,
-      "w": 159,
-      "h": 85
+      "y": 2069,
+      "width": 164,
+      "height": 159
     },
     {
-      "text": "ٱلْأَرْضَ",
+      "location": "39:73:5",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 5,
+      "word_id": 75703,
+      "x": 112,
+      "y": 2075,
+      "width": 90,
+      "height": 134
+    },
+    {
+      "location": "39:72:10",
+      "surah": 39,
+      "ayah": 72,
+      "word_position": 10,
+      "word_id": 75697,
+      "x": 1263,
+      "y": 2077,
+      "width": 563,
+      "height": 130
+    },
+    {
+      "location": "39:72:11",
+      "surah": 39,
+      "ayah": 72,
+      "word_position": 11,
+      "word_id": 75698,
+      "x": 1089,
+      "y": 2062,
+      "width": 153,
+      "height": 142
+    },
+    {
+      "location": "39:73:6",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 6,
+      "word_id": 75704,
+      "x": 1630,
+      "y": 2268,
+      "width": 196,
+      "height": 125
+    },
+    {
+      "location": "39:73:7",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 7,
+      "word_id": 75705,
+      "x": 1463,
+      "y": 2270,
+      "width": 152,
+      "height": 132
+    },
+    {
+      "location": "39:73:8",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 8,
+      "word_id": 75706,
+      "x": 1447,
+      "y": 2244,
+      "width": 11,
+      "height": 37
+    },
+    {
+      "location": "39:73:9",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 9,
+      "word_id": 75707,
+      "x": 1303,
+      "y": 2266,
+      "width": 149,
+      "height": 139
+    },
+    {
+      "location": "39:73:10",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 10,
+      "word_id": 75708,
+      "x": 1203,
+      "y": 2269,
+      "width": 78,
+      "height": 138
+    },
+    {
+      "location": "39:73:11",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 11,
+      "word_id": 75709,
+      "x": 944,
+      "y": 2274,
+      "width": 244,
+      "height": 118
+    },
+    {
+      "location": "39:73:12",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 12,
+      "word_id": 75710,
+      "x": 663,
+      "y": 2267,
+      "width": 269,
+      "height": 132
+    },
+    {
+      "location": "39:73:13",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 13,
+      "word_id": 75711,
+      "x": 428,
+      "y": 2261,
+      "width": 208,
+      "height": 139
+    },
+    {
+      "location": "39:73:14",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 14,
+      "word_id": 75712,
+      "x": 265,
+      "y": 2271,
+      "width": 149,
+      "height": 121
+    },
+    {
+      "location": "39:73:15",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 15,
+      "word_id": 75713,
+      "x": 107,
+      "y": 2266,
+      "width": 141,
+      "height": 117
+    },
+    {
+      "location": "39:73:16",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 16,
+      "word_id": 75714,
+      "x": 1590,
+      "y": 2475,
+      "width": 232,
+      "height": 131
+    },
+    {
+      "location": "39:73:17",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 17,
+      "word_id": 75715,
+      "x": 1407,
+      "y": 2471,
+      "width": 169,
+      "height": 155
+    },
+    {
+      "location": "39:73:18",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 18,
+      "word_id": 75716,
+      "x": 1050,
+      "y": 2472,
+      "width": 337,
+      "height": 153
+    },
+    {
+      "location": "39:73:19",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 19,
+      "word_id": 75717,
+      "x": 851,
+      "y": 2478,
+      "width": 191,
+      "height": 125
+    },
+    {
+      "location": "39:73:20",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 20,
+      "word_id": 75718,
+      "x": 550,
+      "y": 2463,
+      "width": 287,
+      "height": 136
+    },
+    {
+      "location": "39:73:21",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 21,
+      "word_id": 75719,
+      "x": 290,
+      "y": 2475,
+      "width": 249,
+      "height": 130
+    },
+    {
+      "location": "39:73:22",
+      "surah": 39,
+      "ayah": 73,
+      "word_position": 22,
+      "word_id": 75720,
+      "x": 101,
+      "y": 2464,
+      "width": 153,
+      "height": 142
+    },
+    {
+      "location": "39:74:1",
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 1,
+      "word_id": 75721,
+      "x": 1593,
+      "y": 2663,
+      "width": 233,
+      "height": 139
+    },
+    {
+      "location": "39:74:2",
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 2,
+      "word_id": 75722,
+      "x": 1302,
+      "y": 2671,
+      "width": 263,
+      "height": 106
+    },
+    {
+      "location": "39:74:3",
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 3,
+      "word_id": 75723,
+      "x": 1195,
+      "y": 2675,
+      "width": 93,
+      "height": 123
+    },
+    {
+      "location": "39:74:4",
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 4,
+      "word_id": 75724,
+      "x": 1005,
+      "y": 2650,
+      "width": 177,
+      "height": 149
+    },
+    {
+      "location": "39:74:5",
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 5,
+      "word_id": 75725,
+      "x": 739,
+      "y": 2670,
+      "width": 254,
+      "height": 110
+    },
+    {
+      "location": "39:74:6",
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 6,
+      "word_id": 75726,
+      "x": 550,
+      "y": 2680,
+      "width": 185,
+      "height": 118
+    },
+    {
+      "location": "39:74:7",
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 7,
+      "word_id": 75727,
+      "x": 331,
+      "y": 2661,
+      "width": 203,
+      "height": 141
+    },
+    {
       "location": "39:74:8",
-      "x": 50,
-      "y": 1777,
-      "w": 162,
-      "h": 83
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 8,
+      "word_id": 75728,
+      "x": 102,
+      "y": 2659,
+      "width": 206,
+      "height": 135
     },
     {
-      "text": "نَتَبَوَّأُ",
       "location": "39:74:9",
-      "x": 1038,
-      "y": 1907,
-      "w": 112,
-      "h": 96
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 9,
+      "word_id": 75729,
+      "x": 1640,
+      "y": 2852,
+      "width": 186,
+      "height": 151
     },
     {
-      "text": "مِنَ",
       "location": "39:74:10",
-      "x": 930,
-      "y": 1907,
-      "w": 91,
-      "h": 46
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 10,
+      "word_id": 75730,
+      "x": 1484,
+      "y": 2888,
+      "width": 166,
+      "height": 115
     },
     {
-      "text": "ٱلْجَنَّةِ",
       "location": "39:74:11",
-      "x": 772,
-      "y": 1907,
-      "w": 141,
-      "h": 72
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 11,
+      "word_id": 75731,
+      "x": 1253,
+      "y": 2867,
+      "width": 212,
+      "height": 130
     },
     {
-      "text": "حَيْثُ",
       "location": "39:74:12",
-      "x": 642,
-      "y": 1907,
-      "w": 113,
-      "h": 63
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 12,
+      "word_id": 75732,
+      "x": 1068,
+      "y": 2878,
+      "width": 178,
+      "height": 119
     },
     {
-      "text": "نَشَآءُ ۖ",
       "location": "39:74:13",
-      "x": 526,
-      "y": 1907,
-      "w": 99,
-      "h": 87
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 13,
+      "word_id": 75733,
+      "x": 899,
+      "y": 2877,
+      "width": 156,
+      "height": 104
     },
     {
-      "text": "فَنِعْمَ",
-      "location": "39:74:14",
-      "x": 403,
-      "y": 1907,
-      "w": 106,
-      "h": 70
-    },
-    {
-      "text": "أَجْرُ",
       "location": "39:74:15",
-      "x": 292,
-      "y": 1907,
-      "w": 94,
-      "h": 84
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 15,
+      "word_id": 75735,
+      "x": 733,
+      "y": 2871,
+      "width": 156,
+      "height": 163
     },
     {
-      "text": "ٱلْعَـٰمِلِينَ ٧٤",
       "location": "39:74:16",
-      "x": 50,
-      "y": 1907,
-      "w": 225,
-      "h": 86
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 16,
+      "word_id": 75736,
+      "x": 573,
+      "y": 2864,
+      "width": 143,
+      "height": 146
+    },
+    {
+      "location": "39:74:17",
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 17,
+      "word_id": 75737,
+      "x": 294,
+      "y": 2875,
+      "width": 268,
+      "height": 137
+    },
+    {
+      "location": "39:74:18",
+      "surah": 39,
+      "ayah": 74,
+      "word_position": 18,
+      "word_id": 75738,
+      "x": 102,
+      "y": 2866,
+      "width": 153,
+      "height": 142
     }
   ]
 }
