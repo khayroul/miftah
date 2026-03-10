@@ -7,12 +7,27 @@ function clamp(value: number, min: number, max: number): number {
 function resolveBoundaryAtAyahEnd(
   ayahBottomsAscending: number[],
   targetY: number,
+  minY = 1,
 ): number {
-  const nextAyahEnd = ayahBottomsAscending.find((bottom) => bottom >= targetY);
-  if (typeof nextAyahEnd === "number") {
-    return nextAyahEnd;
+  const candidates = ayahBottomsAscending.filter((bottom) => bottom >= minY);
+  if (candidates.length === 0) {
+    return ayahBottomsAscending[ayahBottomsAscending.length - 1] ?? targetY;
   }
-  return ayahBottomsAscending[ayahBottomsAscending.length - 1] ?? targetY;
+
+  let atOrBelowTarget: number | null = null;
+  for (const bottom of candidates) {
+    if (bottom <= targetY) {
+      atOrBelowTarget = bottom;
+      continue;
+    }
+    break;
+  }
+
+  if (atOrBelowTarget !== null) {
+    return atOrBelowTarget;
+  }
+
+  return candidates[0];
 }
 
 export function resolveApproxThirdBoundariesByAyahEnd(
@@ -26,7 +41,11 @@ export function resolveApproxThirdBoundariesByAyahEnd(
   const firstTargetY = imageHeight / 3;
   const secondTargetY = (imageHeight * 2) / 3;
   const firstRaw = resolveBoundaryAtAyahEnd(ayahBottomsAscending, firstTargetY);
-  const secondRaw = resolveBoundaryAtAyahEnd(ayahBottomsAscending, secondTargetY);
+  const secondRaw = resolveBoundaryAtAyahEnd(
+    ayahBottomsAscending,
+    secondTargetY,
+    firstRaw + 1,
+  );
 
   const firstBoundaryY = clamp(firstRaw, 1, imageHeight);
   const secondBoundaryY = clamp(Math.max(secondRaw, firstBoundaryY), 1, imageHeight);
