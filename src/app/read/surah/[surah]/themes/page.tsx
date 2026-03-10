@@ -119,11 +119,11 @@ export default async function SurahThemeAppearancePage({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {surahNumber > 1 ? (
               <Link
                 href={`/read/surah/${surahNumber - 1}/themes`}
-                className="rounded-full bg-stone-100 px-4 py-1.5 text-sm font-medium text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
               >
                 Prev Surah
               </Link>
@@ -131,7 +131,7 @@ export default async function SurahThemeAppearancePage({
             {surahNumber < 114 ? (
               <Link
                 href={`/read/surah/${surahNumber + 1}/themes`}
-                className="rounded-full bg-stone-100 px-4 py-1.5 text-sm font-medium text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
               >
                 Next Surah
               </Link>
@@ -176,11 +176,11 @@ export default async function SurahThemeAppearancePage({
                 </header>
 
                 {/* Ayat List */}
-                <div className="space-y-12 pb-8">
+                <div className="space-y-16 pb-8">
                   {selectedChunk.ayat.map((ayah) => (
-                    <div key={ayah.id} className="relative group/ayah">
+                    <div key={ayah.id} className="relative group/ayah flex flex-col gap-6">
                       {/* Ayat Indicator */}
-                      <div className="absolute -left-12 top-2 hidden w-8 text-right text-sm font-medium text-stone-300 sm:block dark:text-stone-600">
+                      <div className="absolute -left-4 sm:-left-12 top-0 flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 bg-stone-50 text-xs font-semibold text-stone-500 shadow-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
                         {ayah.ayah_number}
                       </div>
 
@@ -211,11 +211,12 @@ export default async function SurahThemeAppearancePage({
                       )}
 
                       {/* Full Translation */}
-                      <div className="mt-8 sm:pl-0 border-l-2 border-stone-100 pl-4 py-1 dark:border-stone-800 hover:border-stone-300 dark:hover:border-stone-700 transition-colors">
-                        <p className="text-base leading-relaxed text-stone-700 dark:text-stone-300">
-                          <span className="mr-2 font-medium text-stone-400 sm:hidden">{ayah.ayah_number}.</span>
-                          {ayah.display_bm ?? "Terjemahan BM belum tersedia."}
-                        </p>
+                      <div className="mt-2 pl-6 sm:pl-0">
+                        <div className="rounded-xl border border-stone-100 bg-stone-50/50 p-4 sm:p-5 dark:border-stone-800/80 dark:bg-stone-800/20">
+                          <p className="text-[15px] leading-relaxed text-stone-700 dark:text-stone-300">
+                            {ayah.display_bm ?? "Terjemahan BM belum tersedia."}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -225,55 +226,57 @@ export default async function SurahThemeAppearancePage({
           </section>
 
           {/* Theme Navigation Bottom Bar */}
-          <nav className="sticky bottom-4 z-10 mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-stone-200/50 bg-white/80 p-3 backdrop-blur-xl shadow-lg shadow-black/5 dark:border-stone-800/80 dark:bg-stone-900/80">
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+          <nav className="sticky bottom-6 z-10 mx-auto w-full max-w-2xl mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-full border border-stone-200/80 bg-white/90 px-4 py-3 backdrop-blur-xl shadow-xl shadow-black/5 dark:border-stone-700/80 dark:bg-stone-900/90">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               {selectedChunkIndex > 1 ? (
                 <Link
                   href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex - 1}`}
-                  className="flex flex-1 items-center justify-center rounded-xl bg-stone-50 px-5 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                  className="flex flex-1 items-center justify-center rounded-full border border-stone-200 bg-stone-50 px-5 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
                 >
                   &larr; Prev
                 </Link>
               ) : (
-                <span className="flex flex-1 items-center justify-center rounded-xl bg-stone-50/50 px-5 py-2.5 text-sm font-medium text-stone-400 dark:bg-stone-800/30 dark:text-stone-600">
+                <span className="flex flex-1 items-center justify-center rounded-full border border-stone-100 bg-stone-50/50 px-5 py-2 text-sm font-medium text-stone-400 dark:border-stone-800 dark:bg-stone-800/30 dark:text-stone-600">
                   &larr; Prev
                 </span>
               )}
               {selectedChunkIndex < chunks.length ? (
                 <Link
                   href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex + 1}`}
-                  className="flex flex-1 items-center justify-center rounded-xl bg-stone-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
+                  className="flex flex-1 items-center justify-center rounded-full bg-stone-900 px-5 py-2 text-sm font-medium text-white shadow-md transition hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
                 >
-                  Next &rarr;
+                  Next Theme &rarr;
                 </Link>
               ) : (
-                <span className="flex flex-1 items-center justify-center rounded-xl bg-stone-100 px-5 py-2.5 text-sm font-medium text-stone-400 dark:bg-stone-800 dark:text-stone-600">
-                  Next &rarr;
+                <span className="flex flex-1 items-center justify-center rounded-full bg-stone-100 px-5 py-2 text-sm font-medium text-stone-400 dark:bg-stone-800 dark:text-stone-600">
+                  Next Theme &rarr;
                 </span>
               )}
             </div>
 
-            <form method="get" className="hidden sm:flex items-center gap-2">
+            <form method="get" className="hidden sm:flex items-center gap-3 pr-2">
               <label className="text-sm font-medium text-stone-500 dark:text-stone-400">
-                Jump to Theme
+                Jump to
               </label>
-              <select
-                name="chunk"
-                defaultValue={String(selectedChunkIndex)}
-                className="max-w-[15rem] truncate rounded-xl border border-stone-200 bg-white/50 px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 dark:border-stone-700 dark:bg-stone-900/50 dark:text-stone-100"
-              >
-                {chunks.map((chunk) => (
-                  <option key={chunk.chunk_index} value={chunk.chunk_index}>
-                    {chunk.chunk_index}. {chunkTitleBm(chunk)}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="submit"
-                className="rounded-xl bg-stone-100 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-              >
-                Go
-              </button>
+              <div className="flex items-center gap-2">
+                <select
+                  name="chunk"
+                  defaultValue={String(selectedChunkIndex)}
+                  className="max-w-[12rem] truncate rounded-lg border border-stone-200 bg-stone-50 px-2 py-1.5 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                >
+                  {chunks.map((chunk) => (
+                    <option key={chunk.chunk_index} value={chunk.chunk_index}>
+                      {chunk.chunk_index}. {chunkTitleBm(chunk)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="submit"
+                  className="rounded-lg bg-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-300 dark:bg-stone-700 dark:text-stone-200 dark:hover:bg-stone-600"
+                >
+                  Go
+                </button>
+              </div>
             </form>
           </nav>
         </div>
