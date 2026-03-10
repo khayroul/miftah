@@ -12,7 +12,7 @@ type RangePreset = "page" | "surah" | "juz";
 type RepeatOption = 1 | 2 | 3 | -1;
 
 const RANGE_PRESETS: Array<{ value: RangePreset; label: string }> = [
-  { value: "page", label: "Page" },
+  { value: "page", label: "Halaman" },
   { value: "surah", label: "Surah" },
   { value: "juz", label: "Juz" },
 ];
@@ -25,12 +25,12 @@ function clamp(value: number, min: number, max: number): number {
 
 function repeatLabel(value: RepeatOption): string {
   if (value === -1) {
-    return "loop";
+    return "ulang tanpa henti";
   }
   if (value === 1) {
-    return "1 time";
+    return "1 kali";
   }
-  return `${value} times`;
+  return `${value} kali`;
 }
 
 function formatTrackLabel(track: ReadAudioTrack): string {
@@ -272,7 +272,7 @@ export function ReadAudioDock({
               onClick={togglePlayback}
               disabled={!canPlay}
               className="grid h-11 w-11 place-items-center rounded-full border border-teal-300 bg-teal-50 text-teal-800 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-teal-700/60 dark:bg-teal-900/35 dark:text-teal-100 dark:hover:bg-teal-900/55"
-              aria-label={isPlaying ? "Pause audio" : "Play audio"}
+              aria-label={isPlaying ? "Jeda audio" : "Mainkan audio"}
             >
               {isPlaying ? (
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -330,7 +330,7 @@ export function ReadAudioDock({
 
               <div>
                 <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
-                  Adjust End Verse To The End Of The
+                  Laraskan julat hingga hujung
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {RANGE_PRESETS.map((preset) => {
@@ -355,7 +355,7 @@ export function ReadAudioDock({
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <label className="text-xs text-stone-600 dark:text-stone-300">
-                  From
+                  Dari
                   <select
                     value={String(normalizedRangeStart)}
                     onChange={(event) => {
@@ -373,7 +373,7 @@ export function ReadAudioDock({
                 </label>
 
                 <label className="text-xs text-stone-600 dark:text-stone-300">
-                  To
+                  Hingga
                   <select
                     value={String(normalizedRangeEnd)}
                     onChange={(event) =>
@@ -392,13 +392,13 @@ export function ReadAudioDock({
 
               {rangeSummary ? (
                 <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
-                  Playing: {rangeSummary}
+                  Sedang dimainkan: {rangeSummary}
                 </p>
               ) : null}
 
               <div className="mt-4">
                 <SegmentedRepeat
-                  title="Play each verse"
+                  title="Ulang setiap ayat"
                   value={repeatEachVerse}
                   onChange={(next) => {
                     setRepeatEachVerse(next);
@@ -409,7 +409,7 @@ export function ReadAudioDock({
 
               <div className="mt-4">
                 <SegmentedRepeat
-                  title="Play set of verses"
+                  title="Ulang set ayat"
                   value={repeatSet}
                   onChange={(next) => {
                     setRepeatSet(next);
@@ -425,7 +425,7 @@ export function ReadAudioDock({
                   disabled={safeIndex <= normalizedRangeStart}
                   className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
                 >
-                  Prev Ayah
+                  Ayat Sebelum
                 </button>
                 <button
                   type="button"
@@ -433,7 +433,7 @@ export function ReadAudioDock({
                   disabled={safeIndex >= normalizedRangeEnd}
                   className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
                 >
-                  Next Ayah
+                  Ayat Seterusnya
                 </button>
               </div>
 

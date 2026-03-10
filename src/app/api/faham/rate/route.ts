@@ -6,7 +6,7 @@ import { logVocabReview } from "@/lib/faham/review-log";
 import { fahamRateRequestSchema } from "@/lib/faham/schemas";
 import {
   getVocabProgressById,
-  updateVocabFsrs,
+  updateVocabProgressAfterReview,
 } from "@/lib/faham/vocab-progress";
 import type { FsrsState } from "@/types/database";
 import { ZodError } from "zod";
@@ -30,13 +30,21 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (!progress) {
       return NextResponse.json({ error: "Progress not found" }, { status: 404 });
     }
+    if (progress.user_id !== userId) {
+      return NextResponse.json({ error: "Progress not found" }, { status: 404 });
+    }
 
     const now = new Date();
     const card = dbRowToCard(progress);
     const result = applyRating(card, body.rating as Grade, now);
     const nextCard = result.card;
 
-    await updateVocabFsrs(progress.id, cardToDbRow(nextCard));
+    await updateVocabProgressAfterReview(progress.id, {
+      ...cardToDbRow(nextCard),
+      lastIncorrectAt: body.rating === 1 ? now.toISOString() : null,
+      mistakeStreak: body.rating === 1 ? progress.mistake_streak + 1 : 0,
+      needsReinforcement: body.rating === 1,
+    });
     await logVocabReview({
       elapsedDays: nextCard.elapsed_days,
       itemId: progress.word_id,

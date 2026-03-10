@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useReadMode } from "@/lib/useReadMode";
 import type { ReadMode } from "@/lib/readMode";
 
@@ -26,7 +26,24 @@ export function ReadModeTools({
   showJumpControls,
   onToggleJumpControls,
 }: ReadModeToolsProps) {
+  const router = useRouter();
   const { mode, setMode } = useReadMode();
+
+  const handleModeChange = (nextMode: ReadMode) => {
+    if (nextMode === "faham") {
+      setMode(nextMode);
+      router.push("/faham");
+      return;
+    }
+
+    if (nextMode === "tema") {
+      setMode(nextMode);
+      router.push(`/read/surah/${themeSurahId}/themes`);
+      return;
+    }
+
+    setMode(nextMode);
+  };
 
   return (
     <section className="space-y-4">
@@ -41,7 +58,7 @@ export function ReadModeTools({
               <button
                 key={item.value}
                 type="button"
-                onClick={() => setMode(item.value)}
+                onClick={() => handleModeChange(item.value)}
                 className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
                   active
                     ? "bg-stone-900 text-stone-50 shadow-md dark:bg-stone-100 dark:text-stone-900"
@@ -56,19 +73,19 @@ export function ReadModeTools({
 
         {mode === "read" ? (
           <p className="text-xs font-medium text-stone-400 dark:text-stone-500 sm:ml-2">
-            Mushaf kekal minimal untuk tilawah.
+            Paparan mushaf kekal ringkas untuk bacaan.
           </p>
         ) : mode === "faham" ? (
           <p className="text-xs font-medium text-stone-400 dark:text-stone-500 sm:ml-2">
-            Tap perkataan untuk makna segera, kemudian buka engine Faham untuk drill.
+            Ketik perkataan untuk lihat makna ringkas.
           </p>
         ) : mode === "tema" ? (
           <p className="text-xs font-medium text-stone-400 dark:text-stone-500 sm:ml-2">
-            Fokus alur surah dan tema ayat melalui paparan chunk.
+            Tema membawa terus ke halaman surah bertema.
           </p>
         ) : (
           <p className="text-xs font-medium text-stone-400 dark:text-stone-500 sm:ml-2">
-            Tap halaman mushaf untuk buka panel audio di bawah.
+            Mod Hafal mengekalkan mushaf dan kawalan hafalan pada halaman ini.
           </p>
         )}
       </div>
@@ -83,76 +100,25 @@ export function ReadModeTools({
               : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
           }`}
         >
-          {showJumpControls ? "Hide Jump-To" : "Show Jump-To"}
+          {showJumpControls ? "Sembunyikan lompat" : "Buka lompat"}
         </button>
 
-        {mode === "read" ? (
-          <Link
-            href="/faham"
-            className="rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 shadow-sm transition hover:bg-amber-100 dark:border-amber-700/50 dark:bg-amber-900/25 dark:text-amber-100 dark:hover:bg-amber-900/40"
-          >
-            Masuk Faham
-          </Link>
-        ) : null}
-
-        {mode === "faham" ? (
-          <>
-            <Link
-              href="/faham"
-              className="rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 shadow-sm transition hover:bg-amber-100 dark:border-amber-700/50 dark:bg-amber-900/25 dark:text-amber-100 dark:hover:bg-amber-900/40"
-            >
-              Faham Engine
-            </Link>
-            <Link
-              href={`/read/surah/${themeSurahId}/themes`}
-              className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-            >
-              Buka Tema
-            </Link>
-          </>
-        ) : null}
-
-        {mode === "tema" ? (
-          <>
-            <Link
-              href={`/read/surah/${themeSurahId}/themes`}
-              className="rounded-full border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-900 shadow-sm transition hover:bg-indigo-100 dark:border-indigo-700/40 dark:bg-indigo-900/25 dark:text-indigo-100 dark:hover:bg-indigo-900/40"
-            >
-              Tema Surah
-            </Link>
-            <Link
-              href="/faham"
-              className="rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 shadow-sm transition hover:bg-amber-100 dark:border-amber-700/50 dark:bg-amber-900/25 dark:text-amber-100 dark:hover:bg-amber-900/40"
-            >
-              Faham Engine
-            </Link>
-          </>
-        ) : null}
-
         {mode === "hifz" ? (
-          <>
-            <button
-              type="button"
-              onClick={() =>
-                onHifzRevealByThirdsChange(!hifzRevealByThirdsEnabled)
-              }
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition-all shadow-sm ${
-                hifzRevealByThirdsEnabled
-                  ? "border-teal-900 bg-teal-900 text-teal-50 dark:border-teal-300 dark:bg-teal-300 dark:text-teal-950"
-                  : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-              }`}
-            >
-              {hifzRevealByThirdsEnabled
-                ? "Reveal 1/3: On"
-                : "Reveal 1/3: Off"}
-            </button>
-            <Link
-              href="/hifz"
-              className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-            >
-              Papan Hafal
-            </Link>
-          </>
+          <button
+            type="button"
+            onClick={() =>
+              onHifzRevealByThirdsChange(!hifzRevealByThirdsEnabled)
+            }
+            className={`rounded-full border px-4 py-2 text-sm font-medium transition-all shadow-sm ${
+              hifzRevealByThirdsEnabled
+                ? "border-teal-900 bg-teal-900 text-teal-50 dark:border-teal-300 dark:bg-teal-300 dark:text-teal-950"
+                : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+            }`}
+          >
+            {hifzRevealByThirdsEnabled
+              ? "Paparan 1/3 aktif"
+              : "Paparan 1/3 tidak aktif"}
+          </button>
         ) : null}
       </div>
     </section>

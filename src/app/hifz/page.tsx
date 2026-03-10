@@ -1,18 +1,23 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import { ModeNavigator } from "@/components/ModeNavigator";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HifzWorkspace } from "@/components/HifzWorkspace";
+import { requireAuthUser } from "@/lib/auth";
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { getHifzStats, getJuzProgress } from "@/lib/hifz/stats";
+import { getReadJumpTargets } from "@/lib/readNavigation";
 
 export default async function HifzPage() {
-  const userId = process.env.MIFTAH_USER_ID!;
+  const user = await requireAuthUser("/hifz");
+  const userId = user.id;
 
-  const [plan, stats, juzProgress] = await Promise.all([
+  const [plan, stats, juzProgress, jumpTargets] = await Promise.all([
     buildDailyPlanWithDetails(userId),
     getHifzStats(userId),
     getJuzProgress(userId),
+    getReadJumpTargets(),
   ]);
 
   return (
@@ -30,6 +35,11 @@ export default async function HifzPage() {
           </Link>
           <ThemeToggle />
         </header>
+
+        <ModeNavigator
+          activeMode="hifz"
+          surahTargets={jumpTargets.surahs}
+        />
 
         <HifzWorkspace plan={plan} stats={stats} juzProgress={juzProgress} />
       </main>

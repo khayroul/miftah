@@ -774,15 +774,15 @@ export function MushafPageView({
         </p>
       ) : mode === "hifz" && !hifzRevealByThirdsEnabled ? (
         <p className="text-sm text-teal-700 dark:text-teal-300">
-          Reveal 1/3 sedang Off. Hidupkan semula untuk paparkan butang Hafal.
+          Paparan 1/3 sedang dimatikan. Aktifkan semula untuk memaparkan butang Hafal.
         </p>
       ) : mode === "read" && canSelectAyah ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">
-          Tap pada ayat untuk lihat terjemahan BM. Swipe kiri/kanan untuk tukar halaman.
+          Ketik ayat untuk melihat terjemahan BM. Leret kiri atau kanan untuk menukar halaman.
         </p>
       ) : mode === "hifz" ? (
         <p className="text-sm text-teal-700 dark:text-teal-300">
-          Gunakan butang Hafal untuk buka 1/3 → 2/3 → penuh.
+          Gunakan butang Hafal untuk membuka 1/3 → 2/3 → penuh.
         </p>
       ) : words.length === 0 ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">
@@ -794,15 +794,15 @@ export function MushafPageView({
         </p>
       ) : mode === "tema" ? (
         <p className="text-sm text-indigo-700 dark:text-indigo-300">
-          Mode Tema aktif. Guna butang Tema di atas untuk buka chunk surah.
+          Mod Tema aktif. Anda akan dibawa terus ke halaman tema surah.
         </p>
       ) : !modeAllowsWordInteraction ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">
-          Baca mode aktif. Tukar ke Faham untuk makna perkataan.
+          Mod Baca aktif. Tukar ke Faham untuk melihat makna perkataan.
         </p>
       ) : (
         <p className="text-sm text-stone-600 dark:text-stone-300">
-          Tap pada perkataan untuk lihat makna segera.
+          Ketik perkataan untuk melihat makna segera.
         </p>
       )}
 

@@ -19,7 +19,7 @@ function clamp(value: number, min: number, max: number): number {
 
 function repeatLabel(value: number): string {
   if (value === -1) {
-    return "∞ (loop)";
+    return "∞ (ulang)";
   }
   return `${value}x`;
 }
@@ -131,12 +131,12 @@ export function PageAudioControls({
 
   const repeatStatus = useMemo(() => {
     if (currentRepeatCount === -1) {
-      return "Loop current ayah";
+      return "Ulang ayat semasa tanpa henti";
     }
 
     return repeatsRemaining > 0
-      ? `${repeatsRemaining} repeat left`
-      : "No repeat pending";
+      ? `${repeatsRemaining} ulangan lagi`
+      : "Tiada ulangan tertunda";
   }, [currentRepeatCount, repeatsRemaining]);
 
   const rangeStatus = useMemo(() => {
@@ -292,7 +292,7 @@ export function PageAudioControls({
       />
 
       <div className="mt-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-700 dark:bg-stone-800/50">
-        <p className="text-sm font-medium text-stone-900 dark:text-stone-100">Now playing: {currentTrack.label}</p>
+        <p className="text-sm font-medium text-stone-900 dark:text-stone-100">Sedang dimainkan: {currentTrack.label}</p>
         <p className="mt-1 text-xs text-stone-600 line-clamp-2 dark:text-stone-300">
           {currentTrack.bm ?? "Tiada terjemahan BM"}
         </p>
@@ -305,14 +305,14 @@ export function PageAudioControls({
           disabled={!canPrev}
           className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
         >
-          Prev Ayah
+          Ayat Sebelum
         </button>
         <button
           type="button"
           onClick={togglePlayback}
           className="rounded-lg bg-stone-900 px-3 py-1.5 text-sm text-stone-50 transition hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
         >
-          {isPlaying ? "Pause" : "Play"}
+          {isPlaying ? "Jeda" : "Main"}
         </button>
         <button
           type="button"
@@ -320,13 +320,13 @@ export function PageAudioControls({
           disabled={!canNext}
           className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
         >
-          Next Ayah
+          Ayat Seterusnya
         </button>
       </div>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
         <label className="text-xs text-stone-600 dark:text-stone-300">
-          Speed
+          Kelajuan
           <select
             value={String(speed)}
             onChange={(event) => setSpeed(Number.parseFloat(event.target.value))}
@@ -341,7 +341,7 @@ export function PageAudioControls({
         </label>
 
         <label className="text-xs text-stone-600 dark:text-stone-300">
-          Repeat (default)
+          Ulangan asal
           <select
             value={String(defaultRepeatCount)}
             onChange={(event) => {
@@ -365,13 +365,13 @@ export function PageAudioControls({
             onChange={(event) => setLoopRange(event.target.checked)}
             className="h-4 w-4 rounded border-stone-300 text-stone-900 dark:border-stone-600 dark:bg-stone-900"
           />
-          <span>Loop selected range</span>
+          <span>Ulang julat pilihan</span>
         </label>
       </div>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <label className="text-xs text-stone-600 dark:text-stone-300">
-          Range Start
+          Mula Julat
           <select
             value={String(normalizedRangeStart)}
             onChange={(event) =>
@@ -388,7 +388,7 @@ export function PageAudioControls({
         </label>
 
         <label className="text-xs text-stone-600 dark:text-stone-300">
-          Range End
+          Akhir Julat
           <select
             value={String(normalizedRangeEnd)}
             onChange={(event) =>
@@ -406,12 +406,12 @@ export function PageAudioControls({
       </div>
 
       {rangeStatus ? (
-        <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">Active range: {rangeStatus}</p>
+        <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">Julat aktif: {rangeStatus}</p>
       ) : null}
 
       <details className="mt-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-700 dark:bg-stone-800/45">
         <summary className="cursor-pointer text-xs font-medium uppercase tracking-wide text-stone-600 dark:text-stone-300">
-          Per-Ayah Repeat
+          Ulangan Setiap Ayat
         </summary>
         <div className="mt-3 space-y-3">
           <button
@@ -419,7 +419,7 @@ export function PageAudioControls({
             onClick={resetRangeRepeatOverrides}
             className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
           >
-            Reset Range to Default Repeat
+            Tetapkan Semula Julat Kepada Ulangan Asal
           </button>
           <div className="grid gap-2 sm:grid-cols-2">
             {tracksInRange.map((track) => {

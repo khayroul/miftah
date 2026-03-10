@@ -131,7 +131,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
                   href={`/read/${pageNumber - 1}`}
                   className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
                 >
-                  Prev Page
+                  Halaman Sebelum
                 </Link>
               ) : null}
               {pageNumber < 604 ? (
@@ -139,7 +139,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
                   href={`/read/${pageNumber + 1}`}
                   className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
                 >
-                  Next Page
+                  Halaman Seterusnya
                 </Link>
               ) : null}
             </div>

@@ -1,7 +1,10 @@
+import { TOP_FAHAM_WORD_LIMIT } from "@/lib/faham/config";
 import { buildFahamQueuePlan, DEFAULT_FAHAM_ENGINE_CONFIG } from "@/lib/faham/engine";
 import {
   getDueFahamCards,
   getFahamExposureCandidates,
+  getTopFahamWordCount,
+  getTopFahamWordIds,
 } from "@/lib/faham/repository";
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { getHifzStats } from "@/lib/hifz/stats";
@@ -14,6 +17,7 @@ export interface HomeFahamSnapshot {
   coveragePct: number;
   dueCount: number;
   eligibleNewCount: number;
+  focusWordLimit: number;
   reviewedWordCount: number;
   totalCandidateCount: number;
   totalWords: number;
@@ -78,24 +82,38 @@ async function loadHifzSnapshot(userId: string): Promise<HomeHifzSnapshot> {
 async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
   const config = DEFAULT_FAHAM_ENGINE_CONFIG;
   const now = new Date().toISOString();
-  const [dueCards, candidates, dueCountResult, progressResult, wordResult] = await Promise.all([
+  const topWordIds = await getTopFahamWordIds();
+  if (topWordIds.length === 0) {
+    return {
+      blockedReason: null,
+      coveragePct: 0,
+      dueCount: 0,
+      eligibleNewCount: 0,
+      focusWordLimit: TOP_FAHAM_WORD_LIMIT,
+      reviewedWordCount: 0,
+      totalCandidateCount: 0,
+      totalWords: 0,
+    };
+  }
+
+  const [dueCards, candidates, topWordCount, dueCountResult, progressResult] = await Promise.all([
     getDueFahamCards(
       userId,
       Math.max(config.dueLimit, config.pauseNewCardsAboveDueCount),
     ),
     getFahamExposureCandidates(userId, config.candidatePoolSize),
+    getTopFahamWordCount(),
     supabaseServer
       .from("vocab_progress")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
+      .in("word_id", topWordIds)
       .lte("due", now),
     supabaseServer
       .from("vocab_progress")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", userId),
-    supabaseServer
-      .from("words")
-      .select("id", { count: "exact", head: true }),
+      .eq("user_id", userId)
+      .in("word_id", topWordIds),
   ]);
 
   if (dueCountResult.error) {
@@ -104,10 +122,6 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
   if (progressResult.error) {
     throw progressResult.error;
   }
-  if (wordResult.error) {
-    throw wordResult.error;
-  }
-
   const plan = buildFahamQueuePlan({
     candidates,
     config,
@@ -115,13 +129,14 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
   });
   const dueCount = dueCountResult.count ?? 0;
   const reviewedWordCount = progressResult.count ?? 0;
-  const totalWords = wordResult.count ?? 0;
+  const totalWords = topWordCount;
 
   return {
     blockedReason: plan.blockedReason,
     coveragePct: percentage(reviewedWordCount, totalWords),
     dueCount,
     eligibleNewCount: plan.stats.eligibleNewCount,
+    focusWordLimit: TOP_FAHAM_WORD_LIMIT,
     reviewedWordCount,
     totalCandidateCount: plan.stats.totalCandidateCount,
     totalWords,

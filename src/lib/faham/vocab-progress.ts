@@ -53,3 +53,34 @@ export async function updateVocabFsrs(
     throw error;
   }
 }
+
+export async function updateVocabProgressAfterReview(
+  id: number,
+  params: FsrsFields & {
+    lastIncorrectAt: string | null;
+    mistakeStreak: number;
+    needsReinforcement: boolean;
+  },
+): Promise<void> {
+  const { error } = await supabaseServer
+    .from("vocab_progress")
+    .update({
+      due: params.due,
+      difficulty: params.difficulty,
+      elapsed_days: params.elapsed_days,
+      lapses: params.lapses,
+      last_incorrect_at: params.lastIncorrectAt,
+      last_review: params.last_review,
+      needs_reinforcement: params.needsReinforcement,
+      reps: params.reps,
+      scheduled_days: params.scheduled_days,
+      stability: params.stability,
+      state: params.state,
+      mistake_streak: params.mistakeStreak,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) {
+    throw error;
+  }
+}

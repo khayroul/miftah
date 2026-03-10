@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { TOP_FAHAM_WORD_LIMIT } from "@/lib/faham/config";
 import type { SurahJumpTarget } from "@/lib/readNavigation";
 import { saveReadMode } from "@/lib/readMode";
 import { findMarkerForPage } from "@/lib/readNavigationUtils";
@@ -19,7 +20,6 @@ interface HomeDashboardClientProps {
 
 interface ModeCard {
   helper: string;
-  inside: string[];
   metricLabel: string;
   metricValue: string;
   percent: number;
@@ -52,7 +52,6 @@ function toneClasses(tone: CardTone) {
     return {
       bar: "bg-teal-700 dark:bg-teal-300",
       border: "border-teal-900/18 dark:border-teal-300/18",
-      chip: "border-teal-900/15 bg-teal-950/6 text-teal-900 dark:border-teal-300/20 dark:bg-teal-900/35 dark:text-teal-100",
       surface:
         "bg-[linear-gradient(145deg,rgba(240,253,250,0.96),rgba(255,255,255,0.92))] dark:bg-[linear-gradient(145deg,rgba(15,118,110,0.2),rgba(10,10,10,0.72))]",
       value: "text-teal-900 dark:text-teal-100",
@@ -63,7 +62,6 @@ function toneClasses(tone: CardTone) {
     return {
       bar: "bg-amber-600 dark:bg-amber-300",
       border: "border-amber-900/15 dark:border-amber-300/18",
-      chip: "border-amber-900/15 bg-amber-100/70 text-amber-900 dark:border-amber-300/18 dark:bg-amber-900/30 dark:text-amber-100",
       surface:
         "bg-[linear-gradient(145deg,rgba(255,251,235,0.96),rgba(255,255,255,0.92))] dark:bg-[linear-gradient(145deg,rgba(217,119,6,0.18),rgba(10,10,10,0.72))]",
       value: "text-amber-900 dark:text-amber-100",
@@ -74,7 +72,6 @@ function toneClasses(tone: CardTone) {
     return {
       bar: "bg-indigo-700 dark:bg-indigo-300",
       border: "border-indigo-900/15 dark:border-indigo-300/18",
-      chip: "border-indigo-900/15 bg-indigo-100/70 text-indigo-900 dark:border-indigo-300/18 dark:bg-indigo-900/30 dark:text-indigo-100",
       surface:
         "bg-[linear-gradient(145deg,rgba(238,242,255,0.96),rgba(255,255,255,0.92))] dark:bg-[linear-gradient(145deg,rgba(79,70,229,0.18),rgba(10,10,10,0.72))]",
       value: "text-indigo-900 dark:text-indigo-100",
@@ -84,7 +81,6 @@ function toneClasses(tone: CardTone) {
   return {
     bar: "bg-stone-700 dark:bg-stone-300",
     border: "border-stone-900/10 dark:border-stone-300/14",
-    chip: "border-stone-300/80 bg-stone-100/90 text-stone-700 dark:border-stone-700 dark:bg-stone-800/80 dark:text-stone-200",
     surface:
       "bg-[linear-gradient(145deg,rgba(250,250,249,0.96),rgba(255,255,255,0.92))] dark:bg-[linear-gradient(145deg,rgba(41,37,36,0.8),rgba(10,10,10,0.72))]",
     value: "text-stone-900 dark:text-stone-100",
@@ -101,20 +97,18 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500 dark:text-stone-400">
-            Mode
+            Mod
           </p>
           <h2 className="mt-2 text-2xl font-medium tracking-tight text-stone-900 dark:text-stone-50">
             {card.title}
           </h2>
         </div>
-        <span
-          className={`rounded-full border px-3 py-1 text-[11px] font-medium ${classes.chip}`}
-        >
-          Dalam mode ini
-        </span>
+        <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
+          {card.percent}%
+        </p>
       </div>
 
-      <div className="mt-6 flex items-end justify-between gap-4">
+      <div className="mt-6">
         <div>
           <div className={`text-4xl font-semibold tracking-tight ${classes.value}`}>
             {card.metricValue}
@@ -123,9 +117,6 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
             {card.metricLabel}
           </p>
         </div>
-        <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
-          {card.percent}%
-        </p>
       </div>
 
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/80 ring-1 ring-stone-900/6 dark:bg-stone-950/70 dark:ring-white/8">
@@ -138,18 +129,6 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
       <p className="mt-4 text-sm leading-relaxed text-stone-600 dark:text-stone-300">
         {card.helper}
       </p>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {card.inside.map((item) => (
-          <span
-            key={`${card.title}-${item}`}
-            className={`rounded-full border px-3 py-1 text-xs font-medium ${classes.chip}`}
-          >
-            {item}
-          </span>
-        ))}
-      </div>
-
     </article>
   );
 }
@@ -181,9 +160,8 @@ export function HomeDashboardClient({
   const modeCards: ModeCard[] = [
     {
       helper: readingState.lastPage
-        ? `Sambung dari page ${readingState.lastPage}. Mode Baca kekal tenang dengan Jump dan audio muncul bila diperlukan.`
-        : "Mushaf sengaja minimal. Masuk terus ke bacaan, dan buka utiliti hanya bila perlu.",
-      inside: ["Mushaf", "Jump", "Audio"],
+        ? `Sambung dari halaman ${readingState.lastPage}. Baca kekal ringkas, dan alat tambahan hanya muncul apabila diperlukan.`
+        : "Mushaf sengaja diringkaskan. Masuk terus ke bacaan, kemudian buka alat tambahan apabila perlu.",
       metricLabel: readingState.lastPage
         ? `Bacaan terakhir ${formattedLastRead}`
         : "Belum ada sesi bacaan",
@@ -195,25 +173,23 @@ export function HomeDashboardClient({
     {
       helper: snapshot.faham
         ? snapshot.faham.blockedReason === "due_backlog"
-          ? `${snapshot.faham.dueCount} kad due sedang menunggu. Kad baru direhatkan sementara sehingga backlog selesai.`
-          : `${snapshot.faham.dueCount} kad due dan ${snapshot.faham.eligibleNewCount} kad layak baru sekarang, berdasarkan exposure dari baca, tema, dan hafal.`
-        : "Engine kata demi kata sudah tersedia, tetapi statistik server belum dapat dimuat.",
-      inside: ["FSRS", "WBW", "Baca/Tema/Hafal"],
-      metricLabel: snapshot.faham
-        ? `${snapshot.faham.reviewedWordCount} / ${snapshot.faham.totalWords} perkataan pernah masuk deck`
-        : "Stat Faham belum tersedia",
-      metricValue: `${snapshot.faham?.coveragePct ?? 0}%`,
+          ? `${snapshot.faham.dueCount} kad ulang kaji masih menunggu. Kad baharu dijeda sehingga baki ini selesai.`
+          : `${snapshot.faham.dueCount} kad ulang kaji dan ${snapshot.faham.eligibleNewCount} kad baharu sedia dibuka daripada 3,000 perkataan teras.`
+        : "Enjin kata demi kata sudah sedia, tetapi statistiknya belum dapat dimuat sekarang.",
+      metricLabel: "perkataan dalam enjin Faham",
+      metricValue: snapshot.faham
+        ? `${snapshot.faham.reviewedWordCount} / ${snapshot.faham.totalWords} perkataan`
+        : `0 / ${TOP_FAHAM_WORD_LIMIT} perkataan`,
       percent: snapshot.faham?.coveragePct ?? 0,
       title: "Faham",
       tone: "amber",
     },
     {
       helper: snapshot.tema && snapshot.tema.totalChunks > 0
-        ? `${snapshot.tema.exploredCount} chunk sudah pernah diteroka. Laluan seterusnya ikut surah semasa: ${activeSurahLabel}.`
-        : `Navigator tema ikut surah. Teruskan dari surah semasa ${activeSurahLabel} supaya bacaan dan tema bergerak seiring.`,
-      inside: ["Chunk", "Ayat kunci", "Alur surah"],
+        ? `${snapshot.tema.exploredCount} bahagian tema sudah diteroka. Laluan seterusnya ikut surah semasa: ${activeSurahLabel}.`
+        : `Tema diatur mengikut surah. Teruskan dari surah semasa ${activeSurahLabel} supaya bacaan dan tema bergerak seiring.`,
       metricLabel: snapshot.tema && snapshot.tema.totalChunks > 0
-        ? `${snapshot.tema.exploredCount} / ${snapshot.tema.totalChunks} chunk pernah diteroka`
+        ? `${snapshot.tema.exploredCount} / ${snapshot.tema.totalChunks} bahagian telah dibuka`
         : `Sedia untuk Surah ${activeSurahId}`,
       metricValue: `${snapshot.tema?.exploredPct ?? 0}%`,
       percent: snapshot.tema?.exploredPct ?? 0,
@@ -224,9 +200,8 @@ export function HomeDashboardClient({
       helper: snapshot.hifz
         ? snapshot.hifz.todayTotal > 0
           ? `${snapshot.hifz.todayTotal} ayat aktif hari ini. ${snapshot.hifz.nextAyahLabel ? `Ayat seterusnya ${snapshot.hifz.nextAyahLabel}.` : "Sesi seterusnya sudah siap disusun."}`
-          : "Workspace hafal kekal fokus pada Sabak, Sabqi, dan Manzil."
-        : "Workspace hafal sedia digunakan, tetapi statistik server belum dapat dimuat.",
-      inside: ["Sabak", "Sabqi", "Manzil"],
+          : "Ruang Hafal kekal fokus pada Sabak, Sabqi, dan Manzil."
+        : "Ruang Hafal sedia digunakan, tetapi statistik server belum dapat dimuat.",
       metricLabel: snapshot.hifz
         ? `${snapshot.hifz.totalManzil} ayat sudah stabil di Manzil`
         : "Belum ada data hafal",
@@ -250,9 +225,9 @@ export function HomeDashboardClient({
               Di Sebalik Setiap Ayat, Ada Khazanah Menanti.
             </h1>
             <p className="max-w-4xl text-base leading-relaxed text-stone-600 sm:text-lg dark:text-stone-300">
-              Dan Miftah adalah kuncinya. Tinggalkan cara lama. 4 Mode - Baca,
-              Faham, Tema, dan Hafal. Masanya untuk anda faham apa yang dibaca,
-              dan hafal apa yang difahami.
+              Miftah membantu anda bergerak melalui empat mod: Baca, Faham,
+              Tema, dan Hafal. Fokusnya mudah: fahami apa yang dibaca, lalu
+              hafal dengan lebih bermakna.
             </p>
           </div>
 
@@ -263,7 +238,7 @@ export function HomeDashboardClient({
             }}
             className="inline-flex rounded-xl bg-teal-900 px-5 py-2.5 text-sm font-medium text-teal-50 transition hover:bg-teal-800 dark:bg-teal-700 dark:hover:bg-teal-600"
           >
-            {readingState.lastPage ? "Masuk Miftah (Sambung Baca)" : "Masuk Miftah"}
+            {readingState.lastPage ? "Sambung Baca" : "Mulakan Baca"}
           </Link>
         </div>
       </section>

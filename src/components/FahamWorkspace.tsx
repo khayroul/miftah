@@ -83,11 +83,11 @@ function queueItems(snapshot: FahamQueueSnapshot): SerializedFahamCard[] {
 }
 
 function dueLabel(count: number): string {
-  return count === 1 ? "1 kad due" : `${count} kad due`;
+  return count === 1 ? "1 kad ulang kaji" : `${count} kad ulang kaji`;
 }
 
 function newLabel(count: number): string {
-  return count === 1 ? "1 kad baru" : `${count} kad baru`;
+  return count === 1 ? "1 kad baharu" : `${count} kad baharu`;
 }
 
 async function requestQueue(
@@ -171,7 +171,7 @@ export function FahamWorkspace({
           setErrorMessage(null);
         })
         .catch(() => {
-          setErrorMessage("Queue Faham tak dapat dimuat sekarang.");
+          setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
         });
     });
   };
@@ -246,18 +246,29 @@ export function FahamWorkspace({
 
             <div>
               <h1 className="text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-50">
-                Faham makna tanpa buka jawapan dulu.
+                Fahami makna tanpa membuka jawapan terlebih dahulu.
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600 dark:text-stone-300">
                 Faham kini menyokong Arab ke Melayu, Melayu ke Arab, atau mod
-                campur. FSRS masih berjalan di belakang tabir: betul
-                menguatkan kad, salah hantar semula lebih awal.
+                campuran. Enjin ini memfokuskan 3,000 perkataan teras. Jika
+                tersalah jawab, perkataan itu akan ditanda untuk pengukuhan dan
+                muncul semula lebih awal.
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <StatCard label="Due keseluruhan" value={String(snapshot.stats.dueCount)} />
-              <StatCard label="Baru yang layak" value={String(snapshot.stats.eligibleNewCount)} />
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <StatCard
+                label="Perkataan teras"
+                value={String(snapshot.stats.focusWordLimit)}
+              />
+              <StatCard
+                label="Kad ulang kaji"
+                value={String(snapshot.stats.dueCount)}
+              />
+              <StatCard
+                label="Kad baharu sedia"
+                value={String(snapshot.stats.eligibleNewCount)}
+              />
               <StatCard label="Siap sesi ini" value={String(sessionDoneCount)} />
             </div>
           </div>
@@ -270,7 +281,8 @@ export function FahamWorkspace({
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-300">
                   Hanya ubah keutamaan kad baru untuk sesi semasa. Ia tidak
-                  simpan tetapan kekal, dan review due tetap datang dahulu.
+                  menyimpan tetapan kekal, dan kad ulang kaji tetap datang
+                  dahulu.
                 </p>
               </div>
               <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
@@ -360,8 +372,9 @@ export function FahamWorkspace({
 
       {snapshot.blockedReason === "due_backlog" ? (
         <section className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
-          Kad baru dihentikan sementara kerana backlog review masih tinggi.
-          Selesaikan due cards dahulu, kemudian enjin akan buka kad baru semula.
+          Kad baharu dijeda sementara kerana baki ulang kaji masih tinggi.
+          Selesaikan kad ulang kaji dahulu, kemudian enjin akan membuka kad
+          baharu semula.
         </section>
       ) : null}
 
@@ -376,7 +389,7 @@ export function FahamWorkspace({
                     : "border-amber-900/15 bg-amber-100/75 text-amber-900 dark:border-amber-300/20 dark:bg-amber-900/35 dark:text-amber-100"
                 }`}
               >
-                {currentCard.kind === "due" ? "Review Due" : "Kad Baru"}
+                {currentCard.kind === "due" ? "Ulang kaji" : "Kad baharu"}
               </span>
               <span className="rounded-full border border-stone-200 bg-stone-100 px-3 py-1 text-xs text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300">
                 {currentCard.kind === "due"
@@ -384,11 +397,16 @@ export function FahamWorkspace({
                   : newLabel(snapshot.new.length)}
               </span>
               <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
-                Mode: {PRESET_CONFIGS[preset].shortLabel}
+                Susunan: {PRESET_CONFIGS[preset].shortLabel}
               </span>
               <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
                 Arah: {DIRECTION_CONFIGS[directionMode].shortLabel}
               </span>
+              {currentCard.needsReinforcement ? (
+                <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-200">
+                  Pengukuhan {currentCard.mistakeStreak}
+                </span>
+              ) : null}
             </div>
 
             <div className="min-w-32">
@@ -440,7 +458,7 @@ export function FahamWorkspace({
 
                 return (
                   <button
-                    key={`${currentCard.progressId}-${option}`}
+                    key={`${currentCard.progressId}-${option.lang}-${option.value}`}
                     type="button"
                     disabled={Boolean(answerState) || isPending}
                     onClick={() => handleAnswer(index)}
@@ -476,7 +494,7 @@ export function FahamWorkspace({
 
           <div className="mt-5 rounded-[1.35rem] border border-stone-200/80 bg-stone-50/90 p-4 dark:border-stone-700 dark:bg-stone-950/60">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
-              Kenapa pilihan ini?
+              Set pilihan ini
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {currentCard.mcq.whyThisSet.map((note) => (
@@ -491,24 +509,32 @@ export function FahamWorkspace({
           </div>
 
           {answerState ? (
-            <div className="mt-6 rounded-[1.5rem] border border-stone-200/80 bg-stone-50/90 p-5 dark:border-stone-700 dark:bg-stone-950/65">
+            <div
+              className={`mt-6 rounded-[1.5rem] border p-5 ${
+                answerState.isCorrect
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-700/40 dark:bg-emerald-950/30 dark:text-emerald-50"
+                  : "border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-50"
+              }`}
+            >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p
                     className={`text-sm font-semibold ${
                       answerState.isCorrect
-                        ? "text-emerald-700 dark:text-emerald-300"
-                        : "text-rose-700 dark:text-rose-300"
+                        ? "text-emerald-800 dark:text-emerald-100"
+                        : "text-rose-800 dark:text-rose-100"
                     }`}
                   >
-                    {answerState.isCorrect ? "Betul. Kad ini akan dilonggarkan." : "Kurang tepat. Kad ini akan datang semula lebih awal."}
+                    {answerState.isCorrect
+                      ? "Betul. Kad ini akan dijarakkan."
+                      : "Kurang tepat. Perkataan ini ditanda untuk pengukuhan dan akan muncul semula lebih awal."}
                   </p>
-                  <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">
+                  <p className="mt-2 text-sm text-stone-800 dark:text-stone-100">
                     {currentCard.mcq.answerLabel}:{" "}
                     <span
                       dir={currentCard.mcq.direction === "bm_to_arab" ? "rtl" : "ltr"}
                       lang={currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms"}
-                      className={`text-stone-900 dark:text-stone-100 ${
+                      className={`${
                         currentCard.mcq.direction === "bm_to_arab"
                           ? "font-arabic text-2xl"
                           : "font-medium"
@@ -518,10 +544,16 @@ export function FahamWorkspace({
                     </span>
                   </p>
                   {currentCard.mcq.answerSecondary ? (
-                    <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                    <p className="mt-1 text-sm text-stone-700 dark:text-stone-200">
                       {currentCard.mcq.direction === "bm_to_arab"
                         ? `Transliterasi: ${currentCard.mcq.answerSecondary}`
-                        : `English: ${currentCard.mcq.answerSecondary}`}
+                        : `Bahasa Inggeris: ${currentCard.mcq.answerSecondary}`}
+                    </p>
+                  ) : null}
+                  {!answerState.isCorrect ? (
+                    <p className="mt-1 text-sm text-rose-800 dark:text-rose-100">
+                      Tag pengukuhan ini akan kekal sehingga anda menjawabnya
+                      dengan betul.
                     </p>
                   ) : null}
                 </div>
@@ -539,10 +571,10 @@ export function FahamWorkspace({
               {currentCard.exposure ? (
                 <div className="mt-4 flex flex-wrap gap-2 text-xs text-stone-600 dark:text-stone-300">
                   <span className="rounded-full border border-stone-200 bg-white px-3 py-1 dark:border-stone-700 dark:bg-stone-900">
-                    {currentCard.exposure.exposureEventCount} exposure
+                    {currentCard.exposure.exposureEventCount} pendedahan
                   </span>
                   <span className="rounded-full border border-stone-200 bg-white px-3 py-1 dark:border-stone-700 dark:bg-stone-900">
-                    {currentCard.exposure.distinctContextCount} context
+                    {currentCard.exposure.distinctContextCount} konteks
                   </span>
                   {currentCard.exposure.readingOccurrenceWeight > 0 ? (
                     <span className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-teal-800 dark:border-teal-700/40 dark:bg-teal-900/20 dark:text-teal-200">
@@ -567,18 +599,18 @@ export function FahamWorkspace({
       ) : (
         <section className="animate-fade-in-up rounded-3xl border border-stone-200/90 bg-white/88 p-8 text-center shadow-[0_25px_70px_-48px_rgba(28,25,23,0.55)] backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/80">
           <p className="text-2xl font-medium text-stone-900 dark:text-stone-100">
-            Tiada kad Faham buat masa ini.
+            Belum ada kad Faham buat masa ini.
           </p>
           <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">
-            Teruskan baca atau tema dahulu supaya enjin ini ada exposure yang
-            cukup untuk buka kad baru.
+            Teruskan membaca atau buka tema dahulu supaya enjin ini mempunyai
+            pendedahan yang cukup untuk membuka kad baharu.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
               href="/read/1"
               className="rounded-xl bg-teal-900 px-5 py-2.5 text-sm font-medium text-teal-50 transition hover:bg-teal-800 dark:bg-teal-700 dark:hover:bg-teal-600"
             >
-              Masuk Baca
+              Buka Baca
             </Link>
             <Link
               href="/read/surah/2/themes"

@@ -84,7 +84,7 @@ export function HifzWorkspace({ plan, stats, juzProgress }: HifzWorkspaceProps) 
             {/* Left: session info */}
             <div className="space-y-5">
               <div className="inline-flex items-center rounded-full border border-teal-900/15 bg-teal-950/5 px-3 py-1 text-xs font-medium tracking-wide text-teal-900/80 dark:border-teal-300/20 dark:bg-teal-900/40 dark:text-teal-100">
-                Fasa 3 · Hifz Engine
+                Fasa 3 · Enjin Hafal
               </div>
 
               <div>
@@ -144,7 +144,7 @@ export function HifzWorkspace({ plan, stats, juzProgress }: HifzWorkspaceProps) 
                 </button>
               ) : (
                 <div className="rounded-xl border border-stone-200 bg-stone-50 px-5 py-3 text-sm text-stone-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
-                  Tiada ayat untuk ulangkaji hari ini. Balik esok! 🌙
+                  Tiada ayat untuk ulang kaji hari ini. Sambung semula esok.
                 </div>
               )}
             </div>
@@ -219,7 +219,7 @@ export function HifzWorkspace({ plan, stats, juzProgress }: HifzWorkspaceProps) 
         Sesi Selesai!
       </h2>
       <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">
-        {reviewedCount} ayat diulangkaji. Teruskan istiqamah.
+        {reviewedCount} ayat telah diulang kaji. Teruskan istiqamah.
       </p>
       <div className="mt-6 flex justify-center gap-3">
         <button
@@ -227,13 +227,13 @@ export function HifzWorkspace({ plan, stats, juzProgress }: HifzWorkspaceProps) 
           onClick={() => setSessionState("overview")}
           className="rounded-xl border border-stone-300 bg-white px-5 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
         >
-          Kembali ke Papan Pemuka
+          Kembali ke Ringkasan
         </button>
         <Link
           href="/read/1"
           className="rounded-xl bg-teal-900 px-5 py-2.5 text-sm font-medium text-teal-50 transition hover:bg-teal-800 dark:bg-teal-700 dark:hover:bg-teal-600"
         >
-          Baca Quran
+          Buka Baca
         </Link>
       </div>
     </div>

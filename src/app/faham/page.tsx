@@ -2,12 +2,16 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { FahamWorkspace } from "@/components/FahamWorkspace";
+import { ModeNavigator } from "@/components/ModeNavigator";
+import { TOP_FAHAM_WORD_LIMIT } from "@/lib/faham/config";
 import type { FahamQueueSnapshot } from "@/lib/faham/queue";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { buildFahamQueueSnapshot } from "@/lib/faham/queue";
+import { getReadJumpTargets } from "@/lib/readNavigation";
 
 export default async function FahamPage() {
   const userId = process.env.MIFTAH_USER_ID?.trim();
+  const jumpTargets = await getReadJumpTargets();
   let setupMessage: string | null = null;
   let initialQueue: FahamQueueSnapshot = {
     blockedReason: null,
@@ -16,6 +20,7 @@ export default async function FahamPage() {
     stats: {
       dueCount: 0,
       eligibleNewCount: 0,
+      focusWordLimit: TOP_FAHAM_WORD_LIMIT,
       totalCandidateCount: 0,
     },
   };
@@ -45,6 +50,11 @@ export default async function FahamPage() {
           </Link>
           <ThemeToggle />
         </header>
+
+        <ModeNavigator
+          activeMode="faham"
+          surahTargets={jumpTargets.surahs}
+        />
 
         <FahamWorkspace initialQueue={initialQueue} setupMessage={setupMessage} />
       </main>

@@ -56,7 +56,7 @@ export function ReadJumpControls({
   return (
     <section className="rounded-2xl border border-stone-300 bg-white px-3 py-3 shadow-sm sm:px-4 dark:border-stone-600 dark:bg-stone-900">
       <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
-        Jump-To
+        Lompat Ke
       </p>
       <div className="grid gap-2 sm:grid-cols-3">
         <form
@@ -65,14 +65,14 @@ export function ReadJumpControls({
             event.preventDefault();
             const targetPage = parseBoundedIntegerInput(pageInput, 1, 604);
             if (!targetPage) {
-              setErrorMessage("Page mesti antara 1 hingga 604.");
+              setErrorMessage("Halaman mesti antara 1 hingga 604.");
               return;
             }
             jumpToPage(targetPage);
           }}
         >
           <label className="min-w-0 flex-1 text-xs text-stone-600 dark:text-stone-300">
-            Page
+            Halaman
             <input
               value={pageInput}
               onChange={(event) => setPageInput(event.target.value)}
@@ -86,7 +86,7 @@ export function ReadJumpControls({
             type="submit"
             className="rounded-lg border border-stone-300 px-2.5 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
           >
-            Go
+            Buka
           </button>
         </form>
 
@@ -127,7 +127,7 @@ export function ReadJumpControls({
             type="submit"
             className="rounded-lg border border-stone-300 px-2.5 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
           >
-            Go
+            Buka
           </button>
         </form>
 
@@ -168,7 +168,7 @@ export function ReadJumpControls({
             type="submit"
             className="rounded-lg border border-stone-300 px-2.5 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
           >
-            Go
+            Buka
           </button>
         </form>
       </div>

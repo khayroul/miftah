@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FahamExposureTracker } from "@/components/FahamExposureTracker";
+import { ModeNavigator } from "@/components/ModeNavigator";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   getWordByWordForAyahIds,
@@ -37,8 +38,6 @@ function rangeLabel(
 function chunkTitleBm(chunk: ThemeAppearanceChunk): string {
   return chunk.label_bm ?? chunk.theme?.name_bm ?? "Tanpa tema";
 }
-
-
 
 export default async function SurahThemeAppearancePage({
   params,
@@ -83,7 +82,7 @@ export default async function SurahThemeAppearancePage({
   const canJumpToNextSurahTheme =
     chunks.length > 0 && selectedChunkIndex === chunks.length && surahNumber < 114;
   let previousThemeHref: string | null = null;
-  let previousThemeLabel = "← Prev";
+  let previousThemeLabel = "← Tema Sebelum";
   if (chunks.length > 0) {
     if (selectedChunkIndex > 1) {
       previousThemeHref = `/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex - 1}`;
@@ -94,7 +93,7 @@ export default async function SurahThemeAppearancePage({
         );
         if (previousSurahChunks.length > 0) {
           previousThemeHref = `/read/surah/${surahNumber - 1}/themes?chunk=${previousSurahChunks.length}`;
-          previousThemeLabel = "← Prev Surah Theme";
+          previousThemeLabel = "← Tema Surah Sebelum";
         }
       } catch {
         previousThemeHref = null;
@@ -107,10 +106,10 @@ export default async function SurahThemeAppearancePage({
       ? `/read/surah/${surahNumber + 1}/themes?chunk=1`
       : null;
   const nextThemeLabel = hasNextThemeInSurah
-    ? "Next Theme →"
+    ? "Tema Seterusnya →"
     : canJumpToNextSurahTheme
-      ? "Next Surah Theme →"
-      : "Next Theme →";
+      ? "Tema Surah Seterusnya →"
+      : "Tema Seterusnya →";
   let wbwByAyahId: Record<number, AyahWordByWordEntry[]> = {};
   if (selectedChunk) {
     try {
@@ -139,10 +138,16 @@ export default async function SurahThemeAppearancePage({
               href={surahMeta.page_start ? `/read/${surahMeta.page_start}` : "/read/1"}
               className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
             >
-              Page View &rarr;
+              Buka Baca &rarr;
             </Link>
           </div>
         </nav>
+
+        <ModeNavigator
+          activeMode="tema"
+          fallbackReadPage={surahMeta.page_start ?? 1}
+          fallbackThemeSurahId={surahNumber}
+        />
 
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
@@ -151,7 +156,7 @@ export default async function SurahThemeAppearancePage({
               <span className="font-arabic font-normal text-2xl opacity-80 mt-1" lang="ar">{surahMeta.name_arabic}</span>
             </h1>
             <p className="mt-1 text-stone-500 dark:text-stone-400">
-              Surah {surahMeta.id} • Thematic Reading
+              Surah {surahMeta.id} • Bacaan bertema
             </p>
           </div>
 
@@ -161,7 +166,7 @@ export default async function SurahThemeAppearancePage({
                 href={`/read/surah/${surahNumber - 1}/themes`}
                 className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
               >
-                Prev Surah
+                Surah Sebelum
               </Link>
             ) : null}
             {surahNumber < 114 ? (
@@ -169,7 +174,7 @@ export default async function SurahThemeAppearancePage({
                 href={`/read/surah/${surahNumber + 1}/themes`}
                 className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
               >
-                Next Surah
+                Surah Seterusnya
               </Link>
             ) : null}
           </div>
@@ -184,7 +189,7 @@ export default async function SurahThemeAppearancePage({
 
       {!loadError && chunks.length === 0 ? (
         <section className="rounded-2xl border border-amber-100 bg-amber-50 p-6 text-center text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-400">
-          Tiada tema untuk surah ini lagi.
+          Tema untuk surah ini belum tersedia lagi.
         </section>
       ) : null}
 
@@ -212,7 +217,7 @@ export default async function SurahThemeAppearancePage({
                 {/* Theme Header */}
                 <header className="border-b border-stone-200 pb-4 dark:border-stone-800">
                   <span className="mb-2 inline-block rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-stone-600 dark:bg-stone-800 dark:text-stone-300">
-                    Theme {selectedChunkIndex} of {chunks.length}
+                    Tema {selectedChunkIndex} daripada {chunks.length}
                   </span>
                   <h2 className="mt-2 text-2xl font-serif text-stone-900 dark:text-stone-50 md:text-3xl">
                     {chunkTitleBm(selectedChunk)}
@@ -256,7 +261,7 @@ export default async function SurahThemeAppearancePage({
                         </div>
                       ) : (
                         <p className="text-right text-sm text-stone-400" dir="rtl">
-                          [Data WBW belum tersedia]
+                          [Data kata demi kata belum tersedia]
                         </p>
                       )}
 
@@ -287,7 +292,7 @@ export default async function SurahThemeAppearancePage({
                 </Link>
               ) : (
                 <span className="flex flex-1 items-center justify-center rounded-full border border-stone-100 bg-stone-50/50 px-5 py-2 text-sm font-medium text-stone-400 dark:border-stone-800 dark:bg-stone-800/30 dark:text-stone-600">
-                  &larr; Prev
+                  &larr; Sebelum
                 </span>
               )}
               {nextThemeHref ? (
@@ -299,14 +304,14 @@ export default async function SurahThemeAppearancePage({
                 </Link>
               ) : (
                 <span className="flex flex-1 items-center justify-center rounded-full bg-stone-100 px-5 py-2 text-sm font-medium text-stone-400 dark:bg-stone-800 dark:text-stone-600">
-                  Next Theme &rarr;
+                  Tema Seterusnya &rarr;
                 </span>
               )}
             </div>
 
             <form method="get" className="hidden sm:flex items-center gap-3 pr-2">
               <label className="text-sm font-medium text-stone-500 dark:text-stone-400">
-                Jump to
+                Pergi ke
               </label>
               <div className="flex items-center gap-2">
                 <select
@@ -324,7 +329,7 @@ export default async function SurahThemeAppearancePage({
                   type="submit"
                   className="rounded-lg bg-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-300 dark:bg-stone-700 dark:text-stone-200 dark:hover:bg-stone-600"
                 >
-                  Go
+                  Buka
                 </button>
               </div>
             </form>

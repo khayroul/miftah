@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrCreateProgress, updateHifzStatus } from "@/lib/hifz/study-progress";
+import { createSupabaseServerClient } from "@/lib/supabase-auth-server";
 import type { HifzStatus } from "@/types/database";
 
 interface MarkMemorizedBody {
@@ -33,12 +34,20 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid ayah id(s)" }, { status: 400 });
   }
 
-  const userId = process.env.MIFTAH_USER_ID?.trim();
-  if (!userId) {
-    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
-  }
-
   try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = user.id;
     const now = new Date();
     for (const ayahId of ayahIds) {
       const progress = await getOrCreateProgress(userId, ayahId);

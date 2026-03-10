@@ -8,6 +8,7 @@ import {
   demoteManzilToSabqi,
 } from "@/lib/hifz/study-progress";
 import { logReview } from "@/lib/hifz/review-log";
+import { createSupabaseServerClient } from "@/lib/supabase-auth-server";
 import type { FsrsRating, FsrsState } from "@/types/database";
 import type { Grade } from "@/lib/fsrs";
 
@@ -35,15 +36,26 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid parameters" }, { status: 400 });
   }
 
-  const userId = process.env.MIFTAH_USER_ID;
-  if (!userId) {
-    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
-  }
-
   try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = user.id;
     const progress = await getProgressById(progressId);
     if (!progress) {
       return NextResponse.json({ error: "Progress not found" }, { status: 404 });
+    }
+    if (progress.user_id !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const now = new Date();

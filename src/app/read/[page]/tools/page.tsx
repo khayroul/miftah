@@ -66,11 +66,11 @@ export default async function ReadToolsPage({ params }: ReadToolsPageProps) {
 
               <div>
                 <h1 className="text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-50">
-                  Jump dan audio duduk di luar mushaf.
+                  Lompat dan audio berada di luar mushaf.
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600 dark:text-stone-300">
                   Halaman baca kekal bersih. Gunakan ruang ini untuk lompat ke
-                  page, surah, atau juz, kemudian jalankan audio tanpa
+                  halaman, surah, atau juz, kemudian jalankan audio tanpa
                   mengganggu permukaan mushaf.
                 </p>
               </div>
