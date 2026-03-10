@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   getWordByWordForAyahIds,
   getSurah,
@@ -93,15 +94,19 @@ export default async function SurahThemeAppearancePage({
       {/* Refined Header */}
       <header className="flex flex-col gap-6">
         <nav className="flex items-center justify-between text-sm text-stone-500 dark:text-stone-400">
-          <Link href="/" className="hover:text-stone-900 transition dark:hover:text-stone-200">
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+          >
             &larr; Utama
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Link
               href={surahMeta.page_start ? `/read/${surahMeta.page_start}` : "/read/1"}
-              className="hover:text-stone-900 transition dark:hover:text-stone-200"
+              className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
             >
-              Page View
+              Page View &rarr;
             </Link>
           </div>
         </nav>

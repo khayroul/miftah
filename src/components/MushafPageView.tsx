@@ -426,35 +426,53 @@ export function MushafPageView({
         )}
       </div>
 
-      <nav className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        {pageNumber > 1 ? (
-          <Link
-            href={`/read/${pageNumber - 1}`}
-            className="justify-self-start rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
-          >
-            Prev
-          </Link>
-        ) : (
-          <span className="justify-self-start rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-500">
-            Prev
-          </span>
-        )}
-        <span className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
-          Page {pageNumber} / 604
-        </span>
-        {pageNumber < 604 ? (
-          <Link
-            href={`/read/${pageNumber + 1}`}
-            className="justify-self-end rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
-          >
-            Next
-          </Link>
-        ) : (
-          <span className="justify-self-end rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-500">
-            Next
-          </span>
-        )}
-      </nav>
+      <div className="fixed bottom-6 left-1/2 z-40 w-max max-w-[95vw] -translate-x-1/2 animate-fade-in-up">
+        <nav className="flex items-center gap-1 rounded-full border border-stone-200/80 bg-white/95 p-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md dark:border-stone-700/60 dark:bg-stone-900/90">
+          {pageNumber > 1 ? (
+            <Link
+              href={`/read/${pageNumber - 1}`}
+              className="rounded-full px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800 flex items-center gap-1.5"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+              </svg>
+              <span className="hidden sm:inline">Prev</span>
+            </Link>
+          ) : (
+            <span className="flex cursor-not-allowed items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-stone-300 dark:text-stone-600">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+              </svg>
+              <span className="hidden sm:inline">Prev</span>
+            </span>
+          )}
+
+          <div className="flex select-none items-center justify-center px-4">
+            <span className="text-xs font-bold tracking-widest text-stone-500 dark:text-stone-400">
+              HALAMAN {pageNumber}
+            </span>
+          </div>
+
+          {pageNumber < 604 ? (
+            <Link
+              href={`/read/${pageNumber + 1}`}
+              className="rounded-full px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800 flex items-center gap-1.5"
+            >
+              <span className="hidden sm:inline">Next</span>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </Link>
+          ) : (
+            <span className="flex cursor-not-allowed items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-stone-300 dark:text-stone-600">
+              <span className="hidden sm:inline">Next</span>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </span>
+          )}
+        </nav>
+      </div>
 
       {!manifest ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">

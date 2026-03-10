@@ -19,6 +19,15 @@ export interface MushafPageManifest {
   words: MushafWordHitbox[];
 }
 
+export interface MushafAyahManifest {
+  surah: number;
+  ayah: number;
+  schema_version: string;
+  image_width: number;
+  image_height: number;
+  words: MushafWordHitbox[];
+}
+
 export interface MushafWordTranslation {
   location: string;
   bm?: string;

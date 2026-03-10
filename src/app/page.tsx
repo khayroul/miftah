@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ContinueReadingCard } from "@/components/ContinueReadingCard";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Home() {
   const highlights = [
@@ -25,6 +26,10 @@ export default function Home() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_16%_12%,rgba(20,94,89,0.18),transparent_34%),radial-gradient(circle_at_85%_0%,rgba(180,83,9,0.16),transparent_30%)] dark:bg-[radial-gradient(circle_at_16%_12%,rgba(15,118,110,0.22),transparent_34%),radial-gradient(circle_at_85%_0%,rgba(180,83,9,0.18),transparent_30%)]" />
 
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 lg:py-12">
+        <header className="flex w-full justify-end">
+          <ThemeToggle />
+        </header>
+
         <section className="animate-fade-in-up rounded-3xl border border-stone-200/90 bg-white/85 p-5 shadow-[0_25px_70px_-48px_rgba(28,25,23,0.55)] backdrop-blur-sm sm:p-7 dark:border-stone-700 dark:bg-stone-900/78 dark:shadow-[0_25px_70px_-48px_rgba(2,6,23,0.9)]">
           <div className="grid gap-8 lg:grid-cols-[1.35fr_1fr]">
             <div className="space-y-6">
@@ -69,6 +74,12 @@ export default function Home() {
                   className="rounded-xl border border-stone-300 bg-white px-5 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
                 >
                   Explore Theme Navigator
+                </Link>
+                <Link
+                  href="/hifz"
+                  className="rounded-xl border border-teal-900/30 bg-teal-50 px-5 py-2.5 text-sm font-medium text-teal-900 transition hover:bg-teal-100 dark:border-teal-700 dark:bg-teal-900/30 dark:text-teal-100 dark:hover:bg-teal-900/50"
+                >
+                  Hifz Dashboard
                 </Link>
               </div>
             </div>

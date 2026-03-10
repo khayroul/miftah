@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import "./globals.css";
 
 const geist = Geist({
@@ -21,7 +20,6 @@ export default function RootLayout({
   return (
     <html lang="ms">
       <body className={`${geist.variable} antialiased`}>
-        <ThemeToggle />
         {children}
       </body>
     </html>

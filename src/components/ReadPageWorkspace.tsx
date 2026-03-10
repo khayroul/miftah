@@ -9,6 +9,7 @@ import type { PageAudioTrack } from "@/components/PageAudioControls";
 import { ReadModeTools } from "@/components/ReadModeTools";
 import { useRouter } from "next/navigation";
 import type { MushafPageManifest, MushafWordTranslationMap } from "@/types/mushaf";
+import type { ReactNode } from "react";
 
 interface SurahOption {
   surah: number;
@@ -34,6 +35,7 @@ interface ReadPageWorkspaceProps {
   juzOptions: JuzOption[];
   audioTracks: PageAudioTrack[];
   ayahDetails: MushafAyahDetail[];
+  mushafHeader?: ReactNode;
 }
 
 export function ReadPageWorkspace({
@@ -49,6 +51,7 @@ export function ReadPageWorkspace({
   juzOptions,
   audioTracks,
   ayahDetails,
+  mushafHeader,
 }: ReadPageWorkspaceProps) {
   const router = useRouter();
   const [playingAyahKey, setPlayingAyahKey] = useState<string | null>(null);
@@ -81,6 +84,8 @@ export function ReadPageWorkspace({
         audioTracks={audioTracks}
         onPlaybackAyahChange={handlePlaybackAyahChange}
       />
+
+      {mushafHeader}
 
       <MushafPageView
         key={pageNumber}

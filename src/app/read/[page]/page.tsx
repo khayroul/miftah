@@ -88,44 +88,45 @@ export default async function ReadPage({ params }: ReadPageProps) {
             <ThemeToggle />
           </div>
         </nav>
-
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <h1 className="flex items-center gap-3 text-3xl font-semibold tracking-tight text-stone-900 hover:text-stone-800 dark:text-stone-100">
-              Surah {surahMeta?.name_en ?? "Al-Fatihah"}
-              {surahMeta?.name_arabic && (
-                <span className="font-arabic mt-1 text-2xl font-normal opacity-80">
-                  {surahMeta.name_arabic}
-                </span>
-              )}
-            </h1>
-            <p className="mt-1 text-stone-500 dark:text-stone-400">
-              Surah {surahForThemeView} • Halaman {pageNumber} / 604
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            {pageNumber > 1 ? (
-              <Link
-                href={`/read/${pageNumber - 1}`}
-                className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-              >
-                Prev Page
-              </Link>
-            ) : null}
-            {pageNumber < 604 ? (
-              <Link
-                href={`/read/${pageNumber + 1}`}
-                className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-              >
-                Next Page
-              </Link>
-            ) : null}
-          </div>
-        </div>
       </header>
 
       <ReadPageWorkspace
         pageNumber={pageNumber}
+        mushafHeader={
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <h1 className="flex items-center gap-3 text-3xl font-semibold tracking-tight text-stone-900 hover:text-stone-800 dark:text-stone-100">
+                Surah {surahMeta?.name_en ?? "Al-Fatihah"}
+                {surahMeta?.name_arabic && (
+                  <span className="font-arabic mt-1 text-2xl font-normal opacity-80">
+                    {surahMeta.name_arabic}
+                  </span>
+                )}
+              </h1>
+              <p className="mt-1 text-stone-500 dark:text-stone-400">
+                Surah {surahForThemeView} • Halaman {pageNumber} / 604
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {pageNumber > 1 ? (
+                <Link
+                  href={`/read/${pageNumber - 1}`}
+                  className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                >
+                  Prev Page
+                </Link>
+              ) : null}
+              {pageNumber < 604 ? (
+                <Link
+                  href={`/read/${pageNumber + 1}`}
+                  className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                >
+                  Next Page
+                </Link>
+              ) : null}
+            </div>
+          </div>
+        }
         imageAvailable={imageAvailable}
         thumbnailAvailable={thumbnailAvailable}
         manifest={manifest}
