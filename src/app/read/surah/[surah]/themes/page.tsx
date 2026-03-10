@@ -9,6 +9,7 @@ import type { Surah } from "@/types/database";
 
 interface SurahThemeAppearancePageProps {
   params: Promise<{ surah: string }>;
+  searchParams: Promise<{ chunk?: string | string[] }>;
 }
 
 function parseSurahNumber(value: string): number | null {
@@ -40,8 +41,10 @@ function chunkTitleEn(chunk: ThemeAppearanceChunk): string {
 
 export default async function SurahThemeAppearancePage({
   params,
+  searchParams,
 }: SurahThemeAppearancePageProps) {
   const { surah } = await params;
+  const query = await searchParams;
   const surahNumber = parseSurahNumber(surah);
 
   if (!surahNumber) {
@@ -63,6 +66,18 @@ export default async function SurahThemeAppearancePage({
     loadError =
       "Data tema belum dapat dimuat sekarang. Sila semak sambungan Supabase dan cuba semula.";
   }
+
+  const rawChunkParam = Array.isArray(query.chunk) ? query.chunk[0] : query.chunk;
+  const parsedChunkParam = rawChunkParam
+    ? Number.parseInt(rawChunkParam, 10)
+    : 1;
+  const selectedChunkIndex =
+    chunks.length > 0
+      ? Number.isInteger(parsedChunkParam)
+        ? Math.min(Math.max(parsedChunkParam, 1), chunks.length)
+        : 1
+      : 1;
+  const selectedChunk = chunks[selectedChunkIndex - 1] ?? null;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -128,17 +143,57 @@ export default async function SurahThemeAppearancePage({
 
       {!loadError && chunks.length > 0 ? (
         <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4">
-          <h2 className="text-sm font-medium text-stone-900">Chunk Navigator</h2>
-          <div className="flex flex-wrap gap-2">
-            {chunks.map((chunk) => (
-              <a
-                key={chunk.chunk_index}
-                href={`#chunk-${chunk.chunk_index}`}
-                className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs text-stone-700 transition hover:bg-stone-100"
+          <h2 className="text-sm font-medium text-stone-900">
+            Chunk Navigator ({selectedChunkIndex}/{chunks.length})
+          </h2>
+          <form method="get" className="flex flex-wrap items-end gap-2">
+            <label className="text-xs text-stone-600">
+              Pilih chunk
+              <select
+                name="chunk"
+                defaultValue={String(selectedChunkIndex)}
+                className="mt-1 block min-w-64 rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900"
               >
-                {rangeLabel(surahNumber, chunk.start_ayah, chunk.end_ayah)}
-              </a>
-            ))}
+                {chunks.map((chunk) => (
+                  <option key={chunk.chunk_index} value={chunk.chunk_index}>
+                    {chunk.chunk_index}.{" "}
+                    {rangeLabel(surahNumber, chunk.start_ayah, chunk.end_ayah)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="submit"
+              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
+            >
+              Go
+            </button>
+          </form>
+          <div className="flex flex-wrap gap-2">
+            {selectedChunkIndex > 1 ? (
+              <Link
+                href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex - 1}`}
+                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
+              >
+                Prev Chunk
+              </Link>
+            ) : (
+              <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400">
+                Prev Chunk
+              </span>
+            )}
+            {selectedChunkIndex < chunks.length ? (
+              <Link
+                href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex + 1}`}
+                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
+              >
+                Next Chunk
+              </Link>
+            ) : (
+              <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400">
+                Next Chunk
+              </span>
+            )}
           </div>
         </section>
       ) : null}
@@ -151,30 +206,34 @@ export default async function SurahThemeAppearancePage({
 
       {!loadError ? (
         <section className="space-y-4">
-          {chunks.map((chunk) => (
+          {selectedChunk ? (
             <article
-              key={chunk.chunk_index}
-              id={`chunk-${chunk.chunk_index}`}
+              key={selectedChunk.chunk_index}
+              id={`chunk-${selectedChunk.chunk_index}`}
               className="space-y-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm"
             >
               <header className="space-y-1">
                 <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
-                  Chunk {chunk.chunk_index}
+                  Chunk {selectedChunk.chunk_index}
                 </p>
                 <h3 className="text-base font-medium text-stone-900">
-                  {rangeLabel(surahNumber, chunk.start_ayah, chunk.end_ayah)} •{" "}
-                  {chunkTitleBm(chunk)}
+                  {rangeLabel(
+                    surahNumber,
+                    selectedChunk.start_ayah,
+                    selectedChunk.end_ayah,
+                  )}{" "}
+                  • {chunkTitleBm(selectedChunk)}
                 </h3>
                 <p className="text-sm text-stone-600">
-                  {chunkTitleEn(chunk)} • {chunk.ayah_count} ayat
+                  {chunkTitleEn(selectedChunk)} • {selectedChunk.ayah_count} ayat
                 </p>
                 <p className="text-xs text-stone-500">
-                  Mode: {chunk.source === "manual" ? "Manual override" : "Auto"}
+                  Mode: {selectedChunk.source === "manual" ? "Manual override" : "Auto"}
                 </p>
               </header>
 
               <div className="space-y-3">
-                {chunk.ayat.map((ayah) => (
+                {selectedChunk.ayat.map((ayah) => (
                   <article
                     key={ayah.id}
                     className="rounded-xl border border-stone-100 bg-stone-50 p-3"
@@ -192,7 +251,7 @@ export default async function SurahThemeAppearancePage({
                 ))}
               </div>
             </article>
-          ))}
+          ) : null}
         </section>
       ) : null}
     </main>
