@@ -29,6 +29,7 @@ Output: data/seed/seed.sql          — Full INSERT SQL for Supabase
 
 import json
 import re
+from collections import defaultdict
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
@@ -36,6 +37,10 @@ PROJECT_ROOT = SCRIPT_DIR.parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 SEED_DIR = DATA_DIR / "seed"
 QUL_DIR = DATA_DIR / "qul"
+
+ARABIC_DIACRITICS_RE = re.compile(
+    r"[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u08D3-\u08E1\u08E3-\u08FF]"
+)
 
 
 def escape_sql(val):
@@ -114,11 +119,25 @@ def load_tanzil_text(filepath):
     return texts
 
 
-def build_ayat_sql(ayat, sahih, basmeih, id_wbw):
-    """Generate INSERT for ayat table.
-    Merges Arabic text from QUL dump + tanzil.net + translations.
-    Uses tanzil verse_metadata.json for complete page/juz/hizb/ruku (all 6,236).
-    """
+def safe_int(value, default=0):
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def tokenize_uthmani_words(text):
+    return [token for token in str(text or "").split() if token]
+
+
+def strip_arabic_diacritics(text):
+    return ARABIC_DIACRITICS_RE.sub("", str(text or ""))
+
+
+def build_full_ayah_records(ayat, sahih, basmeih):
+    """Build canonical ayah records (full 6,236) used by both ayat and WBW seed."""
     # Load tanzil.net Arabic text (full 6,236 ayat)
     tanzil_uthmani_path = DATA_DIR / "qul" / "quran-uthmani.txt"
     tanzil_simple_path = DATA_DIR / "qul" / "quran-simple.txt"
@@ -131,37 +150,73 @@ def build_ayat_sql(ayat, sahih, basmeih, id_wbw):
     verse_meta = {}
     surah_meta = {}
     if verse_meta_path.exists():
-        with open(verse_meta_path, encoding='utf-8') as f:
+        with open(verse_meta_path, encoding="utf-8") as f:
             meta_data = json.load(f)
-            verse_meta = meta_data.get('verses', {})
-            surah_meta = meta_data.get('surahs', {})
+            verse_meta = meta_data.get("verses", {})
+            surah_meta = meta_data.get("surahs", {})
         print(f"  Tanzil metadata: {len(verse_meta)} verses (page/juz/hizb/ruku)")
 
-    # Build lookup for QUL dump ayat (has word_count)
+    # Build lookup for QUL dump ayat (has word_count for covered subset)
     qul_ayat_map = {}
-    for a in ayat:
-        key = f"{a['surah_id']}:{a['ayah_number']}"
-        qul_ayat_map[key] = a
+    for row in ayat:
+        key = f"{row['surah_id']}:{row['ayah_number']}"
+        qul_ayat_map[key] = row
 
-    # Build full ayat list from all sources
+    # Build full ayat keyset from all core sources
     all_verse_keys = set()
-    for key in sahih:
-        all_verse_keys.add(key)
-    for key in basmeih:
-        all_verse_keys.add(key)
-    for key in tanzil_uthmani:
-        all_verse_keys.add(key)
-    for key in verse_meta:
-        all_verse_keys.add(key)
+    all_verse_keys.update(sahih.keys())
+    all_verse_keys.update(basmeih.keys())
+    all_verse_keys.update(tanzil_uthmani.keys())
+    all_verse_keys.update(verse_meta.keys())
 
-    # Parse verse keys and sort
     parsed_keys = []
     for key in sorted(all_verse_keys):
-        parts = key.split(':')
-        if len(parts) == 2:
-            parsed_keys.append((int(parts[0]), int(parts[1]), key))
+        parts = key.split(":")
+        if len(parts) != 2:
+            continue
+        parsed_keys.append((int(parts[0]), int(parts[1]), key))
     parsed_keys.sort()
 
+    records = []
+    for surah_id, ayah_number, key in parsed_keys:
+        qul = qul_ayat_map.get(key, {})
+        en = sahih.get(key, {})
+        bm = basmeih.get(key, {})
+        meta = verse_meta.get(key, {})
+
+        text_uthmani = tanzil_uthmani.get(key, "") or qul.get("text_uthmani", "")
+        text_simple = tanzil_simple.get(key, "") or qul.get("text_simple", "")
+        tokens = tokenize_uthmani_words(text_uthmani)
+
+        word_count = safe_int(qul.get("word_count"), 0)
+        if word_count <= 0:
+            word_count = len(tokens)
+
+        records.append(
+            {
+                "surah_id": surah_id,
+                "ayah_number": ayah_number,
+                "verse_key": key,
+                "text_uthmani": text_uthmani,
+                "text_simple": text_simple,
+                "translation_en": en.get("t", "") if isinstance(en, dict) else "",
+                "translation_bm": bm.get("t", "") if isinstance(bm, dict) else "",
+                "page_number": safe_int(meta.get("page_number"), safe_int(qul.get("page_number"), 0)),
+                "juz_number": safe_int(meta.get("juz_number"), safe_int(qul.get("juz_number"), 0)),
+                "hizb_number": meta.get("hizb_number") if meta.get("hizb_number") is not None else qul.get("hizb_number"),
+                "ruku_number": meta.get("ruku_number") if meta.get("ruku_number") is not None else qul.get("ruku_number"),
+                "sajdah": bool(meta.get("sajdah", False) or qul.get("sajdah", False)),
+                "word_count": word_count,
+            }
+        )
+
+    return records, surah_meta
+
+
+def build_ayat_sql(ayah_records):
+    """Generate INSERT for ayat table.
+    Uses canonical full ayah records (all 6,236).
+    """
     lines = ["-- Ayat"]
     batch_size = 500
     batch = []
@@ -169,35 +224,24 @@ def build_ayat_sql(ayat, sahih, basmeih, id_wbw):
 
     ayat_with_arabic = 0
     ayat_with_page = 0
-    for surah_id, ayah_num, key in parsed_keys:
-        qul = qul_ayat_map.get(key, {})
-        en = sahih.get(key, {})
-        bm = basmeih.get(key, {})
-        meta = verse_meta.get(key, {})
-
-        # Prefer tanzil/QPC text (has waqf marks + consistent orthography), fall back to QUL dump
-        text_uthmani = tanzil_uthmani.get(key, '') or qul.get('text_uthmani', '')
-        text_simple = tanzil_simple.get(key, '') or qul.get('text_simple', '')
+    for row in ayah_records:
+        text_uthmani = row["text_uthmani"]
         if text_uthmani:
             ayat_with_arabic += 1
 
-        # Use tanzil metadata (complete), fall back to QUL dump
-        page_number = meta.get('page_number') or qul.get('page_number', 0)
-        juz_number = meta.get('juz_number') or qul.get('juz_number', 0)
-        hizb_number = meta.get('hizb_number') or qul.get('hizb_number')
-        ruku_number = meta.get('ruku_number') or qul.get('ruku_number')
-        sajdah = meta.get('sajdah', False) or qul.get('sajdah', False)
-        word_count = qul.get('word_count', 0)
+        page_number = safe_int(row["page_number"], 0)
+        juz_number = safe_int(row["juz_number"], 0)
+        hizb_number = row["hizb_number"]
+        ruku_number = row["ruku_number"]
+        sajdah = row["sajdah"]
+        word_count = safe_int(row["word_count"], 0)
 
         if page_number:
             ayat_with_page += 1
 
-        en_text = en.get('t', '') if isinstance(en, dict) else ''
-        bm_text = bm.get('t', '') if isinstance(bm, dict) else ''
-
         batch.append(
-            f"({surah_id}, {ayah_num}, {escape_sql(text_uthmani)}, {escape_sql(text_simple)}, "
-            f"NULL, {escape_sql(en_text)}, {escape_sql(bm_text)}, "
+            f"({row['surah_id']}, {row['ayah_number']}, {escape_sql(text_uthmani)}, {escape_sql(row['text_simple'])}, "
+            f"NULL, {escape_sql(row['translation_en'])}, {escape_sql(row['translation_bm'])}, "
             f"FALSE, NULL, NULL, "
             f"{page_number}, {juz_number}, {hizb_number or 'NULL'}, {ruku_number or 'NULL'}, "
             f"{'TRUE' if sajdah else 'FALSE'}, {word_count}, NULL)"
@@ -229,60 +273,149 @@ def build_ayat_sql(ayat, sahih, basmeih, id_wbw):
     return "\n".join(lines), total, ayat_with_arabic
 
 
-def build_words_sql(words, bm_wbw, en_wbw, word_occurrences):
-    """Generate INSERT for words + word_occurrences tables.
-    Merges QUL word data + our BM/EN WBW translations.
-    """
-    # Build WBW lookup: verse_key:position -> translation
-    # bm_wbw keys are "surah:ayah:position"
+def most_common_text(counts):
+    if not counts:
+        return None
+    max_count = max(counts.values())
+    winners = sorted([text for text, count in counts.items() if count == max_count])
+    return winners[0] if winners else None
 
-    # First, map QUL word occurrences to verse_key:position
-    qul_word_id_to_occ = {}
-    for occ in word_occurrences:
-        qul_word_id_to_occ[occ['qul_word_id']] = occ
 
-    # Map word IDs to their WBW translations via occurrences
-    word_bm_translations = {}  # word_id -> {text: count}
-    word_en_translations = {}
+def pick_legacy_word_entry(token, legacy_by_exact, legacy_by_stripped):
+    candidates = legacy_by_exact.get(token, [])
+    if not candidates:
+        stripped = strip_arabic_diacritics(token)
+        candidates = legacy_by_stripped.get(stripped, []) if stripped else []
+    if not candidates:
+        return None
+    ranked = sorted(
+        candidates,
+        key=lambda row: (-safe_int(row.get("frequency"), 0), str(row.get("text_uthmani") or "")),
+    )
+    return ranked[0]
 
-    for occ in word_occurrences:
-        vk = occ['verse_key']
-        pos = occ['position']
-        wbw_key = f"{vk}:{pos}"
-        word_id = occ['word_id']
 
-        bm = bm_wbw.get(wbw_key, '')
-        en = en_wbw.get(wbw_key, '')
+def build_complete_words_and_occurrences(ayah_records, legacy_words, bm_wbw, en_wbw):
+    """Generate full-coverage words + occurrences from canonical ayah text."""
+    legacy_by_exact = defaultdict(list)
+    legacy_by_stripped = defaultdict(list)
+    for row in legacy_words:
+        token = str(row.get("text_uthmani") or "").strip()
+        if not token:
+            continue
+        legacy_by_exact[token].append(row)
+        legacy_by_stripped[strip_arabic_diacritics(token)].append(row)
 
-        if bm:
-            if word_id not in word_bm_translations:
-                word_bm_translations[word_id] = {}
-            word_bm_translations[word_id][bm] = word_bm_translations[word_id].get(bm, 0) + 1
+    token_frequency = defaultdict(int)
+    token_bm_counts = defaultdict(lambda: defaultdict(int))
+    token_en_counts = defaultdict(lambda: defaultdict(int))
 
-        if en:
-            if word_id not in word_en_translations:
-                word_en_translations[word_id] = {}
-            word_en_translations[word_id][en] = word_en_translations[word_id].get(en, 0) + 1
+    for ayah in ayah_records:
+        verse_key = ayah["verse_key"]
+        tokens = tokenize_uthmani_words(ayah["text_uthmani"])
+        for position, token in enumerate(tokens, 1):
+            token_frequency[token] += 1
+            wbw_key = f"{verse_key}:{position}"
 
-    # Pick most common translation for each word
-    def most_common(d):
-        if not d:
-            return ''
-        return max(d, key=d.get)
+            bm_translation = str(bm_wbw.get(wbw_key, "") or "").strip()
+            if bm_translation:
+                token_bm_counts[token][bm_translation] += 1
 
+            en_translation = str(en_wbw.get(wbw_key, "") or "").strip()
+            if en_translation:
+                token_en_counts[token][en_translation] += 1
+
+    sorted_tokens = sorted(token_frequency.keys(), key=lambda token: (-token_frequency[token], token))
+    token_to_word_id = {token: idx for idx, token in enumerate(sorted_tokens, 1)}
+
+    words = []
+    for token in sorted_tokens:
+        legacy = pick_legacy_word_entry(token, legacy_by_exact, legacy_by_stripped)
+        legacy_text_simple = str(legacy.get("text_simple") or "").strip() if legacy else ""
+        fallback_text_simple = strip_arabic_diacritics(token)
+        text_simple = legacy_text_simple or fallback_text_simple or token
+
+        words.append(
+            {
+                "id": token_to_word_id[token],
+                "text_uthmani": token,
+                "text_simple": text_simple,
+                "translation_bm": most_common_text(token_bm_counts.get(token, {})),
+                "translation_en": most_common_text(token_en_counts.get(token, {})),
+                "transliteration": str(legacy.get("transliteration") or "").strip() if legacy else "",
+                "root": str(legacy.get("root") or "").strip() if legacy else "",
+                "pos": str(legacy.get("pos") or "word").strip() if legacy else "word",
+                "frequency": token_frequency[token],
+            }
+        )
+
+    occurrences = []
+    for ayah in ayah_records:
+        tokens = tokenize_uthmani_words(ayah["text_uthmani"])
+        for position, token in enumerate(tokens, 1):
+            occurrences.append(
+                {
+                    "word_id": token_to_word_id[token],
+                    "verse_key": ayah["verse_key"],
+                    "position": position,
+                    "page_number": safe_int(ayah["page_number"], 0),
+                }
+            )
+
+    return words, occurrences
+
+
+def audit_word_occurrence_coverage(ayah_records, occurrences):
+    expected_positions = {}
+    for ayah in ayah_records:
+        tokens = tokenize_uthmani_words(ayah["text_uthmani"])
+        expected_positions[ayah["verse_key"]] = set(range(1, len(tokens) + 1))
+
+    actual_positions = defaultdict(set)
+    for occ in occurrences:
+        actual_positions[occ["verse_key"]].add(safe_int(occ["position"], 0))
+
+    mismatches = []
+    missing_token_total = 0
+    for ayah in ayah_records:
+        verse_key = ayah["verse_key"]
+        expected = expected_positions.get(verse_key, set())
+        actual = actual_positions.get(verse_key, set())
+        missing = sorted([pos for pos in expected if pos not in actual])
+        if not missing:
+            continue
+        missing_token_total += len(missing)
+        mismatches.append(
+            {
+                "verse_key": verse_key,
+                "expected_count": len(expected),
+                "actual_count": len(actual),
+                "missing_positions": missing,
+            }
+        )
+
+    expected_total = sum(len(positions) for positions in expected_positions.values())
+    return {
+        "expected_tokens": expected_total,
+        "actual_occurrences": len(occurrences),
+        "mismatch_ayah_count": len(mismatches),
+        "missing_token_total": missing_token_total,
+        "sample_mismatches": mismatches[:10],
+    }
+
+
+def build_words_sql(words):
+    """Generate INSERT for words table from canonical full-coverage word list."""
     lines = ["-- Words"]
     batch_size = 500
     batch = []
 
-    for w in words:
-        wid = w['id']
-        bm_trans = most_common(word_bm_translations.get(wid, {}))
-        en_trans = most_common(word_en_translations.get(wid, {}))
-
+    for word in words:
         batch.append(
-            f"({wid}, {escape_sql(w['text_uthmani'])}, {escape_sql(w['text_simple'])}, "
-            f"{escape_sql(bm_trans)}, {escape_sql(en_trans)}, {escape_sql(w['transliteration'])}, "
-            f"{escape_sql(w['root'])}, NULL, {escape_sql(w['pos'])}, {w['frequency']})"
+            f"({word['id']}, {escape_sql(word['text_uthmani'])}, {escape_sql(word['text_simple'])}, "
+            f"{escape_sql(word.get('translation_bm') or None)}, {escape_sql(word.get('translation_en') or None)}, "
+            f"{escape_sql(word.get('transliteration') or None)}, {escape_sql(word.get('root') or None)}, "
+            f"NULL, {escape_sql(word.get('pos') or None)}, {safe_int(word.get('frequency'), 0)})"
         )
 
         if len(batch) >= batch_size:
@@ -607,8 +740,8 @@ def main():
     # Load extracted QUL data
     surahs = load_json(SEED_DIR / "surahs.json")
     ayat = load_json(SEED_DIR / "ayat.json")
-    words = load_json(SEED_DIR / "words.json")
-    occurrences = load_json(SEED_DIR / "word_occurrences.json")
+    legacy_words = load_json(SEED_DIR / "words.json")
+    legacy_occurrences = load_json(SEED_DIR / "word_occurrences.json")
     themes = load_json_optional(SEED_DIR / "themes.json", [])
     theme_ayat = load_json_optional(SEED_DIR / "theme_ayat.json", [])
     ayah_theme_chunks = load_json_optional(SEED_DIR / "ayah_theme_chunks.json", [])
@@ -622,7 +755,10 @@ def main():
     bm_wbw = load_json(DATA_DIR / "bm_wbw_complete.json")
     en_wbw = load_json(QUL_DIR / "english-wbw-translation.json")
 
-    print(f"\nLoaded: {len(surahs)} surahs, {len(ayat)} ayat (QUL), {len(words)} words")
+    print(
+        f"\nLoaded: {len(surahs)} surahs, {len(ayat)} ayat (QUL), "
+        f"{len(legacy_words)} words (legacy), {len(legacy_occurrences)} occurrences (legacy)"
+    )
     print(
         f"Thematic: themes={len(themes)}, theme_ayat={len(theme_ayat)} | "
         f"Mutashabihat: patterns={len(mutashabihat)}, links={len(mutashabihat_ayat)}"
@@ -631,14 +767,28 @@ def main():
     print(f"Tafsir notes: {len(tafsir_notes)}")
     print(f"Translations: Sahih={len(sahih)}, Basmeih={len(basmeih)}, BM-WBW={len(bm_wbw)}, EN-WBW={len(en_wbw)}")
 
-    # Load tanzil metadata for surahs
-    verse_meta_path = SEED_DIR / "verse_metadata.json"
-    surah_meta = {}
-    if verse_meta_path.exists():
-        with open(verse_meta_path, encoding='utf-8') as f:
-            meta_data = json.load(f)
-            surah_meta = meta_data.get('surahs', {})
-        print(f"Tanzil surah metadata: {len(surah_meta)} surahs")
+    # Build canonical ayah records + full-coverage words/occurrences
+    ayah_records, surah_meta = build_full_ayah_records(ayat, sahih, basmeih)
+    words, occurrences = build_complete_words_and_occurrences(
+        ayah_records,
+        legacy_words,
+        bm_wbw,
+        en_wbw,
+    )
+    wbw_coverage = audit_word_occurrence_coverage(ayah_records, occurrences)
+    print(
+        "WBW coverage audit: "
+        f"expected_tokens={wbw_coverage['expected_tokens']}, "
+        f"actual_occurrences={wbw_coverage['actual_occurrences']}, "
+        f"mismatch_ayah={wbw_coverage['mismatch_ayah_count']}"
+    )
+    if wbw_coverage["mismatch_ayah_count"] > 0:
+        sample = wbw_coverage["sample_mismatches"][:3]
+        raise RuntimeError(
+            "Word-occurrence coverage audit failed. "
+            f"Mismatched ayat={wbw_coverage['mismatch_ayah_count']}, "
+            f"missing_tokens={wbw_coverage['missing_token_total']}, sample={sample}"
+        )
 
     # Build SQL
     print("\nBuilding SQL...")
@@ -654,7 +804,7 @@ def main():
     sql_parts.append("")
 
     # Ayat (with juz_start fix for surahs after ayat are inserted)
-    ayat_sql, total_ayat, ayat_with_arabic = build_ayat_sql(ayat, sahih, basmeih, {})
+    ayat_sql, total_ayat, ayat_with_arabic = build_ayat_sql(ayah_records)
     sql_parts.append(ayat_sql)
     sql_parts.append("")
 
@@ -675,7 +825,7 @@ WHERE surahs.id = sub.surah_id;""")
     sql_parts.append("")
 
     # Words
-    sql_parts.append(build_words_sql(words, bm_wbw, en_wbw, occurrences))
+    sql_parts.append(build_words_sql(words))
     sql_parts.append("")
 
     # Word occurrences
@@ -743,6 +893,9 @@ Ayat: {total_ayat} total ({ayat_with_arabic} with Arabic text from Tanzil/QUL)
   → {missing_ayat} ayat need Arabic text
 Unique words: {len(words)}
 Word occurrences: {len(occurrences)}
+WBW expected token total: {wbw_coverage['expected_tokens']}
+WBW mismatch ayat: {wbw_coverage['mismatch_ayah_count']}
+WBW missing token positions: {wbw_coverage['missing_token_total']}
 Themes: {len(themes)}
 Theme-ayah links: {len(theme_ayat)}
 Ayah theme chunks: {len(ayah_theme_chunks)}

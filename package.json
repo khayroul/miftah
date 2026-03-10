@@ -21,6 +21,8 @@
     "seed:fetch-ayah-themes": "python3 scripts/seed/fetch_qul_ayah_theme_chunks.py",
     "seed:translate-ayah-themes-bm": "tsx scripts/seed/translate_ayah_theme_chunks_bm.ts",
     "seed:sync-ayah-themes": "tsx scripts/seed/sync_ayah_theme_chunks.ts",
+    "seed:check-word-coverage": "python3 scripts/seed/check_word_coverage.py",
+    "seed:sync-word-coverage": "python3 scripts/seed/sync_word_coverage.py",
     "bot": "tsx src/bot/index.ts",
     "bot:dev": "tsx watch src/bot/index.ts",
     "bot:service:install": "bash scripts/bot/install_launchd.sh",

@@ -24,5 +24,8 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: WBW Coverage Check
+        run: npm run seed:check-word-coverage
+
       - name: Build
         run: npm run build
