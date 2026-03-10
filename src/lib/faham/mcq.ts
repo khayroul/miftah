@@ -6,7 +6,9 @@ export type FahamMcqDirectionMode = FahamMcqDirection | "mixed";
 export interface FahamMcqPoolWord {
   frequency: number;
   id: number;
+  lemma: string | null;
   pos: string | null;
+  root: string | null;
   textSimple: string;
   textUthmani: string;
   translationBm: string | null;
@@ -32,6 +34,7 @@ export interface FahamBuiltMcq {
   promptLang: "ar" | "ms";
   promptPrimary: string;
   promptSecondary: string | null;
+  whyThisSet: string[];
 }
 
 function collapseWhitespace(value: string): string {
@@ -78,7 +81,21 @@ function posScore(correctPos: string | null, candidatePos: string | null): numbe
   if (!correctPos || !candidatePos) {
     return 0;
   }
-  return correctPos === candidatePos ? 18 : -4;
+  return correctPos === candidatePos ? 22 : -12;
+}
+
+function isAbstractPos(pos: string | null): boolean {
+  if (!pos) {
+    return false;
+  }
+
+  const normalized = pos.toLowerCase();
+  return (
+    normalized.includes("particle") ||
+    normalized.includes("prep") ||
+    normalized.includes("conj") ||
+    normalized.includes("pron")
+  );
 }
 
 function normalizeArabicText(value: string | null | undefined): string | null {
@@ -123,6 +140,7 @@ function scoreMalayDistractor(correctWord: Word, candidate: FahamMcqPoolWord): n
       0.7,
     ) +
     proximityScore(correctWord.frequency, candidate.frequency, 12, 65) +
+    (!isAbstractPos(correctWord.pos) && isAbstractPos(candidate.pos) ? -14 : 0) +
     (correctMeaning.includes(",") === candidateMeaning.includes(",") ? 3 : 0) -
     meaningOverlapPenalty(correctMeaning, candidateMeaning)
   );
@@ -137,6 +155,10 @@ function scoreArabicDistractor(correctWord: Word, candidate: FahamMcqPoolWord): 
 
   const correctMeaning = normalizeMalayMeaning(correctWord.translation_bm);
   const candidateMeaning = normalizeMalayMeaning(candidate.translationBm);
+  const sameRoot = Boolean(correctWord.root && candidate.root && correctWord.root === candidate.root);
+  const sameLemma = Boolean(
+    correctWord.lemma && candidate.lemma && correctWord.lemma === candidate.lemma,
+  );
 
   return (
     posScore(correctWord.pos, candidate.pos) +
@@ -148,10 +170,35 @@ function scoreArabicDistractor(correctWord: Word, candidate: FahamMcqPoolWord): 
       0.8,
     ) +
     proximityScore(correctWord.frequency, candidate.frequency, 10, 70) +
+    (sameRoot ? -22 : 0) +
+    (sameLemma ? -10 : 0) +
     (correctMeaning && candidateMeaning
       ? proximityScore(correctMeaning.length, candidateMeaning.length, 8, 2)
       : 0)
   );
+}
+
+function buildWhyThisSetNotes(word: Word, direction: FahamMcqDirection): string[] {
+  const notes: string[] = [];
+
+  if (word.pos) {
+    notes.push(`Pilihan diutamakan daripada kelas kata ${word.pos} yang serupa.`);
+  }
+
+  if (direction === "arab_to_bm") {
+    notes.push("Makna dipilih hampir sama panjang supaya jawapan tidak terlalu menonjol.");
+    if (!isAbstractPos(word.pos)) {
+      notes.push("Partikel dan kata fungsi ditolak ke bawah supaya gangguan lebih bermakna.");
+    }
+    return notes;
+  }
+
+  notes.push("Pilihan Arab dipilih dengan rupa panjang yang hampir seimbang.");
+  if (word.root || word.lemma) {
+    notes.push("Keluarga akar yang sama dielakkan supaya soalan benar-benar uji makna.");
+  }
+
+  return notes;
 }
 
 function selectDistractors(params: {
@@ -219,11 +266,7 @@ function buildArabicToMalayMcq(
     return null;
   }
 
-  const selectedDistractors = deterministicOrder(
-    distractors.slice(0, Math.max(distractorCount * 3, distractorCount)),
-    `bm:${word.id}:${correctMeaning}`,
-    (item) => item,
-  ).slice(0, distractorCount);
+  const selectedDistractors = distractors.slice(0, distractorCount);
   const optionValues = deterministicOrder(
     [correctMeaning, ...selectedDistractors],
     `bm-options:${word.id}`,
@@ -251,6 +294,7 @@ function buildArabicToMalayMcq(
     promptLang: "ar",
     promptPrimary: correctArabic,
     promptSecondary: word.transliteration?.trim() || null,
+    whyThisSet: buildWhyThisSetNotes(word, "arab_to_bm"),
   };
 }
 
@@ -277,11 +321,7 @@ function buildMalayToArabicMcq(
     return null;
   }
 
-  const selectedDistractors = deterministicOrder(
-    distractors.slice(0, Math.max(distractorCount * 3, distractorCount)),
-    `ar:${word.id}:${correctArabic}`,
-    (item) => item,
-  ).slice(0, distractorCount);
+  const selectedDistractors = distractors.slice(0, distractorCount);
   const optionValues = deterministicOrder(
     [correctArabic, ...selectedDistractors],
     `ar-options:${word.id}`,
@@ -309,6 +349,7 @@ function buildMalayToArabicMcq(
     promptLang: "ms",
     promptPrimary: correctMeaning,
     promptSecondary: word.translation_en?.trim() || null,
+    whyThisSet: buildWhyThisSetNotes(word, "bm_to_arab"),
   };
 }
 

@@ -1,4 +1,5 @@
 import type { FahamSourceType } from "@/types/database";
+import { TOP_FAHAM_WORD_LIMIT } from "./config";
 import type { FahamBuiltMcq, FahamMcqDirectionMode } from "./mcq";
 import { buildFahamMcqForWord, normalizeMalayMeaning } from "./mcq";
 import {
@@ -34,6 +35,8 @@ export interface SerializedFahamCard {
   };
   kind: "due" | "new";
   mcq: FahamBuiltMcq;
+  mistakeStreak: number;
+  needsReinforcement: boolean;
   progressId: number;
   reps: number;
   state: number;
@@ -55,6 +58,7 @@ export interface FahamQueueSnapshot {
   stats: {
     dueCount: number;
     eligibleNewCount: number;
+    focusWordLimit: number;
     totalCandidateCount: number;
   };
 }
@@ -74,6 +78,8 @@ function serializeDueCard(
     due: card.progress.due,
     kind: "due",
     mcq,
+    mistakeStreak: card.progress.mistake_streak,
+    needsReinforcement: card.progress.needs_reinforcement,
     progressId: card.progress.id,
     reps: card.progress.reps,
     state: card.progress.state,
@@ -144,6 +150,9 @@ export async function buildFahamQueueSnapshot(
     blockedReason: plan.blockedReason,
     due: surfacedDueCards,
     new: surfacedNewCards,
-    stats: plan.stats,
+    stats: {
+      ...plan.stats,
+      focusWordLimit: TOP_FAHAM_WORD_LIMIT,
+    },
   };
 }

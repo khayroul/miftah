@@ -474,6 +474,22 @@ export function FahamWorkspace({
             </div>
           </div>
 
+          <div className="mt-5 rounded-[1.35rem] border border-stone-200/80 bg-stone-50/90 p-4 dark:border-stone-700 dark:bg-stone-950/60">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
+              Kenapa pilihan ini?
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {currentCard.mcq.whyThisSet.map((note) => (
+                <span
+                  key={note}
+                  className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs leading-relaxed text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+                >
+                  {note}
+                </span>
+              ))}
+            </div>
+          </div>
+
           {answerState ? (
             <div className="mt-6 rounded-[1.5rem] border border-stone-200/80 bg-stone-50/90 p-5 dark:border-stone-700 dark:bg-stone-950/65">
               <div className="flex flex-wrap items-center justify-between gap-3">

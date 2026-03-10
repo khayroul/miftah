@@ -194,6 +194,9 @@ export interface VocabProgress extends FsrsFields {
   id: number;
   user_id: string;
   word_id: number;
+  needs_reinforcement: boolean;
+  mistake_streak: number;
+  last_incorrect_at: string | null;
   created_at: string;
   updated_at: string;
 }

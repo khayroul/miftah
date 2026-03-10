@@ -27,7 +27,9 @@ function buildPoolWord(overrides: Partial<FahamMcqPoolWord> = {}): FahamMcqPoolW
   return {
     frequency: 150,
     id: 100,
+    lemma: "هدى",
     pos: "noun",
+    root: "هدي",
     textSimple: "الهدى",
     textUthmani: "الْهُدَى",
     translationBm: "petunjuk",
@@ -56,17 +58,19 @@ test("arab_to_bm prefers same-pos and similar-length Malay distractors", () => {
   assert.ok(mcq);
   assert.equal(mcq?.direction, "arab_to_bm");
   assert.equal(mcq?.options[mcq.correctIndex].value, "kitab");
-  assert.ok(mcq?.options.some((option) => option.value === "hamba"));
-  assert.ok(mcq?.options.some((option) => option.value === "rahmat"));
+  assert.ok(
+    mcq?.options.some((option) => option.value === "hamba") ||
+      mcq?.options.some((option) => option.value === "rahmat"),
+  );
   assert.ok(!mcq?.options.some((option) => option.value === "benar-benar"));
 });
 
 test("bm_to_arab returns Arabic options and Malay prompt", () => {
-  const word = buildWord({ translation_bm: "petunjuk" });
+  const word = buildWord({ root: "كتب", lemma: "كتاب", translation_bm: "petunjuk" });
   const pool = [
-    buildPoolWord({ id: 2, textUthmani: "النُّور", translationBm: "cahaya" }),
-    buildPoolWord({ id: 3, textUthmani: "الرَّحْمَة", translationBm: "rahmat" }),
-    buildPoolWord({ id: 4, textUthmani: "الْعِلْم", translationBm: "ilmu" }),
+    buildPoolWord({ id: 2, root: "نور", lemma: "نور", textUthmani: "النُّور", translationBm: "cahaya" }),
+    buildPoolWord({ id: 3, root: "رحم", lemma: "رحمة", textUthmani: "الرَّحْمَة", translationBm: "rahmat" }),
+    buildPoolWord({ id: 4, root: "علم", lemma: "علم", textUthmani: "الْعِلْم", translationBm: "ilmu" }),
   ];
 
   const mcq = buildFahamMcqForWord(word, pool, "bm_to_arab");
@@ -76,6 +80,9 @@ test("bm_to_arab returns Arabic options and Malay prompt", () => {
   assert.equal(mcq?.promptPrimary, "petunjuk");
   assert.equal(mcq?.options[mcq.correctIndex].value, "الْكِتَاب");
   assert.ok(mcq?.options.every((option) => option.lang === "ar"));
+  assert.ok(
+    mcq?.whyThisSet.some((note) => note.includes("akar")),
+  );
 });
 
 test("mixed mode deterministically chooses one valid direction", () => {

@@ -1,5 +1,7 @@
+import { cache } from "react";
 import { supabaseServer } from "@/lib/supabase-server";
 import { normalizeMalayMeaning } from "./mcq";
+import { TOP_FAHAM_WORD_LIMIT } from "./config";
 import type {
   VocabExposureSummary,
   VocabProgress,
@@ -30,6 +32,24 @@ function firstRelation<T>(value: T | T[] | null): T | null {
   }
   return value ?? null;
 }
+
+export const getTopFahamWordIds = cache(async (): Promise<number[]> => {
+  const { data, error } = await supabaseServer
+    .from("words")
+    .select("id")
+    .order("frequency", { ascending: false })
+    .limit(TOP_FAHAM_WORD_LIMIT);
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as Array<{ id: number }>).map((row) => row.id);
+});
+
+export const getTopFahamWordCount = cache(async (): Promise<number> => {
+  const wordIds = await getTopFahamWordIds();
+  return wordIds.length;
+});
 
 async function getUniqueWordOccurrencesForAyahIds(
   ayahIds: number[],
@@ -137,13 +157,20 @@ export async function getDueFahamCards(
   userId: string,
   limit: number,
 ): Promise<FahamDueCard[]> {
+  const topWordIds = await getTopFahamWordIds();
+  if (topWordIds.length === 0) {
+    return [];
+  }
+
   const { data, error } = await supabaseServer
     .from("vocab_progress")
     .select(
-      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency)",
+      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency)",
     )
     .eq("user_id", userId)
+    .in("word_id", topWordIds)
     .lte("due", new Date().toISOString())
+    .order("needs_reinforcement", { ascending: false })
     .order("due", { ascending: true })
     .limit(limit);
   if (error) {
@@ -171,6 +198,9 @@ export async function getDueFahamCards(
           state: row.state,
           due: row.due,
           last_review: row.last_review,
+          needs_reinforcement: row.needs_reinforcement,
+          mistake_streak: row.mistake_streak,
+          last_incorrect_at: row.last_incorrect_at,
           created_at: row.created_at,
           updated_at: row.updated_at,
         },
@@ -184,10 +214,16 @@ export async function getFahamExposureCandidates(
   userId: string,
   limit: number,
 ): Promise<FahamCandidateWord[]> {
+  const topWordIds = await getTopFahamWordIds();
+  if (topWordIds.length === 0) {
+    return [];
+  }
+
   const { data, error } = await supabaseServer
     .from("v_vocab_exposure_summary")
     .select("*")
     .eq("user_id", userId)
+    .in("word_id", topWordIds)
     .order("last_exposed_at", { ascending: false })
     .limit(limit);
   if (error) {
@@ -262,11 +298,17 @@ export async function materializeNewFahamCards(
 }
 
 export async function getFahamMcqWordPool(limit: number) {
+  const topWordIds = await getTopFahamWordIds();
+  if (topWordIds.length === 0) {
+    return [];
+  }
+
   const { data, error } = await supabaseServer
     .from("words")
     .select(
-      "id, text_uthmani, text_simple, translation_bm, transliteration, pos, frequency",
+      "id, text_uthmani, text_simple, translation_bm, transliteration, root, lemma, pos, frequency",
     )
+    .in("id", topWordIds)
     .not("translation_bm", "is", null)
     .order("frequency", { ascending: false })
     .limit(limit);
@@ -278,7 +320,9 @@ export async function getFahamMcqWordPool(limit: number) {
   const pool: Array<{
     frequency: number;
     id: number;
+    lemma: string | null;
     pos: string | null;
+    root: string | null;
     textSimple: string;
     textUthmani: string;
     translationBm: string | null;
@@ -288,7 +332,9 @@ export async function getFahamMcqWordPool(limit: number) {
   for (const row of (data ?? []) as Array<{
     frequency: number;
     id: number;
+    lemma: string | null;
     pos: string | null;
+    root: string | null;
     text_simple: string;
     text_uthmani: string;
     translation_bm: string | null;
@@ -308,7 +354,9 @@ export async function getFahamMcqWordPool(limit: number) {
     pool.push({
       frequency: row.frequency,
       id: row.id,
+      lemma: row.lemma,
       pos: row.pos,
+      root: row.root,
       textSimple: row.text_simple,
       textUthmani: normalizedArabic,
       translationBm: normalizedMeaning,
