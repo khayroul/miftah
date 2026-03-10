@@ -1,0 +1,23 @@
+# Ignore large local artifacts not needed at runtime on Vercel
+assets/
+test/
+.tmp/
+node_modules/
+.next/
+coverage/
+
+# Ignore heavy data folders, keep only lightweight runtime fallbacks
+data/*
+!data/theme_chunk_overrides.json
+!data/seed/
+
+data/seed/*
+!data/seed/ayat.json
+!data/seed/surahs.json
+
+# Dev/ops artifacts
+scripts/
+supabase/
+ops/
+n8n-exports/
+manifests/
