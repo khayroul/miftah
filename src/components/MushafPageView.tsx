@@ -267,7 +267,7 @@ export function MushafPageView({
       fullImageReady,
       wordsCount: words.length,
     });
-  const modeAllowsWordInteraction = mode === "faham";
+  const modeAllowsWordInteraction = mode === "faham" || mode === "read";
   const canInteract = modeAllowsWordInteraction && canInteractWhenReady;
   const canSelectAyah = mode === "read" && canShowFullImage && fullImageReady;
   const wordTapPaddingX = Math.max(8, imageWidth * 0.004);

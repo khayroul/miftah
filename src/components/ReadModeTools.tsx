@@ -47,8 +47,8 @@ export function ReadModeTools({
 
   return (
     <section className="space-y-4">
-      <div className="flex w-full flex-col items-start gap-4 sm:flex-row sm:items-center">
-        <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-stone-200 bg-white p-1.5 shadow-sm dark:border-stone-700 dark:bg-stone-800">
+      <div className="flex w-full flex-col items-center justify-center gap-4 sm:flex-row">
+        <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-full border border-stone-200 bg-white p-1.5 shadow-sm dark:border-stone-700 dark:bg-stone-800">
           <span className="pl-3 pr-2 text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
             Mode
           </span>
@@ -70,27 +70,9 @@ export function ReadModeTools({
             );
           })}
         </div>
-
-        {mode === "read" ? (
-          <p className="text-xs font-medium text-stone-400 dark:text-stone-500 sm:ml-2">
-            Paparan mushaf kekal ringkas untuk bacaan.
-          </p>
-        ) : mode === "faham" ? (
-          <p className="text-xs font-medium text-stone-400 dark:text-stone-500 sm:ml-2">
-            Ketik perkataan untuk lihat makna ringkas.
-          </p>
-        ) : mode === "tema" ? (
-          <p className="text-xs font-medium text-stone-400 dark:text-stone-500 sm:ml-2">
-            Tema membawa terus ke halaman surah bertema.
-          </p>
-        ) : (
-          <p className="text-xs font-medium text-stone-400 dark:text-stone-500 sm:ml-2">
-            Mod Hafal mengekalkan mushaf dan kawalan hafalan pada halaman ini.
-          </p>
-        )}
       </div>
 
-      <div className="inline-flex flex-wrap items-center gap-2">
+      <div className="flex w-full items-center justify-center gap-3">
         <button
           type="button"
           onClick={onToggleJumpControls}

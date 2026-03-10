@@ -5,6 +5,7 @@ import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
 
 interface ReadAudioDockProps {
   tracks: ReadAudioTrack[];
+  visible?: boolean;
   onRequestClose: () => void;
 }
 
@@ -113,6 +114,7 @@ function SegmentedRepeat({ title, value, onChange }: SegmentedRepeatProps) {
 
 export function ReadAudioDock({
   tracks,
+  visible,
   onRequestClose,
 }: ReadAudioDockProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -254,7 +256,11 @@ export function ReadAudioDock({
   const currentRangeTracks = tracks.slice(normalizedRangeStart, normalizedRangeEnd + 1);
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50">
+    <div
+      className={`fixed inset-x-0 bottom-0 z-50 transition-all duration-300 ${
+        visible === false ? "pointer-events-none translate-y-full opacity-0" : "translate-y-0 opacity-100"
+      }`}
+    >
       <audio
         ref={audioRef}
         preload="metadata"

@@ -164,13 +164,12 @@ export function ReadPageWorkspace({
         onCanvasTap={handleMushafTap}
       />
 
-      {audioDockVisible ? (
-        <ReadAudioDock
-          key={`audio-dock-${pageNumber}`}
-          tracks={audioTracks}
-          onRequestClose={() => setAudioDockVisible(false)}
-        />
-      ) : null}
+      <ReadAudioDock
+        key={`audio-dock-${pageNumber}`}
+        tracks={audioTracks}
+        visible={audioDockVisible}
+        onRequestClose={() => setAudioDockVisible(false)}
+      />
     </>
   );
 }

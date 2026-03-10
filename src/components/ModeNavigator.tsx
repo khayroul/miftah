@@ -68,33 +68,35 @@ export function ModeNavigator({
   }, [fallbackThemeSurahId, readPage, surahTargets]);
 
   return (
-    <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-stone-200 bg-white/92 p-1.5 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
-      <span className="pl-3 pr-2 text-xs font-semibold uppercase tracking-[0.2em] text-stone-400 dark:text-stone-500">
-        Mod
-      </span>
-      {MODE_ITEMS.map((item) => {
-        const active = item.value === activeMode;
-        return (
-          <Link
-            key={item.value}
-            href={modeHref({
-              mode: item.value,
-              readPage,
-              themeSurahId: derivedThemeSurahId,
-            })}
-            onClick={() => {
-              saveReadMode(item.value);
-            }}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-              active
-                ? "bg-stone-900 text-stone-50 shadow-sm dark:bg-stone-100 dark:text-stone-900"
-                : "text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
-            }`}
-          >
-            {item.label}
-          </Link>
-        );
-      })}
+    <div className="flex w-full justify-center">
+      <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-full border border-stone-200 bg-white/92 p-1.5 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
+        <span className="pl-3 pr-2 text-xs font-semibold uppercase tracking-[0.2em] text-stone-400 dark:text-stone-500">
+          Mod
+        </span>
+        {MODE_ITEMS.map((item) => {
+          const active = item.value === activeMode;
+          return (
+            <Link
+              key={item.value}
+              href={modeHref({
+                mode: item.value,
+                readPage,
+                themeSurahId: derivedThemeSurahId,
+              })}
+              onClick={() => {
+                saveReadMode(item.value);
+              }}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                active
+                  ? "bg-stone-900 text-stone-50 shadow-sm dark:bg-stone-100 dark:text-stone-900"
+                  : "text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }
