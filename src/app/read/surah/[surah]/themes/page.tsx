@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   getWordByWordForAyahIds,
@@ -189,6 +190,17 @@ export default async function SurahThemeAppearancePage({
 
       {!loadError && chunks.length > 0 ? (
         <div className="flex flex-col gap-8">
+          {selectedChunk ? (
+            <FahamExposureTracker
+              payload={{
+                ayahIds: selectedChunk.ayat.map((ayah) => ayah.id),
+                sourceType: "theme_chunk",
+                surahId: surahNumber,
+                themeChunkIndex: selectedChunk.chunk_index,
+              }}
+            />
+          ) : null}
+
           {/* Main Content Area */}
           <section className="space-y-6">
             {selectedChunk ? (

@@ -1,5 +1,6 @@
 "use client";
 
+import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import type { PlanItem } from "@/lib/hifz/scheduler";
 import type { FsrsRating } from "@/types/database";
 
@@ -63,6 +64,14 @@ export function HifzSessionCard({
 
   return (
     <div className="animate-fade-in-up rounded-3xl border border-stone-200/90 bg-white/85 p-5 shadow-[0_25px_70px_-48px_rgba(28,25,23,0.55)] backdrop-blur-sm sm:p-7 dark:border-stone-700 dark:bg-stone-900/78 dark:shadow-[0_25px_70px_-48px_rgba(2,6,23,0.9)]">
+      <FahamExposureTracker
+        payload={{
+          ayahIds: [ayah.id],
+          sourceType: "hifz_ayah",
+          surahId: ayah.surahId,
+        }}
+      />
+
       {/* Header: block badge + progress */}
       <div className="mb-5 flex items-center justify-between">
         <span

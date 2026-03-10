@@ -1,19 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { PageAudioTrack } from "@/components/PageAudioControls";
 import type { MushafAyahDetail } from "@/components/MushafPageView";
 import { ReadPageWorkspace } from "@/components/ReadPageWorkspace";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { getProgressByAyahIds } from "@/lib/hifz/study-progress";
 import { loadPageManifest, pageImageExists } from "@/lib/mushafAssets";
+import { mapAyatToPageAudioTracks } from "@/lib/pageAudioTracks";
 import { getAyatByPage, getSurah } from "@/lib/queries";
 import {
   getReadJumpTargets,
   parseReadPage,
-  parseReadSurah,
 } from "@/lib/readNavigation";
 import { findMarkerForPage } from "@/lib/readNavigationUtils";
-import { mapAyatToPageAudioTracks } from "@/lib/pageAudioTracks";
 import { getWordTranslationsByHitboxes } from "@/lib/wbwTranslations";
 import type { Ayah } from "@/types/database";
 
@@ -37,12 +35,10 @@ export default async function ReadPage({ params }: ReadPageProps) {
   ]);
 
   let ayatOnPage: Ayah[] = [];
-  let audioTracks: PageAudioTrack[] = [];
   let ayahDetails: MushafAyahDetail[] = [];
   let memorizedAyahKeys: string[] = [];
   try {
     ayatOnPage = await getAyatByPage(pageNumber);
-    audioTracks = mapAyatToPageAudioTracks(ayatOnPage);
     ayahDetails = ayatOnPage.map((ayah) => ({
       id: ayah.id,
       key: `${ayah.surah_id}:${ayah.ayah_number}`,
@@ -72,7 +68,6 @@ export default async function ReadPage({ params }: ReadPageProps) {
     }
   } catch {
     ayatOnPage = [];
-    audioTracks = [];
     ayahDetails = [];
     memorizedAyahKeys = [];
   }
@@ -92,8 +87,8 @@ export default async function ReadPage({ params }: ReadPageProps) {
 
   const surahByPage = findMarkerForPage(surahMarkers, pageNumber)?.id ?? 1;
   const juzByPage = findMarkerForPage(juzMarkers, pageNumber)?.id ?? 1;
-  const firstWordLocation = manifest?.words[0]?.location;
-  const surahForThemeView = parseReadSurah(firstWordLocation) ?? surahByPage;
+  const surahForThemeView = ayatOnPage[0]?.surah_id ?? surahByPage;
+  const audioTracks = mapAyatToPageAudioTracks(ayatOnPage);
   
   const surahMeta = await getSurah(surahForThemeView);
 
@@ -157,11 +152,12 @@ export default async function ReadPage({ params }: ReadPageProps) {
         currentSurahId={surahByPage}
         currentJuzNumber={juzByPage}
         themeSurahId={surahForThemeView}
-        surahOptions={jumpTargets.surahs}
-        juzOptions={jumpTargets.juzs}
+        jumpSurahOptions={jumpTargets.surahs}
+        jumpJuzOptions={jumpTargets.juzs}
         audioTracks={audioTracks}
         ayahDetails={ayahDetails}
         memorizedAyahKeys={memorizedAyahKeys}
+        readingAyahIds={ayatOnPage.map((ayah) => ayah.id)}
       />
     </main>
   );

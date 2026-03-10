@@ -1,5 +1,14 @@
 import type { Ayah } from "@/types/database";
-import type { PageAudioTrack } from "@/components/PageAudioControls";
+
+export interface ReadAudioTrack {
+  key: string;
+  label: string;
+  audioUrl: string;
+  bm: string | null;
+  surahId: number;
+  ayahNumber: number;
+  juzNumber: number;
+}
 
 const DEFAULT_EVERYAYAH_BASE_URL = "https://everyayah.com/data";
 const DEFAULT_EVERYAYAH_RECITER = "Alafasy_128kbps";
@@ -18,7 +27,7 @@ function buildEveryAyahUrl(surah: number, ayah: number): string {
   return `${baseUrl}/${reciter}/${toThreeDigits(surah)}${toThreeDigits(ayah)}.mp3`;
 }
 
-export function mapAyatToPageAudioTracks(ayat: Ayah[]): PageAudioTrack[] {
+export function mapAyatToPageAudioTracks(ayat: Ayah[]): ReadAudioTrack[] {
   return ayat
     .map((ayah) => ({
       key: `${ayah.surah_id}:${ayah.ayah_number}`,
@@ -28,5 +37,8 @@ export function mapAyatToPageAudioTracks(ayat: Ayah[]): PageAudioTrack[] {
           ? ayah.audio_url
           : buildEveryAyahUrl(ayah.surah_id, ayah.ayah_number),
       bm: ayah.display_bm,
+      surahId: ayah.surah_id,
+      ayahNumber: ayah.ayah_number,
+      juzNumber: ayah.juz_number,
     }));
 }

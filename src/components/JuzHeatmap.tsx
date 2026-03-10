@@ -6,29 +6,50 @@ interface JuzHeatmapProps {
   juzProgress: JuzStat[];
 }
 
-function juzColor(pct: number): string {
-  if (pct === 0) return "bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400";
-  if (pct < 25) return "bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300";
-  if (pct < 75) return "bg-teal-300 text-teal-900 dark:bg-teal-700 dark:text-teal-100";
-  if (pct < 100) return "bg-teal-600 text-white dark:bg-teal-500 dark:text-white";
-  return "bg-amber-400 text-white dark:bg-amber-500 dark:text-white";
+function juzColor(stat: JuzStat): string {
+  if (stat.manzilCount <= 0) {
+    return "bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400";
+  }
+
+  if (stat.manzilPct < 25) {
+    return "bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300";
+  }
+  if (stat.manzilPct < 75) {
+    return "bg-teal-300 text-teal-900 dark:bg-teal-700 dark:text-teal-100";
+  }
+  return "bg-teal-600 text-white dark:bg-teal-500 dark:text-white";
 }
 
 export function JuzHeatmap({ juzProgress }: JuzHeatmapProps) {
+  const totalAyat = juzProgress.reduce((sum, stat) => sum + stat.totalAyat, 0);
+  const totalManzil = juzProgress.reduce((sum, stat) => sum + stat.manzilCount, 0);
+  const overallPct = totalAyat > 0 ? (totalManzil / totalAyat) * 100 : 0;
+
   return (
     <div>
       <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
         Kemajuan Juz
       </p>
+      <div className="mb-3">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
+          <div
+            className="h-full rounded-full bg-teal-600 transition-all dark:bg-teal-500"
+            style={{ width: `${Math.max(0, Math.min(overallPct, 100))}%` }}
+          />
+        </div>
+        <p className="mt-1 text-[10px] text-stone-500 dark:text-stone-400">
+          {Math.round(overallPct)}% manzil ({totalManzil} / {totalAyat} ayat)
+        </p>
+      </div>
       <div className="grid grid-cols-6 gap-1.5">
         {juzProgress.map((stat) => (
           <div
             key={stat.juz}
             title={`Juz ${stat.juz}: ${stat.manzilCount} / ${stat.totalAyat} ayat hafal (${stat.manzilPct}%)`}
-            className={`flex flex-col items-center justify-center rounded-lg p-1.5 transition-opacity hover:opacity-80 ${juzColor(stat.manzilPct)}`}
+            className={`flex flex-col items-center justify-center rounded-lg p-1.5 transition-opacity hover:opacity-80 ${juzColor(stat)}`}
           >
             <span className="text-[10px] font-bold leading-none">{stat.juz}</span>
-            {stat.manzilPct > 0 && (
+            {stat.manzilCount > 0 && (
               <span className="mt-0.5 text-[9px] leading-none opacity-80">
                 {Math.round(stat.manzilPct)}%
               </span>
@@ -43,11 +64,11 @@ export function JuzHeatmap({ juzProgress }: JuzHeatmapProps) {
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block h-2.5 w-2.5 rounded bg-teal-300 dark:bg-teal-700" />
-          Dalam hafazan
+          Ada manzil
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-2.5 w-2.5 rounded bg-amber-400 dark:bg-amber-500" />
-          Penuh
+          <span className="inline-block h-2.5 w-2.5 rounded bg-teal-600 dark:bg-teal-500" />
+          Manzil tinggi
         </span>
       </div>
     </div>

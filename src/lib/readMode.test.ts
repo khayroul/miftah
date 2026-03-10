@@ -26,11 +26,24 @@ test("loadReadMode returns default on empty storage", () => {
 test("saveReadMode persists valid modes", () => {
   const storage = createMemoryStorage();
 
-  assert.equal(saveReadMode("study", storage), true);
-  assert.equal(loadReadMode(storage), "study");
+  assert.equal(saveReadMode("faham", storage), true);
+  assert.equal(loadReadMode(storage), "faham");
+
+  assert.equal(saveReadMode("tema", storage), true);
+  assert.equal(loadReadMode(storage), "tema");
 
   assert.equal(saveReadMode("hifz", storage), true);
   assert.equal(loadReadMode(storage), "hifz");
+});
+
+test("legacy study value is normalized to faham", () => {
+  const storage = createMemoryStorage({ "miftah.read.mode.v1": "study" });
+  assert.equal(loadReadMode(storage), "faham");
+});
+
+test("legacy theme value is normalized to tema", () => {
+  const storage = createMemoryStorage({ "miftah.read.mode.v1": "theme" });
+  assert.equal(loadReadMode(storage), "tema");
 });
 
 test("invalid raw value falls back to read", () => {

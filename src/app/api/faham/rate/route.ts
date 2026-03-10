@@ -1,0 +1,67 @@
+import { NextResponse } from "next/server";
+import type { Grade } from "@/lib/fsrs";
+import { applyRating } from "@/lib/fsrs";
+import { dbRowToCard, cardToDbRow } from "@/lib/hifz/fsrs-bridge";
+import { logVocabReview } from "@/lib/faham/review-log";
+import { fahamRateRequestSchema } from "@/lib/faham/schemas";
+import {
+  getVocabProgressById,
+  updateVocabFsrs,
+} from "@/lib/faham/vocab-progress";
+import type { FsrsState } from "@/types/database";
+import { ZodError } from "zod";
+
+export async function POST(request: Request): Promise<NextResponse> {
+  let rawBody: unknown;
+  try {
+    rawBody = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  try {
+    const body = fahamRateRequestSchema.parse(rawBody);
+    const userId = process.env.MIFTAH_USER_ID?.trim();
+    if (!userId) {
+      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+    }
+
+    const progress = await getVocabProgressById(body.progressId);
+    if (!progress) {
+      return NextResponse.json({ error: "Progress not found" }, { status: 404 });
+    }
+
+    const now = new Date();
+    const card = dbRowToCard(progress);
+    const result = applyRating(card, body.rating as Grade, now);
+    const nextCard = result.card;
+
+    await updateVocabFsrs(progress.id, cardToDbRow(nextCard));
+    await logVocabReview({
+      elapsedDays: nextCard.elapsed_days,
+      itemId: progress.word_id,
+      rating: body.rating,
+      scheduledDays: nextCard.scheduled_days,
+      stateAfter: nextCard.state as FsrsState,
+      stateBefore: progress.state as FsrsState,
+      userId,
+    });
+
+    return NextResponse.json({
+      due: nextCard.due.toISOString(),
+      ok: true,
+      progressId: progress.id,
+      state: nextCard.state,
+    });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { error: "Invalid parameters", issues: error.issues },
+        { status: 400 },
+      );
+    }
+
+    console.error("[faham/rate] Error:", error);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
+}

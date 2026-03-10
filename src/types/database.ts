@@ -90,6 +90,8 @@ export interface ThemeAyah {
   notes: string | null;
 }
 
+export type ThemeChunkProgressStatus = "started" | "completed";
+
 export interface AyahThemeChunk {
   id: number;
   source_chunk_id: number | null;
@@ -196,6 +198,39 @@ export interface VocabProgress extends FsrsFields {
   updated_at: string;
 }
 
+export type FahamSourceType = "reading_page" | "theme_chunk" | "hifz_ayah";
+
+export interface VocabExposureEvent {
+  id: number;
+  user_id: string;
+  word_id: number;
+  source_type: FahamSourceType;
+  source_key: string;
+  ayah_id: number | null;
+  page_number: number | null;
+  surah_id: number | null;
+  theme_chunk_index: number | null;
+  occurrence_count: number;
+  exposed_at: string;
+  created_at: string;
+}
+
+export interface VocabExposureSummary {
+  user_id: string;
+  word_id: number;
+  exposure_event_count: number;
+  distinct_context_count: number;
+  distinct_source_count: number;
+  total_occurrence_weight: number;
+  reading_event_count: number;
+  theme_event_count: number;
+  hifz_event_count: number;
+  reading_occurrence_weight: number;
+  theme_occurrence_weight: number;
+  hifz_occurrence_weight: number;
+  last_exposed_at: string;
+}
+
 export interface ReviewLog {
   id: string;
   user_id: string;
@@ -207,6 +242,35 @@ export interface ReviewLog {
   elapsed_days: number;
   scheduled_days: number;
   reviewed_at: string;
+}
+
+export interface Profile {
+  id: string;
+  display_name: string | null;
+  locale: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserReadingState {
+  user_id: string;
+  last_page: number | null;
+  last_read_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ThemeChunkProgress {
+  id: number;
+  user_id: string;
+  surah_id: number;
+  chunk_index: number;
+  status: ThemeChunkProgressStatus;
+  first_opened_at: string;
+  last_opened_at: string;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // ============================================================

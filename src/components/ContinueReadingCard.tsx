@@ -7,7 +7,6 @@ export function ContinueReadingCard() {
   const state = useReadingProgressState();
 
   const continuePage = state.lastPage ?? 1;
-  const recentBookmarks = state.bookmarks.slice(0, 6);
 
   return (
     <section className="w-full max-w-md rounded-2xl border border-stone-300 bg-white px-4 py-4 shadow-sm dark:border-stone-600 dark:bg-stone-900">
@@ -26,20 +25,6 @@ export function ContinueReadingCard() {
       >
         Continue Reading
       </Link>
-
-      {recentBookmarks.length > 0 ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {recentBookmarks.map((bookmark) => (
-            <Link
-              key={`${bookmark.page}-${bookmark.createdAt}`}
-              href={`/read/${bookmark.page}`}
-              className="rounded-md border border-stone-200 px-2 py-1 text-xs text-stone-700 transition hover:bg-stone-100 dark:border-stone-700 dark:text-stone-200 dark:hover:bg-stone-800"
-            >
-              p. {bookmark.page}
-            </Link>
-          ))}
-        </div>
-      ) : null}
     </section>
   );
 }

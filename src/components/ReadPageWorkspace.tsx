@@ -5,22 +5,16 @@ import {
   MushafPageView,
   type MushafAyahDetail,
 } from "@/components/MushafPageView";
-import type { PageAudioTrack } from "@/components/PageAudioControls";
+import { FahamExposureTracker } from "@/components/FahamExposureTracker";
+import { ReadAudioDock } from "@/components/ReadAudioDock";
+import { ReadJumpControls } from "@/components/ReadJumpControls";
 import { ReadModeTools } from "@/components/ReadModeTools";
+import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
+import { rememberLastReadPage } from "@/lib/readingProgressStorage";
 import { useRouter } from "next/navigation";
+import type { JuzJumpTarget, SurahJumpTarget } from "@/lib/readNavigation";
 import type { MushafPageManifest, MushafWordTranslationMap } from "@/types/mushaf";
 import type { ReactNode } from "react";
-
-interface SurahOption {
-  surah: number;
-  name: string;
-  page: number;
-}
-
-interface JuzOption {
-  juz: number;
-  page: number;
-}
 
 interface ReadPageWorkspaceProps {
   pageNumber: number;
@@ -31,11 +25,12 @@ interface ReadPageWorkspaceProps {
   currentSurahId: number;
   currentJuzNumber: number;
   themeSurahId: number;
-  surahOptions: SurahOption[];
-  juzOptions: JuzOption[];
-  audioTracks: PageAudioTrack[];
+  jumpSurahOptions: SurahJumpTarget[];
+  jumpJuzOptions: JuzJumpTarget[];
+  audioTracks: ReadAudioTrack[];
   ayahDetails: MushafAyahDetail[];
   memorizedAyahKeys: string[];
+  readingAyahIds: number[];
   mushafHeader?: ReactNode;
 }
 
@@ -50,15 +45,17 @@ export function ReadPageWorkspace({
   currentSurahId,
   currentJuzNumber,
   themeSurahId,
-  surahOptions,
-  juzOptions,
+  jumpSurahOptions,
+  jumpJuzOptions,
   audioTracks,
   ayahDetails,
   memorizedAyahKeys,
+  readingAyahIds,
   mushafHeader,
 }: ReadPageWorkspaceProps) {
   const router = useRouter();
-  const [playingAyahKey, setPlayingAyahKey] = useState<string | null>(null);
+  const [audioDockVisible, setAudioDockVisible] = useState(false);
+  const [showJumpControls, setShowJumpControls] = useState(false);
   const [hifzRevealByThirdsEnabled, setHifzRevealByThirdsEnabled] = useState(
     () => {
       if (typeof window === "undefined") {
@@ -77,36 +74,78 @@ export function ReadPageWorkspace({
     );
   }, [hifzRevealByThirdsEnabled]);
 
-  const handlePlaybackAyahChange = useCallback((ayahKey: string | null) => {
-    setPlayingAyahKey(ayahKey);
+  useEffect(() => {
+    rememberLastReadPage(pageNumber);
+  }, [pageNumber]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setAudioDockVisible(false);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
+
   const handleNavigatePrevPage = useCallback(() => {
     if (pageNumber <= 1) {
       return;
     }
+    setAudioDockVisible(false);
     router.push(`/read/${pageNumber - 1}`);
   }, [pageNumber, router]);
   const handleNavigateNextPage = useCallback(() => {
     if (pageNumber >= 604) {
       return;
     }
+    setAudioDockVisible(false);
     router.push(`/read/${pageNumber + 1}`);
   }, [pageNumber, router]);
+  const handleMushafTap = useCallback(() => {
+    setAudioDockVisible((current) => !current);
+  }, []);
 
   return (
     <>
+      <FahamExposureTracker
+        payload={{
+          ayahIds: readingAyahIds,
+          pageNumber,
+          sourceType: "reading_page",
+          surahId: currentSurahId,
+        }}
+      />
+
       <ReadModeTools
-        currentPage={pageNumber}
-        currentSurahId={currentSurahId}
-        currentJuzNumber={currentJuzNumber}
         themeSurahId={themeSurahId}
-        surahOptions={surahOptions}
-        juzOptions={juzOptions}
-        audioTracks={audioTracks}
-        onPlaybackAyahChange={handlePlaybackAyahChange}
         hifzRevealByThirdsEnabled={hifzRevealByThirdsEnabled}
         onHifzRevealByThirdsChange={setHifzRevealByThirdsEnabled}
+        showJumpControls={showJumpControls}
+        onToggleJumpControls={() =>
+          setShowJumpControls((current) => !current)
+        }
       />
+
+      <div
+        className={`overflow-hidden transition-[max-height,opacity,transform] duration-300 ${
+          showJumpControls
+            ? "max-h-[420px] translate-y-0 opacity-100"
+            : "pointer-events-none max-h-0 -translate-y-1 opacity-0"
+        }`}
+        aria-hidden={!showJumpControls}
+      >
+        <div className="pt-1">
+          <ReadJumpControls
+            currentPage={pageNumber}
+            currentSurahId={currentSurahId}
+            currentJuzNumber={currentJuzNumber}
+            surahOptions={jumpSurahOptions}
+            juzOptions={jumpJuzOptions}
+          />
+        </div>
+      </div>
 
       {mushafHeader}
 
@@ -120,10 +159,18 @@ export function ReadPageWorkspace({
         ayahDetails={ayahDetails}
         memorizedAyahKeys={memorizedAyahKeys}
         hifzRevealByThirdsEnabled={hifzRevealByThirdsEnabled}
-        playingAyahKey={playingAyahKey}
         onNavigatePrevPage={handleNavigatePrevPage}
         onNavigateNextPage={handleNavigateNextPage}
+        onCanvasTap={handleMushafTap}
       />
+
+      {audioDockVisible ? (
+        <ReadAudioDock
+          key={`audio-dock-${pageNumber}`}
+          tracks={audioTracks}
+          onRequestClose={() => setAudioDockVisible(false)}
+        />
+      ) : null}
     </>
   );
 }

@@ -1,10 +1,20 @@
-export type ReadMode = "read" | "study" | "hifz";
+export type ReadMode = "read" | "faham" | "tema" | "hifz";
 
 const STORAGE_KEY = "miftah.read.mode.v1";
 const listeners = new Set<() => void>();
 
 function isReadMode(value: unknown): value is ReadMode {
-  return value === "read" || value === "study" || value === "hifz";
+  return value === "read" || value === "faham" || value === "tema" || value === "hifz";
+}
+
+function normalizeStoredMode(value: unknown): ReadMode | null {
+  if (value === "study") {
+    return "faham";
+  }
+  if (value === "theme") {
+    return "tema";
+  }
+  return isReadMode(value) ? value : null;
 }
 
 export function defaultReadMode(): ReadMode {
@@ -45,7 +55,7 @@ export function loadReadMode(storage: StorageLike | null = getStorage()): ReadMo
       return defaultReadMode();
     }
 
-    return isReadMode(raw) ? raw : defaultReadMode();
+    return normalizeStoredMode(raw) ?? defaultReadMode();
   } catch {
     return defaultReadMode();
   }

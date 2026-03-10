@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import {
   useMemo,
   useRef,
@@ -40,9 +39,9 @@ interface MushafPageViewProps {
   ayahDetails: MushafAyahDetail[];
   memorizedAyahKeys: string[];
   hifzRevealByThirdsEnabled?: boolean;
-  playingAyahKey?: string | null;
   onNavigatePrevPage?: () => void;
   onNavigateNextPage?: () => void;
+  onCanvasTap?: () => void;
 }
 
 interface AyahBoundingBox {
@@ -228,9 +227,9 @@ export function MushafPageView({
   ayahDetails,
   memorizedAyahKeys,
   hifzRevealByThirdsEnabled = false,
-  playingAyahKey = null,
   onNavigatePrevPage,
   onNavigateNextPage,
+  onCanvasTap,
 }: MushafPageViewProps) {
   const [selectedWord, setSelectedWord] = useState<MushafWordHitbox | null>(
     null,
@@ -268,7 +267,7 @@ export function MushafPageView({
       fullImageReady,
       wordsCount: words.length,
     });
-  const modeAllowsWordInteraction = mode === "study";
+  const modeAllowsWordInteraction = mode === "faham";
   const canInteract = modeAllowsWordInteraction && canInteractWhenReady;
   const canSelectAyah = mode === "read" && canShowFullImage && fullImageReady;
   const wordTapPaddingX = Math.max(8, imageWidth * 0.004);
@@ -436,7 +435,6 @@ export function MushafPageView({
       ayahLayoutEntries.every((entry) => memorizedAyahKeySet.has(entry.key)),
     [ayahLayoutEntries, memorizedAyahKeySet],
   );
-  const playingAyahBox = playingAyahKey ? ayahBoxes.get(playingAyahKey) ?? null : null;
   const remainingAyahKeys = useMemo(
     () =>
       ayahLayoutEntries
@@ -567,6 +565,7 @@ export function MushafPageView({
         style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
+        onClick={() => onCanvasTap?.()}
       >
         {canShowAnyImage ? (
           <>
@@ -598,17 +597,6 @@ export function MushafPageView({
                   setFullImageFailed(true);
                   setFullImageReady(false);
                   setSelectedWord(null);
-                }}
-              />
-            ) : null}
-            {playingAyahBox ? (
-              <div
-                className="pointer-events-none absolute border-2 border-emerald-500 bg-emerald-200/20 shadow-[0_0_0_3px_rgba(16,185,129,0.16)]"
-                style={{
-                  left: percent(playingAyahBox.x, imageWidth),
-                  top: percent(playingAyahBox.y, imageHeight),
-                  width: percent(playingAyahBox.width, imageWidth),
-                  height: percent(playingAyahBox.height, imageHeight),
                 }}
               />
             ) : null}
@@ -751,55 +739,7 @@ export function MushafPageView({
         )}
       </div>
 
-      <div className="fixed bottom-6 left-1/2 z-40 w-max max-w-[95vw] -translate-x-1/2 animate-fade-in-up">
-        <nav className="flex items-center gap-1 rounded-full border border-stone-200/80 bg-white/95 p-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md dark:border-stone-700/60 dark:bg-stone-900/90">
-          {pageNumber > 1 ? (
-            <Link
-              href={`/read/${pageNumber - 1}`}
-              className="rounded-full px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800 flex items-center gap-1.5"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-              </svg>
-              <span className="hidden sm:inline">Prev</span>
-            </Link>
-          ) : (
-            <span className="flex cursor-not-allowed items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-stone-300 dark:text-stone-600">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-              </svg>
-              <span className="hidden sm:inline">Prev</span>
-            </span>
-          )}
-
-          <div className="flex select-none items-center justify-center px-4">
-            <span className="text-xs font-bold tracking-widest text-stone-500 dark:text-stone-400">
-              HALAMAN {pageNumber}
-            </span>
-          </div>
-
-          {pageNumber < 604 ? (
-            <Link
-              href={`/read/${pageNumber + 1}`}
-              className="rounded-full px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800 flex items-center gap-1.5"
-            >
-              <span className="hidden sm:inline">Next</span>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-              </svg>
-            </Link>
-          ) : (
-            <span className="flex cursor-not-allowed items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-stone-300 dark:text-stone-600">
-              <span className="hidden sm:inline">Next</span>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-              </svg>
-            </span>
-          )}
-        </nav>
-      </div>
-
-      {mode === "hifz" && canShowAnyImage ? (
+      {mode === "hifz" && canShowAnyImage && hifzRevealByThirdsEnabled ? (
         <div className="fixed bottom-24 left-1/2 z-40 w-[min(92vw,420px)] -translate-x-1/2 animate-fade-in-up">
           <div className="rounded-2xl border border-teal-200 bg-white/95 p-3 shadow-[0_10px_30px_rgba(13,148,136,0.22)] backdrop-blur-md dark:border-teal-900/60 dark:bg-stone-900/90">
             <button
@@ -832,6 +772,10 @@ export function MushafPageView({
         <p className="text-sm text-teal-700 dark:text-teal-300">
           Hifz reveal aktif: paparan {revealStageLabel(hifzRevealContext.stage)} halaman (sempadan ikut hujung ayat).
         </p>
+      ) : mode === "hifz" && !hifzRevealByThirdsEnabled ? (
+        <p className="text-sm text-teal-700 dark:text-teal-300">
+          Reveal 1/3 sedang Off. Hidupkan semula untuk paparkan butang Hafal.
+        </p>
       ) : mode === "read" && canSelectAyah ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">
           Tap pada ayat untuk lihat terjemahan BM. Swipe kiri/kanan untuk tukar halaman.
@@ -839,10 +783,6 @@ export function MushafPageView({
       ) : mode === "hifz" ? (
         <p className="text-sm text-teal-700 dark:text-teal-300">
           Gunakan butang Hafal untuk buka 1/3 → 2/3 → penuh.
-        </p>
-      ) : playingAyahKey ? (
-        <p className="text-sm text-emerald-700">
-          Sedang dimainkan: ayat {playingAyahKey}
         </p>
       ) : words.length === 0 ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">
@@ -852,9 +792,13 @@ export function MushafPageView({
         <p className="text-sm text-stone-600 dark:text-stone-300">
           Thumbnail dipaparkan dahulu. Hitbox aktif selepas imej penuh siap.
         </p>
+      ) : mode === "tema" ? (
+        <p className="text-sm text-indigo-700 dark:text-indigo-300">
+          Mode Tema aktif. Guna butang Tema di atas untuk buka chunk surah.
+        </p>
       ) : !modeAllowsWordInteraction ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">
-          Read mode aktif. Tukar ke Study/Hifz untuk makna perkataan.
+          Baca mode aktif. Tukar ke Faham untuk makna perkataan.
         </p>
       ) : (
         <p className="text-sm text-stone-600 dark:text-stone-300">

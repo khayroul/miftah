@@ -1,13 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
 
-export interface PageAudioTrack {
-  key: string;
-  label: string;
-  audioUrl: string;
-  bm: string | null;
-}
+export type PageAudioTrack = ReadAudioTrack;
 
 interface PageAudioControlsProps {
   tracks: PageAudioTrack[];
