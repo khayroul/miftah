@@ -91,243 +91,192 @@ export default async function SurahThemeAppearancePage({
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
-              Theme Appearance View
-            </h1>
-            <p className="text-sm text-stone-600 dark:text-stone-300">
-              Surah {surahMeta.id}: {surahMeta.name_en} ({surahMeta.name_arabic})
-            </p>
-          </div>
-          <div className="flex gap-2">
+    <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 sm:px-6 md:py-12">
+      {/* Refined Header */}
+      <header className="flex flex-col gap-6">
+        <nav className="flex items-center justify-between text-sm text-stone-500 dark:text-stone-400">
+          <Link href="/" className="hover:text-stone-900 transition dark:hover:text-stone-200">
+            &larr; Utama
+          </Link>
+          <div className="flex items-center gap-4">
             <Link
               href={surahMeta.page_start ? `/read/${surahMeta.page_start}` : "/read/1"}
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+              className="hover:text-stone-900 transition dark:hover:text-stone-200"
             >
               Page View
             </Link>
-            <Link
-              href="/"
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
-            >
-              Utama
-            </Link>
+          </div>
+        </nav>
+
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight text-stone-900 hover:text-stone-800 dark:text-stone-100 flex items-center gap-3">
+              Surah {surahMeta.name_en}
+              <span className="font-arabic font-normal text-2xl opacity-80 mt-1">{surahMeta.name_arabic}</span>
+            </h1>
+            <p className="mt-1 text-stone-500 dark:text-stone-400">
+              Surah {surahMeta.id} • Thematic Reading
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {surahNumber > 1 ? (
+              <Link
+                href={`/read/surah/${surahNumber - 1}/themes`}
+                className="rounded-full bg-stone-100 px-4 py-1.5 text-sm font-medium text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+              >
+                Prev Surah
+              </Link>
+            ) : null}
+            {surahNumber < 114 ? (
+              <Link
+                href={`/read/surah/${surahNumber + 1}/themes`}
+                className="rounded-full bg-stone-100 px-4 py-1.5 text-sm font-medium text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+              >
+                Next Surah
+              </Link>
+            ) : null}
           </div>
         </div>
-
-        <nav className="flex flex-wrap gap-2">
-          {surahNumber > 1 ? (
-            <Link
-              href={`/read/surah/${surahNumber - 1}/themes`}
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
-            >
-              Prev Surah
-            </Link>
-          ) : (
-            <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:text-stone-500">
-              Prev Surah
-            </span>
-          )}
-          {surahNumber < 114 ? (
-            <Link
-              href={`/read/surah/${surahNumber + 1}/themes`}
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
-            >
-              Next Surah
-            </Link>
-          ) : (
-            <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:text-stone-500">
-              Next Surah
-            </span>
-          )}
-        </nav>
       </header>
 
       {loadError ? (
-        <section className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <section className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400">
           {loadError}
         </section>
       ) : null}
 
+      {!loadError && chunks.length === 0 ? (
+        <section className="rounded-2xl border border-amber-100 bg-amber-50 p-6 text-center text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-400">
+          Tiada tema untuk surah ini lagi.
+        </section>
+      ) : null}
+
       {!loadError && chunks.length > 0 ? (
-        <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900">
-          <h2 className="text-sm font-medium text-stone-900 dark:text-stone-100">
-            Theme Navigator ({selectedChunkIndex}/{chunks.length})
-          </h2>
-          <form method="get" className="flex flex-wrap items-end gap-2">
-            <label className="text-xs text-stone-600 dark:text-stone-300">
-              Pilih theme
+        <div className="flex flex-col gap-8">
+          {/* Main Content Area */}
+          <section className="space-y-6">
+            {selectedChunk ? (
+              <article
+                key={selectedChunk.chunk_index}
+                id={`chunk-${selectedChunk.chunk_index}`}
+                className="space-y-8 animate-in fade-in duration-500"
+              >
+                {/* Theme Header */}
+                <header className="border-b border-stone-200 pb-4 dark:border-stone-800">
+                  <span className="mb-2 inline-block rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-stone-600 dark:bg-stone-800 dark:text-stone-300">
+                    Theme {selectedChunkIndex} of {chunks.length}
+                  </span>
+                  <h2 className="mt-2 text-2xl font-serif text-stone-900 dark:text-stone-50 md:text-3xl">
+                    {chunkTitleBm(selectedChunk)}
+                  </h2>
+                  <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
+                    Ayat {rangeLabel(surahNumber, selectedChunk.start_ayah, selectedChunk.end_ayah)}
+                  </p>
+                </header>
+
+                {/* Ayat List */}
+                <div className="space-y-12 pb-8">
+                  {selectedChunk.ayat.map((ayah) => (
+                    <div key={ayah.id} className="relative group/ayah">
+                      {/* Ayat Indicator */}
+                      <div className="absolute -left-12 top-2 hidden w-8 text-right text-sm font-medium text-stone-300 sm:block dark:text-stone-600">
+                        {ayah.ayah_number}
+                      </div>
+
+                      {/* Word by Word */}
+                      {wbwByAyahId[ayah.id] && wbwByAyahId[ayah.id].length > 0 ? (
+                        <div className="flex flex-wrap justify-start gap-x-1.5 gap-y-6" dir="rtl">
+                          {wbwByAyahId[ayah.id].map((word) => (
+                            <div
+                              key={`${ayah.id}-${word.position}`}
+                              className="group/word flex min-w-fit max-w-[10rem] flex-col items-center justify-start hover:bg-stone-50 dark:hover:bg-stone-800/50 rounded-lg p-2 transition-colors cursor-pointer"
+                            >
+                              <span className="block text-center text-[2.5rem] sm:text-5xl leading-tight text-stone-900 dark:text-stone-100 mb-3">
+                                {word.text_uthmani}
+                              </span>
+                              <span
+                                dir="ltr"
+                                className="block text-center text-sm sm:text-base leading-snug text-stone-500 group-hover/word:text-stone-800 dark:text-stone-400 dark:group-hover/word:text-stone-200 transition-colors"
+                              >
+                                {word.translation_bm ?? word.translation_en ?? "—"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-right text-sm text-stone-400" dir="rtl">
+                          [Data WBW belum tersedia]
+                        </p>
+                      )}
+
+                      {/* Full Translation */}
+                      <div className="mt-8 sm:pl-0 border-l-2 border-stone-100 pl-4 py-1 dark:border-stone-800 hover:border-stone-300 dark:hover:border-stone-700 transition-colors">
+                        <p className="text-base leading-relaxed text-stone-700 dark:text-stone-300">
+                          <span className="mr-2 font-medium text-stone-400 sm:hidden">{ayah.ayah_number}.</span>
+                          {ayah.display_bm ?? "Terjemahan BM belum tersedia."}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ) : null}
+          </section>
+
+          {/* Theme Navigation Bottom Bar */}
+          <nav className="sticky bottom-4 z-10 mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-stone-200/50 bg-white/80 p-3 backdrop-blur-xl shadow-lg shadow-black/5 dark:border-stone-800/80 dark:bg-stone-900/80">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              {selectedChunkIndex > 1 ? (
+                <Link
+                  href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex - 1}`}
+                  className="flex flex-1 items-center justify-center rounded-xl bg-stone-50 px-5 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                >
+                  &larr; Prev
+                </Link>
+              ) : (
+                <span className="flex flex-1 items-center justify-center rounded-xl bg-stone-50/50 px-5 py-2.5 text-sm font-medium text-stone-400 dark:bg-stone-800/30 dark:text-stone-600">
+                  &larr; Prev
+                </span>
+              )}
+              {selectedChunkIndex < chunks.length ? (
+                <Link
+                  href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex + 1}`}
+                  className="flex flex-1 items-center justify-center rounded-xl bg-stone-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
+                >
+                  Next &rarr;
+                </Link>
+              ) : (
+                <span className="flex flex-1 items-center justify-center rounded-xl bg-stone-100 px-5 py-2.5 text-sm font-medium text-stone-400 dark:bg-stone-800 dark:text-stone-600">
+                  Next &rarr;
+                </span>
+              )}
+            </div>
+
+            <form method="get" className="hidden sm:flex items-center gap-2">
+              <label className="text-sm font-medium text-stone-500 dark:text-stone-400">
+                Jump to Theme
+              </label>
               <select
                 name="chunk"
                 defaultValue={String(selectedChunkIndex)}
-                className="mt-1 block min-w-64 rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
+                className="max-w-[15rem] truncate rounded-xl border border-stone-200 bg-white/50 px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 dark:border-stone-700 dark:bg-stone-900/50 dark:text-stone-100"
               >
                 {chunks.map((chunk) => (
                   <option key={chunk.chunk_index} value={chunk.chunk_index}>
-                    {chunk.chunk_index}.{" "}
-                    {rangeLabel(surahNumber, chunk.start_ayah, chunk.end_ayah)}
+                    {chunk.chunk_index}. {chunkTitleBm(chunk)}
                   </option>
                 ))}
               </select>
-            </label>
-            <button
-              type="submit"
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
-            >
-              Go
-            </button>
-          </form>
-          <div className="flex flex-wrap gap-2">
-            {selectedChunkIndex > 1 ? (
-              <Link
-                href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex - 1}`}
-                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+              <button
+                type="submit"
+                className="rounded-xl bg-stone-100 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
               >
-                Prev Theme
-              </Link>
-            ) : (
-              <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:text-stone-500">
-                Prev Theme
-              </span>
-            )}
-            {selectedChunkIndex < chunks.length ? (
-              <Link
-                href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex + 1}`}
-                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
-              >
-                Next Theme
-              </Link>
-            ) : (
-              <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:text-stone-500">
-                Next Theme
-              </span>
-            )}
-          </div>
-        </section>
-      ) : null}
-
-      {!loadError && chunks.length === 0 ? (
-        <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          Tiada chunk tema untuk surah ini lagi.
-        </section>
-      ) : null}
-
-      {!loadError ? (
-        <section className="space-y-4">
-          {selectedChunk ? (
-            <article
-              key={selectedChunk.chunk_index}
-              id={`chunk-${selectedChunk.chunk_index}`}
-              className="space-y-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm dark:border-stone-700 dark:bg-stone-900"
-            >
-              <header className="space-y-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
-                  Theme {selectedChunk.chunk_index}
-                </p>
-                <h3 className="text-base font-medium text-stone-900 dark:text-stone-100">
-                  {rangeLabel(
-                    surahNumber,
-                    selectedChunk.start_ayah,
-                    selectedChunk.end_ayah,
-                  )}{" "}
-                  • {chunkTitleBm(selectedChunk)}
-                </h3>
-                <p className="text-sm text-stone-600 dark:text-stone-300">
-                  {chunkTitleEn(selectedChunk)} • {selectedChunk.ayah_count} ayat
-                </p>
-                <p className="text-xs text-stone-500 dark:text-stone-400">
-                  Mode: {selectedChunk.source === "manual" ? "Manual override" : "Auto"}
-                </p>
-              </header>
-
-              <div className="space-y-3">
-                {selectedChunk.ayat.map((ayah) => (
-                  <article
-                    key={ayah.id}
-                    className="rounded-xl border border-stone-100 bg-stone-50 p-3 dark:border-stone-700 dark:bg-stone-800/60"
-                  >
-                    <div className="rounded-lg border border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-900/70">
-                      {wbwByAyahId[ayah.id] && wbwByAyahId[ayah.id].length > 0 ? (
-                        <div className="flex justify-end">
-                          <div className="w-fit max-w-full flex flex-wrap justify-end gap-x-1.5 gap-y-2.5" dir="rtl">
-                            {wbwByAyahId[ayah.id].map((word) => (
-                              <span
-                                key={`${ayah.id}-${word.position}`}
-                                className="inline-flex w-[4.2rem] shrink-0 flex-col items-end text-right align-top"
-                              >
-                                <span className="block w-full text-right text-2xl leading-none text-stone-900 dark:text-stone-100">
-                                  {word.text_uthmani}
-                                </span>
-                                <span
-                                  dir="ltr"
-                                  className="mt-1 block w-full overflow-hidden whitespace-normal break-words text-center text-[11px] leading-[1.15] text-stone-600 dark:text-stone-300"
-                                  style={{
-                                    display: "-webkit-box",
-                                    WebkitBoxOrient: "vertical",
-                                    WebkitLineClamp: 3,
-                                  }}
-                                >
-                                  {word.translation_bm ?? word.translation_en ?? "—"}
-                                </span>
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-stone-500 dark:text-stone-400">
-                          Data WBW belum tersedia untuk ayat ini.
-                        </p>
-                      )}
-                    </div>
-                    <p className="mt-2 text-sm leading-relaxed text-stone-700 dark:text-stone-200">
-                      {ayah.display_bm ?? "Terjemahan BM belum tersedia."}
-                    </p>
-                    <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
-                      {surahNumber}:{ayah.ayah_number} • Page {ayah.page_number}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            </article>
-          ) : null}
-        </section>
-      ) : null}
-
-      {!loadError && chunks.length > 0 ? (
-        <footer className="rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900">
-          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
-            Theme Navigation
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {selectedChunkIndex > 1 ? (
-              <Link
-                href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex - 1}`}
-                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
-              >
-                Prev Theme
-              </Link>
-            ) : (
-              <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:text-stone-500">
-                Prev Theme
-              </span>
-            )}
-            {selectedChunkIndex < chunks.length ? (
-              <Link
-                href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex + 1}`}
-                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
-              >
-                Next Theme
-              </Link>
-            ) : (
-              <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:text-stone-500">
-                Next Theme
-              </span>
-            )}
-          </div>
-        </footer>
+                Go
+              </button>
+            </form>
+          </nav>
+        </div>
       ) : null}
     </main>
   );
