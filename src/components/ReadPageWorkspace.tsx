@@ -12,9 +12,11 @@ import { ReadModeTools } from "@/components/ReadModeTools";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
 import { rememberLastReadPage } from "@/lib/readingProgressStorage";
 import { useRouter } from "next/navigation";
+import { useReadMode } from "@/lib/useReadMode";
 import type { JuzJumpTarget, SurahJumpTarget } from "@/lib/readNavigation";
 import type { MushafPageManifest, MushafWordTranslationMap } from "@/types/mushaf";
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 interface ReadPageWorkspaceProps {
   pageNumber: number;
@@ -54,6 +56,7 @@ export function ReadPageWorkspace({
   mushafHeader,
 }: ReadPageWorkspaceProps) {
   const router = useRouter();
+  const { mode } = useReadMode();
   const [audioDockVisible, setAudioDockVisible] = useState(false);
   const [showJumpControls, setShowJumpControls] = useState(false);
   const [hifzRevealByThirdsEnabled, setHifzRevealByThirdsEnabled] = useState(
@@ -148,6 +151,27 @@ export function ReadPageWorkspace({
       </div>
 
       {mushafHeader}
+
+      {mode === "read" && (
+        <div className="flex w-full justify-end gap-3 px-1 mb-2">
+          {pageNumber > 1 ? (
+            <Link
+              href={`/read/${pageNumber - 1}`}
+              className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+            >
+              Halaman Sebelum
+            </Link>
+          ) : null}
+          {pageNumber < 604 ? (
+            <Link
+              href={`/read/${pageNumber + 1}`}
+              className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+            >
+              Halaman Seterusnya
+            </Link>
+          ) : null}
+        </div>
+      )}
 
       <MushafPageView
         key={pageNumber}

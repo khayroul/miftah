@@ -96,12 +96,6 @@ export default async function ReadPage({ params }: ReadPageProps) {
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
       <header className="flex flex-col gap-6">
         <nav className="flex items-center justify-between text-sm text-stone-500 dark:text-stone-400">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-          >
-            &larr; Utama
-          </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
           </div>
@@ -124,24 +118,6 @@ export default async function ReadPage({ params }: ReadPageProps) {
               <p className="mt-1 text-stone-500 dark:text-stone-400">
                 Surah {surahForThemeView} • Halaman {pageNumber} / 604
               </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {pageNumber > 1 ? (
-                <Link
-                  href={`/read/${pageNumber - 1}`}
-                  className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-                >
-                  Halaman Sebelum
-                </Link>
-              ) : null}
-              {pageNumber < 604 ? (
-                <Link
-                  href={`/read/${pageNumber + 1}`}
-                  className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-                >
-                  Halaman Seterusnya
-                </Link>
-              ) : null}
             </div>
           </div>
         }

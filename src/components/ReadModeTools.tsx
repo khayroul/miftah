@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useReadMode } from "@/lib/useReadMode";
 import type { ReadMode } from "@/lib/readMode";
@@ -49,7 +50,23 @@ export function ReadModeTools({
     <section className="space-y-4">
       <div className="flex w-full flex-col items-center justify-center gap-4 sm:flex-row">
         <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-full border border-stone-200 bg-white p-1.5 shadow-sm dark:border-stone-700 dark:bg-stone-800">
-          <span className="pl-3 pr-2 text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+          <Link
+            href="/"
+            className="mr-2 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+            title="Utama"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+          </Link>
+
+          <span className="hidden sm:inline-block pr-2 text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
             Mode
           </span>
           {MODES.map((item) => {
@@ -82,7 +99,7 @@ export function ReadModeTools({
               : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
           }`}
         >
-          {showJumpControls ? "Sembunyikan lompat" : "Buka lompat"}
+          {showJumpControls ? "Tutup Pilih Halaman" : "Pilih Halaman"}
         </button>
 
         {mode === "hifz" ? (
