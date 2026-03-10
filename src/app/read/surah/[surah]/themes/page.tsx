@@ -144,11 +144,11 @@ export default async function SurahThemeAppearancePage({
       {!loadError && chunks.length > 0 ? (
         <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4">
           <h2 className="text-sm font-medium text-stone-900">
-            Chunk Navigator ({selectedChunkIndex}/{chunks.length})
+            Theme Navigator ({selectedChunkIndex}/{chunks.length})
           </h2>
           <form method="get" className="flex flex-wrap items-end gap-2">
             <label className="text-xs text-stone-600">
-              Pilih chunk
+              Pilih theme
               <select
                 name="chunk"
                 defaultValue={String(selectedChunkIndex)}
@@ -175,11 +175,11 @@ export default async function SurahThemeAppearancePage({
                 href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex - 1}`}
                 className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
               >
-                Prev Chunk
+                Prev Theme
               </Link>
             ) : (
               <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400">
-                Prev Chunk
+                Prev Theme
               </span>
             )}
             {selectedChunkIndex < chunks.length ? (
@@ -187,11 +187,11 @@ export default async function SurahThemeAppearancePage({
                 href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex + 1}`}
                 className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
               >
-                Next Chunk
+                Next Theme
               </Link>
             ) : (
               <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400">
-                Next Chunk
+                Next Theme
               </span>
             )}
           </div>
@@ -214,7 +214,7 @@ export default async function SurahThemeAppearancePage({
             >
               <header className="space-y-1">
                 <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
-                  Chunk {selectedChunk.chunk_index}
+                  Theme {selectedChunk.chunk_index}
                 </p>
                 <h3 className="text-base font-medium text-stone-900">
                   {rangeLabel(
