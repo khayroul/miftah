@@ -85,6 +85,115 @@ export async function getWordsForAyah(ayahId: number) {
   return data;
 }
 
+export interface AyahWordByWordEntry {
+  ayah_id: number;
+  position: number;
+  text_uthmani: string;
+  translation_bm: string | null;
+  translation_en: string | null;
+}
+
+interface WordOccurrenceWbwRow {
+  ayah_id: number;
+  position: number;
+  words:
+    | {
+        text_uthmani: string;
+        translation_bm: string | null;
+        translation_en: string | null;
+      }
+    | Array<{
+        text_uthmani: string;
+        translation_bm: string | null;
+        translation_en: string | null;
+      }>
+    | null;
+}
+
+function chunkValues(values: number[], size: number): number[][] {
+  const chunks: number[][] = [];
+  for (let index = 0; index < values.length; index += size) {
+    chunks.push(values.slice(index, index + size));
+  }
+  return chunks;
+}
+
+function normalizeWordOccurrenceWbwRows(rows: WordOccurrenceWbwRow[]): AyahWordByWordEntry[] {
+  const result: AyahWordByWordEntry[] = [];
+
+  for (const row of rows) {
+    const relation = Array.isArray(row.words) ? row.words[0] : row.words;
+    if (!relation) {
+      continue;
+    }
+
+    result.push({
+      ayah_id: row.ayah_id,
+      position: row.position,
+      text_uthmani: relation.text_uthmani,
+      translation_bm: relation.translation_bm,
+      translation_en: relation.translation_en,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Fetch WBW tokens for multiple ayat. Result is grouped by ayah_id and
+ * ordered by word position within each ayah.
+ */
+export async function getWordByWordForAyahIds(
+  ayahIds: number[],
+): Promise<Record<number, AyahWordByWordEntry[]>> {
+  const uniqueAyahIds = Array.from(
+    new Set(
+      ayahIds.filter((ayahId) => Number.isInteger(ayahId) && ayahId > 0),
+    ),
+  );
+
+  if (uniqueAyahIds.length === 0) {
+    return {};
+  }
+
+  const grouped: Record<number, AyahWordByWordEntry[]> = {};
+  const batches = chunkValues(uniqueAyahIds, 40);
+
+  for (const ayahIdBatch of batches) {
+    const { data, error } = await supabase
+      .from("word_occurrences")
+      .select("ayah_id, position, words(text_uthmani, translation_bm, translation_en)")
+      .in("ayah_id", ayahIdBatch)
+      .order("ayah_id")
+      .order("position");
+
+    if (error) {
+      throw error;
+    }
+
+    const normalizedRows = normalizeWordOccurrenceWbwRows(
+      (data ?? []) as WordOccurrenceWbwRow[],
+    );
+
+    for (const entry of normalizedRows) {
+      const current = grouped[entry.ayah_id] ?? [];
+      current.push(entry);
+      grouped[entry.ayah_id] = current;
+    }
+  }
+
+  for (const ayahId of Object.keys(grouped)) {
+    const numericAyahId = Number.parseInt(ayahId, 10);
+    const rows = grouped[numericAyahId];
+    if (!rows) {
+      continue;
+    }
+    rows.sort((a, b) => a.position - b.position);
+  }
+
+  return grouped;
+}
+
 export interface ThemeAppearanceAyah {
   id: number;
   surah_id: number;

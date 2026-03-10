@@ -38,6 +38,12 @@ interface AyahBoundingBox {
   height: number;
 }
 
+interface WordTooltipPlacement {
+  left: number;
+  top: number;
+  width: number;
+}
+
 function percent(value: number, total: number): string {
   return `${(value / total) * 100}%`;
 }
@@ -58,6 +64,41 @@ function expandHitbox(
   const width = clamp(box.width + paddingX * 2, 1, maxWidth - x);
   const height = clamp(box.height + paddingY * 2, 1, maxHeight - y);
   return { x, y, width, height };
+}
+
+function getWordTooltipPlacement(
+  word: MushafWordHitbox,
+  imageWidth: number,
+  imageHeight: number,
+): WordTooltipPlacement {
+  const horizontalPadding = Math.max(12, imageWidth * 0.01);
+  const verticalPadding = Math.max(12, imageHeight * 0.01);
+  const verticalGap = Math.max(14, imageHeight * 0.008);
+  const tooltipWidth = Math.min(420, imageWidth * 0.52);
+  const estimatedTooltipHeight = Math.min(220, imageHeight * 0.18);
+
+  const centeredLeft = word.x + word.width / 2 - tooltipWidth / 2;
+  const left = clamp(
+    centeredLeft,
+    horizontalPadding,
+    imageWidth - tooltipWidth - horizontalPadding,
+  );
+
+  const preferredTop = word.y + word.height + verticalGap;
+  const fallbackTop = word.y - estimatedTooltipHeight - verticalGap;
+  const top = preferredTop + estimatedTooltipHeight <= imageHeight - verticalPadding
+    ? preferredTop
+    : fallbackTop;
+
+  return {
+    left,
+    top: clamp(
+      top,
+      verticalPadding,
+      imageHeight - estimatedTooltipHeight - verticalPadding,
+    ),
+    width: tooltipWidth,
+  };
 }
 
 export function MushafPageView({
@@ -108,6 +149,9 @@ export function MushafPageView({
   const wordTapPaddingY = Math.max(8, imageHeight * 0.003);
   const selectedTranslation = activeWord
     ? wordTranslations[activeWord.location] ?? null
+    : null;
+  const activeWordTooltipPlacement = activeWord
+    ? getWordTooltipPlacement(activeWord, imageWidth, imageHeight)
     : null;
   const ayahDetailsMap = useMemo(() => {
     const map = new Map<string, MushafAyahDetail>();
@@ -214,7 +258,7 @@ export function MushafPageView({
   return (
     <section className="space-y-3">
       <div
-        className="relative overflow-visible rounded-2xl border border-stone-300 bg-[#fffdfa] shadow-[0_18px_34px_-30px_rgba(28,25,23,0.7)] dark:border-stone-600 dark:bg-[#fffdfa] dark:shadow-[0_22px_38px_-30px_rgba(2,6,23,0.9)]"
+        className="relative overflow-visible rounded-2xl border border-stone-300 bg-[#fffdfa] shadow-[0_18px_34px_-30px_rgba(28,25,23,0.7)] dark:border-stone-600 dark:bg-slate-950 dark:shadow-[0_22px_38px_-30px_rgba(2,6,23,0.9)]"
         style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -228,7 +272,7 @@ export function MushafPageView({
                 fill
                 unoptimized
                 sizes="(max-width: 1024px) 100vw, 960px"
-                className={`object-contain transition-opacity duration-200 ${
+                className={`object-contain transition-opacity duration-200 dark:invert dark:brightness-105 dark:contrast-110 ${
                   fullImageReady ? "opacity-0" : "opacity-100"
                 }`}
                 onError={() => setThumbnailFailed(true)}
@@ -241,7 +285,7 @@ export function MushafPageView({
                 fill
                 unoptimized
                 sizes="(max-width: 1024px) 100vw, 960px"
-                className={`object-contain transition-opacity duration-200 ${
+                className={`object-contain transition-opacity duration-200 dark:invert dark:brightness-105 dark:contrast-110 ${
                   fullImageReady ? "opacity-100" : "opacity-0"
                 }`}
                 onLoad={() => setFullImageReady(true)}
@@ -321,9 +365,14 @@ export function MushafPageView({
                       title={word.location}
                       onClick={(event) => {
                         event.stopPropagation();
-                        setSelectedWord((current) =>
-                          current?.location === word.location ? null : word,
-                        );
+                        setSelectedWord(word);
+                      }}
+                      onTouchStart={(event) => {
+                        event.stopPropagation();
+                        setSelectedWord(word);
+                      }}
+                      onTouchEnd={(event) => {
+                        event.stopPropagation();
                       }}
                       className="absolute cursor-pointer bg-transparent hover:bg-amber-300/25 focus-visible:bg-amber-300/30 focus-visible:outline-none"
                       style={{
@@ -345,6 +394,27 @@ export function MushafPageView({
                       height: percent(activeWord.height, imageHeight),
                     }}
                   />
+                ) : null}
+                {activeWord && activeWordTooltipPlacement ? (
+                  <article
+                    data-testid="word-tooltip"
+                    className="pointer-events-none absolute z-20 rounded-xl border border-stone-300 bg-white/96 px-3 py-2 text-sm text-stone-800 shadow-md dark:border-stone-700 dark:bg-stone-900/96 dark:text-stone-100"
+                    style={{
+                      left: percent(activeWordTooltipPlacement.left, imageWidth),
+                      top: percent(activeWordTooltipPlacement.top, imageHeight),
+                      width: percent(activeWordTooltipPlacement.width, imageWidth),
+                    }}
+                  >
+                    <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+                      {selectedTranslation?.bm ?? "Tiada terjemahan"}
+                    </p>
+                    <p className="text-sm text-stone-600 dark:text-stone-300">
+                      {selectedTranslation?.en ?? "No translation"}
+                    </p>
+                    <p className="mt-1 text-[11px] text-stone-500 dark:text-stone-400">
+                      {activeWord.location}
+                    </p>
+                  </article>
                 ) : null}
               </div>
             ) : null}
@@ -385,23 +455,6 @@ export function MushafPageView({
           </span>
         )}
       </nav>
-
-      {activeWord ? (
-        <article
-          data-testid="word-tooltip"
-          className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 shadow-sm dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
-        >
-          <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
-            {selectedTranslation?.bm ?? "Tiada terjemahan"}
-          </p>
-          <p className="text-sm text-stone-600 dark:text-stone-300">
-            {selectedTranslation?.en ?? "No translation"}
-          </p>
-          <p className="mt-1 text-[11px] text-stone-500 dark:text-stone-400">
-            {activeWord.location}
-          </p>
-        </article>
-      ) : null}
 
       {!manifest ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">

@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  getWordByWordForAyahIds,
   getSurah,
   getThemeAppearanceChunksBySurah,
 } from "@/lib/queries";
-import type { ThemeAppearanceChunk } from "@/lib/queries";
+import type { AyahWordByWordEntry, ThemeAppearanceChunk } from "@/lib/queries";
 import type { Surah } from "@/types/database";
 
 interface SurahThemeAppearancePageProps {
@@ -78,29 +79,39 @@ export default async function SurahThemeAppearancePage({
         : 1
       : 1;
   const selectedChunk = chunks[selectedChunkIndex - 1] ?? null;
+  let wbwByAyahId: Record<number, AyahWordByWordEntry[]> = {};
+  if (selectedChunk) {
+    try {
+      wbwByAyahId = await getWordByWordForAyahIds(
+        selectedChunk.ayat.map((ayah) => ayah.id),
+      );
+    } catch {
+      wbwByAyahId = {};
+    }
+  }
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
       <header className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-medium text-stone-900">
+            <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
               Theme Appearance View
             </h1>
-            <p className="text-sm text-stone-600">
+            <p className="text-sm text-stone-600 dark:text-stone-300">
               Surah {surahMeta.id}: {surahMeta.name_en} ({surahMeta.name_arabic})
             </p>
           </div>
           <div className="flex gap-2">
             <Link
               href={surahMeta.page_start ? `/read/${surahMeta.page_start}` : "/read/1"}
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
+              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
             >
               Page View
             </Link>
             <Link
               href="/"
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
+              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
             >
               Utama
             </Link>
@@ -111,24 +122,24 @@ export default async function SurahThemeAppearancePage({
           {surahNumber > 1 ? (
             <Link
               href={`/read/surah/${surahNumber - 1}/themes`}
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
+              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
             >
               Prev Surah
             </Link>
           ) : (
-            <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400">
+            <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:text-stone-500">
               Prev Surah
             </span>
           )}
           {surahNumber < 114 ? (
             <Link
               href={`/read/surah/${surahNumber + 1}/themes`}
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
+              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
             >
               Next Surah
             </Link>
           ) : (
-            <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400">
+            <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:text-stone-500">
               Next Surah
             </span>
           )}
@@ -142,17 +153,17 @@ export default async function SurahThemeAppearancePage({
       ) : null}
 
       {!loadError && chunks.length > 0 ? (
-        <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4">
-          <h2 className="text-sm font-medium text-stone-900">
+        <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900">
+          <h2 className="text-sm font-medium text-stone-900 dark:text-stone-100">
             Theme Navigator ({selectedChunkIndex}/{chunks.length})
           </h2>
           <form method="get" className="flex flex-wrap items-end gap-2">
-            <label className="text-xs text-stone-600">
+            <label className="text-xs text-stone-600 dark:text-stone-300">
               Pilih theme
               <select
                 name="chunk"
                 defaultValue={String(selectedChunkIndex)}
-                className="mt-1 block min-w-64 rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900"
+                className="mt-1 block min-w-64 rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
               >
                 {chunks.map((chunk) => (
                   <option key={chunk.chunk_index} value={chunk.chunk_index}>
@@ -164,7 +175,7 @@ export default async function SurahThemeAppearancePage({
             </label>
             <button
               type="submit"
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
+              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
             >
               Go
             </button>
@@ -173,24 +184,24 @@ export default async function SurahThemeAppearancePage({
             {selectedChunkIndex > 1 ? (
               <Link
                 href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex - 1}`}
-                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
+                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
               >
                 Prev Theme
               </Link>
             ) : (
-              <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400">
+              <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:text-stone-500">
                 Prev Theme
               </span>
             )}
             {selectedChunkIndex < chunks.length ? (
               <Link
                 href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex + 1}`}
-                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
+                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
               >
                 Next Theme
               </Link>
             ) : (
-              <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400">
+              <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:text-stone-500">
                 Next Theme
               </span>
             )}
@@ -210,13 +221,13 @@ export default async function SurahThemeAppearancePage({
             <article
               key={selectedChunk.chunk_index}
               id={`chunk-${selectedChunk.chunk_index}`}
-              className="space-y-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm"
+              className="space-y-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm dark:border-stone-700 dark:bg-stone-900"
             >
               <header className="space-y-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
+                <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
                   Theme {selectedChunk.chunk_index}
                 </p>
-                <h3 className="text-base font-medium text-stone-900">
+                <h3 className="text-base font-medium text-stone-900 dark:text-stone-100">
                   {rangeLabel(
                     surahNumber,
                     selectedChunk.start_ayah,
@@ -224,10 +235,10 @@ export default async function SurahThemeAppearancePage({
                   )}{" "}
                   • {chunkTitleBm(selectedChunk)}
                 </h3>
-                <p className="text-sm text-stone-600">
+                <p className="text-sm text-stone-600 dark:text-stone-300">
                   {chunkTitleEn(selectedChunk)} • {selectedChunk.ayah_count} ayat
                 </p>
-                <p className="text-xs text-stone-500">
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   Mode: {selectedChunk.source === "manual" ? "Manual override" : "Auto"}
                 </p>
               </header>
@@ -236,15 +247,43 @@ export default async function SurahThemeAppearancePage({
                 {selectedChunk.ayat.map((ayah) => (
                   <article
                     key={ayah.id}
-                    className="rounded-xl border border-stone-100 bg-stone-50 p-3"
+                    className="rounded-xl border border-stone-100 bg-stone-50 p-3 dark:border-stone-700 dark:bg-stone-800/60"
                   >
-                    <p className="text-right text-2xl leading-loose text-stone-900" dir="rtl">
-                      {ayah.text_uthmani}
-                    </p>
-                    <p className="mt-2 text-sm leading-relaxed text-stone-700">
+                    <div className="rounded-lg border border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-900/70">
+                      {wbwByAyahId[ayah.id] && wbwByAyahId[ayah.id].length > 0 ? (
+                        <div className="flex flex-wrap justify-end gap-x-1.5 gap-y-2.5" dir="rtl">
+                          {wbwByAyahId[ayah.id].map((word) => (
+                            <span
+                              key={`${ayah.id}-${word.position}`}
+                              className="inline-flex w-[4.2rem] shrink-0 flex-col items-center text-center align-top"
+                            >
+                              <span className="text-2xl leading-none text-stone-900 dark:text-stone-100">
+                                {word.text_uthmani}
+                              </span>
+                              <span
+                                dir="ltr"
+                                className="mt-1 block w-full overflow-hidden whitespace-normal break-words text-[11px] leading-[1.15] text-stone-600 dark:text-stone-300"
+                                style={{
+                                  display: "-webkit-box",
+                                  WebkitBoxOrient: "vertical",
+                                  WebkitLineClamp: 3,
+                                }}
+                              >
+                                {word.translation_bm ?? word.translation_en ?? "—"}
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-stone-500 dark:text-stone-400">
+                          Data WBW belum tersedia untuk ayat ini.
+                        </p>
+                      )}
+                    </div>
+                    <p className="mt-2 text-sm leading-relaxed text-stone-700 dark:text-stone-200">
                       {ayah.display_bm ?? "Terjemahan BM belum tersedia."}
                     </p>
-                    <p className="mt-2 text-xs text-stone-500">
+                    <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
                       {surahNumber}:{ayah.ayah_number} • Page {ayah.page_number}
                     </p>
                   </article>
@@ -253,6 +292,40 @@ export default async function SurahThemeAppearancePage({
             </article>
           ) : null}
         </section>
+      ) : null}
+
+      {!loadError && chunks.length > 0 ? (
+        <footer className="rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
+            Theme Navigation
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {selectedChunkIndex > 1 ? (
+              <Link
+                href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex - 1}`}
+                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+              >
+                Prev Theme
+              </Link>
+            ) : (
+              <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:text-stone-500">
+                Prev Theme
+              </span>
+            )}
+            {selectedChunkIndex < chunks.length ? (
+              <Link
+                href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex + 1}`}
+                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+              >
+                Next Theme
+              </Link>
+            ) : (
+              <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:text-stone-500">
+                Next Theme
+              </span>
+            )}
+          </div>
+        </footer>
       ) : null}
     </main>
   );
