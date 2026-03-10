@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   MushafPageView,
   type MushafAyahDetail,
@@ -35,8 +35,11 @@ interface ReadPageWorkspaceProps {
   juzOptions: JuzOption[];
   audioTracks: PageAudioTrack[];
   ayahDetails: MushafAyahDetail[];
+  memorizedAyahKeys: string[];
   mushafHeader?: ReactNode;
 }
+
+const HIFZ_REVEAL_BY_THIRDS_STORAGE_KEY = "miftah:read:hifz-reveal-by-thirds";
 
 export function ReadPageWorkspace({
   pageNumber,
@@ -51,10 +54,28 @@ export function ReadPageWorkspace({
   juzOptions,
   audioTracks,
   ayahDetails,
+  memorizedAyahKeys,
   mushafHeader,
 }: ReadPageWorkspaceProps) {
   const router = useRouter();
   const [playingAyahKey, setPlayingAyahKey] = useState<string | null>(null);
+  const [hifzRevealByThirdsEnabled, setHifzRevealByThirdsEnabled] = useState(
+    () => {
+      if (typeof window === "undefined") {
+        return false;
+      }
+      return (
+        window.localStorage.getItem(HIFZ_REVEAL_BY_THIRDS_STORAGE_KEY) === "1"
+      );
+    },
+  );
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      HIFZ_REVEAL_BY_THIRDS_STORAGE_KEY,
+      hifzRevealByThirdsEnabled ? "1" : "0",
+    );
+  }, [hifzRevealByThirdsEnabled]);
 
   const handlePlaybackAyahChange = useCallback((ayahKey: string | null) => {
     setPlayingAyahKey(ayahKey);
@@ -83,6 +104,8 @@ export function ReadPageWorkspace({
         juzOptions={juzOptions}
         audioTracks={audioTracks}
         onPlaybackAyahChange={handlePlaybackAyahChange}
+        hifzRevealByThirdsEnabled={hifzRevealByThirdsEnabled}
+        onHifzRevealByThirdsChange={setHifzRevealByThirdsEnabled}
       />
 
       {mushafHeader}
@@ -95,6 +118,8 @@ export function ReadPageWorkspace({
         manifest={manifest}
         wordTranslations={wordTranslations}
         ayahDetails={ayahDetails}
+        memorizedAyahKeys={memorizedAyahKeys}
+        hifzRevealByThirdsEnabled={hifzRevealByThirdsEnabled}
         playingAyahKey={playingAyahKey}
         onNavigatePrevPage={handleNavigatePrevPage}
         onNavigateNextPage={handleNavigateNextPage}

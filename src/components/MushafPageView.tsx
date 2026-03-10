@@ -2,7 +2,17 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useRef, useState, type TouchEvent } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  type TouchEvent,
+} from "react";
+import {
+  calculateHifzRevealStageByAyahKeys,
+  resolveApproxThirdBoundariesByAyahEnd,
+  type HifzRevealStage,
+} from "@/lib/hifz/pageReveal";
 import { deriveMushafViewState } from "@/lib/mushafViewState";
 import { useReadMode } from "@/lib/useReadMode";
 import type {
@@ -26,6 +36,8 @@ interface MushafPageViewProps {
   manifest: MushafPageManifest | null;
   wordTranslations: MushafWordTranslationMap;
   ayahDetails: MushafAyahDetail[];
+  memorizedAyahKeys: string[];
+  hifzRevealByThirdsEnabled?: boolean;
   playingAyahKey?: string | null;
   onNavigatePrevPage?: () => void;
   onNavigateNextPage?: () => void;
@@ -42,6 +54,12 @@ interface WordTooltipPlacement {
   left: number;
   top: number;
   width: number;
+}
+
+interface AyahLayoutEntry {
+  key: string;
+  box: AyahBoundingBox;
+  bottomY: number;
 }
 
 function percent(value: number, total: number): string {
@@ -101,6 +119,26 @@ function getWordTooltipPlacement(
   };
 }
 
+function getAyahKeyFromWord(word: MushafWordHitbox): string | null {
+  const surah = word.surah;
+  const ayah = word.ayah;
+  const explicitAyahKey =
+    typeof surah === "number" && typeof ayah === "number"
+      ? `${surah}:${ayah}`
+      : word.location.split(":").slice(0, 2).join(":");
+  return explicitAyahKey.includes(":") ? explicitAyahKey : null;
+}
+
+function revealStageLabel(stage: HifzRevealStage): string {
+  if (stage === 1) {
+    return "1/3";
+  }
+  if (stage === 2) {
+    return "2/3";
+  }
+  return "Penuh";
+}
+
 export function MushafPageView({
   pageNumber,
   imageAvailable,
@@ -108,6 +146,8 @@ export function MushafPageView({
   manifest,
   wordTranslations,
   ayahDetails,
+  memorizedAyahKeys,
+  hifzRevealByThirdsEnabled = false,
   playingAyahKey = null,
   onNavigatePrevPage,
   onNavigateNextPage,
@@ -144,15 +184,8 @@ export function MushafPageView({
   const modeAllowsWordInteraction = mode !== "read";
   const canInteract = modeAllowsWordInteraction && canInteractWhenReady;
   const canTapAyah = mode === "read" && canShowFullImage && fullImageReady;
-  const activeWord = canInteract ? selectedWord : null;
   const wordTapPaddingX = Math.max(8, imageWidth * 0.004);
   const wordTapPaddingY = Math.max(8, imageHeight * 0.003);
-  const selectedTranslation = activeWord
-    ? wordTranslations[activeWord.location] ?? null
-    : null;
-  const activeWordTooltipPlacement = activeWord
-    ? getWordTooltipPlacement(activeWord, imageWidth, imageHeight)
-    : null;
   const ayahDetailsMap = useMemo(() => {
     const map = new Map<string, MushafAyahDetail>();
     for (const ayah of ayahDetails) {
@@ -164,14 +197,8 @@ export function MushafPageView({
     const map = new Map<string, AyahBoundingBox>();
 
     for (const word of words) {
-      const surah = word.surah;
-      const ayah = word.ayah;
-      const ayahKey =
-        typeof surah === "number" && typeof ayah === "number"
-          ? `${surah}:${ayah}`
-          : word.location.split(":").slice(0, 2).join(":");
-
-      if (!ayahKey.includes(":")) {
+      const ayahKey = getAyahKeyFromWord(word);
+      if (!ayahKey) {
         continue;
       }
 
@@ -201,6 +228,20 @@ export function MushafPageView({
 
     return map;
   }, [words]);
+  const ayahLayoutEntries = useMemo<AyahLayoutEntry[]>(() => {
+    return Array.from(ayahBoxes.entries())
+      .map(([key, box]) => ({
+        key,
+        box,
+        bottomY: box.y + box.height,
+      }))
+      .sort((a, b) => {
+        if (a.box.y !== b.box.y) {
+          return a.box.y - b.box.y;
+        }
+        return a.box.x - b.box.x;
+      });
+  }, [ayahBoxes]);
   const ayahOverlayTargets = useMemo(
     () =>
       Array.from(ayahBoxes.entries()).map(([key, box]) => ({
@@ -210,8 +251,81 @@ export function MushafPageView({
       })),
     [ayahBoxes, ayahDetailsMap],
   );
+  const memorizedAyahKeySet = useMemo(
+    () => new Set(memorizedAyahKeys),
+    [memorizedAyahKeys],
+  );
+  const hifzRevealContext = useMemo(() => {
+    const revealEnabled =
+      mode === "hifz" && hifzRevealByThirdsEnabled && imageHeight > 0;
+    if (!revealEnabled || ayahLayoutEntries.length === 0) {
+      return null;
+    }
+
+    const ayahBottomsAscending = ayahLayoutEntries.map((entry) => entry.bottomY);
+    const { firstBoundaryY, secondBoundaryY } = resolveApproxThirdBoundariesByAyahEnd(
+      ayahBottomsAscending,
+      imageHeight,
+    );
+
+    const firstSegmentAyahKeys = ayahLayoutEntries
+      .filter((entry) => entry.bottomY <= firstBoundaryY)
+      .map((entry) => entry.key);
+    const secondSegmentAyahKeys = ayahLayoutEntries
+      .filter(
+        (entry) =>
+          entry.bottomY > firstBoundaryY && entry.bottomY <= secondBoundaryY,
+      )
+      .map((entry) => entry.key);
+
+    const stage = calculateHifzRevealStageByAyahKeys(
+      firstSegmentAyahKeys,
+      secondSegmentAyahKeys,
+      memorizedAyahKeySet,
+    );
+
+    const visibleBoundaryY =
+      stage === 1 ? firstBoundaryY : stage === 2 ? secondBoundaryY : imageHeight;
+
+    return {
+      stage,
+      firstBoundaryY,
+      secondBoundaryY,
+      visibleBoundaryY,
+    };
+  }, [
+    ayahLayoutEntries,
+    hifzRevealByThirdsEnabled,
+    imageHeight,
+    memorizedAyahKeySet,
+    mode,
+  ]);
+  const revealMaskTop = hifzRevealContext
+    ? percent(hifzRevealContext.visibleBoundaryY, imageHeight)
+    : null;
+  const revealEnabled =
+    hifzRevealByThirdsEnabled &&
+    mode === "hifz" &&
+    hifzRevealContext !== null &&
+    hifzRevealContext.visibleBoundaryY < imageHeight;
+  const revealVisibleBoundaryY = hifzRevealContext?.visibleBoundaryY ?? imageHeight;
+  const activeWord =
+    canInteract &&
+    selectedWord !== null &&
+    selectedWord.y < revealVisibleBoundaryY
+      ? selectedWord
+      : null;
+  const selectedTranslation = activeWord
+    ? wordTranslations[activeWord.location] ?? null
+    : null;
+  const activeWordTooltipPlacement = activeWord
+    ? getWordTooltipPlacement(activeWord, imageWidth, imageHeight)
+    : null;
+  const selectedAyahBox = selectedAyahKey ? ayahBoxes.get(selectedAyahKey) ?? null : null;
   const selectedAyahDetail = selectedAyahKey && canTapAyah
-    ? ayahDetailsMap.get(selectedAyahKey) ?? null
+    ? !selectedAyahBox || selectedAyahBox.y < revealVisibleBoundaryY
+      ? ayahDetailsMap.get(selectedAyahKey) ?? null
+      : null
     : null;
   const playingAyahBox = playingAyahKey ? ayahBoxes.get(playingAyahKey) ?? null : null;
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
@@ -418,6 +532,19 @@ export function MushafPageView({
                 ) : null}
               </div>
             ) : null}
+            {hifzRevealContext && revealEnabled && revealMaskTop ? (
+              <div
+                className="absolute left-0 right-0 bottom-0 z-30 border-t border-dashed border-teal-500/60 bg-[#fffdfa] dark:bg-slate-950"
+                style={{ top: revealMaskTop }}
+                onClick={(event) => event.stopPropagation()}
+                onTouchStart={(event) => event.stopPropagation()}
+                onTouchEnd={(event) => event.stopPropagation()}
+              >
+                <div className="pointer-events-none absolute left-1/2 top-2 -translate-x-1/2 rounded-full border border-teal-500/40 bg-white/95 px-3 py-1 text-[10px] font-semibold tracking-wide text-teal-800 shadow-sm dark:border-teal-300/40 dark:bg-stone-900/95 dark:text-teal-200">
+                  HIFZ REVEAL · {revealStageLabel(hifzRevealContext.stage)}
+                </div>
+              </div>
+            ) : null}
           </>
         ) : (
           <div className="flex h-full items-center justify-center px-6 text-center text-sm text-stone-600 dark:text-stone-300">
@@ -477,6 +604,10 @@ export function MushafPageView({
       {!manifest ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">
           Manifest tidak ditemui. Halaman dipaparkan tanpa hitbox.
+        </p>
+      ) : revealEnabled && hifzRevealContext ? (
+        <p className="text-sm text-teal-700 dark:text-teal-300">
+          Hifz reveal aktif: paparan {revealStageLabel(hifzRevealContext.stage)} halaman (sempadan ikut hujung ayat).
         </p>
       ) : canTapAyah ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">

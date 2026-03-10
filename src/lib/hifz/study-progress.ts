@@ -45,6 +45,31 @@ export async function getProgressById(
   return data as StudyProgress | null;
 }
 
+export async function getProgressByAyahIds(
+  userId: string,
+  ayahIds: number[],
+): Promise<Map<number, StudyProgress>> {
+  const uniqueAyahIds = Array.from(
+    new Set(ayahIds.filter((ayahId) => Number.isInteger(ayahId) && ayahId > 0)),
+  );
+  if (uniqueAyahIds.length === 0) {
+    return new Map<number, StudyProgress>();
+  }
+
+  const { data, error } = await supabaseServer
+    .from("study_progress")
+    .select("*")
+    .eq("user_id", userId)
+    .in("ayah_id", uniqueAyahIds);
+  if (error) throw error;
+
+  const map = new Map<number, StudyProgress>();
+  for (const row of (data ?? []) as StudyProgress[]) {
+    map.set(row.ayah_id, row);
+  }
+  return map;
+}
+
 export async function updateFsrsFields(
   id: number,
   fields: FsrsFields,

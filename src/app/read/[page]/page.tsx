@@ -4,6 +4,7 @@ import type { PageAudioTrack } from "@/components/PageAudioControls";
 import type { MushafAyahDetail } from "@/components/MushafPageView";
 import { ReadPageWorkspace } from "@/components/ReadPageWorkspace";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { getProgressByAyahIds } from "@/lib/hifz/study-progress";
 import { loadPageManifest, pageImageExists } from "@/lib/mushafAssets";
 import { getAyatByPage, getSurah } from "@/lib/queries";
 import {
@@ -38,6 +39,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
   let ayatOnPage: Ayah[] = [];
   let audioTracks: PageAudioTrack[] = [];
   let ayahDetails: MushafAyahDetail[] = [];
+  let memorizedAyahKeys: string[] = [];
   try {
     ayatOnPage = await getAyatByPage(pageNumber);
     audioTracks = mapAyatToPageAudioTracks(ayatOnPage);
@@ -48,10 +50,30 @@ export default async function ReadPage({ params }: ReadPageProps) {
       bm: ayah.display_bm,
       en: ayah.translation_en,
     }));
+
+    const userId = process.env.MIFTAH_USER_ID?.trim();
+    if (userId && ayatOnPage.length > 0) {
+      try {
+        const progressByAyahId = await getProgressByAyahIds(
+          userId,
+          ayatOnPage.map((ayah) => ayah.id),
+        );
+        memorizedAyahKeys = ayatOnPage.flatMap((ayah) => {
+          const status = progressByAyahId.get(ayah.id)?.hifz_status;
+          if (status === "sabqi" || status === "manzil") {
+            return [`${ayah.surah_id}:${ayah.ayah_number}`];
+          }
+          return [];
+        });
+      } catch {
+        memorizedAyahKeys = [];
+      }
+    }
   } catch {
     ayatOnPage = [];
     audioTracks = [];
     ayahDetails = [];
+    memorizedAyahKeys = [];
   }
 
   const wordTranslations = manifest
@@ -138,6 +160,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
         juzOptions={jumpTargets.juzs}
         audioTracks={audioTracks}
         ayahDetails={ayahDetails}
+        memorizedAyahKeys={memorizedAyahKeys}
       />
     </main>
   );

@@ -28,6 +28,8 @@ interface ReadModeToolsProps {
   juzOptions: JuzOption[];
   audioTracks: PageAudioTrack[];
   onPlaybackAyahChange?: (ayahKey: string | null) => void;
+  hifzRevealByThirdsEnabled: boolean;
+  onHifzRevealByThirdsChange: (next: boolean) => void;
 }
 
 const MODES: Array<{ value: ReadMode; label: string }> = [
@@ -47,6 +49,8 @@ export function ReadModeTools({
   juzOptions,
   audioTracks,
   onPlaybackAyahChange,
+  hifzRevealByThirdsEnabled,
+  onHifzRevealByThirdsChange,
 }: ReadModeToolsProps) {
   const { mode, setMode } = useReadMode();
   const [showJumpControls, setShowJumpControls] = useState(() => {
@@ -128,6 +132,24 @@ export function ReadModeTools({
           >
             {showAudioControls ? "Hide Audio" : "Show Audio"}
           </button>
+
+          {mode === "hifz" ? (
+            <button
+              type="button"
+              onClick={() =>
+                onHifzRevealByThirdsChange(!hifzRevealByThirdsEnabled)
+              }
+              className={`rounded-full border px-4 py-2 text-sm font-medium transition-all shadow-sm ${
+                hifzRevealByThirdsEnabled
+                  ? "border-teal-900 bg-teal-900 text-teal-50 dark:border-teal-300 dark:bg-teal-300 dark:text-teal-950"
+                  : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+              }`}
+            >
+              {hifzRevealByThirdsEnabled
+                ? "1/3 Hifz Reveal: On"
+                : "1/3 Hifz Reveal: Off"}
+            </button>
+          ) : null}
 
           {mode === "study" && (
             <Link
