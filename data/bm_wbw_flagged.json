@@ -509,7 +509,7 @@
   },
   {
     "id_text": "mereka mau mengerti",
-    "bm_text_auto": "mereka mau mengerti",
+    "bm_text_auto": "mereka mahu mengerti",
     "en_text": "use reason",
     "flag_reasons": [
       {
@@ -517,7 +517,14 @@
         "word": "mengerti"
       }
     ],
-    "changes_applied": [],
+    "changes_applied": [
+      {
+        "type": "orthography",
+        "from": "mau",
+        "to": "mahu",
+        "count": 1
+      }
+    ],
     "occurrences": 1,
     "sample_keys": [
       "10:42:11"
@@ -863,7 +870,7 @@
   },
   {
     "id_text": "menyadari/mengerti",
-    "bm_text_auto": "menyadari/mengerti",
+    "bm_text_auto": "menyedari/mengerti",
     "en_text": "you perceive",
     "flag_reasons": [
       {
@@ -871,7 +878,14 @@
         "word": "mengerti"
       }
     ],
-    "changes_applied": [],
+    "changes_applied": [
+      {
+        "type": "orthography",
+        "from": "menyadari",
+        "to": "menyedari",
+        "count": 1
+      }
+    ],
     "occurrences": 1,
     "sample_keys": [
       "26:113:7"

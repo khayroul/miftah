@@ -35,6 +35,171 @@ OUTPUT_FLAGGED = DATA_DIR / "bm_wbw_flagged.json"
 OUTPUT_REVIEW_CSV = DATA_DIR / "bm_wbw_review.csv"
 OUTPUT_STATS = DATA_DIR / "bm_wbw_stats.txt"
 
+ORTHOGRAPHY_RULES = [
+    {
+        "pattern": re.compile(r"\bkarena(?P<suffix>nya)?\b", re.IGNORECASE),
+        "replacement": "kerana{suffix}",
+        "from": "karena",
+        "to": "kerana",
+    },
+    {
+        "pattern": re.compile(r"\bmau(?P<suffix>kah)?\b", re.IGNORECASE),
+        "replacement": "mahu{suffix}",
+        "from": "mau",
+        "to": "mahu",
+    },
+    {
+        "pattern": re.compile(r"\bkemauan(?P<suffix>ku|mu|nya)?\b", re.IGNORECASE),
+        "replacement": "kemahuan{suffix}",
+        "from": "kemauan",
+        "to": "kemahuan",
+    },
+    {
+        "pattern": re.compile(r"\bmenyadari\b", re.IGNORECASE),
+        "replacement": "menyedari",
+        "from": "menyadari",
+        "to": "menyedari",
+    },
+    {
+        "pattern": re.compile(r"\bsekedar\b", re.IGNORECASE),
+        "replacement": "sekadar",
+        "from": "sekedar",
+        "to": "sekadar",
+    },
+    {
+        "pattern": re.compile(r"\bberpikir\b", re.IGNORECASE),
+        "replacement": "berfikir",
+        "from": "berpikir",
+        "to": "berfikir",
+    },
+    {
+        "pattern": re.compile(r"\bpikiran\b", re.IGNORECASE),
+        "replacement": "fikiran",
+        "from": "pikiran",
+        "to": "fikiran",
+    },
+    {
+        "pattern": re.compile(r"\bpikir\b", re.IGNORECASE),
+        "replacement": "fikir",
+        "from": "pikir",
+        "to": "fikir",
+    },
+    {
+        "pattern": re.compile(r"\bmengkaruniakan\b", re.IGNORECASE),
+        "replacement": "mengurniakan",
+        "from": "mengkaruniakan",
+        "to": "mengurniakan",
+    },
+    {
+        "pattern": re.compile(r"\bdikaruniakan\b", re.IGNORECASE),
+        "replacement": "dikurniakan",
+        "from": "dikaruniakan",
+        "to": "dikurniakan",
+    },
+    {
+        "pattern": re.compile(r"\bkarunia(?P<suffix>Nya|-Nya|nya|kan)?\b", re.IGNORECASE),
+        "replacement": "kurnia{suffix}",
+        "from": "karunia",
+        "to": "kurnia",
+    },
+    {
+        "pattern": re.compile(r"\blezat\b", re.IGNORECASE),
+        "replacement": "lazat",
+        "from": "lezat",
+        "to": "lazat",
+    },
+    {
+        "pattern": re.compile(r"\bsurga(?P<suffix>-Ku)?\b", re.IGNORECASE),
+        "replacement": "syurga{suffix}",
+        "from": "surga",
+        "to": "syurga",
+    },
+    {
+        "pattern": re.compile(r"\bsiksaan(?P<suffix>Ku|Nya|ku|mu|nya)?\b", re.IGNORECASE),
+        "replacement": "seksaan{suffix}",
+        "from": "siksaan",
+        "to": "seksaan",
+    },
+    {
+        "pattern": re.compile(r"\bdisiksa\b", re.IGNORECASE),
+        "replacement": "diseksa",
+        "from": "disiksa",
+        "to": "diseksa",
+    },
+    {
+        "pattern": re.compile(r"\bsiksa(?P<suffix>Ku|Nya|ku|mu|nya)?\b", re.IGNORECASE),
+        "replacement": "seksa{suffix}",
+        "from": "siksa",
+        "to": "seksa",
+    },
+    {
+        "pattern": re.compile(r"\bkedzaliman(?P<suffix>nya)?\b", re.IGNORECASE),
+        "replacement": "kezaliman{suffix}",
+        "from": "kedzaliman",
+        "to": "kezaliman",
+    },
+    {
+        "pattern": re.compile(r"\bdzalim(?P<suffix>nya)?\b", re.IGNORECASE),
+        "replacement": "zalim{suffix}",
+        "from": "dzalim",
+        "to": "zalim",
+    },
+    {
+        "pattern": re.compile(r"\bkeridhaan(?P<suffix>Nya|-Nya|nya|mu)?\b", re.IGNORECASE),
+        "replacement": "keredhaan{suffix}",
+        "from": "keridhaan",
+        "to": "keredhaan",
+    },
+    {
+        "pattern": re.compile(r"\bmeridhai(?P<suffix>nya)?\b", re.IGNORECASE),
+        "replacement": "meredhai{suffix}",
+        "from": "meridhai",
+        "to": "meredhai",
+    },
+    {
+        "pattern": re.compile(r"\bdiridhai(?P<suffix>nya)?\b", re.IGNORECASE),
+        "replacement": "diredhai{suffix}",
+        "from": "diridhai",
+        "to": "diredhai",
+    },
+    {
+        "pattern": re.compile(r"\bridhai(?P<suffix>nya)?\b", re.IGNORECASE),
+        "replacement": "redhai{suffix}",
+        "from": "ridhai",
+        "to": "redhai",
+    },
+    {
+        "pattern": re.compile(r"\bridha\b", re.IGNORECASE),
+        "replacement": "redha",
+        "from": "ridha",
+        "to": "redha",
+    },
+    {
+        "pattern": re.compile(r"\bistri-istri(?P<suffix>ku|mu|nya)?\b", re.IGNORECASE),
+        "replacement": "isteri-isteri{suffix}",
+        "from": "istri-istri",
+        "to": "isteri-isteri",
+    },
+    {
+        "pattern": re.compile(r"\bistri(?P<suffix>ku|mu|nya)?\b", re.IGNORECASE),
+        "replacement": "isteri{suffix}",
+        "from": "istri",
+        "to": "isteri",
+    },
+    {
+        "pattern": re.compile(r"\bdirezkikan\b", re.IGNORECASE),
+        "replacement": "direzekikan",
+        "from": "direzkikan",
+        "to": "direzekikan",
+    },
+    {
+        "pattern": re.compile(r"\brezki(?P<suffix>kan|lah|ku|mu|nya)?\b", re.IGNORECASE),
+        "replacement": "rezeki{suffix}",
+        "from": "rezki",
+        "to": "rezeki",
+    },
+]
+
 
 def load_normalization_map():
     with open(NORM_MAP_PATH) as f:
@@ -88,6 +253,43 @@ def apply_substitutions(text, norm_map):
                         "to": bm_word
                     })
                     result = new_result
+
+    return result, changes
+
+
+def preserve_case(source, replacement):
+    if source.isupper():
+        return replacement.upper()
+    if source and source[0].isupper():
+        return replacement[0].upper() + replacement[1:]
+    return replacement
+
+
+def apply_orthography_normalization(text):
+    """Apply Indonesian→BM spelling normalization after direct substitutions."""
+    changes = []
+    result = text
+
+    for rule in ORTHOGRAPHY_RULES:
+        def replacer(match):
+            groups = {
+                key: value or ""
+                for key, value in match.groupdict().items()
+            }
+            replacement = rule["replacement"].format(**groups)
+            return preserve_case(match.group(0), replacement)
+
+        new_result, count = rule["pattern"].subn(replacer, result)
+        if count <= 0 or new_result == result:
+            continue
+
+        changes.append({
+            "type": "orthography",
+            "from": rule["from"],
+            "to": rule["to"],
+            "count": count,
+        })
+        result = new_result
 
     return result, changes
 
@@ -152,6 +354,8 @@ def convert():
 
         # Step 2: Apply mechanical substitutions
         bm_text, changes = apply_substitutions(id_text, norm_map)
+        bm_text, orthography_changes = apply_orthography_normalization(bm_text)
+        changes.extend(orthography_changes)
 
         # Step 3: Check if flagging needed
         flag_reasons = should_flag(id_text, norm_map)
