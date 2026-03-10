@@ -1,8 +1,10 @@
 # Ignore large local artifacts not needed at runtime on Vercel
-assets/
-!assets/fonts/
-!assets/fonts/NotoNaskhArabic-Variable.ttf
-!assets/fonts/KFGQPCUthmanTahaNaskh-Regular.ttf
+assets/ayat/
+assets/pages/
+assets/words/
+assets/manifests/
+assets/fonts/qcf-v2/
+assets/fonts/qcf-v2-woff2/
 test/
 .tmp/
 node_modules/
