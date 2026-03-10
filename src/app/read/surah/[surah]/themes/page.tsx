@@ -128,7 +128,7 @@ export default async function SurahThemeAppearancePage({
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-stone-900 hover:text-stone-800 dark:text-stone-100 flex items-center gap-3">
               Surah {surahMeta.name_en}
-              <span className="font-arabic font-normal text-2xl opacity-80 mt-1">{surahMeta.name_arabic}</span>
+              <span className="font-arabic font-normal text-2xl opacity-80 mt-1" lang="ar">{surahMeta.name_arabic}</span>
             </h1>
             <p className="mt-1 text-stone-500 dark:text-stone-400">
               Surah {surahMeta.id} • Thematic Reading
@@ -209,7 +209,7 @@ export default async function SurahThemeAppearancePage({
                               className="group/word flex min-w-fit max-w-[5.5rem] sm:max-w-[7rem] flex-col items-center justify-start hover:bg-stone-50 dark:hover:bg-stone-800/50 rounded-lg p-2 transition-colors cursor-pointer"
                             >
                               <span
-                                className="font-arabic mb-2 block text-center text-[1.75rem] leading-tight text-stone-900 sm:text-3xl dark:text-stone-100"
+                                className="font-arabic mb-2 block text-center text-[1.75rem] leading-[1.5] text-stone-900 sm:text-3xl dark:text-stone-100"
                                 lang="ar"
                               >
                                 {word.text_uthmani}

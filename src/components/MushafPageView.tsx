@@ -890,6 +890,7 @@ export function MushafPageView({
             <p
               className="font-arabic mt-3 text-right text-2xl leading-loose text-stone-900 dark:text-stone-100"
               dir="rtl"
+              lang="ar"
             >
               {selectedAyahDetail.textUthmani}
             </p>

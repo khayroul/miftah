@@ -83,6 +83,7 @@ export function HifzSessionCard({
       {/* Arabic text */}
       <p
         dir="rtl"
+        lang="ar"
         className="font-arabic mb-4 text-right text-2xl leading-loose text-stone-900 sm:text-3xl dark:text-stone-100"
       >
         {ayah.textUthmani}

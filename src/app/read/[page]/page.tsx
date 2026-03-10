@@ -121,7 +121,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
               <h1 className="flex items-center gap-3 text-3xl font-semibold tracking-tight text-stone-900 hover:text-stone-800 dark:text-stone-100">
                 Surah {surahMeta?.name_en ?? "Al-Fatihah"}
                 {surahMeta?.name_arabic && (
-                  <span className="font-arabic mt-1 text-2xl font-normal opacity-80">
+                  <span className="font-arabic mt-1 text-2xl font-normal opacity-80" lang="ar">
                     {surahMeta.name_arabic}
                   </span>
                 )}

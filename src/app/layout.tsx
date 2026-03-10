@@ -8,9 +8,9 @@ const geist = Geist({
   subsets: ["latin"],
 });
 
-const uthmani = localFont({
-  src: "../../assets/fonts/KFGQPCUthmanTahaNaskh-Regular.ttf",
-  variable: "--font-kfg-uthmani",
+const arabicText = localFont({
+  src: "../../assets/fonts/NotoNaskhArabic-Variable.ttf",
+  variable: "--font-quran-arabic",
   display: "swap",
 });
 
@@ -26,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ms">
-      <body className={`${geist.variable} ${uthmani.variable} antialiased`}>
+      <body className={`${geist.variable} ${arabicText.variable} antialiased`}>
         {children}
       </body>
     </html>
