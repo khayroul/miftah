@@ -190,14 +190,14 @@ export default async function SurahThemeAppearancePage({
                           {wbwByAyahId[ayah.id].map((word) => (
                             <div
                               key={`${ayah.id}-${word.position}`}
-                              className="group/word flex min-w-fit max-w-[10rem] flex-col items-center justify-start hover:bg-stone-50 dark:hover:bg-stone-800/50 rounded-lg p-2 transition-colors cursor-pointer"
+                              className="group/word flex min-w-fit max-w-[9rem] flex-col items-center justify-start hover:bg-stone-50 dark:hover:bg-stone-800/50 rounded-lg p-2 transition-colors cursor-pointer"
                             >
-                              <span className="block text-center text-[2.5rem] sm:text-5xl leading-tight text-stone-900 dark:text-stone-100 mb-3">
+                              <span className="block text-center text-4xl sm:text-5xl leading-tight text-stone-900 dark:text-stone-100 mb-2.5">
                                 {word.text_uthmani}
                               </span>
                               <span
                                 dir="ltr"
-                                className="block text-center text-sm sm:text-base leading-snug text-stone-500 group-hover/word:text-stone-800 dark:text-stone-400 dark:group-hover/word:text-stone-200 transition-colors"
+                                className="block text-center text-sm sm:text-[15px] leading-snug text-stone-500 group-hover/word:text-stone-800 dark:text-stone-400 dark:group-hover/word:text-stone-200 transition-colors"
                               >
                                 {word.translation_bm ?? word.translation_en ?? "—"}
                               </span>
