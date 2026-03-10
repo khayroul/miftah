@@ -12,7 +12,7 @@ import {
 } from "@/lib/readNavigation";
 import { findMarkerForPage } from "@/lib/readNavigationUtils";
 import { mapAyatToPageAudioTracks } from "@/lib/pageAudioTracks";
-import { getWordTranslationsByLocation } from "@/lib/wbwTranslations";
+import { getWordTranslationsByHitboxes } from "@/lib/wbwTranslations";
 import type { Ayah } from "@/types/database";
 
 interface ReadPageProps {
@@ -54,7 +54,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
   }
 
   const wordTranslations = manifest
-    ? await getWordTranslationsByLocation(manifest.words.map((word) => word.location))
+    ? await getWordTranslationsByHitboxes(manifest.words)
     : {};
 
   const surahMarkers = jumpTargets.surahs.map((target) => ({
@@ -72,48 +72,22 @@ export default async function ReadPage({ params }: ReadPageProps) {
   const surahForThemeView = parseReadSurah(firstWordLocation) ?? surahByPage;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
+    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
       <header className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-medium text-stone-900">
+            <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
               Mushaf View
             </h1>
-            <p className="text-sm text-stone-600">Halaman {pageNumber} / 604</p>
+            <p className="text-sm text-stone-600 dark:text-stone-400">Halaman {pageNumber} / 604</p>
           </div>
           <Link
             href="/"
-            className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
+            className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
           >
             Utama
           </Link>
         </div>
-        <nav className="flex flex-wrap gap-2">
-          {pageNumber > 1 ? (
-            <Link
-              href={`/read/${pageNumber - 1}`}
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
-            >
-              Prev
-            </Link>
-          ) : (
-            <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400">
-              Prev
-            </span>
-          )}
-          {pageNumber < 604 ? (
-            <Link
-              href={`/read/${pageNumber + 1}`}
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100"
-            >
-              Next
-            </Link>
-          ) : (
-            <span className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-400">
-              Next
-            </span>
-          )}
-        </nav>
       </header>
 
       <ReadPageWorkspace

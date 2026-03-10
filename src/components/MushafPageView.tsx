@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useRef, useState, type TouchEvent } from "react";
 import { deriveMushafViewState } from "@/lib/mushafViewState";
 import { useReadMode } from "@/lib/useReadMode";
@@ -43,6 +44,20 @@ function percent(value: number, total: number): string {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+function expandHitbox(
+  box: AyahBoundingBox,
+  paddingX: number,
+  paddingY: number,
+  maxWidth: number,
+  maxHeight: number,
+): AyahBoundingBox {
+  const x = clamp(box.x - paddingX, 0, maxWidth);
+  const y = clamp(box.y - paddingY, 0, maxHeight);
+  const width = clamp(box.width + paddingX * 2, 1, maxWidth - x);
+  const height = clamp(box.height + paddingY * 2, 1, maxHeight - y);
+  return { x, y, width, height };
 }
 
 export function MushafPageView({
@@ -89,6 +104,8 @@ export function MushafPageView({
   const canInteract = modeAllowsWordInteraction && canInteractWhenReady;
   const canTapAyah = mode === "read" && canShowFullImage && fullImageReady;
   const activeWord = canInteract ? selectedWord : null;
+  const wordTapPaddingX = Math.max(8, imageWidth * 0.004);
+  const wordTapPaddingY = Math.max(8, imageHeight * 0.003);
   const selectedTranslation = activeWord
     ? wordTranslations[activeWord.location] ?? null
     : null;
@@ -193,22 +210,11 @@ export function MushafPageView({
 
     onNavigateNextPage?.();
   };
-  const tooltipAnchor = activeWord
-    ? {
-        left: clamp(
-          ((activeWord.x + activeWord.width / 2) / imageWidth) * 100,
-          12,
-          88,
-        ),
-        top: ((activeWord.y + activeWord.height / 2) / imageHeight) * 100,
-        showBelow: activeWord.y < imageHeight * 0.18,
-      }
-    : null;
 
   return (
     <section className="space-y-3">
       <div
-        className="relative overflow-hidden rounded-2xl border border-stone-300 bg-white shadow-sm"
+        className="relative overflow-visible rounded-2xl border border-stone-300 bg-[#fffdfa] shadow-[0_18px_34px_-30px_rgba(28,25,23,0.7)] dark:border-stone-600 dark:bg-[#fffdfa] dark:shadow-[0_22px_38px_-30px_rgba(2,6,23,0.9)]"
         style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -282,7 +288,7 @@ export function MushafPageView({
             ) : null}
             {!fullImageReady && canShowFullImage ? (
               <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-4">
-                <span className="rounded-full border border-stone-300 bg-white/90 px-3 py-1 text-xs text-stone-600 shadow-sm">
+                <span className="rounded-full border border-stone-300 bg-white/90 px-3 py-1 text-xs text-stone-600 shadow-sm dark:border-stone-700 dark:bg-stone-900/90 dark:text-stone-300">
                   Loading full page...
                 </span>
               </div>
@@ -292,28 +298,43 @@ export function MushafPageView({
                 className="absolute inset-0"
                 onClick={() => setSelectedWord(null)}
               >
-                {words.map((word, index) => (
-                  <button
-                    key={`${word.location}-${index}`}
-                    type="button"
-                    data-testid="word-hitbox"
-                    aria-label={`Perkataan ${word.location}`}
-                    title={word.location}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setSelectedWord((current) =>
-                        current?.location === word.location ? null : word,
-                      );
-                    }}
-                    className="absolute cursor-pointer bg-transparent hover:bg-amber-300/25 focus-visible:bg-amber-300/30 focus-visible:outline-none"
-                    style={{
-                      left: percent(word.x, imageWidth),
-                      top: percent(word.y, imageHeight),
-                      width: percent(word.width, imageWidth),
-                      height: percent(word.height, imageHeight),
-                    }}
-                  />
-                ))}
+                {words.map((word, index) => {
+                  const tapBox = expandHitbox(
+                    {
+                      x: word.x,
+                      y: word.y,
+                      width: word.width,
+                      height: word.height,
+                    },
+                    wordTapPaddingX,
+                    wordTapPaddingY,
+                    imageWidth,
+                    imageHeight,
+                  );
+
+                  return (
+                    <button
+                      key={`${word.location}-${index}`}
+                      type="button"
+                      data-testid="word-hitbox"
+                      aria-label={`Perkataan ${word.location}`}
+                      title={word.location}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setSelectedWord((current) =>
+                          current?.location === word.location ? null : word,
+                        );
+                      }}
+                      className="absolute cursor-pointer bg-transparent hover:bg-amber-300/25 focus-visible:bg-amber-300/30 focus-visible:outline-none"
+                      style={{
+                        left: percent(tapBox.x, imageWidth),
+                        top: percent(tapBox.y, imageHeight),
+                        width: percent(tapBox.width, imageWidth),
+                        height: percent(tapBox.height, imageHeight),
+                      }}
+                    />
+                  );
+                })}
                 {activeWord ? (
                   <div
                     className="pointer-events-none absolute border-2 border-amber-500"
@@ -325,56 +346,69 @@ export function MushafPageView({
                     }}
                   />
                 ) : null}
-                {activeWord && tooltipAnchor ? (
-                  <div
-                    data-testid="word-tooltip"
-                    className="pointer-events-none absolute z-20 w-[min(84vw,21rem)] max-w-sm rounded-xl border border-stone-300 bg-white/95 px-3 py-2 text-xs text-stone-800 shadow-lg backdrop-blur-sm"
-                    style={{
-                      left: `${tooltipAnchor.left}%`,
-                      top: `${tooltipAnchor.top}%`,
-                      transform: tooltipAnchor.showBelow
-                        ? "translate(-50%, 14px)"
-                        : "translate(-50%, calc(-100% - 14px))",
-                    }}
-                  >
-                    <p className="font-medium text-stone-900">
-                      {selectedTranslation?.bm ?? "Tiada terjemahan"}
-                    </p>
-                    <p className="text-stone-600">
-                      {selectedTranslation?.en ?? "No translation"}
-                    </p>
-                    <p className="mt-1 text-[11px] text-stone-500">
-                      {activeWord.location}
-                    </p>
-                    <div
-                      className="absolute left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-stone-300 bg-white/95"
-                      style={{
-                        top: tooltipAnchor.showBelow ? "-6px" : undefined,
-                        bottom: tooltipAnchor.showBelow ? undefined : "-6px",
-                        borderTopWidth: tooltipAnchor.showBelow ? 1 : 0,
-                        borderLeftWidth: tooltipAnchor.showBelow ? 1 : 0,
-                        borderRightWidth: tooltipAnchor.showBelow ? 0 : 1,
-                        borderBottomWidth: tooltipAnchor.showBelow ? 0 : 1,
-                      }}
-                    />
-                  </div>
-                ) : null}
               </div>
             ) : null}
           </>
         ) : (
-          <div className="flex h-full items-center justify-center px-6 text-center text-sm text-stone-600">
+          <div className="flex h-full items-center justify-center px-6 text-center text-sm text-stone-600 dark:text-stone-300">
             Imej halaman {pageNumber} belum tersedia lagi.
           </div>
         )}
       </div>
 
+      <nav className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+        {pageNumber > 1 ? (
+          <Link
+            href={`/read/${pageNumber - 1}`}
+            className="justify-self-start rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
+          >
+            Prev
+          </Link>
+        ) : (
+          <span className="justify-self-start rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-500">
+            Prev
+          </span>
+        )}
+        <span className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
+          Page {pageNumber} / 604
+        </span>
+        {pageNumber < 604 ? (
+          <Link
+            href={`/read/${pageNumber + 1}`}
+            className="justify-self-end rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
+          >
+            Next
+          </Link>
+        ) : (
+          <span className="justify-self-end rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-500">
+            Next
+          </span>
+        )}
+      </nav>
+
+      {activeWord ? (
+        <article
+          data-testid="word-tooltip"
+          className="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 shadow-sm dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
+        >
+          <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+            {selectedTranslation?.bm ?? "Tiada terjemahan"}
+          </p>
+          <p className="text-sm text-stone-600 dark:text-stone-300">
+            {selectedTranslation?.en ?? "No translation"}
+          </p>
+          <p className="mt-1 text-[11px] text-stone-500 dark:text-stone-400">
+            {activeWord.location}
+          </p>
+        </article>
+      ) : null}
+
       {!manifest ? (
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-stone-600 dark:text-stone-300">
           Manifest tidak ditemui. Halaman dipaparkan tanpa hitbox.
         </p>
       ) : canTapAyah ? (
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-stone-600 dark:text-stone-300">
           Tap pada ayat untuk lihat terjemahan BM. Swipe kiri/kanan untuk tukar halaman.
         </p>
       ) : playingAyahKey ? (
@@ -382,19 +416,19 @@ export function MushafPageView({
           Sedang dimainkan: ayat {playingAyahKey}
         </p>
       ) : words.length === 0 ? (
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-stone-600 dark:text-stone-300">
           Manifest dijumpai, tetapi tiada hitbox sah untuk dipaparkan.
         </p>
       ) : !fullImageReady ? (
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-stone-600 dark:text-stone-300">
           Thumbnail dipaparkan dahulu. Hitbox aktif selepas imej penuh siap.
         </p>
       ) : !modeAllowsWordInteraction ? (
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-stone-600 dark:text-stone-300">
           Read mode aktif. Tukar ke Study/Hifz untuk makna perkataan.
         </p>
       ) : (
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-stone-600 dark:text-stone-300">
           Tap pada perkataan untuk lihat makna segera.
         </p>
       )}
@@ -402,29 +436,29 @@ export function MushafPageView({
       {selectedAyahDetail ? (
         <div className="fixed inset-0 z-40 flex items-end bg-black/35" onClick={() => setSelectedAyahKey(null)}>
           <article
-            className="max-h-[78vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl"
+            className="max-h-[78vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl dark:bg-stone-900"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-medium text-stone-900">
+              <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
                 Ayat {selectedAyahDetail.label}
               </p>
               <button
                 type="button"
                 onClick={() => setSelectedAyahKey(null)}
-                className="rounded-lg border border-stone-300 px-2 py-1 text-xs text-stone-700 transition hover:bg-stone-100"
+                className="rounded-lg border border-stone-300 px-2 py-1 text-xs text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
               >
                 Tutup
               </button>
             </div>
-            <p className="mt-3 text-right text-2xl leading-loose text-stone-900" dir="rtl">
+            <p className="mt-3 text-right text-2xl leading-loose text-stone-900 dark:text-stone-100" dir="rtl">
               {selectedAyahDetail.textUthmani}
             </p>
-            <p className="mt-3 text-sm leading-relaxed text-stone-700">
+            <p className="mt-3 text-sm leading-relaxed text-stone-700 dark:text-stone-200">
               {selectedAyahDetail.bm ?? "Terjemahan BM belum tersedia."}
             </p>
             {selectedAyahDetail.en ? (
-              <p className="mt-2 text-xs leading-relaxed text-stone-500">
+              <p className="mt-2 text-xs leading-relaxed text-stone-500 dark:text-stone-400">
                 EN: {selectedAyahDetail.en}
               </p>
             ) : null}

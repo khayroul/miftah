@@ -54,8 +54,8 @@ export function ReadJumpControls({
   }
 
   return (
-    <section className="rounded-2xl border border-stone-300 bg-white px-3 py-3 shadow-sm sm:px-4">
-      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">
+    <section className="rounded-2xl border border-stone-300 bg-white px-3 py-3 shadow-sm sm:px-4 dark:border-stone-600 dark:bg-stone-900">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
         Jump-To
       </p>
       <div className="grid gap-2 sm:grid-cols-3">
@@ -71,20 +71,20 @@ export function ReadJumpControls({
             jumpToPage(targetPage);
           }}
         >
-          <label className="min-w-0 flex-1 text-xs text-stone-600">
+          <label className="min-w-0 flex-1 text-xs text-stone-600 dark:text-stone-300">
             Page
             <input
               value={pageInput}
               onChange={(event) => setPageInput(event.target.value)}
               inputMode="numeric"
               pattern="[0-9]*"
-              className="mt-1 w-full rounded-lg border border-stone-300 px-2 py-1.5 text-sm text-stone-900 outline-none focus:border-stone-500"
+              className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 outline-none focus:border-stone-500 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
               placeholder="1-604"
             />
           </label>
           <button
             type="submit"
-            className="rounded-lg border border-stone-300 px-2.5 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100"
+            className="rounded-lg border border-stone-300 px-2.5 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
           >
             Go
           </button>
@@ -109,12 +109,12 @@ export function ReadJumpControls({
             jumpToPage(targetPage);
           }}
         >
-          <label className="min-w-0 flex-1 text-xs text-stone-600">
+          <label className="min-w-0 flex-1 text-xs text-stone-600 dark:text-stone-300">
             Surah
             <select
               value={surahInput}
               onChange={(event) => setSurahInput(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 outline-none focus:border-stone-500"
+              className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 outline-none focus:border-stone-500 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
             >
               {surahOptions.map((option) => (
                 <option key={option.surah} value={option.surah}>
@@ -125,7 +125,7 @@ export function ReadJumpControls({
           </label>
           <button
             type="submit"
-            className="rounded-lg border border-stone-300 px-2.5 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100"
+            className="rounded-lg border border-stone-300 px-2.5 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
           >
             Go
           </button>
@@ -150,12 +150,12 @@ export function ReadJumpControls({
             jumpToPage(targetPage);
           }}
         >
-          <label className="min-w-0 flex-1 text-xs text-stone-600">
+          <label className="min-w-0 flex-1 text-xs text-stone-600 dark:text-stone-300">
             Juz
             <select
               value={juzInput}
               onChange={(event) => setJuzInput(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 outline-none focus:border-stone-500"
+              className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 outline-none focus:border-stone-500 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
             >
               {juzOptions.map((option) => (
                 <option key={option.juz} value={option.juz}>
@@ -166,7 +166,7 @@ export function ReadJumpControls({
           </label>
           <button
             type="submit"
-            className="rounded-lg border border-stone-300 px-2.5 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100"
+            className="rounded-lg border border-stone-300 px-2.5 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
           >
             Go
           </button>
@@ -174,7 +174,7 @@ export function ReadJumpControls({
       </div>
 
       {errorMessage ? (
-        <p className="mt-2 text-xs text-rose-700">{errorMessage}</p>
+        <p className="mt-2 text-xs text-rose-700 dark:text-rose-400">{errorMessage}</p>
       ) : null}
     </section>
   );

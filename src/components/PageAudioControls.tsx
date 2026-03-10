@@ -154,11 +154,11 @@ export function PageAudioControls({
 
   if (!canPlayAudio || !currentTrack) {
     return (
-      <section className="rounded-2xl border border-stone-300 bg-white px-3 py-3 shadow-sm sm:px-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
+      <section className="rounded-2xl border border-stone-300 bg-white px-3 py-3 shadow-sm sm:px-4 dark:border-stone-600 dark:bg-stone-900">
+        <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
           Audio
         </p>
-        <p className="mt-2 text-sm text-stone-600">
+        <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">
           Tiada audio URL untuk ayat pada halaman ini.
         </p>
       </section>
@@ -246,8 +246,8 @@ export function PageAudioControls({
   };
 
   return (
-    <section className="rounded-2xl border border-stone-300 bg-white px-3 py-3 shadow-sm sm:px-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
+    <section className="rounded-2xl border border-stone-300 bg-white px-3 py-3 shadow-sm sm:px-4 dark:border-stone-600 dark:bg-stone-900">
+      <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
         Audio
       </p>
 
@@ -295,9 +295,9 @@ export function PageAudioControls({
         }}
       />
 
-      <div className="mt-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
-        <p className="text-sm font-medium text-stone-900">Now playing: {currentTrack.label}</p>
-        <p className="mt-1 text-xs text-stone-600 line-clamp-2">
+      <div className="mt-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-700 dark:bg-stone-800/50">
+        <p className="text-sm font-medium text-stone-900 dark:text-stone-100">Now playing: {currentTrack.label}</p>
+        <p className="mt-1 text-xs text-stone-600 line-clamp-2 dark:text-stone-300">
           {currentTrack.bm ?? "Tiada terjemahan BM"}
         </p>
       </div>
@@ -307,14 +307,14 @@ export function PageAudioControls({
           type="button"
           onClick={() => goToTrack(safeIndex - 1)}
           disabled={!canPrev}
-          className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
         >
           Prev Ayah
         </button>
         <button
           type="button"
           onClick={togglePlayback}
-          className="rounded-lg bg-stone-900 px-3 py-1.5 text-sm text-stone-50 transition hover:bg-stone-700"
+          className="rounded-lg bg-stone-900 px-3 py-1.5 text-sm text-stone-50 transition hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
         >
           {isPlaying ? "Pause" : "Play"}
         </button>
@@ -322,19 +322,19 @@ export function PageAudioControls({
           type="button"
           onClick={() => goToTrack(safeIndex + 1)}
           disabled={!canNext}
-          className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
         >
           Next Ayah
         </button>
       </div>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        <label className="text-xs text-stone-600">
+        <label className="text-xs text-stone-600 dark:text-stone-300">
           Speed
           <select
             value={String(speed)}
             onChange={(event) => setSpeed(Number.parseFloat(event.target.value))}
-            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900"
+            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
           >
             {SPEED_OPTIONS.map((option) => (
               <option key={option} value={option}>
@@ -344,7 +344,7 @@ export function PageAudioControls({
           </select>
         </label>
 
-        <label className="text-xs text-stone-600">
+        <label className="text-xs text-stone-600 dark:text-stone-300">
           Repeat (default)
           <select
             value={String(defaultRepeatCount)}
@@ -352,7 +352,7 @@ export function PageAudioControls({
               setDefaultRepeatCount(normalizeRepeatValue(event.target.value));
               setRepeatStep(0);
             }}
-            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900"
+            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
           >
             {REPEAT_OPTIONS.map((option) => (
               <option key={option} value={option}>
@@ -362,26 +362,26 @@ export function PageAudioControls({
           </select>
         </label>
 
-        <label className="flex items-end gap-2 text-xs text-stone-600">
+        <label className="flex items-end gap-2 text-xs text-stone-600 dark:text-stone-300">
           <input
             type="checkbox"
             checked={loopRange}
             onChange={(event) => setLoopRange(event.target.checked)}
-            className="h-4 w-4 rounded border-stone-300 text-stone-900"
+            className="h-4 w-4 rounded border-stone-300 text-stone-900 dark:border-stone-600 dark:bg-stone-900"
           />
           <span>Loop selected range</span>
         </label>
       </div>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <label className="text-xs text-stone-600">
+        <label className="text-xs text-stone-600 dark:text-stone-300">
           Range Start
           <select
             value={String(normalizedRangeStart)}
             onChange={(event) =>
               updateRangeStart(Number.parseInt(event.target.value, 10))
             }
-            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900"
+            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
           >
             {tracks.map((track, index) => (
               <option key={`start-${track.key}`} value={index}>
@@ -391,14 +391,14 @@ export function PageAudioControls({
           </select>
         </label>
 
-        <label className="text-xs text-stone-600">
+        <label className="text-xs text-stone-600 dark:text-stone-300">
           Range End
           <select
             value={String(normalizedRangeEnd)}
             onChange={(event) =>
               updateRangeEnd(Number.parseInt(event.target.value, 10))
             }
-            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900"
+            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
           >
             {tracks.map((track, index) => (
               <option key={`end-${track.key}`} value={index}>
@@ -410,18 +410,18 @@ export function PageAudioControls({
       </div>
 
       {rangeStatus ? (
-        <p className="mt-2 text-xs text-stone-500">Active range: {rangeStatus}</p>
+        <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">Active range: {rangeStatus}</p>
       ) : null}
 
-      <details className="mt-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
-        <summary className="cursor-pointer text-xs font-medium uppercase tracking-wide text-stone-600">
+      <details className="mt-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-700 dark:bg-stone-800/45">
+        <summary className="cursor-pointer text-xs font-medium uppercase tracking-wide text-stone-600 dark:text-stone-300">
           Per-Ayah Repeat
         </summary>
         <div className="mt-3 space-y-3">
           <button
             type="button"
             onClick={resetRangeRepeatOverrides}
-            className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs text-stone-700 transition hover:bg-stone-100"
+            className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
           >
             Reset Range to Default Repeat
           </button>
@@ -429,7 +429,7 @@ export function PageAudioControls({
             {tracksInRange.map((track) => {
               const value = repeatByTrack[track.key] ?? defaultRepeatCount;
               return (
-                <label key={`repeat-${track.key}`} className="text-xs text-stone-600">
+                <label key={`repeat-${track.key}`} className="text-xs text-stone-600 dark:text-stone-300">
                   {track.label}
                   <select
                     value={String(value)}
@@ -439,7 +439,7 @@ export function PageAudioControls({
                         normalizeRepeatValue(event.target.value),
                       )
                     }
-                    className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900"
+                    className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
                   >
                     {REPEAT_OPTIONS.map((option) => (
                       <option key={`${track.key}-${option}`} value={option}>
@@ -454,7 +454,7 @@ export function PageAudioControls({
         </div>
       </details>
 
-      <p className="mt-2 text-xs text-stone-500">{repeatStatus}</p>
+      <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">{repeatStatus}</p>
     </section>
   );
 }
