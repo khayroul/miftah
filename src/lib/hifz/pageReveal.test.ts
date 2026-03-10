@@ -5,27 +5,45 @@ import {
   resolveApproxThirdBoundariesByAyahEnd,
 } from "./pageReveal";
 
-test("resolveApproxThirdBoundariesByAyahEnd prefers ayah end at or below target", () => {
+test("resolveApproxThirdBoundariesByAyahEnd snaps to nearest ayah end by line distance", () => {
   const { firstBoundaryY, secondBoundaryY } =
-    resolveApproxThirdBoundariesByAyahEnd([800, 1400, 2200], 3000);
+    resolveApproxThirdBoundariesByAyahEnd(
+      [
+        { bottomY: 450, linePosition: 4.5 },
+        { bottomY: 600, linePosition: 6.0 },
+        { bottomY: 1050, linePosition: 10.5 },
+      ],
+      15,
+      3000,
+    );
 
-  // 1/3 target = 1000 => choose 800, not 1400.
-  assert.equal(firstBoundaryY, 800);
-  // 2/3 target = 2000 => choose 1400 (closest at/below target with progression).
-  assert.equal(secondBoundaryY, 1400);
+  // 1/3 target = line 5 => choose 4.5 (closer than 6.0).
+  assert.equal(firstBoundaryY, 450);
+  // 2/3 target = line 10 => choose 10.5.
+  assert.equal(secondBoundaryY, 1050);
 });
 
-test("resolveApproxThirdBoundariesByAyahEnd keeps progression when sparse ayah endings", () => {
+test("resolveApproxThirdBoundariesByAyahEnd can pick above target when closer", () => {
   const { firstBoundaryY, secondBoundaryY } =
-    resolveApproxThirdBoundariesByAyahEnd([900], 3000);
+    resolveApproxThirdBoundariesByAyahEnd(
+      [
+        { bottomY: 400, linePosition: 4.0 },
+        { bottomY: 550, linePosition: 5.5 },
+        { bottomY: 900, linePosition: 9.0 },
+      ],
+      15,
+      3000,
+    );
 
-  assert.equal(firstBoundaryY, 900);
+  // 1/3 target = line 5 => choose 5.5 (closer than 4.0).
+  assert.equal(firstBoundaryY, 550);
+  // 2/3 target = line 10 => nearest available with progression is 9.0.
   assert.equal(secondBoundaryY, 900);
 });
 
 test("resolveApproxThirdBoundariesByAyahEnd falls back safely when no endings", () => {
   const { firstBoundaryY, secondBoundaryY } =
-    resolveApproxThirdBoundariesByAyahEnd([], 3000);
+    resolveApproxThirdBoundariesByAyahEnd([], 15, 3000);
 
   assert.equal(firstBoundaryY, 3000);
   assert.equal(secondBoundaryY, 3000);

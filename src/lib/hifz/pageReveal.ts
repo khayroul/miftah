@@ -1,54 +1,76 @@
 export type HifzRevealStage = 1 | 2 | 3;
+export interface AyahEndByLine {
+  bottomY: number;
+  linePosition: number;
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function resolveBoundaryAtAyahEnd(
-  ayahBottomsAscending: number[],
-  targetY: number,
-  minY = 1,
-): number {
-  const candidates = ayahBottomsAscending.filter((bottom) => bottom >= minY);
+function resolveBoundaryAtNearestAyahEndByLine(
+  ayahEndsByLine: AyahEndByLine[],
+  targetLinePosition: number,
+  minLinePosition = Number.NEGATIVE_INFINITY,
+): AyahEndByLine | null {
+  const candidates = ayahEndsByLine.filter(
+    (entry) => entry.linePosition >= minLinePosition,
+  );
   if (candidates.length === 0) {
-    return ayahBottomsAscending[ayahBottomsAscending.length - 1] ?? targetY;
+    return null;
   }
 
-  let atOrBelowTarget: number | null = null;
-  for (const bottom of candidates) {
-    if (bottom <= targetY) {
-      atOrBelowTarget = bottom;
-      continue;
+  let best = candidates[0];
+  let bestDistance = Math.abs(best.linePosition - targetLinePosition);
+  for (const candidate of candidates.slice(1)) {
+    const distance = Math.abs(candidate.linePosition - targetLinePosition);
+    if (
+      distance < bestDistance ||
+      (distance === bestDistance && candidate.linePosition < best.linePosition)
+    ) {
+      best = candidate;
+      bestDistance = distance;
     }
-    break;
   }
-
-  if (atOrBelowTarget !== null) {
-    return atOrBelowTarget;
-  }
-
-  return candidates[0];
+  return best;
 }
 
 export function resolveApproxThirdBoundariesByAyahEnd(
-  ayahBottomsAscending: number[],
+  ayahEndsByLine: AyahEndByLine[],
+  totalLineCount: number,
   imageHeight: number,
 ): { firstBoundaryY: number; secondBoundaryY: number } {
-  if (ayahBottomsAscending.length === 0 || imageHeight <= 0) {
+  if (
+    ayahEndsByLine.length === 0 ||
+    !Number.isFinite(totalLineCount) ||
+    totalLineCount <= 0 ||
+    imageHeight <= 0
+  ) {
     return { firstBoundaryY: imageHeight, secondBoundaryY: imageHeight };
   }
 
-  const firstTargetY = imageHeight / 3;
-  const secondTargetY = (imageHeight * 2) / 3;
-  const firstRaw = resolveBoundaryAtAyahEnd(ayahBottomsAscending, firstTargetY);
-  const secondRaw = resolveBoundaryAtAyahEnd(
-    ayahBottomsAscending,
-    secondTargetY,
-    firstRaw + 1,
-  );
+  const firstTargetLine = totalLineCount / 3;
+  const secondTargetLine = (totalLineCount * 2) / 3;
+
+  const firstEntry =
+    resolveBoundaryAtNearestAyahEndByLine(ayahEndsByLine, firstTargetLine) ??
+    ayahEndsByLine[0];
+  const secondEntry =
+    resolveBoundaryAtNearestAyahEndByLine(
+      ayahEndsByLine,
+      secondTargetLine,
+      firstEntry.linePosition + 0.01,
+    ) ?? firstEntry;
+
+  const firstRaw = firstEntry.bottomY;
+  const secondRaw = Math.max(secondEntry.bottomY, firstRaw);
 
   const firstBoundaryY = clamp(firstRaw, 1, imageHeight);
-  const secondBoundaryY = clamp(Math.max(secondRaw, firstBoundaryY), 1, imageHeight);
+  const secondBoundaryY = clamp(
+    Math.max(secondRaw, firstBoundaryY),
+    1,
+    imageHeight,
+  );
 
   return { firstBoundaryY, secondBoundaryY };
 }

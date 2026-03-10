@@ -239,7 +239,7 @@ export function MushafPageView({
   const [fullImageReady, setFullImageReady] = useState(false);
   const [fullImageFailed, setFullImageFailed] = useState(false);
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
-  const [markingAyahKey, setMarkingAyahKey] = useState<string | null>(null);
+  const [markingMemorized, setMarkingMemorized] = useState(false);
   const [markMemorizedError, setMarkMemorizedError] = useState<string | null>(
     null,
   );
@@ -270,8 +270,7 @@ export function MushafPageView({
     });
   const modeAllowsWordInteraction = mode === "study";
   const canInteract = modeAllowsWordInteraction && canInteractWhenReady;
-  const canSelectAyah =
-    (mode === "read" || mode === "hifz") && canShowFullImage && fullImageReady;
+  const canSelectAyah = mode === "read" && canShowFullImage && fullImageReady;
   const wordTapPaddingX = Math.max(8, imageWidth * 0.004);
   const wordTapPaddingY = Math.max(8, imageHeight * 0.003);
   const ayahDetailsMap = useMemo(() => {
@@ -427,19 +426,9 @@ export function MushafPageView({
   const activeWordTooltipPlacement = activeWord
     ? getWordTooltipPlacement(activeWord, imageWidth, imageHeight)
     : null;
-  const selectableAyahTargets = useMemo(() => {
-    if (mode !== "hifz") {
-      return ayahOverlayTargets;
-    }
-    return ayahOverlayTargets.filter(
-      ({ box }) => box.y < revealVisibleBoundaryY,
-    );
-  }, [ayahOverlayTargets, mode, revealVisibleBoundaryY]);
-  const selectedAyahBox = selectedAyahKey ? ayahBoxes.get(selectedAyahKey) ?? null : null;
+  const selectableAyahTargets = ayahOverlayTargets;
   const selectedAyahDetail = selectedAyahKey && canSelectAyah
-    ? !selectedAyahBox || selectedAyahBox.y < revealVisibleBoundaryY
-      ? ayahDetailsMap.get(selectedAyahKey) ?? null
-      : null
+    ? ayahDetailsMap.get(selectedAyahKey) ?? null
     : null;
   const allAyatMemorized = useMemo(
     () =>
@@ -448,20 +437,54 @@ export function MushafPageView({
     [ayahLayoutEntries, memorizedAyahKeySet],
   );
   const playingAyahBox = playingAyahKey ? ayahBoxes.get(playingAyahKey) ?? null : null;
-  const handleMarkAyahMemorized = async () => {
-    if (!selectedAyahDetail || mode !== "hifz") {
+  const remainingAyahKeys = useMemo(
+    () =>
+      ayahLayoutEntries
+        .filter((entry) => !memorizedAyahKeySet.has(entry.key))
+        .map((entry) => entry.key),
+    [ayahLayoutEntries, memorizedAyahKeySet],
+  );
+  const hifzStageTargetAyahKeys = useMemo(() => {
+    if (mode !== "hifz") {
+      return [];
+    }
+    if (!hifzRevealContext) {
+      return remainingAyahKeys;
+    }
+    if (hifzRevealContext.stage === 1) {
+      return hifzRevealContext.firstSegmentAyahKeys;
+    }
+    if (hifzRevealContext.stage === 2) {
+      return hifzRevealContext.secondSegmentAyahKeys;
+    }
+    return hifzRevealContext.thirdSegmentAyahKeys;
+  }, [hifzRevealContext, mode, remainingAyahKeys]);
+  const canMarkHifz = mode === "hifz" && remainingAyahKeys.length > 0;
+  const hifzHafalButtonLabel = allAyatMemorized
+    ? "Halaman Sudah Hafal"
+    : markingMemorized
+      ? "Menyimpan..."
+      : !canMarkHifz
+        ? "Tiada Ayat Untuk Ditanda"
+        : !hifzRevealSessionActive
+          ? "Hafal Halaman Ini"
+          : hifzRevealContext?.stage === 1
+            ? "Hafal 1/3 Pertama"
+            : hifzRevealContext?.stage === 2
+              ? "Hafal 1/3 Kedua"
+              : "Hafal Baki Halaman";
+  const handleMarkHifzMemorized = async () => {
+    if (mode !== "hifz" || markingMemorized || allAyatMemorized || !canMarkHifz) {
       return;
     }
 
-    const segmentKeys =
-      hifzRevealContext?.stage === 1
-        ? hifzRevealContext.firstSegmentAyahKeys
-        : hifzRevealContext?.stage === 2
-          ? hifzRevealContext.secondSegmentAyahKeys
-          : hifzRevealContext?.thirdSegmentAyahKeys ?? [];
-
-    const fallbackKeys = [selectedAyahDetail.key];
-    const targetAyahKeys = segmentKeys.length > 0 ? segmentKeys : fallbackKeys;
+    const fallbackKeys = remainingAyahKeys;
+    const targetAyahKeys =
+      hifzStageTargetAyahKeys.length > 0 ? hifzStageTargetAyahKeys : fallbackKeys;
+    if (targetAyahKeys.length === 0) {
+      setMarkMemorizedError("Ayat sasaran tidak dijumpai untuk ditanda hafal.");
+      return;
+    }
     const targetAyahIds = targetAyahKeys
       .map((key) => ayahDetailsMap.get(key)?.id ?? null)
       .filter((value): value is number => typeof value === "number");
@@ -471,7 +494,7 @@ export function MushafPageView({
       return;
     }
 
-    setMarkingAyahKey(selectedAyahDetail.key);
+    setMarkingMemorized(true);
     setMarkMemorizedError(null);
     try {
       const response = await fetch("/api/hifz/mark-memorized", {
@@ -493,7 +516,7 @@ export function MushafPageView({
     } catch {
       setMarkMemorizedError("Gagal simpan status hafal. Cuba lagi.");
     } finally {
-      setMarkingAyahKey(null);
+      setMarkingMemorized(false);
     }
   };
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
@@ -776,6 +799,31 @@ export function MushafPageView({
         </nav>
       </div>
 
+      {mode === "hifz" && canShowAnyImage ? (
+        <div className="fixed bottom-24 left-1/2 z-40 w-[min(92vw,420px)] -translate-x-1/2 animate-fade-in-up">
+          <div className="rounded-2xl border border-teal-200 bg-white/95 p-3 shadow-[0_10px_30px_rgba(13,148,136,0.22)] backdrop-blur-md dark:border-teal-900/60 dark:bg-stone-900/90">
+            <button
+              type="button"
+              disabled={allAyatMemorized || markingMemorized || !canMarkHifz}
+              onClick={handleMarkHifzMemorized}
+              className="w-full rounded-xl bg-teal-900 px-4 py-2.5 text-sm font-semibold text-teal-50 transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-55 dark:bg-teal-700 dark:hover:bg-teal-600"
+            >
+              {hifzHafalButtonLabel}
+            </button>
+            <p className="mt-2 text-xs text-teal-800 dark:text-teal-200">
+              {hifzRevealSessionActive
+                ? "Setiap kali ditekan, paparan akan buka bahagian seterusnya sehingga penuh."
+                : "Semua ayat pada halaman ini akan ditanda sebagai hafal."}
+            </p>
+            {markMemorizedError ? (
+              <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                {markMemorizedError}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
       {!manifest ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">
           Manifest tidak ditemui. Halaman dipaparkan tanpa hitbox.
@@ -788,9 +836,9 @@ export function MushafPageView({
         <p className="text-sm text-stone-600 dark:text-stone-300">
           Tap pada ayat untuk lihat terjemahan BM. Swipe kiri/kanan untuk tukar halaman.
         </p>
-      ) : mode === "hifz" && canSelectAyah ? (
+      ) : mode === "hifz" ? (
         <p className="text-sm text-teal-700 dark:text-teal-300">
-          Tap ayat untuk tandakan hafal dan buka 2/3 atau penuh.
+          Gunakan butang Hafal untuk buka 1/3 → 2/3 → penuh.
         </p>
       ) : playingAyahKey ? (
         <p className="text-sm text-emerald-700">
@@ -814,12 +862,11 @@ export function MushafPageView({
         </p>
       )}
 
-      {selectedAyahDetail ? (
+      {selectedAyahDetail && mode === "read" ? (
         <div
           className="fixed inset-0 z-40 flex items-end bg-black/35"
           onClick={() => {
             setSelectedAyahKey(null);
-            setMarkMemorizedError(null);
           }}
         >
           <article
@@ -834,7 +881,6 @@ export function MushafPageView({
                 type="button"
                 onClick={() => {
                   setSelectedAyahKey(null);
-                  setMarkMemorizedError(null);
                 }}
                 className="rounded-lg border border-stone-300 px-2 py-1 text-xs text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
               >
@@ -854,40 +900,6 @@ export function MushafPageView({
               <p className="mt-2 text-xs leading-relaxed text-stone-500 dark:text-stone-400">
                 EN: {selectedAyahDetail.en}
               </p>
-            ) : null}
-            {mode === "hifz" ? (
-              <div className="mt-4 rounded-xl border border-teal-200 bg-teal-50/70 p-3 dark:border-teal-900/50 dark:bg-teal-950/20">
-                <button
-                  type="button"
-                  disabled={
-                    allAyatMemorized || markingAyahKey === selectedAyahDetail.key
-                  }
-                  onClick={handleMarkAyahMemorized}
-                  className="rounded-lg bg-teal-900 px-3 py-2 text-sm font-medium text-teal-50 transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-teal-700 dark:hover:bg-teal-600"
-                >
-                  {allAyatMemorized
-                    ? "Halaman Sudah Ditanda Hafal"
-                    : markingAyahKey === selectedAyahDetail.key
-                      ? "Menyimpan..."
-                      : !hifzRevealSessionActive
-                        ? "Tanda Hafal Ayat Ini"
-                        : hifzRevealContext?.stage === 1
-                        ? "Sahkan 1/3 Pertama Hafal"
-                        : hifzRevealContext?.stage === 2
-                          ? "Sahkan 1/3 Kedua Hafal"
-                          : "Sahkan Baki Halaman Hafal"}
-                </button>
-                <p className="mt-2 text-xs text-teal-800 dark:text-teal-200">
-                  {hifzRevealSessionActive
-                    ? "Setiap kali disahkan, sesi akan membuka bahagian seterusnya (1/3 → 2/3 → penuh), kemudian menanda baki ayat sebagai hafal."
-                    : "Ayat dipilih akan ditanda hafal."}
-                </p>
-                {markMemorizedError ? (
-                  <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-                    {markMemorizedError}
-                  </p>
-                ) : null}
-              </div>
             ) : null}
           </article>
         </div>
