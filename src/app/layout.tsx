@@ -9,7 +9,7 @@ const geist = Geist({
 });
 
 const arabicText = localFont({
-  src: "../../assets/fonts/NotoNaskhArabic-Variable.ttf",
+  src: "../../assets/fonts/UthmanicHafs_V22.ttf",
   variable: "--font-quran-arabic",
   display: "swap",
 });

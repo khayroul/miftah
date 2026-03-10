@@ -81,6 +81,25 @@ export default async function SurahThemeAppearancePage({
   const hasNextThemeInSurah = selectedChunkIndex < chunks.length;
   const canJumpToNextSurahTheme =
     chunks.length > 0 && selectedChunkIndex === chunks.length && surahNumber < 114;
+  let previousThemeHref: string | null = null;
+  let previousThemeLabel = "← Prev";
+  if (chunks.length > 0) {
+    if (selectedChunkIndex > 1) {
+      previousThemeHref = `/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex - 1}`;
+    } else if (surahNumber > 1) {
+      try {
+        const previousSurahChunks = await getThemeAppearanceChunksBySurah(
+          surahNumber - 1,
+        );
+        if (previousSurahChunks.length > 0) {
+          previousThemeHref = `/read/surah/${surahNumber - 1}/themes?chunk=${previousSurahChunks.length}`;
+          previousThemeLabel = "← Prev Surah Theme";
+        }
+      } catch {
+        previousThemeHref = null;
+      }
+    }
+  }
   const nextThemeHref = hasNextThemeInSurah
     ? `/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex + 1}`
     : canJumpToNextSurahTheme
@@ -247,12 +266,12 @@ export default async function SurahThemeAppearancePage({
           {/* Theme Navigation Bottom Bar */}
           <nav className="sticky bottom-6 z-10 mx-auto w-full max-w-2xl mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-full border border-stone-200/80 bg-white/90 px-4 py-3 backdrop-blur-xl shadow-xl shadow-black/5 dark:border-stone-700/80 dark:bg-stone-900/90">
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              {selectedChunkIndex > 1 ? (
+              {previousThemeHref ? (
                 <Link
-                  href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex - 1}`}
+                  href={previousThemeHref}
                   className="flex flex-1 items-center justify-center rounded-full border border-stone-200 bg-stone-50 px-5 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
                 >
-                  &larr; Prev
+                  {previousThemeLabel}
                 </Link>
               ) : (
                 <span className="flex flex-1 items-center justify-center rounded-full border border-stone-100 bg-stone-50/50 px-5 py-2 text-sm font-medium text-stone-400 dark:border-stone-800 dark:bg-stone-800/30 dark:text-stone-600">
