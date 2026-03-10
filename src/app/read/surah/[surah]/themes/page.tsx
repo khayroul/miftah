@@ -36,9 +36,7 @@ function chunkTitleBm(chunk: ThemeAppearanceChunk): string {
   return chunk.label_bm ?? chunk.theme?.name_bm ?? "Tanpa tema";
 }
 
-function chunkTitleEn(chunk: ThemeAppearanceChunk): string {
-  return chunk.label_en ?? chunk.theme?.name_en ?? "Unthemed";
-}
+
 
 export default async function SurahThemeAppearancePage({
   params,
