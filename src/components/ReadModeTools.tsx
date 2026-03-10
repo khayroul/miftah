@@ -71,10 +71,11 @@ export function ReadModeTools({
   }, [showAudioControls]);
 
   return (
-    <section className="space-y-3">
-      <div className="rounded-2xl border border-stone-300 bg-white px-3 py-3 shadow-sm sm:px-4 dark:border-stone-600 dark:bg-stone-900">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
+    <section className="space-y-4">
+      <div className="flex w-full flex-col sm:flex-row items-start sm:items-center gap-4">
+        {/* Mode Selector */}
+        <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-stone-200 bg-white p-1.5 shadow-sm dark:border-stone-700 dark:bg-stone-800">
+          <span className="pl-3 pr-2 text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
             Mode
           </span>
           {MODES.map((item) => {
@@ -84,10 +85,10 @@ export function ReadModeTools({
                 key={item.value}
                 type="button"
                 onClick={() => setMode(item.value)}
-                className={`rounded-lg px-3 py-1.5 text-sm transition ${
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
                   active
-                    ? "bg-stone-900 text-stone-50 dark:bg-stone-100 dark:text-stone-900"
-                    : "border border-stone-300 text-stone-700 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+                    ? "bg-stone-900 text-stone-50 shadow-md dark:bg-stone-100 dark:text-stone-900"
+                    : "text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-stone-100"
                 }`}
               >
                 {item.label}
@@ -97,33 +98,45 @@ export function ReadModeTools({
         </div>
 
         {mode === "read" ? (
-          <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
-            Read mode keeps UI minimal for focused tilawah.
+          <p className="text-xs font-medium text-stone-400 dark:text-stone-500 sm:ml-2">
+            Minimal UI for tilawah.
           </p>
         ) : null}
       </div>
 
       {mode !== "read" ? (
-        <div className="rounded-2xl border border-stone-300 bg-white px-3 py-3 shadow-sm sm:px-4 dark:border-stone-600 dark:bg-stone-900">
-          <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
-            Panels
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setShowJumpControls((current) => !current)}
-              className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+        <div className="inline-flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowJumpControls((current) => !current)}
+            className={`rounded-full border px-4 py-2 text-sm font-medium transition-all shadow-sm ${
+              showJumpControls
+                ? "border-stone-900 bg-stone-900 text-stone-50 dark:border-stone-100 dark:bg-stone-100 dark:text-stone-900"
+                : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+            }`}
+          >
+            {showJumpControls ? "Hide Jump-To" : "Show Jump-To"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowAudioControls((current) => !current)}
+            className={`rounded-full border px-4 py-2 text-sm font-medium transition-all shadow-sm ${
+              showAudioControls
+                ? "border-stone-900 bg-stone-900 text-stone-50 dark:border-stone-100 dark:bg-stone-100 dark:text-stone-900"
+                : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+            }`}
+          >
+            {showAudioControls ? "Hide Audio" : "Show Audio"}
+          </button>
+
+          {mode === "study" && (
+            <Link
+              href={`/read/surah/${themeSurahId}/themes`}
+              className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
             >
-              {showJumpControls ? "Hide Jump-To" : "Show Jump-To"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowAudioControls((current) => !current)}
-              className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
-            >
-              {showAudioControls ? "Hide Audio" : "Show Audio"}
-            </button>
-          </div>
+              Open Theme Chunks &rarr;
+            </Link>
+          )}
         </div>
       ) : null}
 
@@ -138,14 +151,6 @@ export function ReadModeTools({
               juzOptions={juzOptions}
             />
           ) : null}
-          <div className="rounded-2xl border border-stone-300 bg-white px-3 py-3 shadow-sm sm:px-4 dark:border-stone-600 dark:bg-stone-900">
-            <Link
-              href={`/read/surah/${themeSurahId}/themes`}
-              className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
-            >
-              Open Theme Chunks
-            </Link>
-          </div>
           {showAudioControls ? (
             <PageAudioControls
               tracks={audioTracks}
