@@ -67,7 +67,9 @@ export default async function SurahThemeAppearancePage({
       "Data tema belum dapat dimuat sekarang. Sila semak sambungan Supabase dan cuba semula.";
   }
 
-  const rawChunkParam = Array.isArray(query.chunk) ? query.chunk[0] : query.chunk;
+  const rawChunkParam = Array.isArray(query.chunk)
+    ? query.chunk[0]
+    : query.chunk;
   const parsedChunkParam = rawChunkParam
     ? Number.parseInt(rawChunkParam, 10)
     : 1;
@@ -80,7 +82,9 @@ export default async function SurahThemeAppearancePage({
   const selectedChunk = chunks[selectedChunkIndex - 1] ?? null;
   const hasNextThemeInSurah = selectedChunkIndex < chunks.length;
   const canJumpToNextSurahTheme =
-    chunks.length > 0 && selectedChunkIndex === chunks.length && surahNumber < 114;
+    chunks.length > 0 &&
+    selectedChunkIndex === chunks.length &&
+    surahNumber < 114;
   let previousThemeHref: string | null = null;
   let previousThemeLabel = "← Tema Sebelum";
   if (chunks.length > 0) {
@@ -135,7 +139,11 @@ export default async function SurahThemeAppearancePage({
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <Link
-              href={surahMeta.page_start ? `/read/${surahMeta.page_start}` : "/read/1"}
+              href={
+                surahMeta.page_start
+                  ? `/read/${surahMeta.page_start}`
+                  : "/read/1"
+              }
               className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
             >
               Buka Baca &rarr;
@@ -153,7 +161,12 @@ export default async function SurahThemeAppearancePage({
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-stone-900 hover:text-stone-800 dark:text-stone-100 flex items-center gap-3">
               Surah {surahMeta.name_en}
-              <span className="font-arabic font-normal text-2xl opacity-80 mt-1" lang="ar">{surahMeta.name_arabic}</span>
+              <span
+                className="font-arabic font-normal text-2xl opacity-80 mt-1"
+                lang="ar"
+              >
+                {surahMeta.name_arabic}
+              </span>
             </h1>
             <p className="mt-1 text-stone-500 dark:text-stone-400">
               Surah {surahMeta.id} • Bacaan bertema
@@ -223,29 +236,41 @@ export default async function SurahThemeAppearancePage({
                     {chunkTitleBm(selectedChunk)}
                   </h2>
                   <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
-                    Ayat {rangeLabel(surahNumber, selectedChunk.start_ayah, selectedChunk.end_ayah)}
+                    Ayat{" "}
+                    {rangeLabel(
+                      surahNumber,
+                      selectedChunk.start_ayah,
+                      selectedChunk.end_ayah,
+                    )}
                   </p>
                 </header>
 
                 {/* Ayat List */}
                 <div className="space-y-16 pb-8">
                   {selectedChunk.ayat.map((ayah) => (
-                    <div key={ayah.id} className="relative group/ayah flex flex-col gap-6">
+                    <div
+                      key={ayah.id}
+                      className="relative group/ayah flex flex-col gap-6"
+                    >
                       {/* Ayat Indicator */}
                       <div className="absolute -left-4 sm:-left-12 top-0 flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 bg-stone-50 text-xs font-semibold text-stone-500 shadow-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
                         {ayah.ayah_number}
                       </div>
 
                       {/* Word by Word */}
-                      {wbwByAyahId[ayah.id] && wbwByAyahId[ayah.id].length > 0 ? (
-                        <div className="flex flex-wrap justify-start gap-x-1.5 gap-y-6" dir="rtl">
+                      {wbwByAyahId[ayah.id] &&
+                      wbwByAyahId[ayah.id].length > 0 ? (
+                        <div
+                          className="flex flex-wrap justify-start gap-x-1.5 gap-y-6"
+                          dir="rtl"
+                        >
                           {wbwByAyahId[ayah.id].map((word) => (
                             <div
                               key={`${ayah.id}-${word.position}`}
-                              className="group/word flex min-w-fit max-w-[5.5rem] sm:max-w-[7rem] flex-col items-center justify-start hover:bg-stone-50 dark:hover:bg-stone-800/50 rounded-lg p-2 transition-colors cursor-pointer"
+                              className="group/word flex min-w-fit max-w-max flex-1 flex-col items-center justify-start rounded-lg p-2 transition-colors hover:bg-stone-50 cursor-pointer dark:hover:bg-stone-800/50"
                             >
                               <span
-                                className="font-arabic mb-2 block text-center text-[1.75rem] leading-[1.5] text-stone-900 sm:text-3xl dark:text-stone-100"
+                                className="font-arabic mb-2 block text-center text-4xl leading-[1.6] text-stone-900 sm:text-5xl dark:text-stone-100"
                                 lang="ar"
                               >
                                 {word.text_uthmani}
@@ -254,13 +279,18 @@ export default async function SurahThemeAppearancePage({
                                 dir="ltr"
                                 className="block text-center text-xs sm:text-sm leading-snug text-stone-500 line-clamp-2 group-hover/word:text-stone-800 dark:text-stone-400 dark:group-hover/word:text-stone-200 transition-colors"
                               >
-                                {word.translation_bm ?? word.translation_en ?? "—"}
+                                {word.translation_bm ??
+                                  word.translation_en ??
+                                  "—"}
                               </span>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-right text-sm text-stone-400" dir="rtl">
+                        <p
+                          className="text-right text-sm text-stone-400"
+                          dir="rtl"
+                        >
                           [Data kata demi kata belum tersedia]
                         </p>
                       )}
@@ -309,7 +339,10 @@ export default async function SurahThemeAppearancePage({
               )}
             </div>
 
-            <form method="get" className="hidden sm:flex items-center gap-3 pr-2">
+            <form
+              method="get"
+              className="hidden sm:flex items-center gap-3 pr-2"
+            >
               <label className="text-sm font-medium text-stone-500 dark:text-stone-400">
                 Pergi ke
               </label>
