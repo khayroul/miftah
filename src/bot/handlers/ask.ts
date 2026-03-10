@@ -14,6 +14,11 @@ interface AyahWithSurahContext {
   };
 }
 
+interface ChatCompletionMessage {
+  role: "system" | "user";
+  content: string;
+}
+
 const SYSTEM_PROMPT = `Anda adalah Miftah, pembantu hafazan Al-Quran dalam Bahasa Malaysia.
 
 Anda boleh membantu pengguna dengan:
@@ -63,18 +68,18 @@ export async function handleAsk(ctx: Context): Promise<void> {
     // Check if query mentions a specific surah/ayah — fetch context from DB
     const context = await fetchQuranContext(query);
 
-    const messages = [
-      { role: "system" as const, content: SYSTEM_PROMPT },
+    const messages: ChatCompletionMessage[] = [
+      { role: "system", content: SYSTEM_PROMPT },
     ];
 
     if (context) {
       messages.push({
-        role: "system" as const,
+        role: "system",
         content: `Konteks dari pangkalan data:\n${context}`,
       });
     }
 
-    messages.push({ role: "user" as const, content: query });
+    messages.push({ role: "user", content: query });
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",

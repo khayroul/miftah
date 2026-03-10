@@ -16,6 +16,15 @@ import { handleQuiz } from "./handlers/quiz.js";
 import { handleMutashabihat } from "./handlers/mutashabihat.js";
 import { handleTranslationReview } from "./handlers/translation-review.js";
 import { handleThemes } from "./handlers/themes.js";
+import { handleHealth } from "./handlers/health.js";
+import { supabaseAdmin } from "./supabase-admin.js";
+import {
+  addStartupCheck,
+  markPollingError,
+  markPollingStarted,
+  markPollingStopped,
+  setLockInfo,
+} from "./services/runtime-health.js";
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) {
@@ -37,6 +46,7 @@ const BOT_COMMANDS = [
   { command: "mutashabihat", description: "Alert ayat serupa" },
   { command: "trreview", description: "Semak BM translation" },
   { command: "themes", description: "Paparan chunk tema ayat" },
+  { command: "health", description: "Semak kesihatan bot" },
   { command: "ask", description: "Tanya tentang Al-Quran" },
 ];
 
@@ -64,6 +74,7 @@ bot.command("quiz", handleQuiz);
 bot.command("mutashabihat", handleMutashabihat);
 bot.command("trreview", handleTranslationReview);
 bot.command("themes", handleThemes);
+bot.command("health", handleHealth);
 
 // Callback queries (inline keyboard presses)
 bot.on("callback_query:data", handleCallback);
@@ -130,6 +141,7 @@ async function acquireInstanceLock(): Promise<void> {
 
   await writeFile(LOCK_PATH, `${currentPid}\n`, "utf-8");
   lockAcquired = true;
+  setLockInfo(LOCK_PATH, currentPid);
 }
 
 async function releaseInstanceLock(): Promise<void> {
@@ -148,11 +160,13 @@ async function releaseInstanceLock(): Promise<void> {
 
 async function runBotWithRetry(): Promise<void> {
   await acquireInstanceLock();
+  await runStartupDiagnostics();
   await registerBotCommands();
 
   while (!isShuttingDown) {
     try {
       console.log("[miftah-bot] Starting polling...");
+      markPollingStarted();
       await bot.start({
         onStart: (info) => {
           console.log(`[miftah-bot] Running as @${info.username}`);
@@ -164,6 +178,7 @@ async function runBotWithRetry(): Promise<void> {
       return;
     } catch (err) {
       if (isShuttingDown) return;
+      markPollingError(err);
       console.error("[miftah-bot] Polling crashed, retrying in 5s:", err);
       await sleep(5000);
     }
@@ -176,6 +191,7 @@ void runBotWithRetry();
 // Graceful shutdown
 const shutdown = () => {
   isShuttingDown = true;
+  markPollingStopped();
   console.log("[miftah-bot] Shutting down...");
   bot.stop();
   void releaseInstanceLock();
@@ -184,5 +200,69 @@ process.once("SIGINT", shutdown);
 process.once("SIGTERM", shutdown);
 
 process.once("exit", () => {
+  markPollingStopped();
   void releaseInstanceLock();
 });
+
+async function runStartupDiagnostics(): Promise<void> {
+  const strict = process.env.BOT_STARTUP_STRICT === "1";
+  const fails: string[] = [];
+
+  const addCheck = (name: string, ok: boolean, detail: string): void => {
+    addStartupCheck(name, ok, detail);
+    const status = ok ? "OK" : "FAIL";
+    console.log(`[startup] ${status} ${name}: ${detail}`);
+    if (!ok) {
+      fails.push(`${name}: ${detail}`);
+    }
+  };
+
+  addCheck("node", true, process.version);
+  addCheck("cwd", true, process.cwd());
+
+  addCheck(
+    "env:NEXT_PUBLIC_SUPABASE_URL",
+    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+    process.env.NEXT_PUBLIC_SUPABASE_URL ? "present" : "missing",
+  );
+  addCheck(
+    "env:SUPABASE_SERVICE_ROLE_KEY",
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+    process.env.SUPABASE_SERVICE_ROLE_KEY ? "present" : "missing",
+  );
+  addCheck(
+    "env:TELEGRAM_BOT_TOKEN",
+    Boolean(process.env.TELEGRAM_BOT_TOKEN),
+    process.env.TELEGRAM_BOT_TOKEN ? "present" : "missing",
+  );
+
+  try {
+    const me = await bot.api.getMe();
+    addCheck("telegram:getMe", true, `@${me.username}`);
+  } catch (err) {
+    addCheck(
+      "telegram:getMe",
+      false,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
+  try {
+    const { error } = await supabaseAdmin.from("surahs").select("id").limit(1);
+    if (error) {
+      addCheck("supabase:query", false, error.message);
+    } else {
+      addCheck("supabase:query", true, "ok");
+    }
+  } catch (err) {
+    addCheck(
+      "supabase:query",
+      false,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
+  if (strict && fails.length > 0) {
+    throw new Error(`Startup diagnostics failed: ${fails.join(" | ")}`);
+  }
+}

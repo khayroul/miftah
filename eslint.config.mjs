@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored dataset transformation source (kept as external reference code).
+    "data/mushaf-layout/src/**",
   ]),
 ]);
 

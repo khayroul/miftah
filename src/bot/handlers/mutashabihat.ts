@@ -10,19 +10,31 @@ interface MutashabihatPattern {
   difficulty_rating: number | null;
 }
 
+type SurahRelation =
+  | { name_transliteration: string }
+  | { name_transliteration: string }[]
+  | null;
+
 interface PatternOccurrence {
   ayah_id: number;
   variation_note: string | null;
-  ayat: {
-    surah_id: number;
-    ayah_number: number;
-    text_uthmani: string;
-    display_bm: string | null;
-    translation_en: string | null;
-    surahs: {
-      name_transliteration: string;
-    } | null;
-  };
+  ayat:
+    | {
+        surah_id: number;
+        ayah_number: number;
+        text_uthmani: string;
+        display_bm: string | null;
+        translation_en: string | null;
+        surahs: SurahRelation;
+      }
+    | {
+        surah_id: number;
+        ayah_number: number;
+        text_uthmani: string;
+        display_bm: string | null;
+        translation_en: string | null;
+        surahs: SurahRelation;
+      }[];
 }
 
 interface AyahForHeuristic {
@@ -33,9 +45,17 @@ interface AyahForHeuristic {
   text_simple: string;
   display_bm: string | null;
   translation_en: string | null;
-  surahs: {
-    name_transliteration: string;
-  } | null;
+  surahs: SurahRelation;
+}
+
+function getSurahName(
+  relation: SurahRelation,
+  fallbackSurahId: number,
+): string {
+  if (Array.isArray(relation)) {
+    return relation[0]?.name_transliteration ?? `Surah ${fallbackSurahId}`;
+  }
+  return relation?.name_transliteration ?? `Surah ${fallbackSurahId}`;
 }
 
 function parseRef(value: string): { surah: number; ayah: number } | null {
@@ -89,7 +109,7 @@ function buildHeuristicAlertText(
     "Nota: Data mutashabihat rasmi belum di-seed, jadi ini padanan heuristik sementara.",
   );
   lines.push("");
-  const baseSurah = baseAyah.surahs?.name_transliteration ?? `Surah ${baseAyah.surah_id}`;
+  const baseSurah = getSurahName(baseAyah.surahs, baseAyah.surah_id);
   const baseBm = baseAyah.display_bm ?? baseAyah.translation_en ?? "—";
   lines.push(`Ayat rujukan: ${baseSurah} ${baseAyah.surah_id}:${baseAyah.ayah_number}`);
   lines.push(baseAyah.text_uthmani);
@@ -98,7 +118,7 @@ function buildHeuristicAlertText(
   lines.push("Ayat berkaitan:");
 
   for (const ay of matches.slice(0, 6)) {
-    const surahName = ay.surahs?.name_transliteration ?? `Surah ${ay.surah_id}`;
+    const surahName = getSurahName(ay.surahs, ay.surah_id);
     const bm = ay.display_bm ?? ay.translation_en ?? "—";
     lines.push(`• ${surahName} ${ay.surah_id}:${ay.ayah_number}`);
     lines.push(`  ${ay.text_uthmani}`);
@@ -192,8 +212,11 @@ function buildPatternText(
   lines.push("Lokasi serupa:");
 
   for (const occ of occurrences.slice(0, 8)) {
-    const ay = occ.ayat;
-    const surahName = ay.surahs?.name_transliteration ?? `Surah ${ay.surah_id}`;
+    const ay = Array.isArray(occ.ayat) ? occ.ayat[0] : occ.ayat;
+    if (!ay) {
+      continue;
+    }
+    const surahName = getSurahName(ay.surahs, ay.surah_id);
     const bm = ay.display_bm ?? ay.translation_en ?? "—";
     lines.push(
       `• ${surahName} ${ay.surah_id}:${ay.ayah_number}${occ.variation_note ? ` — ${occ.variation_note}` : ""}`,

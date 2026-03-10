@@ -11,6 +11,11 @@ interface TranslationReviewSession {
   currentAyahId: number | null;
 }
 
+type SurahRelation =
+  | { name_transliteration: string }
+  | { name_transliteration: string }[]
+  | null;
+
 interface ReviewAyahRow {
   id: number;
   surah_id: number;
@@ -22,14 +27,19 @@ interface ReviewAyahRow {
   bm_flagged: boolean;
   bm_resolution_notes: string | null;
   bm_correction_note: string | null;
-  surahs: {
-    name_transliteration: string;
-  } | null;
+  surahs: SurahRelation;
 }
 
 const DEFAULT_REVIEW_COUNT = 10;
 const MAX_REVIEW_COUNT = 50;
 const sessions = new Map<number, TranslationReviewSession>();
+
+function getSurahName(relation: SurahRelation, fallbackSurahId: number): string {
+  if (Array.isArray(relation)) {
+    return relation[0]?.name_transliteration ?? `Surah ${fallbackSurahId}`;
+  }
+  return relation?.name_transliteration ?? `Surah ${fallbackSurahId}`;
+}
 
 function parseCount(value: string | undefined): number {
   if (!value) {
@@ -125,7 +135,7 @@ async function fetchAyahForReview(ayahId: number): Promise<ReviewAyahRow | null>
 }
 
 function buildReviewCard(ayah: ReviewAyahRow, session: TranslationReviewSession): string {
-  const surahName = ayah.surahs?.name_transliteration ?? `Surah ${ayah.surah_id}`;
+  const surahName = getSurahName(ayah.surahs, ayah.surah_id);
   const lines: string[] = [
     "🧾 BM Translation Review",
     "",

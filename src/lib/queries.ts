@@ -144,6 +144,15 @@ interface AyahThemeBaseRow {
   page_number: number;
 }
 
+interface AyahThemeChunkDatasetRow {
+  id: number;
+  surah_id: number;
+  ayah_from: number;
+  ayah_to: number;
+  theme: string;
+  theme_bm: string | null;
+}
+
 const THEME_CHUNK_OVERRIDES_PATH = path.resolve(
   "data/theme_chunk_overrides.json",
 );
@@ -182,7 +191,12 @@ function selectDominantTheme(links: AyahThemeLinkRow[]): {
       theme: normalizeTheme(link.theme),
       relevance: link.relevance,
     }))
-    .filter((item) => item.theme !== null)
+    .filter(
+      (
+        item,
+      ): item is { theme: Theme; relevance: "primary" | "secondary" | null } =>
+        item.theme !== null,
+    )
     .sort((a, b) => {
       const relevanceDiff = relevanceScore(a.relevance) - relevanceScore(b.relevance);
       if (relevanceDiff !== 0) {
@@ -385,6 +399,99 @@ function buildAutoChunks(ayat: ThemeAppearanceAyah[]): ThemeAppearanceChunkSeed[
   return chunks;
 }
 
+function buildBaseThemeAppearanceAyat(
+  ayatRows: AyahThemeBaseRow[],
+): ThemeAppearanceAyah[] {
+  return ayatRows.map((ayah) => ({
+    id: ayah.id,
+    surah_id: ayah.surah_id,
+    ayah_number: ayah.ayah_number,
+    text_uthmani: ayah.text_uthmani,
+    display_bm: ayah.display_bm,
+    page_number: ayah.page_number,
+    theme: null,
+    theme_relevance: null,
+  }));
+}
+
+function buildChunksFromAyahThemeDataset(
+  themedAyat: ThemeAppearanceAyah[],
+  datasetRows: AyahThemeChunkDatasetRow[],
+): ThemeAppearanceChunk[] {
+  if (themedAyat.length === 0) {
+    return [];
+  }
+
+  const chunks: ThemeAppearanceChunkSeed[] = [];
+  const firstAyah = themedAyat[0].ayah_number;
+  const lastAyah = themedAyat[themedAyat.length - 1].ayah_number;
+  let cursorAyah = firstAyah;
+
+  const pushUnthemedGapChunk = (startAyah: number, endAyah: number): void => {
+    const ayat = pickAyatRange(themedAyat, startAyah, endAyah);
+    if (ayat.length === 0) {
+      return;
+    }
+
+    chunks.push({
+      surah_id: ayat[0].surah_id,
+      start_ayah: ayat[0].ayah_number,
+      end_ayah: ayat[ayat.length - 1].ayah_number,
+      ayah_count: ayat.length,
+      theme: null,
+      label_bm: null,
+      label_en: null,
+      source: "auto",
+      ayat,
+    });
+  };
+
+  for (const row of datasetRows) {
+    const boundedStartAyah = Math.max(row.ayah_from, firstAyah);
+    const boundedEndAyah = Math.min(row.ayah_to, lastAyah);
+    if (boundedStartAyah > boundedEndAyah) {
+      continue;
+    }
+
+    const startAyah = Math.max(boundedStartAyah, cursorAyah);
+    if (startAyah > boundedEndAyah) {
+      continue;
+    }
+
+    if (cursorAyah < startAyah) {
+      pushUnthemedGapChunk(cursorAyah, startAyah - 1);
+    }
+
+    const ayat = pickAyatRange(themedAyat, startAyah, boundedEndAyah);
+    if (ayat.length === 0) {
+      continue;
+    }
+
+    chunks.push({
+      surah_id: ayat[0].surah_id,
+      start_ayah: ayat[0].ayah_number,
+      end_ayah: ayat[ayat.length - 1].ayah_number,
+      ayah_count: ayat.length,
+      theme: null,
+      label_bm: row.theme_bm ?? null,
+      label_en: row.theme,
+      source: "auto",
+      ayat,
+    });
+
+    cursorAyah = boundedEndAyah + 1;
+    if (cursorAyah > lastAyah) {
+      break;
+    }
+  }
+
+  if (cursorAyah <= lastAyah) {
+    pushUnthemedGapChunk(cursorAyah, lastAyah);
+  }
+
+  return withChunkIndex(chunks);
+}
+
 function pickAyatRange(
   allAyat: ThemeAppearanceAyah[],
   startAyah: number,
@@ -457,6 +564,27 @@ export async function getThemeAppearanceChunksBySurah(
     return [];
   }
 
+  const themedAyat = buildBaseThemeAppearanceAyat(ayatRows);
+
+  const { data: datasetChunks, error: datasetError } = await supabase
+    .from("ayah_theme_chunks")
+    .select("id, surah_id, ayah_from, ayah_to, theme, theme_bm")
+    .eq("surah_id", surahId)
+    .order("ayah_from")
+    .order("ayah_to");
+
+  if (datasetError) {
+    const message = String(datasetError.message ?? "").toLowerCase();
+    if (!message.includes("does not exist")) {
+      throw datasetError;
+    }
+  } else if ((datasetChunks ?? []).length > 0) {
+    return buildChunksFromAyahThemeDataset(
+      themedAyat,
+      (datasetChunks ?? []) as AyahThemeChunkDatasetRow[],
+    );
+  }
+
   const ayahIds = ayatRows.map((row) => row.id);
   const { data: themeLinks, error: themeError } = await supabase
     .from("theme_ayat")
@@ -472,7 +600,7 @@ export async function getThemeAppearanceChunksBySurah(
     linksByAyah.set(rawLink.ayah_id, links);
   }
 
-  const themedAyat: ThemeAppearanceAyah[] = ayatRows.map((ayah) => {
+  const themedAyatWithFallbackThemes: ThemeAppearanceAyah[] = ayatRows.map((ayah) => {
     const links = linksByAyah.get(ayah.id) ?? [];
     const selectedTheme = selectDominantTheme(links);
 
@@ -488,11 +616,11 @@ export async function getThemeAppearanceChunksBySurah(
     };
   });
 
-  const firstAyah = themedAyat[0];
-  const lastAyah = themedAyat[themedAyat.length - 1];
+  const firstAyah = themedAyatWithFallbackThemes[0];
+  const lastAyah = themedAyatWithFallbackThemes[themedAyatWithFallbackThemes.length - 1];
   const overrides = await loadSurahThemeChunkOverrides(surahId, lastAyah.ayah_number);
   if (overrides.length === 0) {
-    return withChunkIndex(buildAutoChunks(themedAyat));
+    return withChunkIndex(buildAutoChunks(themedAyatWithFallbackThemes));
   }
 
   const manualThemeIds = Array.from(
@@ -509,12 +637,16 @@ export async function getThemeAppearanceChunksBySurah(
 
   for (const override of overrides) {
     if (cursorAyah < override.start_ayah) {
-      const autoAyat = pickAyatRange(themedAyat, cursorAyah, override.start_ayah - 1);
+      const autoAyat = pickAyatRange(
+        themedAyatWithFallbackThemes,
+        cursorAyah,
+        override.start_ayah - 1,
+      );
       chunks.push(...buildAutoChunks(autoAyat));
     }
 
     const manualAyat = pickAyatRange(
-      themedAyat,
+      themedAyatWithFallbackThemes,
       override.start_ayah,
       override.end_ayah,
     );
@@ -528,7 +660,7 @@ export async function getThemeAppearanceChunksBySurah(
 
   if (cursorAyah <= lastAyah.ayah_number) {
     const trailingAutoAyat = pickAyatRange(
-      themedAyat,
+      themedAyatWithFallbackThemes,
       cursorAyah,
       lastAyah.ayah_number,
     );

@@ -10,6 +10,7 @@ export function dbRowToCard(row: FsrsFields): Card {
     difficulty: row.difficulty,
     elapsed_days: row.elapsed_days,
     scheduled_days: row.scheduled_days,
+    learning_steps: 0,
     reps: row.reps,
     lapses: row.lapses,
     state: row.state as State,

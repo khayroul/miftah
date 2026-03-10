@@ -1,0 +1,262 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { cache } from "react";
+import { supabase } from "./supabase";
+
+interface AyahNavigationRow {
+  surah_id: number | null;
+  juz_number: number | null;
+  page_number: number | null;
+}
+
+interface SurahNameRow {
+  id: number;
+  name_transliteration: string | null;
+}
+
+interface LocalSurahSeedRow {
+  id?: number;
+  name_transliteration?: string;
+}
+
+interface LocalAyahSeedRow {
+  surah_id?: number;
+  juz_number?: number;
+  page_number?: number;
+}
+
+export interface SurahJumpTarget {
+  surah: number;
+  name: string;
+  page: number;
+}
+
+export interface JuzJumpTarget {
+  juz: number;
+  page: number;
+}
+
+export interface ReadJumpTargets {
+  surahs: SurahJumpTarget[];
+  juzs: JuzJumpTarget[];
+}
+
+const LOCAL_SURAHS_PATH = path.resolve("data/seed/surahs.json");
+const LOCAL_AYAT_PATH = path.resolve("data/seed/ayat.json");
+
+function isValidPageNumber(value: number | null): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 604;
+}
+
+function isValidSurahNumber(value: number | null): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 114;
+}
+
+function isValidJuzNumber(value: number | null): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 30;
+}
+
+function toPositiveInt(value: number | null): number | null {
+  if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) {
+    return null;
+  }
+  return value;
+}
+
+function buildStartPageMap(
+  rows: AyahNavigationRow[] | LocalAyahSeedRow[],
+  key: "surah_id" | "juz_number",
+): Map<number, number> {
+  const startPages = new Map<number, number>();
+
+  for (const row of rows) {
+    const scopeId = toPositiveInt(
+      typeof row[key] === "number" ? row[key] : null,
+    );
+    const pageNumber = toPositiveInt(
+      typeof row.page_number === "number" ? row.page_number : null,
+    );
+
+    if (!scopeId || !isValidPageNumber(pageNumber)) {
+      continue;
+    }
+
+    const current = startPages.get(scopeId);
+    if (!current || pageNumber < current) {
+      startPages.set(scopeId, pageNumber);
+    }
+  }
+
+  return startPages;
+}
+
+async function fetchAllAyahNavigationRows(): Promise<AyahNavigationRow[]> {
+  const pageSize = 1000;
+  let from = 0;
+  const rows: AyahNavigationRow[] = [];
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("ayat")
+      .select("surah_id,juz_number,page_number")
+      .order("id", { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
+      break;
+    }
+
+    rows.push(...(data as AyahNavigationRow[]));
+
+    if (data.length < pageSize) {
+      break;
+    }
+
+    from += pageSize;
+  }
+
+  return rows;
+}
+
+function buildSurahTargets(
+  surahStartPages: Map<number, number>,
+  namesBySurahId: Map<number, string>,
+): SurahJumpTarget[] {
+  const targets: SurahJumpTarget[] = [];
+  let carryPage = 1;
+
+  for (let surah = 1; surah <= 114; surah += 1) {
+    const page = surahStartPages.get(surah) ?? carryPage;
+    carryPage = page;
+
+    targets.push({
+      surah,
+      page,
+      name: namesBySurahId.get(surah) ?? `Surah ${surah}`,
+    });
+  }
+
+  return targets;
+}
+
+function buildJuzTargets(juzStartPages: Map<number, number>): JuzJumpTarget[] {
+  const targets: JuzJumpTarget[] = [];
+  let carryPage = 1;
+
+  for (let juz = 1; juz <= 30; juz += 1) {
+    const page = juzStartPages.get(juz) ?? carryPage;
+    carryPage = page;
+
+    targets.push({ juz, page });
+  }
+
+  return targets;
+}
+
+async function buildTargetsFromSupabase(): Promise<ReadJumpTargets> {
+  const [ayahRows, surahResponse] = await Promise.all([
+    fetchAllAyahNavigationRows(),
+    supabase
+      .from("surahs")
+      .select("id,name_transliteration")
+      .order("id", { ascending: true }),
+  ]);
+
+  const namesBySurahId = new Map<number, string>();
+  if (!surahResponse.error && surahResponse.data) {
+    for (const row of surahResponse.data as SurahNameRow[]) {
+      if (
+        Number.isInteger(row.id) &&
+        typeof row.name_transliteration === "string" &&
+        row.name_transliteration.trim().length > 0
+      ) {
+        namesBySurahId.set(row.id, row.name_transliteration.trim());
+      }
+    }
+  }
+
+  const surahStartPages = buildStartPageMap(ayahRows, "surah_id");
+  const juzStartPages = buildStartPageMap(ayahRows, "juz_number");
+
+  if (surahStartPages.size === 0 || juzStartPages.size === 0) {
+    throw new Error("Navigation mapping is empty from Supabase.");
+  }
+
+  return {
+    surahs: buildSurahTargets(surahStartPages, namesBySurahId),
+    juzs: buildJuzTargets(juzStartPages),
+  };
+}
+
+async function buildTargetsFromLocalSeed(): Promise<ReadJumpTargets> {
+  const [surahRaw, ayahRaw] = await Promise.all([
+    readFile(LOCAL_SURAHS_PATH, "utf-8"),
+    readFile(LOCAL_AYAT_PATH, "utf-8"),
+  ]);
+
+  const parsedSurahs = JSON.parse(surahRaw) as LocalSurahSeedRow[];
+  const parsedAyat = JSON.parse(ayahRaw) as LocalAyahSeedRow[];
+
+  const namesBySurahId = new Map<number, string>();
+  for (const row of parsedSurahs) {
+    const surahId = toPositiveInt(typeof row.id === "number" ? row.id : null);
+    if (
+      isValidSurahNumber(surahId) &&
+      typeof row.name_transliteration === "string" &&
+      row.name_transliteration.trim().length > 0
+    ) {
+      namesBySurahId.set(surahId, row.name_transliteration.trim());
+    }
+  }
+
+  const surahStartPages = buildStartPageMap(parsedAyat, "surah_id");
+  const juzStartPages = buildStartPageMap(parsedAyat, "juz_number");
+
+  return {
+    surahs: buildSurahTargets(surahStartPages, namesBySurahId),
+    juzs: buildJuzTargets(juzStartPages),
+  };
+}
+
+export const getReadJumpTargets = cache(async (): Promise<ReadJumpTargets> => {
+  try {
+    return await buildTargetsFromSupabase();
+  } catch {
+    return buildTargetsFromLocalSeed();
+  }
+});
+
+export function parseReadPage(value: string): number | null {
+  const parsed = Number.parseInt(value, 10);
+  if (!isValidPageNumber(parsed)) {
+    return null;
+  }
+  return parsed;
+}
+
+export function parseReadSurah(value: string | undefined): number | null {
+  if (!value) {
+    return null;
+  }
+  const [surah] = value.split(":");
+  const parsed = Number.parseInt(surah, 10);
+  if (!isValidSurahNumber(parsed)) {
+    return null;
+  }
+  return parsed;
+}
+
+export function parseReadJuz(value: string | undefined): number | null {
+  if (!value) {
+    return null;
+  }
+  const parsed = Number.parseInt(value, 10);
+  if (!isValidJuzNumber(parsed)) {
+    return null;
+  }
+  return parsed;
+}

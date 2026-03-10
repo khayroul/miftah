@@ -2,6 +2,75 @@ import { supabaseAdmin } from "../supabase-admin.js";
 import type { Ayah, HifzStatus, Surah, Word } from "@/types/database";
 import { getReviewCount } from "./review-log.js";
 
+interface SurahNameJoin {
+  name_transliteration: string;
+}
+
+interface AyahJoinWithSurah extends Ayah {
+  surahs?: SurahNameJoin | SurahNameJoin[] | null;
+}
+
+interface StudyProgressAyahJoinRow {
+  id: number;
+  ayah_id: number;
+  hifz_status: HifzStatus;
+  due: string;
+  stability: number;
+  difficulty: number;
+  reps: number;
+  lapses: number;
+  state: number;
+  ayat: AyahJoinWithSurah;
+}
+
+interface VocabProgressWordJoinRow {
+  id: number;
+  word_id: number;
+  due: string;
+  state: number;
+  reps: number;
+  words: Word;
+}
+
+interface WordIdRow {
+  word_id: number;
+}
+
+interface IdRow {
+  id: number;
+}
+
+interface WordTranslationJoin {
+  id: number;
+  text_uthmani: string;
+  translation_bm: string | null;
+  translation_en: string | null;
+}
+
+interface AyahWordJoinRow {
+  position: number;
+  words: WordTranslationJoin | WordTranslationJoin[] | null;
+}
+
+interface ReviewedAtRow {
+  reviewed_at: string;
+}
+
+interface JuzJoin {
+  juz_number: number;
+}
+
+interface StudyProgressJuzJoinRow {
+  ayat: JuzJoin | JuzJoin[] | null;
+}
+
+function firstRelation<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+  return value ?? null;
+}
+
 // ── Ayah queries with joins ──
 
 export interface AyahWithDetails {
@@ -33,11 +102,23 @@ export async function getDueAyatWithDetails(
     .limit(limit);
   if (error) throw error;
 
-  return (data ?? []).map((row: any) => ({
-    ...row,
-    ayah: row.ayat,
-    surah_name: row.ayat?.surahs?.name_transliteration ?? "",
-  }));
+  const rows = (data ?? []) as StudyProgressAyahJoinRow[];
+  return rows.map((row) => {
+    const surah = firstRelation(row.ayat?.surahs);
+    return {
+      id: row.id,
+      ayah_id: row.ayah_id,
+      hifz_status: row.hifz_status,
+      due: row.due,
+      stability: row.stability,
+      difficulty: row.difficulty,
+      reps: row.reps,
+      lapses: row.lapses,
+      state: row.state,
+      ayah: row.ayat,
+      surah_name: surah?.name_transliteration ?? "",
+    };
+  });
 }
 
 // ── Vocab queries with joins ──
@@ -64,8 +145,13 @@ export async function getDueVocabWithDetails(
     .limit(limit);
   if (error) throw error;
 
-  return (data ?? []).map((row: any) => ({
-    ...row,
+  const rows = (data ?? []) as VocabProgressWordJoinRow[];
+  return rows.map((row) => ({
+    id: row.id,
+    word_id: row.word_id,
+    due: row.due,
+    state: row.state,
+    reps: row.reps,
     word: row.words,
   }));
 }
@@ -80,7 +166,9 @@ export async function getNewVocabByFrequency(
     .select("word_id")
     .eq("user_id", userId);
 
-  const knownIds = new Set((existingIds ?? []).map((r: any) => r.word_id));
+  const knownIds = new Set(
+    ((existingIds ?? []) as WordIdRow[]).map((row) => row.word_id),
+  );
 
   const { data, error } = await supabaseAdmin
     .from("words")
@@ -118,7 +206,7 @@ export async function getNextSabakAyahIds(
     .order("id", { ascending: true })
     .limit(count);
   if (error) throw error;
-  return (data ?? []).map((r: any) => r.id);
+  return ((data ?? []) as IdRow[]).map((row) => row.id);
 }
 
 // ── Ayah word details ──
@@ -141,13 +229,22 @@ export async function getAyahWordsWithTranslations(
     .order("position", { ascending: true });
   if (error) throw error;
 
-  return (data ?? []).map((row: any) => ({
-    wordId: row.words.id,
-    position: row.position,
-    textUthmani: row.words.text_uthmani,
-    translationBm: row.words.translation_bm,
-    translationEn: row.words.translation_en,
-  }));
+  const rows = (data ?? []) as AyahWordJoinRow[];
+  return rows
+    .map((row) => {
+      const word = firstRelation(row.words);
+      if (!word) {
+        return null;
+      }
+      return {
+        wordId: word.id,
+        position: row.position,
+        textUthmani: word.text_uthmani,
+        translationBm: word.translation_bm,
+        translationEn: word.translation_en,
+      };
+    })
+    .filter((row): row is AyahWord => row !== null);
 }
 
 // ── Ayah lookup ──
@@ -278,9 +375,10 @@ export async function getUserStats(userId: string): Promise<UserStats> {
         .gte("reviewed_at", sixtyDaysAgo.toISOString())
         .order("reviewed_at", { ascending: false })
         .then(({ data }) => {
+          const reviewRows = (data ?? []) as ReviewedAtRow[];
           const dates = new Set(
-            (data ?? []).map((r: any) =>
-              new Date(r.reviewed_at).toISOString().slice(0, 10),
+            reviewRows.map((row) =>
+              new Date(row.reviewed_at).toISOString().slice(0, 10),
             ),
           );
           // Count consecutive days from today backwards
@@ -305,10 +403,14 @@ export async function getUserStats(userId: string): Promise<UserStats> {
       .eq("user_id", userId)
       .neq("hifz_status", "not_started")
       .then(({ data }) => {
+        const rows = (data ?? []) as StudyProgressJuzJoinRow[];
         const juzCounts = new Map<number, number>();
-        for (const row of data ?? []) {
-          const juz = (row as any).ayat?.juz_number;
-          if (juz) juzCounts.set(juz, (juzCounts.get(juz) ?? 0) + 1);
+        for (const row of rows) {
+          const ayat = firstRelation(row.ayat);
+          const juz = ayat?.juz_number;
+          if (typeof juz === "number") {
+            juzCounts.set(juz, (juzCounts.get(juz) ?? 0) + 1);
+          }
         }
         return [...juzCounts.entries()]
           .sort((a, b) => a[0] - b[0])

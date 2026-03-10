@@ -1,5 +1,4 @@
 import type { Context } from "grammy";
-import { InlineKeyboard } from "grammy";
 import { USER_ID } from "../config.js";
 import { buildDailyPlan, type DailyPlan } from "../services/scheduler.js";
 import {
@@ -15,11 +14,32 @@ import {
   buildBlankingKeyboard,
   buildSabakKeyboard,
 } from "../services/formatter.js";
-import type { Ayah, StudyProgress } from "@/types/database";
+import type { StudyProgress } from "@/types/database";
 
 // Session state per chat
 const planCache = new Map<number, DailyPlan>();
 const blockIndex = new Map<string, number>();
+
+interface AyahRowWithSurah {
+  surah_id: number;
+  ayah_number: number;
+  text_uthmani: string;
+  display_bm: string | null;
+  translation_en: string | null;
+  surahs:
+    | { name_transliteration: string }
+    | { name_transliteration: string }[]
+    | null;
+}
+
+function getSurahTransliteration(
+  relation: AyahRowWithSurah["surahs"],
+): string {
+  if (Array.isArray(relation)) {
+    return relation[0]?.name_transliteration ?? "";
+  }
+  return relation?.name_transliteration ?? "";
+}
 
 export async function handleHifz(ctx: Context): Promise<void> {
   const chatId = ctx.chat?.id;
@@ -110,15 +130,16 @@ async function showSabakOverview(
     .order("id", { ascending: true });
 
   if (!ayatRows || ayatRows.length === 0) return;
+  const rows = ayatRows as AyahRowWithSurah[];
 
   // Group by surah for cleaner display
   let text = `*SABAK — Hafalan Baru* (${items.length} ayat)\nBaca dan hafal semua ayat ini:\n\n`;
   let currentSurah = 0;
 
-  for (const row of ayatRows) {
+  for (const row of rows) {
     if (row.surah_id !== currentSurah) {
       currentSurah = row.surah_id;
-      text += `*${(row as any).surahs?.name_transliteration}*\n\n`;
+      text += `*${getSurahTransliteration(row.surahs)}*\n\n`;
     }
     const bm = row.display_bm ?? row.translation_en ?? "";
     text += `*${row.surah_id}:${row.ayah_number}*\n${row.text_uthmani}\n_${bm}_\n\n`;

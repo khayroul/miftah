@@ -15,6 +15,6 @@ export function getSupabaseAdmin(): SupabaseClient {
 /** Convenience alias */
 export const supabaseAdmin = new Proxy({} as SupabaseClient, {
   get(_, prop) {
-    return (getSupabaseAdmin() as any)[prop];
+    return Reflect.get(getSupabaseAdmin(), prop);
   },
 });
