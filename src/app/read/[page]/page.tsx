@@ -44,6 +44,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
     ayatOnPage = await getAyatByPage(pageNumber);
     audioTracks = mapAyatToPageAudioTracks(ayatOnPage);
     ayahDetails = ayatOnPage.map((ayah) => ({
+      id: ayah.id,
       key: `${ayah.surah_id}:${ayah.ayah_number}`,
       label: `${ayah.surah_id}:${ayah.ayah_number}`,
       textUthmani: ayah.text_uthmani,
