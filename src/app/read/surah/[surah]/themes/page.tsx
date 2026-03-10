@@ -251,28 +251,30 @@ export default async function SurahThemeAppearancePage({
                   >
                     <div className="rounded-lg border border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-900/70">
                       {wbwByAyahId[ayah.id] && wbwByAyahId[ayah.id].length > 0 ? (
-                        <div className="flex flex-wrap justify-end gap-x-1.5 gap-y-2.5" dir="rtl">
-                          {wbwByAyahId[ayah.id].map((word) => (
-                            <span
-                              key={`${ayah.id}-${word.position}`}
-                              className="inline-flex w-[4.2rem] shrink-0 flex-col items-center text-center align-top"
-                            >
-                              <span className="text-2xl leading-none text-stone-900 dark:text-stone-100">
-                                {word.text_uthmani}
-                              </span>
+                        <div className="flex justify-end">
+                          <div className="w-fit max-w-full flex flex-wrap justify-end gap-x-1.5 gap-y-2.5" dir="rtl">
+                            {wbwByAyahId[ayah.id].map((word) => (
                               <span
-                                dir="ltr"
-                                className="mt-1 block w-full overflow-hidden whitespace-normal break-words text-[11px] leading-[1.15] text-stone-600 dark:text-stone-300"
-                                style={{
-                                  display: "-webkit-box",
-                                  WebkitBoxOrient: "vertical",
-                                  WebkitLineClamp: 3,
-                                }}
+                                key={`${ayah.id}-${word.position}`}
+                                className="inline-flex w-[4.2rem] shrink-0 flex-col items-end text-right align-top"
                               >
-                                {word.translation_bm ?? word.translation_en ?? "—"}
+                                <span className="block w-full text-right text-2xl leading-none text-stone-900 dark:text-stone-100">
+                                  {word.text_uthmani}
+                                </span>
+                                <span
+                                  dir="ltr"
+                                  className="mt-1 block w-full overflow-hidden whitespace-normal break-words text-center text-[11px] leading-[1.15] text-stone-600 dark:text-stone-300"
+                                  style={{
+                                    display: "-webkit-box",
+                                    WebkitBoxOrient: "vertical",
+                                    WebkitLineClamp: 3,
+                                  }}
+                                >
+                                  {word.translation_bm ?? word.translation_en ?? "—"}
+                                </span>
                               </span>
-                            </span>
-                          ))}
+                            ))}
+                          </div>
                         </div>
                       ) : (
                         <p className="text-xs text-stone-500 dark:text-stone-400">
