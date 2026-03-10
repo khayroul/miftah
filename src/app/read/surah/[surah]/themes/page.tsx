@@ -78,6 +78,19 @@ export default async function SurahThemeAppearancePage({
         : 1
       : 1;
   const selectedChunk = chunks[selectedChunkIndex - 1] ?? null;
+  const hasNextThemeInSurah = selectedChunkIndex < chunks.length;
+  const canJumpToNextSurahTheme =
+    chunks.length > 0 && selectedChunkIndex === chunks.length && surahNumber < 114;
+  const nextThemeHref = hasNextThemeInSurah
+    ? `/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex + 1}`
+    : canJumpToNextSurahTheme
+      ? `/read/surah/${surahNumber + 1}/themes?chunk=1`
+      : null;
+  const nextThemeLabel = hasNextThemeInSurah
+    ? "Next Theme →"
+    : canJumpToNextSurahTheme
+      ? "Next Surah Theme →"
+      : "Next Theme →";
   let wbwByAyahId: Record<number, AyahWordByWordEntry[]> = {};
   if (selectedChunk) {
     try {
@@ -195,7 +208,10 @@ export default async function SurahThemeAppearancePage({
                               key={`${ayah.id}-${word.position}`}
                               className="group/word flex min-w-fit max-w-[5.5rem] sm:max-w-[7rem] flex-col items-center justify-start hover:bg-stone-50 dark:hover:bg-stone-800/50 rounded-lg p-2 transition-colors cursor-pointer"
                             >
-                              <span className="font-arabic mb-2 block text-center text-[1.75rem] leading-tight text-stone-900 sm:text-3xl dark:text-stone-100">
+                              <span
+                                className="font-arabic mb-2 block text-center text-[1.75rem] leading-tight text-stone-900 sm:text-3xl dark:text-stone-100"
+                                lang="ar"
+                              >
                                 {word.text_uthmani}
                               </span>
                               <span
@@ -243,12 +259,12 @@ export default async function SurahThemeAppearancePage({
                   &larr; Prev
                 </span>
               )}
-              {selectedChunkIndex < chunks.length ? (
+              {nextThemeHref ? (
                 <Link
-                  href={`/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex + 1}`}
+                  href={nextThemeHref}
                   className="flex flex-1 items-center justify-center rounded-full bg-stone-900 px-5 py-2 text-sm font-medium text-white shadow-md transition hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
                 >
-                  Next Theme &rarr;
+                  {nextThemeLabel}
                 </Link>
               ) : (
                 <span className="flex flex-1 items-center justify-center rounded-full bg-stone-100 px-5 py-2 text-sm font-medium text-stone-400 dark:bg-stone-800 dark:text-stone-600">
