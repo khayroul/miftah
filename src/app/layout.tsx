@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 const geist = Geist({
   variable: "--font-geist",
   subsets: ["latin"],
+});
+
+const uthmani = localFont({
+  src: "../../assets/fonts/KFGQPCUthmanTahaNaskh-Regular.ttf",
+  variable: "--font-kfg-uthmani",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -19,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ms">
-      <body className={`${geist.variable} antialiased`}>
+      <body className={`${geist.variable} ${uthmani.variable} antialiased`}>
         {children}
       </body>
     </html>

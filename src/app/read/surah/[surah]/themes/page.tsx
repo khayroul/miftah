@@ -195,7 +195,7 @@ export default async function SurahThemeAppearancePage({
                               key={`${ayah.id}-${word.position}`}
                               className="group/word flex min-w-fit max-w-[5.5rem] sm:max-w-[7rem] flex-col items-center justify-start hover:bg-stone-50 dark:hover:bg-stone-800/50 rounded-lg p-2 transition-colors cursor-pointer"
                             >
-                              <span className="block text-center text-[1.75rem] sm:text-3xl leading-tight text-stone-900 dark:text-stone-100 mb-2">
+                              <span className="font-arabic mb-2 block text-center text-[1.75rem] leading-tight text-stone-900 sm:text-3xl dark:text-stone-100">
                                 {word.text_uthmani}
                               </span>
                               <span

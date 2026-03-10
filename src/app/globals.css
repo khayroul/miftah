@@ -21,6 +21,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist);
   --font-mono: var(--font-geist-mono);
+  --font-arabic: var(--font-kfg-uthmani);
 }
 
 @keyframes fade-in-up {

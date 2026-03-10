@@ -9,6 +9,7 @@ import {
   type TouchEvent,
 } from "react";
 import {
+  type AyahEndByLine,
   calculateHifzRevealStageByAyahKeys,
   resolveApproxThirdBoundariesByAyahEnd,
   type HifzRevealStage,
@@ -150,6 +151,74 @@ function revealStageLabel(stage: HifzRevealStage): string {
   return "Penuh";
 }
 
+function deriveLineCenters(
+  words: MushafWordHitbox[],
+  imageHeight: number,
+): number[] {
+  if (words.length === 0) {
+    return [];
+  }
+
+  const centers = words
+    .map((word) => word.y + word.height / 2)
+    .filter((value) => Number.isFinite(value))
+    .sort((a, b) => a - b);
+  if (centers.length === 0) {
+    return [];
+  }
+
+  const threshold = Math.max(16, imageHeight / 70);
+  const clusters: Array<{ sum: number; count: number; mean: number }> = [];
+
+  for (const center of centers) {
+    const current = clusters[clusters.length - 1];
+    if (!current || Math.abs(center - current.mean) > threshold) {
+      clusters.push({ sum: center, count: 1, mean: center });
+      continue;
+    }
+
+    current.sum += center;
+    current.count += 1;
+    current.mean = current.sum / current.count;
+  }
+
+  return clusters.map((cluster) => cluster.mean);
+}
+
+function mapYToLinePosition(y: number, lineCenters: number[]): number {
+  if (lineCenters.length === 0) {
+    return 1;
+  }
+  if (lineCenters.length === 1) {
+    return 1;
+  }
+
+  if (y <= lineCenters[0]) {
+    return 1;
+  }
+  const lastCenter = lineCenters[lineCenters.length - 1];
+  if (y >= lastCenter) {
+    return lineCenters.length;
+  }
+
+  for (let index = 0; index < lineCenters.length - 1; index += 1) {
+    const start = lineCenters[index];
+    const end = lineCenters[index + 1];
+    if (y < start || y > end) {
+      continue;
+    }
+
+    const span = end - start;
+    if (span <= 0) {
+      return index + 1;
+    }
+    const ratio = (y - start) / span;
+    return index + 1 + ratio;
+  }
+
+  return lineCenters.length;
+}
+
 export function MushafPageView({
   pageNumber,
   imageAvailable,
@@ -261,6 +330,19 @@ export function MushafPageView({
         return a.box.x - b.box.x;
       });
   }, [ayahBoxes]);
+  const lineCenters = useMemo(
+    () => deriveLineCenters(words, imageHeight),
+    [imageHeight, words],
+  );
+  const ayahEndsByLine = useMemo<AyahEndByLine[]>(
+    () =>
+      ayahLayoutEntries.map((entry) => ({
+        bottomY: entry.bottomY,
+        linePosition: mapYToLinePosition(entry.bottomY, lineCenters),
+      })),
+    [ayahLayoutEntries, lineCenters],
+  );
+  const totalLineCount = lineCenters.length > 0 ? lineCenters.length : 15;
   const ayahOverlayTargets = useMemo(
     () =>
       Array.from(ayahBoxes.entries()).map(([key, box]) => ({
@@ -277,9 +359,9 @@ export function MushafPageView({
       return null;
     }
 
-    const ayahBottomsAscending = ayahLayoutEntries.map((entry) => entry.bottomY);
     const { firstBoundaryY, secondBoundaryY } = resolveApproxThirdBoundariesByAyahEnd(
-      ayahBottomsAscending,
+      ayahEndsByLine,
+      totalLineCount,
       imageHeight,
     );
 
@@ -315,11 +397,13 @@ export function MushafPageView({
       thirdSegmentAyahKeys,
     };
   }, [
+    ayahEndsByLine,
     ayahLayoutEntries,
     hifzRevealByThirdsEnabled,
     imageHeight,
     memorizedAyahKeySet,
     mode,
+    totalLineCount,
   ]);
   const revealMaskTop = hifzRevealContext
     ? percent(hifzRevealContext.visibleBoundaryY, imageHeight)
@@ -757,7 +841,10 @@ export function MushafPageView({
                 Tutup
               </button>
             </div>
-            <p className="mt-3 text-right text-2xl leading-loose text-stone-900 dark:text-stone-100" dir="rtl">
+            <p
+              className="font-arabic mt-3 text-right text-2xl leading-loose text-stone-900 dark:text-stone-100"
+              dir="rtl"
+            >
               {selectedAyahDetail.textUthmani}
             </p>
             <p className="mt-3 text-sm leading-relaxed text-stone-700 dark:text-stone-200">
