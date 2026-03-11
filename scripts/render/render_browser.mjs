@@ -478,13 +478,15 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
 
   /* Header bar */
   .header {
-    display: flex;
+    display: none;
     justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    padding: 16px 18px 10px;
-    border-bottom: 1px solid ${t.borderColor};
-    direction: ltr;
+    align-items: flex-end;
+    padding: 0 10px 10px;
+    border-bottom: 2px solid ${t.textColor};
+    margin: 10px 10px 15px;
+    font-size: 20px;
+    color: ${t.textColor};
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
   }
   .header .juz {
     font-size: 17px;
@@ -837,7 +839,7 @@ async function main() {
     if (pageArg) {
       const layout = loadLayout(pageArg);
       if (!layout) { console.error(`No layout for page ${pageArg}`); return; }
-      const path = await renderPage(browser, pageArg, layout, surahMeta, TEST_DIR, theme);
+      const path = await renderPage(browser, pageArg, layout, surahMeta, ASSETS_DIR, theme);
       console.log(`Rendered page ${pageArg}: ${path}`);
     } else if (pagesArg) {
       const [s, e] = pagesArg.split('-').map(Number);
