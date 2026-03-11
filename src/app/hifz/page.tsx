@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 
-import Link from "next/link";
 import { ModeNavigator } from "@/components/ModeNavigator";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HifzWorkspace } from "@/components/HifzWorkspace";

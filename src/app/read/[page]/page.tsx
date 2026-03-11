@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { MushafAyahDetail } from "@/components/MushafPageView";
 import { ReadPageWorkspace } from "@/components/ReadPageWorkspace";
@@ -105,20 +104,18 @@ export default async function ReadPage({ params }: ReadPageProps) {
       <ReadPageWorkspace
         pageNumber={pageNumber}
         mushafHeader={
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <h1 className="flex items-center gap-3 text-3xl font-semibold tracking-tight text-stone-900 hover:text-stone-800 dark:text-stone-100">
-                Surah {surahMeta?.name_en ?? "Al-Fatihah"}
-                {surahMeta?.name_arabic && (
-                  <span className="font-arabic mt-1 text-2xl font-normal opacity-80" lang="ar">
-                    {surahMeta.name_arabic}
-                  </span>
-                )}
-              </h1>
-              <p className="mt-1 text-stone-500 dark:text-stone-400">
-                Surah {surahForThemeView} • Halaman {pageNumber} / 604
-              </p>
-            </div>
+          <div className="flex flex-col items-center justify-center gap-2 text-center mt-2">
+            <h1 className="flex flex-wrap items-center justify-center gap-3 text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:text-3xl">
+              Surah {surahMeta?.name_en ?? "Al-Fatihah"}
+              {surahMeta?.name_arabic && (
+                <span className="font-arabic mt-1 text-2xl font-normal opacity-80" lang="ar">
+                  {surahMeta.name_arabic}
+                </span>
+              )}
+            </h1>
+            <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
+              Surah {surahForThemeView} • Halaman {pageNumber} / 604
+            </p>
           </div>
         }
         imageAvailable={imageAvailable}

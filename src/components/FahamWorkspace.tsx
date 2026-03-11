@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import Link from "next/link";
 import type { FahamSourceType } from "@/types/database";
 import type { FahamQueueSnapshot, SerializedFahamCard } from "@/lib/faham/queue";
 import type { FahamMcqDirectionMode } from "@/lib/faham/mcq";

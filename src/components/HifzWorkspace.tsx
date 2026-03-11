@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Link from "next/link";
 import { JuzHeatmap } from "@/components/JuzHeatmap";
 import { HifzSessionCard } from "@/components/HifzSessionCard";
 import type { DailyPlanWithDetails, PlanItem } from "@/lib/hifz/scheduler";

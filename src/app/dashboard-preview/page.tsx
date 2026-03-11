@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 
-import Link from "next/link";
 import { DashboardPreviewClient } from "@/components/DashboardPreviewClient";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";

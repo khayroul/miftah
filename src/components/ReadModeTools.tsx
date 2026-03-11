@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useReadMode } from "@/lib/useReadMode";
 import type { ReadMode } from "@/lib/readMode";
 
@@ -29,6 +30,12 @@ export function ReadModeTools({
 }: ReadModeToolsProps) {
   const router = useRouter();
   const { mode, setMode } = useReadMode();
+
+  useEffect(() => {
+    if (mode === "faham" || mode === "tema") {
+      setMode("read");
+    }
+  }, [mode, setMode]);
 
   const handleModeChange = (nextMode: ReadMode) => {
     if (nextMode === "faham") {

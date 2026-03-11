@@ -55,7 +55,7 @@ export function ReadJumpControls({
 
   return (
     <section className="rounded-2xl border border-stone-300 bg-white px-3 py-3 shadow-sm sm:px-4 dark:border-stone-600 dark:bg-stone-900">
-      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
+      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-stone-700 dark:text-stone-300">
         Lompat Ke
       </p>
       <div className="grid gap-2 sm:grid-cols-3">
@@ -71,20 +71,20 @@ export function ReadJumpControls({
             jumpToPage(targetPage);
           }}
         >
-          <label className="min-w-0 flex-1 text-xs text-stone-600 dark:text-stone-300">
+          <label className="min-w-0 flex-1 text-xs font-semibold text-stone-700 dark:text-stone-200">
             Halaman
             <input
               value={pageInput}
               onChange={(event) => setPageInput(event.target.value)}
               inputMode="numeric"
               pattern="[0-9]*"
-              className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 outline-none focus:border-stone-500 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
+              className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 outline-none focus:border-teal-500 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-teal-400"
               placeholder="1-604"
             />
           </label>
           <button
             type="submit"
-            className="rounded-lg border border-stone-300 px-2.5 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+            className="rounded-lg border border-teal-600 bg-teal-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-teal-700 hover:border-teal-700 dark:border-teal-500 dark:bg-teal-500 dark:hover:bg-teal-600 shadow-sm"
           >
             Buka
           </button>
