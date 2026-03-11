@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { MushafAyahDetail } from "@/components/MushafPageView";
 import { ReadPageWorkspace } from "@/components/ReadPageWorkspace";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AuthStatusButton } from "@/components/AuthStatusButton";
 import { getProgressByAyahIds } from "@/lib/hifz/study-progress";
 import { loadPageManifest, pageImageExists } from "@/lib/mushafAssets";
 import { mapAyatToPageAudioTracks } from "@/lib/pageAudioTracks";
@@ -96,7 +97,8 @@ export default async function ReadPage({ params }: ReadPageProps) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
       <header className="flex flex-col gap-6">
-        <nav className="flex w-full items-center justify-end">
+        <nav className="flex w-full items-center justify-end gap-2">
+          <AuthStatusButton />
           <ThemeToggle />
         </nav>
       </header>

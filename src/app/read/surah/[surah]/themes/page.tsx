@@ -4,6 +4,7 @@ import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import { ModeNavigator } from "@/components/ModeNavigator";
 import { ThemeChunkSelect } from "@/components/ThemeChunkSelect";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AuthStatusButton } from "@/components/AuthStatusButton";
 import {
   getWordByWordForAyahIds,
   getSurah,
@@ -123,7 +124,8 @@ export default async function SurahThemeAppearancePage({
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 sm:px-6 md:py-12">
       {/* Refined Header */}
       <header className="flex flex-col gap-6">
-        <nav className="flex w-full items-center justify-end">
+        <nav className="flex w-full items-center justify-end gap-2">
+          <AuthStatusButton />
           <ThemeToggle />
         </nav>
 

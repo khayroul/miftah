@@ -42,12 +42,12 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             </div>
 
             <h1 className="mt-6 text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-50">
-              Sign in untuk simpan progres sendiri.
+              Akaun anda, progres anda.
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-stone-600 dark:text-stone-300">
-              Faham, Hafal, Tema, dan dashboard akan diikat pada akaun anda.
-              Baca masih boleh digunakan tanpa sign in, tetapi progresnya hanya
-              tersimpan pada browser semasa.
+              Sign in atau buat akaun baru. Faham, Hafal, Tema, dan dashboard
+              akan diikat pada akaun anda. Baca masih boleh digunakan tanpa sign
+              in, tetapi progresnya hanya tersimpan pada browser semasa.
             </p>
 
             {params.error ? (
