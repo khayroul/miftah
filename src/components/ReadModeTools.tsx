@@ -32,13 +32,11 @@ export function ReadModeTools({
 
   const handleModeChange = (nextMode: ReadMode) => {
     if (nextMode === "faham") {
-      setMode(nextMode);
       router.push("/faham");
       return;
     }
 
     if (nextMode === "tema") {
-      setMode(nextMode);
       router.push(`/read/surah/${themeSurahId}/themes`);
       return;
     }
