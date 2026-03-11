@@ -4,6 +4,7 @@ import { applyRating } from "@/lib/fsrs";
 import { dbRowToCard, cardToDbRow } from "@/lib/hifz/fsrs-bridge";
 import { logVocabReview } from "@/lib/faham/review-log";
 import { fahamRateRequestSchema } from "@/lib/faham/schemas";
+import { getOptionalAuthUser } from "@/lib/auth";
 import {
   getVocabProgressById,
   updateVocabProgressAfterReview,
@@ -21,9 +22,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     const body = fahamRateRequestSchema.parse(rawBody);
-    const userId = process.env.MIFTAH_USER_ID?.trim();
+    const user = await getOptionalAuthUser();
+    const userId = user?.id;
     if (!userId) {
-      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const progress = await getVocabProgressById(body.progressId);

@@ -12,6 +12,7 @@ import {
   parseReadPage,
 } from "@/lib/readNavigation";
 import { findMarkerForPage } from "@/lib/readNavigationUtils";
+import { getOptionalAuthUser } from "@/lib/auth";
 import { getWordTranslationsByHitboxes } from "@/lib/wbwTranslations";
 import type { Ayah } from "@/types/database";
 
@@ -48,7 +49,8 @@ export default async function ReadPage({ params }: ReadPageProps) {
       en: ayah.translation_en,
     }));
 
-    const userId = process.env.MIFTAH_USER_ID?.trim();
+    const user = await getOptionalAuthUser();
+    const userId = user?.id;
     if (userId && ayatOnPage.length > 0) {
       try {
         const progressByAyahId = await getProgressByAyahIds(

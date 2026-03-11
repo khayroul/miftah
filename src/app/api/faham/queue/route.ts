@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { buildFahamQueueSnapshot } from "@/lib/faham/queue";
 import { fahamQueueRequestSchema } from "@/lib/faham/schemas";
+import { getOptionalAuthUser } from "@/lib/auth";
 
 export async function POST(request: Request): Promise<NextResponse> {
   let rawBody: unknown = {};
@@ -13,9 +14,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     const body = fahamQueueRequestSchema.parse(rawBody);
-    const userId = process.env.MIFTAH_USER_ID?.trim();
+    const user = await getOptionalAuthUser();
+    const userId = user?.id;
     if (!userId) {
-      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const snapshot = await buildFahamQueueSnapshot(userId, {

@@ -8,9 +8,11 @@ import type { FahamQueueSnapshot } from "@/lib/faham/queue";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { buildFahamQueueSnapshot } from "@/lib/faham/queue";
 import { getReadJumpTargets } from "@/lib/readNavigation";
+import { requireAuthUser } from "@/lib/auth";
 
 export default async function FahamPage() {
-  const userId = process.env.MIFTAH_USER_ID?.trim();
+  const user = await requireAuthUser("/faham");
+  const userId = user.id;
   const jumpTargets = await getReadJumpTargets();
   let setupMessage: string | null = null;
   let initialQueue: FahamQueueSnapshot = {
@@ -25,15 +27,11 @@ export default async function FahamPage() {
     },
   };
 
-  if (!userId) {
-    setupMessage = "MIFTAH_USER_ID belum ditetapkan pada server.";
-  } else {
-    try {
-      initialQueue = await buildFahamQueueSnapshot(userId, {});
-    } catch {
-      setupMessage =
-        "Enjin Faham perlukan migration SQL baharu sebelum queue boleh dimuatkan. Jalankan SQL di Supabase editor dahulu.";
-    }
+  try {
+    initialQueue = await buildFahamQueueSnapshot(userId, {});
+  } catch {
+    setupMessage =
+      "Enjin Faham perlukan migration SQL baharu sebelum queue boleh dimuatkan. Jalankan SQL di Supabase editor dahulu.";
   }
 
   return (

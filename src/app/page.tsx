@@ -4,9 +4,11 @@ import { HomeDashboardClient } from "@/components/HomeDashboardClient";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { loadHomeDashboardSnapshot } from "@/lib/homeDashboard";
 import { getReadJumpTargets } from "@/lib/readNavigation";
+import { getOptionalAuthUser } from "@/lib/auth";
 
 export default async function Home() {
-  const userId = process.env.MIFTAH_USER_ID?.trim() ?? null;
+  const user = await getOptionalAuthUser();
+  const userId = user?.id ?? null;
   const [snapshot, jumpTargets] = await Promise.all([
     loadHomeDashboardSnapshot(userId),
     getReadJumpTargets(),
