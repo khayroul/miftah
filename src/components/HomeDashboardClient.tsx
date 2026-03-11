@@ -25,6 +25,8 @@ interface ModeCard {
   percent: number;
   title: string;
   tone: CardTone;
+  href: string;
+  buttonLabel: string;
 }
 
 function clampPercent(value: number): number {
@@ -92,43 +94,62 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
 
   return (
     <article
-      className={`animate-fade-in-up rounded-[28px] border p-5 shadow-[0_24px_70px_-42px_rgba(28,25,23,0.42)] backdrop-blur-sm ${classes.border} ${classes.surface}`}
+      className={`animate-fade-in-up flex flex-col rounded-[28px] border p-5 shadow-[0_24px_70px_-42px_rgba(28,25,23,0.42)] backdrop-blur-sm ${classes.border} ${classes.surface}`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500 dark:text-stone-400">
-            Mod
+      <div className="flex-1">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500 dark:text-stone-400">
+              Mod
+            </p>
+            <h2 className="mt-2 text-2xl font-medium tracking-tight text-stone-900 dark:text-stone-50">
+              {card.title}
+            </h2>
+          </div>
+          <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
+            {card.percent}%
           </p>
-          <h2 className="mt-2 text-2xl font-medium tracking-tight text-stone-900 dark:text-stone-50">
-            {card.title}
-          </h2>
         </div>
-        <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
-          {card.percent}%
+
+        <div className="mt-6">
+          <div>
+            <div className={`text-4xl font-semibold tracking-tight ${classes.value}`}>
+              {card.metricValue}
+            </div>
+            <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
+              {card.metricLabel}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/80 ring-1 ring-stone-900/6 dark:bg-stone-950/70 dark:ring-white/8">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${classes.bar}`}
+            style={{ width: `${card.percent}%` }}
+          />
+        </div>
+
+        <p className="mt-4 text-sm leading-relaxed text-stone-600 dark:text-stone-300">
+          {card.helper}
         </p>
       </div>
 
       <div className="mt-6">
-        <div>
-          <div className={`text-4xl font-semibold tracking-tight ${classes.value}`}>
-            {card.metricValue}
-          </div>
-          <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
-            {card.metricLabel}
-          </p>
-        </div>
+        <Link
+          href={card.href}
+          className={`block w-full rounded-xl py-2.5 text-center text-sm font-medium transition ${
+            card.tone === "teal"
+              ? "bg-teal-800/10 text-teal-900 hover:bg-teal-800/15 dark:bg-teal-300/10 dark:text-teal-200 dark:hover:bg-teal-300/20"
+              : card.tone === "amber"
+                ? "bg-amber-800/10 text-amber-950 hover:bg-amber-800/15 dark:bg-amber-300/10 dark:text-amber-200 dark:hover:bg-amber-300/20"
+                : card.tone === "indigo"
+                  ? "bg-indigo-800/10 text-indigo-900 hover:bg-indigo-800/15 dark:bg-indigo-300/10 dark:text-indigo-200 dark:hover:bg-indigo-300/20"
+                  : "bg-stone-900/5 text-stone-900 hover:bg-stone-900/10 dark:bg-stone-100/10 dark:text-stone-200 dark:hover:bg-stone-100/20"
+          }`}
+        >
+          {card.buttonLabel}
+        </Link>
       </div>
-
-      <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/80 ring-1 ring-stone-900/6 dark:bg-stone-950/70 dark:ring-white/8">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${classes.bar}`}
-          style={{ width: `${card.percent}%` }}
-        />
-      </div>
-
-      <p className="mt-4 text-sm leading-relaxed text-stone-600 dark:text-stone-300">
-        {card.helper}
-      </p>
     </article>
   );
 }
@@ -169,6 +190,8 @@ export function HomeDashboardClient({
       percent: readingPositionPct,
       title: "Baca",
       tone: "teal",
+      href: `/read/${continuePage}`,
+      buttonLabel: readingState.lastPage ? "Sambung Baca" : "Mula Baca",
     },
     {
       helper: snapshot.faham
@@ -178,11 +201,13 @@ export function HomeDashboardClient({
         : "Enjin kata demi kata sudah sedia, tetapi statistiknya belum dapat dimuat sekarang.",
       metricLabel: "perkataan dalam enjin Faham",
       metricValue: snapshot.faham
-        ? `${snapshot.faham.reviewedWordCount} / ${snapshot.faham.totalWords} perkataan`
-        : `0 / ${TOP_FAHAM_WORD_LIMIT} perkataan`,
+        ? `${snapshot.faham.reviewedWordCount} / ${snapshot.faham.totalWords}`
+        : `0 / ${TOP_FAHAM_WORD_LIMIT}`,
       percent: snapshot.faham?.coveragePct ?? 0,
       title: "Faham",
       tone: "amber",
+      href: "/faham",
+      buttonLabel: snapshot.faham?.dueCount ? "Mula Ulang Kaji" : "Buka Faham",
     },
     {
       helper: snapshot.tema && snapshot.tema.totalChunks > 0
@@ -195,6 +220,8 @@ export function HomeDashboardClient({
       percent: snapshot.tema?.exploredPct ?? 0,
       title: "Tema",
       tone: "indigo",
+      href: `/read/surah/${activeSurahId}/themes`,
+      buttonLabel: "Teroka Tema",
     },
     {
       helper: snapshot.hifz
@@ -209,6 +236,8 @@ export function HomeDashboardClient({
       percent: snapshot.hifz?.manzilCoveragePct ?? 0,
       title: "Hafal",
       tone: "stone",
+      href: "/hifz",
+      buttonLabel: "Buka Hafal",
     },
   ];
 
