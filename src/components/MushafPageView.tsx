@@ -42,6 +42,8 @@ interface MushafPageViewProps {
   onNavigatePrevPage?: () => void;
   onNavigateNextPage?: () => void;
   onCanvasTap?: () => void;
+  audioDiscovered?: boolean;
+  onAudioDiscovered?: () => void;
 }
 
 interface AyahBoundingBox {
@@ -237,6 +239,8 @@ export function MushafPageView({
   onNavigatePrevPage,
   onNavigateNextPage,
   onCanvasTap,
+  audioDiscovered = true,
+  onAudioDiscovered,
 }: MushafPageViewProps) {
   const [selectedWord, setSelectedWord] = useState<MushafWordHitbox | null>(
     null,
@@ -638,12 +642,25 @@ export function MushafPageView({
 
   return (
     <section className="space-y-3">
+      {/* Discovery Hint */}
+      {!audioDiscovered && mode === "read" && canShowFullImage && (
+        <div className="flex justify-center">
+          <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-medium text-emerald-800 shadow-sm animate-bounce dark:bg-emerald-900/30 dark:text-emerald-100">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            </svg>
+            Tip: Tekan mana-mana ayat untuk dengar audio
+          </div>
+        </div>
+      )}
+
       <div
         className="relative overflow-visible cursor-pointer rounded-2xl border border-stone-300 bg-[#fffdfa] shadow-[0_18px_34px_-30px_rgba(28,25,23,0.7)] dark:border-stone-600 dark:bg-slate-950 dark:shadow-[0_22px_38px_-30px_rgba(2,6,23,0.9)]"
         style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={() => {
+          onAudioDiscovered?.();
           setSelectedAyahKey(null);
           setSelectedWord(null);
           setMarkMemorizedError(null);
@@ -788,11 +805,11 @@ export function MushafPageView({
         </p>
       ) : mode === "read" ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">
-          Paparan bersih (mod Baca). Leret kiri atau kanan untuk menukar halaman.
+          Mod Baca: Leret untuk tukar halaman. <strong>Tekan mana-mana ayat untuk dengar audio.</strong>
         </p>
       ) : mode === "hifz" ? (
         <p className="text-sm text-teal-700 dark:text-teal-300">
-          Gunakan butang Hafal untuk membuka 1/3 → 2/3 → penuh.
+          Gunakan butang Hafal untuk membuka 1/3 → 2/3 → penuh. <strong>Tekan ayat untuk dengar murattal.</strong>
         </p>
       ) : words.length === 0 ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">

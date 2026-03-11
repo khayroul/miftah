@@ -58,7 +58,26 @@ export function ReadPageWorkspace({
   const router = useRouter();
   const { mode } = useReadMode();
   const [audioDockVisible, setAudioDockVisible] = useState(false);
+  const [audioDiscovered, setAudioDiscovered] = useState(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
+    return window.localStorage.getItem("miftah:audio:discovered") === "1";
+  });
   const [showJumpControls, setShowJumpControls] = useState(false);
+
+  const markAudioDiscovered = useCallback(() => {
+    if (!audioDiscovered) {
+      setAudioDiscovered(true);
+      window.localStorage.setItem("miftah:audio:discovered", "1");
+    }
+  }, [audioDiscovered]);
+
+  const handleToggleAudio = useCallback(() => {
+    setAudioDockVisible((prev) => !prev);
+    markAudioDiscovered();
+  }, [markAudioDiscovered]);
+
   const [hifzRevealByThirdsEnabled, setHifzRevealByThirdsEnabled] = useState(
     () => {
       if (typeof window === "undefined") {
@@ -99,7 +118,8 @@ export function ReadPageWorkspace({
   }, [pageNumber, router]);
   const handleMushafTap = useCallback(() => {
     setAudioDockVisible((current) => !current);
-  }, []);
+    markAudioDiscovered();
+  }, [markAudioDiscovered]);
 
   return (
     <>
@@ -120,6 +140,8 @@ export function ReadPageWorkspace({
         onToggleJumpControls={() =>
           setShowJumpControls((current) => !current)
         }
+        isAudioVisible={audioDockVisible}
+        onToggleAudio={handleToggleAudio}
       />
 
       <div
@@ -199,6 +221,8 @@ export function ReadPageWorkspace({
         onNavigatePrevPage={handleNavigatePrevPage}
         onNavigateNextPage={handleNavigateNextPage}
         onCanvasTap={handleMushafTap}
+        audioDiscovered={audioDiscovered}
+        onAudioDiscovered={markAudioDiscovered}
       />
 
       <ReadAudioDock

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import type { FahamSourceType } from "@/types/database";
 import type { FahamQueueSnapshot, SerializedFahamCard } from "@/lib/faham/queue";
 import type { FahamMcqDirectionMode } from "@/lib/faham/mcq";
@@ -150,6 +150,12 @@ export function FahamWorkspace({
   const [answerState, setAnswerState] = useState<AnswerState | null>(null);
   const [sessionDoneCount, setSessionDoneCount] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [audioEnabled, setAudioEnabled] = useState(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
+    return window.localStorage.getItem("miftah:faham:audio-enabled") !== "0";
+  });
   const [isPending, startTransition] = useTransition();
   const cards = useMemo(() => queueItems(snapshot), [snapshot]);
   const currentCard = cards[currentIndex] ?? null;
@@ -202,6 +208,47 @@ export function FahamWorkspace({
       isCorrect: selectedIndex === currentCard.mcq.correctIndex,
       selectedIndex,
     });
+  };
+
+  const handleToggleAudio = () => {
+    setAudioEnabled((prev) => {
+      const next = !prev;
+      window.localStorage.setItem("miftah:faham:audio-enabled", next ? "1" : "0");
+      return next;
+    });
+  };
+
+  const playWordAudio = (text: string, lang: "ar" | "ms") => {
+    if (!audioEnabled || !text) return;
+    
+    // Using a reliable public TTS for Arabic/Malay
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(
+      text
+    )}&tl=${lang}&client=tw-ob`;
+    
+    const audio = new Audio(url);
+    audio.play().catch(() => {
+      // Ignore autoplay blocks or failures
+    });
+  };
+
+  // Autoplay prompt when card changes
+  useEffect(() => {
+    if (currentCard && !answerState) {
+      playWordAudio(currentCard.mcq.promptPrimary, currentCard.mcq.promptLang);
+    }
+  }, [currentCard?.word.id, audioEnabled, directionMode, answerState]);
+
+  // Autoplay correct answer when selection result appears
+  useEffect(() => {
+    if (currentCard && answerState) {
+      const lang = currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms";
+      playWordAudio(currentCard.mcq.answerPrimary, lang);
+    }
+  }, [answerState, currentCard?.word.id, audioEnabled]);
+
+  const handleManualAudio = (lang: "ar" | "ms", text: string) => {
+    playWordAudio(text, lang);
   };
 
   const handleContinue = () => {
@@ -390,6 +437,36 @@ export function FahamWorkspace({
               >
                 {currentCard.kind === "due" ? "Ulang kaji" : "Kad baharu"}
               </span>
+
+              <button
+                type="button"
+                onClick={handleToggleAudio}
+                className={`group flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                  audioEnabled
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/30 dark:text-emerald-300"
+                    : "border-stone-200 bg-stone-50 text-stone-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400"
+                }`}
+              >
+                {audioEnabled ? (
+                  <>
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M11 5L6 9H2v6h4l5 4V5z" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Audio On
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M11 5L6 9H2v6h4l5 4V5z" strokeLinecap="round" strokeLinejoin="round" />
+                      <line x1="23" y1="9" x2="17" y2="15" strokeLinecap="round" strokeLinejoin="round" />
+                      <line x1="17" y1="9" x2="23" y2="15" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Audio Off
+                  </>
+                )}
+              </button>
+
               <span className="rounded-full border border-stone-200 bg-stone-100 px-3 py-1 text-xs text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300">
                 {currentCard.kind === "due"
                   ? dueLabel(snapshot.due.length)
@@ -435,11 +512,13 @@ export function FahamWorkspace({
               <p
                 dir={currentCard.mcq.promptDir}
                 lang={currentCard.mcq.promptLang}
-                className={`mt-10 text-center leading-tight text-stone-950 sm:text-6xl dark:text-stone-50 ${
+                onClick={() => handleManualAudio(currentCard.mcq.promptLang, currentCard.mcq.promptPrimary)}
+                className={`mt-10 cursor-pointer text-center leading-tight text-stone-950 transition hover:scale-[1.03] active:scale-95 sm:text-6xl dark:text-stone-50 ${
                   currentCard.mcq.promptLang === "ar"
                     ? "font-arabic text-5xl"
                     : "text-4xl font-semibold"
                 }`}
+                title="Tekan untuk dengar audio"
               >
                 {currentCard.mcq.promptPrimary}
               </p>
@@ -491,21 +570,7 @@ export function FahamWorkspace({
             </div>
           </div>
 
-          <div className="mt-5 rounded-[1.35rem] border border-stone-200/80 bg-stone-50/90 p-4 dark:border-stone-700 dark:bg-stone-950/60">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
-              Set pilihan ini
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {currentCard.mcq.whyThisSet.map((note) => (
-                <span
-                  key={note}
-                  className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs leading-relaxed text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
-                >
-                  {note}
-                </span>
-              ))}
-            </div>
-          </div>
+
 
           {answerState ? (
             <div
@@ -533,11 +598,16 @@ export function FahamWorkspace({
                     <span
                       dir={currentCard.mcq.direction === "bm_to_arab" ? "rtl" : "ltr"}
                       lang={currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms"}
-                      className={`${
+                      onClick={() => {
+                        const lang = currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms";
+                        handleManualAudio(lang, currentCard.mcq.answerPrimary);
+                      }}
+                      className={`cursor-pointer transition hover:opacity-75 ${
                         currentCard.mcq.direction === "bm_to_arab"
                           ? "font-arabic text-2xl"
-                          : "font-medium"
+                          : "font-medium decoration-stone-400/30 underline-offset-4 hover:underline"
                       }`}
+                      title="Tekan untuk dengar semula"
                     >
                       {currentCard.mcq.answerPrimary}
                     </span>
