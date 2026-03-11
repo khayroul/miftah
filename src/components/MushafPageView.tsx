@@ -786,9 +786,9 @@ export function MushafPageView({
         <p className="text-sm text-teal-700 dark:text-teal-300">
           Paparan 1/3 sedang dimatikan. Aktifkan semula untuk memaparkan butang Hafal.
         </p>
-      ) : mode === "read" && canSelectAyah ? (
+      ) : mode === "read" ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">
-          Klik perkataan untuk melihat makna ringkas. Leret kiri atau kanan untuk menukar halaman.
+          Paparan bersih (mod Baca). Leret kiri atau kanan untuk menukar halaman.
         </p>
       ) : mode === "hifz" ? (
         <p className="text-sm text-teal-700 dark:text-teal-300">
