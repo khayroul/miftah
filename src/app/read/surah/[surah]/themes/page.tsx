@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import { ModeNavigator } from "@/components/ModeNavigator";
+import { ThemeChunkSelect } from "@/components/ThemeChunkSelect";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   getWordByWordForAyahIds,
@@ -296,23 +297,16 @@ export default async function SurahThemeAppearancePage({
                 </span>
               )}
               
-              <form
-                method="get"
-                className="hidden md:flex flex-row items-center gap-1"
-              >
-                <select
-                  name="chunk"
-                  defaultValue={String(selectedChunkIndex)}
-                  onChange={(e) => e.target.form?.submit()}
-                  className="max-w-[12rem] h-10 truncate rounded-full border border-stone-200 bg-white px-3 pr-8 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 cursor-pointer"
-                >
-                  {chunks.map((chunk) => (
-                    <option key={chunk.chunk_index} value={chunk.chunk_index}>
-                      {chunk.chunk_index}. {chunkTitleBm(chunk)}
-                    </option>
-                  ))}
-                </select>
-              </form>
+              <div className="hidden md:flex flex-row items-center gap-1">
+                <ThemeChunkSelect
+                  surahNumber={surahNumber}
+                  selectedChunkIndex={selectedChunkIndex}
+                  chunks={chunks.map((chunk) => ({
+                    chunk_index: chunk.chunk_index,
+                    label: chunkTitleBm(chunk),
+                  }))}
+                />
+              </div>
               
               {nextThemeHref ? (
                 <Link

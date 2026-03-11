@@ -17,7 +17,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     const user = await getOptionalAuthUser();
     const userId = user?.id;
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      // Silently skip for unauthenticated users — exposure logging is non-critical
+      return NextResponse.json({ ok: false, reason: "unauthenticated" });
     }
 
     const result = await recordVocabExposureEvents(userId, body);

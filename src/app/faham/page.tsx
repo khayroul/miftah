@@ -7,11 +7,11 @@ import type { FahamQueueSnapshot } from "@/lib/faham/queue";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { buildFahamQueueSnapshot } from "@/lib/faham/queue";
 import { getReadJumpTargets } from "@/lib/readNavigation";
-import { requireAuthUser } from "@/lib/auth";
+import { getOptionalAuthUser } from "@/lib/auth";
 
 export default async function FahamPage() {
-  const user = await requireAuthUser("/faham");
-  const userId = user.id;
+  const user = await getOptionalAuthUser();
+  const userId = user?.id;
   const jumpTargets = await getReadJumpTargets();
   let setupMessage: string | null = null;
   let initialQueue: FahamQueueSnapshot = {
@@ -26,11 +26,93 @@ export default async function FahamPage() {
     },
   };
 
-  try {
-    initialQueue = await buildFahamQueueSnapshot(userId, {});
-  } catch {
-    setupMessage =
-      "Enjin Faham perlukan migration SQL baharu sebelum queue boleh dimuatkan. Jalankan SQL di Supabase editor dahulu.";
+  if (userId) {
+    try {
+      initialQueue = await buildFahamQueueSnapshot(userId, {});
+    } catch {
+      setupMessage =
+        "Enjin Faham perlukan migration SQL baharu sebelum queue boleh dimuatkan. Jalankan SQL di Supabase editor dahulu.";
+    }
+  } else {
+    setupMessage = "Akaun Diperlukan: Anda sedang menggunakan mod pratonton. Log masuk untuk menyimpan kemajuan anda.";
+    initialQueue.new = [
+      {
+        due: new Date().toISOString(),
+        kind: "new",
+        mcq: {
+          answerLabel: "Makna BM",
+          answerPrimary: "Dengan nama",
+          answerSecondary: null,
+          correctIndex: 0,
+          direction: "arab_to_bm",
+          options: [
+            { dir: "ltr", lang: "ms", value: "Dengan nama" },
+            { dir: "ltr", lang: "ms", value: "Segala puji" },
+            { dir: "ltr", lang: "ms", value: "Tuhan" },
+            { dir: "ltr", lang: "ms", value: "Raja" },
+          ],
+          promptDir: "rtl",
+          promptHint: "Pilih makna BM paling tepat untuk perkataan Arab ini.",
+          promptLabel: "Perkataan Arab",
+          promptLang: "ar",
+          promptPrimary: "بِسْمِ",
+          promptSecondary: "bis'mi",
+          whyThisSet: ["Contoh pratonton (Preview)"],
+        },
+        mistakeStreak: 0,
+        needsReinforcement: false,
+        progressId: -1,
+        reps: 0,
+        state: 0,
+        word: {
+          frequency: 500,
+          id: -1,
+          textSimple: "bis'mi",
+          textUthmani: "بِسْمِ",
+          translationBm: "Dengan nama",
+          translationEn: null,
+          transliteration: null,
+        },
+      },
+      {
+        due: new Date().toISOString(),
+        kind: "new",
+        mcq: {
+          answerLabel: "Makna BM",
+          answerPrimary: "Agama/Pembalasan",
+          answerSecondary: null,
+          correctIndex: 1,
+          direction: "arab_to_bm",
+          options: [
+            { dir: "ltr", lang: "ms", value: "Hari" },
+            { dir: "ltr", lang: "ms", value: "Agama/Pembalasan" },
+            { dir: "ltr", lang: "ms", value: "Jalan" },
+            { dir: "ltr", lang: "ms", value: "Tuhan" },
+          ],
+          promptDir: "rtl",
+          promptHint: "Pilih makna BM paling tepat untuk perkataan Arab ini.",
+          promptLabel: "Perkataan Arab",
+          promptLang: "ar",
+          promptPrimary: "ٱلدِّينِ",
+          promptSecondary: "al-dini",
+          whyThisSet: ["Contoh pratonton (Preview)"],
+        },
+        mistakeStreak: 0,
+        needsReinforcement: false,
+        progressId: -2,
+        reps: 0,
+        state: 0,
+        word: {
+          frequency: 300,
+          id: -2,
+          textSimple: "al-dini",
+          textUthmani: "ٱلدِّينِ",
+          translationBm: "Agama/Pembalasan",
+          translationEn: null,
+          transliteration: null,
+        },
+      }
+    ];
   }
 
   return (

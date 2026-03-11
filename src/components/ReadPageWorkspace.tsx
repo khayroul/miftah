@@ -81,21 +81,7 @@ export function ReadPageWorkspace({
     rememberLastReadPage(pageNumber);
   }, [pageNumber]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    const handleScroll = () => {
-      setAudioDockVisible(false);
-      controller.abort();
-    };
-
-    window.addEventListener("scroll", handleScroll, {
-      passive: true,
-      signal: controller.signal,
-    });
-    return () => {
-      controller.abort();
-    };
-  }, []);
+  // Scroll listener removed to allow audio dock to remain visible while scrolling
 
   const handleNavigatePrevPage = useCallback(() => {
     if (pageNumber <= 1) {
@@ -158,7 +144,7 @@ export function ReadPageWorkspace({
       {mushafHeader}
 
       {mode === "read" && (
-        <div className="flex w-full justify-end gap-3 px-1 mb-2">
+        <div className="flex w-full justify-between items-center px-1 mb-2">
           {pageNumber > 1 ? (
             <Link
               href={`/read/${pageNumber - 1}`}
@@ -175,7 +161,9 @@ export function ReadPageWorkspace({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
-          ) : null}
+          ) : (
+            <div className="w-9 h-9" />
+          )}
           {pageNumber < 604 ? (
             <Link
               href={`/read/${pageNumber + 1}`}
@@ -192,7 +180,9 @@ export function ReadPageWorkspace({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </Link>
-          ) : null}
+          ) : (
+            <div className="w-9 h-9" />
+          )}
         </div>
       )}
 

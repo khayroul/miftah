@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo } from "react";
+import type { ReactNode } from "react";
 import { saveReadMode, type ReadMode } from "@/lib/readMode";
 import { findMarkerForPage } from "@/lib/readNavigationUtils";
 import { useReadingProgressState } from "@/lib/useReadingProgressState";
@@ -14,6 +15,8 @@ interface ModeNavigatorProps {
     page: number;
     surah: number;
   }>;
+  leftAccessory?: ReactNode;
+  onModeClick?: (mode: ReadMode, e: React.MouseEvent) => void;
 }
 
 const MODE_ITEMS: Array<{
@@ -48,6 +51,8 @@ export function ModeNavigator({
   fallbackReadPage = 1,
   fallbackThemeSurahId = 1,
   surahTargets = [],
+  leftAccessory,
+  onModeClick,
 }: ModeNavigatorProps) {
   const readingState = useReadingProgressState();
 
@@ -70,6 +75,7 @@ export function ModeNavigator({
   return (
     <div className="flex w-full justify-center">
       <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-full border border-stone-200 bg-white/92 p-1.5 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
+        {leftAccessory}
         {MODE_ITEMS.map((item) => {
           const active = item.value === activeMode;
           return (
@@ -80,8 +86,12 @@ export function ModeNavigator({
                 readPage,
                 themeSurahId: derivedThemeSurahId,
               })}
-              onClick={() => {
-                saveReadMode(item.value);
+              onClick={(e) => {
+                if (onModeClick) {
+                  onModeClick(item.value, e);
+                } else {
+                  saveReadMode(item.value);
+                }
               }}
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
                 active
