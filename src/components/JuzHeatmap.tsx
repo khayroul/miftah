@@ -20,10 +20,11 @@ function juzColor(stat: JuzStat): string {
   return "bg-teal-600 text-white dark:bg-teal-500 dark:text-white";
 }
 
+const TOTAL_QURAN_AYAT = 6236;
+
 export function JuzHeatmap({ juzProgress }: JuzHeatmapProps) {
-  const totalAyat = juzProgress.reduce((sum, stat) => sum + stat.totalAyat, 0);
   const totalManzil = juzProgress.reduce((sum, stat) => sum + stat.manzilCount, 0);
-  const overallPct = totalAyat > 0 ? (totalManzil / totalAyat) * 100 : 0;
+  const overallPct = (totalManzil / TOTAL_QURAN_AYAT) * 100;
 
   return (
     <div>
@@ -38,7 +39,7 @@ export function JuzHeatmap({ juzProgress }: JuzHeatmapProps) {
           />
         </div>
         <p className="mt-1 text-[10px] text-stone-500 dark:text-stone-400">
-          {Math.round(overallPct)}% manzil ({totalManzil} / {totalAyat} ayat)
+          {Math.round(overallPct)}% manzil ({totalManzil} / {TOTAL_QURAN_AYAT} ayat)
         </p>
       </div>
       <div className="grid grid-cols-6 gap-1.5">
