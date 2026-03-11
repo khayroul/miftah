@@ -1,6 +1,10 @@
-const fs = require('fs');
-const path = require('path');
-const { createClient } = require('@supabase/supabase-js');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createClient } from '@supabase/supabase-js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -34,7 +38,7 @@ async function upload() {
       theme_bm: c.theme_bm
     }));
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('ayah_theme_chunks')
       .upsert(updates, { onConflict: 'id' });
 

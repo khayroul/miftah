@@ -277,9 +277,8 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
   const t = THEMES[theme] || THEMES.light;
   const juz = getJuz(pageNum);
   const pageSurahs = getPageSurahs(normalizedLayout);
-  const primarySurah =
-    getPageStartSurah(normalizedLayout) || pageSurahs[0] || 1;
-  const sm = surahMeta[primarySurah] || {};
+    // getPageStartSurah(normalizedLayout) || pageSurahs[0] || 1;
+  // const sm = surahMeta[primarySurah] || {};
 
   // Read font file as base64 for embedding
   const woff2Path = getWoff2Path(pageNum);
@@ -370,9 +369,53 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
       const words = (line.words || []).map(w => {
         const g = w.qpcV2 || '';
         const loc = w.location || '';
-        // QCF glyph may contain space (word + ayah marker), keep as single unit
+        const wordStr = w.word || '';
         const safeG = g.replace(/ /g, '\u00A0'); // non-breaking space
-        return `<span class="word" data-loc="${loc}">${safeG}</span>`;
+        
+        const hasHizb = wordStr.includes('۞');
+        const hasSajdah = wordStr.includes('۩');
+        const hasAyahNum = /[٠-٩]+$/.test(wordStr);
+        
+        const chars = Array.from(safeG);
+        let leftIdx = 0;
+        let rightIdx = chars.length - 1;
+        
+        let signsPrefix = '';
+        if (hasHizb && chars.length > 0) {
+          signsPrefix += `<span class="sign">${chars[leftIdx]}</span>`;
+          leftIdx++;
+          while (leftIdx <= rightIdx && chars[leftIdx] === '\u00A0') {
+            signsPrefix += `<span class="sign">${chars[leftIdx]}</span>`;
+            leftIdx++;
+          }
+        }
+        
+        let signsSuffix = '';
+        let trailingSignsCount = 0;
+        if (hasAyahNum) trailingSignsCount++;
+        if (hasSajdah) trailingSignsCount++;
+        
+        while (trailingSignsCount > 0 && rightIdx >= leftIdx) {
+          if (chars[rightIdx] === '\u00A0') {
+            signsSuffix = `<span class="sign">${chars[rightIdx]}</span>` + signsSuffix;
+            rightIdx--;
+          } else {
+            signsSuffix = `<span class="sign">${chars[rightIdx]}</span>` + signsSuffix;
+            rightIdx--;
+            trailingSignsCount--;
+          }
+        }
+        
+        // Exclude trailing padding from the hitbox
+        while (rightIdx >= leftIdx && chars[rightIdx] === '\u00A0') {
+          signsSuffix = `<span class="sign">${chars[rightIdx]}</span>` + signsSuffix;
+          rightIdx--;
+        }
+
+        const wordChars = chars.slice(leftIdx, rightIdx + 1).join('');
+        const wordHtml = wordChars.length > 0 ? `<span class="word" data-loc="${loc}">${wordChars}</span>` : '';
+        
+        return `<span class="word-group">${signsPrefix}${wordHtml}${signsSuffix}</span>`;
       });
       // Last line of surah: natural spacing (not stretched); others: justified
       const cls = isLast ? 'text-line last-line' : 'text-line';
@@ -524,7 +567,13 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
   }
 
   /* Individual word spans */
-  .word {
+  .word-group {
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: baseline;
+  }
+  .word, .sign {
     white-space: nowrap;
     flex-shrink: 0;
   }
@@ -647,13 +696,13 @@ async function renderPage(browser, pageNum, layout, surahMeta, outputDir, theme 
       let tries = 0;
       while (tries < 36) {
         const lineRect = line.getBoundingClientRect();
-        const words = Array.from(line.querySelectorAll(':scope > .word'));
-        if (!words.length) break;
+        const groups = Array.from(line.querySelectorAll(':scope > .word-group'));
+        if (!groups.length) break;
 
         let minX = Number.POSITIVE_INFINITY;
         let maxX = Number.NEGATIVE_INFINITY;
-        for (const word of words) {
-          const r = word.getBoundingClientRect();
+        for (const group of groups) {
+          const r = group.getBoundingClientRect();
           if (r.width <= 0) continue;
           minX = Math.min(minX, r.left);
           maxX = Math.max(maxX, r.right);
@@ -762,13 +811,13 @@ async function main() {
   const args = process.argv.slice(2);
   let pageArg = null;
   let pagesArg = null;
-  let goldenOnly = false;
+  // let goldenOnly = false;
   let theme = 'light';
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--page') pageArg = parseInt(args[++i]);
     if (args[i] === '--pages') pagesArg = args[++i];
-    if (args[i] === '--golden-only') goldenOnly = true;
+    // if (args[i] === '--golden-only') goldenOnly = true;
     if (args[i] === '--theme') theme = args[++i] || 'light';
   }
 
