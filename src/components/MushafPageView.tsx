@@ -654,7 +654,7 @@ export function MushafPageView({
           <>
             {canShowThumbnail ? (
               <Image
-                src={`/api/mushaf/page/${pageNumber}?variant=thumb`}
+                src={`/api/mushaf/page/${pageNumber}?variant=thumb&v=qcfv2`}
                 alt={`Thumbnail halaman mushaf ${pageNumber}`}
                 fill
                 unoptimized
@@ -667,7 +667,7 @@ export function MushafPageView({
             ) : null}
             {canShowFullImage ? (
               <Image
-                src={`/api/mushaf/page/${pageNumber}`}
+                src={`/api/mushaf/page/${pageNumber}?v=qcfv2`}
                 alt={`Halaman mushaf ${pageNumber}`}
                 fill
                 unoptimized
