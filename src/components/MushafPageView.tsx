@@ -276,7 +276,7 @@ export function MushafPageView({
     });
   const modeAllowsWordInteraction = mode === "faham" || mode === "read";
   const canInteract = modeAllowsWordInteraction && canInteractWhenReady;
-  const canSelectAyah = mode === "read" && canShowFullImage && fullImageReady;
+  const canSelectAyah = false; // Disabled by user request to prevent WBW conflict
   const wordTapPaddingX = Math.max(8, imageWidth * 0.004);
   const wordTapPaddingY = Math.max(8, imageHeight * 0.003);
   const ayahDetailsMap = useMemo(() => {
@@ -575,6 +575,7 @@ export function MushafPageView({
         onClick={(event) => {
           event.stopPropagation();
           setMarkMemorizedError(null);
+          setSelectedWord(null);
           setSelectedAyahKey((current) => (current === key ? null : key));
         }}
         className="absolute cursor-pointer bg-transparent hover:bg-sky-300/15 focus-visible:bg-sky-300/20 focus-visible:outline-none"
@@ -612,10 +613,12 @@ export function MushafPageView({
           title={word.location}
           onClick={(event) => {
             event.stopPropagation();
+            setSelectedAyahKey(null);
             setSelectedWord(word);
           }}
           onTouchStart={(event) => {
             event.stopPropagation();
+            setSelectedAyahKey(null);
             setSelectedWord(word);
           }}
           onTouchEnd={(event) => {
@@ -640,7 +643,12 @@ export function MushafPageView({
         style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        onClick={() => onCanvasTap?.()}
+        onClick={() => {
+          setSelectedAyahKey(null);
+          setSelectedWord(null);
+          setMarkMemorizedError(null);
+          onCanvasTap?.();
+        }}
       >
         {canShowAnyImage ? (
           <>
@@ -675,17 +683,7 @@ export function MushafPageView({
                 }}
               />
             ) : null}
-            {canSelectAyah ? (
-              <div
-                className="absolute inset-0 cursor-pointer"
-                onClick={() => {
-                  setSelectedAyahKey(null);
-                  setMarkMemorizedError(null);
-                }}
-              >
-                {ayahHitboxButtons}
-              </div>
-            ) : null}
+            {canSelectAyah ? ayahHitboxButtons : null}
             {!fullImageReady && canShowFullImage ? (
               <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-4">
                 <span className="rounded-full border border-stone-300 bg-white/90 px-3 py-1 text-xs text-stone-600 shadow-sm dark:border-stone-700 dark:bg-stone-900/90 dark:text-stone-300">
@@ -694,10 +692,7 @@ export function MushafPageView({
               </div>
             ) : null}
             {canInteract ? (
-              <div
-                className="absolute inset-0 cursor-pointer"
-                onClick={() => setSelectedWord(null)}
-              >
+              <>
                 {wordHitboxButtons}
                 {activeWord ? (
                   <div
@@ -731,7 +726,7 @@ export function MushafPageView({
                     </p>
                   </article>
                 ) : null}
-              </div>
+              </>
             ) : null}
             {hifzRevealContext && revealEnabled && revealMaskTop ? (
               <div

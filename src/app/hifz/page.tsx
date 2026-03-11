@@ -3,21 +3,76 @@ export const dynamic = "force-dynamic";
 import { ModeNavigator } from "@/components/ModeNavigator";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HifzWorkspace } from "@/components/HifzWorkspace";
-import { requireAuthUser } from "@/lib/auth";
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { getHifzStats, getJuzProgress } from "@/lib/hifz/stats";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 
-export default async function HifzPage() {
-  const user = await requireAuthUser("/hifz");
-  const userId = user.id;
+import { getOptionalAuthUser } from "@/lib/auth";
 
-  const [plan, stats, juzProgress, jumpTargets] = await Promise.all([
-    buildDailyPlanWithDetails(userId),
-    getHifzStats(userId),
-    getJuzProgress(userId),
-    getReadJumpTargets(),
-  ]);
+export default async function HifzPage() {
+  const user = await getOptionalAuthUser();
+  const userId = user?.id;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let plan: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let stats: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let juzProgress: any;
+  const jumpTargets = await getReadJumpTargets();
+
+  if (userId) {
+    [plan, stats, juzProgress] = await Promise.all([
+      buildDailyPlanWithDetails(userId),
+      getHifzStats(userId),
+      getJuzProgress(userId),
+    ]);
+  } else {
+    // Guest preview data
+    plan = {
+      sabqi: [],
+      sabak: [
+        {
+          progress: {
+            id: -1,
+            user_id: "preview",
+            ayah_id: 1,
+            state: 0,
+            reps: 0,
+            mistake_streak: 0,
+            needs_reinforcement: false,
+            due: new Date().toISOString(),
+            last_review: null,
+            stability: 0,
+            difficulty: 0,
+            elapsed_days: 0,
+            scheduled_days: 0,
+            hifz_status: "sabak",
+          },
+          ayah: {
+            id: 1,
+            surahId: 1,
+            ayahNumber: 1,
+            textUthmani: "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ",
+            displayBm: "Dengan nama Allah, Yang Maha Pemurah, lagi Maha Mengasihani.",
+            surahNameEn: "Al-Fatiha",
+            surahNameTranslit: "Al-Fatihah",
+          },
+        },
+      ],
+      manzil: [],
+    };
+    stats = { totalManzil: 0, dueTodayCount: 0, streak: 0 };
+    juzProgress = Array.from({ length: 30 }, (_, i) => ({
+      juz: i + 1,
+      totalAyat: 100,
+      manzilCount: 0,
+      sabqiCount: 0,
+      sabakCount: 0,
+      notStartedCount: 100,
+      manzilPct: 0,
+    }));
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -33,6 +88,12 @@ export default async function HifzPage() {
           activeMode="hifz"
           surahTargets={jumpTargets.surahs}
         />
+
+        {!userId && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center text-sm text-amber-900 shadow-sm dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+            <strong>Akaun Diperlukan:</strong> Anda sedang menggunakan mod pratonton. Sila log masuk untuk menyimpan profil memori dan kemajuan hafalan anda.
+          </div>
+        )}
 
         <HifzWorkspace plan={plan} stats={stats} juzProgress={juzProgress} />
       </main>
