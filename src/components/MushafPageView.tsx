@@ -558,6 +558,74 @@ export function MushafPageView({
     onNavigateNextPage?.();
   };
 
+  const ayahHitboxButtons = useMemo(() => {
+    return selectableAyahTargets.map(({ key, box, detail }) => (
+      <button
+        key={`ayah-${key}`}
+        type="button"
+        aria-label={`Ayat ${key}`}
+        title={detail?.label ?? key}
+        onClick={(event) => {
+          event.stopPropagation();
+          setMarkMemorizedError(null);
+          setSelectedAyahKey((current) => (current === key ? null : key));
+        }}
+        className="absolute cursor-pointer bg-transparent hover:bg-sky-300/15 focus-visible:bg-sky-300/20 focus-visible:outline-none"
+        style={{
+          left: percent(box.x, imageWidth),
+          top: percent(box.y, imageHeight),
+          width: percent(box.width, imageWidth),
+          height: percent(box.height, imageHeight),
+        }}
+      />
+    ));
+  }, [selectableAyahTargets, imageWidth, imageHeight]);
+
+  const wordHitboxButtons = useMemo(() => {
+    return words.map((word, index) => {
+      const tapBox = expandHitbox(
+        {
+          x: word.x,
+          y: word.y,
+          width: word.width,
+          height: word.height,
+        },
+        wordTapPaddingX,
+        wordTapPaddingY,
+        imageWidth,
+        imageHeight,
+      );
+
+      return (
+        <button
+          key={`${word.location}-${index}`}
+          type="button"
+          data-testid="word-hitbox"
+          aria-label={`Perkataan ${word.location}`}
+          title={word.location}
+          onClick={(event) => {
+            event.stopPropagation();
+            setSelectedWord(word);
+          }}
+          onTouchStart={(event) => {
+            event.stopPropagation();
+            setSelectedWord(word);
+          }}
+          onTouchEnd={(event) => {
+            event.stopPropagation();
+          }}
+          className="absolute cursor-pointer bg-transparent hover:bg-amber-300/25 focus-visible:bg-amber-300/30 focus-visible:outline-none"
+          style={{
+            left: percent(tapBox.x, imageWidth),
+            top: percent(tapBox.y, imageHeight),
+            width: percent(tapBox.width, imageWidth),
+            height: percent(tapBox.height, imageHeight),
+          }}
+        />
+      );
+    });
+  }, [words, wordTapPaddingX, wordTapPaddingY, imageWidth, imageHeight]);
+
   return (
     <section className="space-y-3">
       <div
@@ -608,26 +676,7 @@ export function MushafPageView({
                   setMarkMemorizedError(null);
                 }}
               >
-                {selectableAyahTargets.map(({ key, box, detail }) => (
-                  <button
-                    key={`ayah-${key}`}
-                    type="button"
-                    aria-label={`Ayat ${key}`}
-                    title={detail?.label ?? key}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setMarkMemorizedError(null);
-                      setSelectedAyahKey((current) => (current === key ? null : key));
-                    }}
-                    className="absolute cursor-pointer bg-transparent hover:bg-sky-300/15 focus-visible:bg-sky-300/20 focus-visible:outline-none"
-                    style={{
-                      left: percent(box.x, imageWidth),
-                      top: percent(box.y, imageHeight),
-                      width: percent(box.width, imageWidth),
-                      height: percent(box.height, imageHeight),
-                    }}
-                  />
-                ))}
+                {ayahHitboxButtons}
               </div>
             ) : null}
             {!fullImageReady && canShowFullImage ? (
@@ -642,48 +691,7 @@ export function MushafPageView({
                 className="absolute inset-0 cursor-pointer"
                 onClick={() => setSelectedWord(null)}
               >
-                {words.map((word, index) => {
-                  const tapBox = expandHitbox(
-                    {
-                      x: word.x,
-                      y: word.y,
-                      width: word.width,
-                      height: word.height,
-                    },
-                    wordTapPaddingX,
-                    wordTapPaddingY,
-                    imageWidth,
-                    imageHeight,
-                  );
-
-                  return (
-                    <button
-                      key={`${word.location}-${index}`}
-                      type="button"
-                      data-testid="word-hitbox"
-                      aria-label={`Perkataan ${word.location}`}
-                      title={word.location}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setSelectedWord(word);
-                      }}
-                      onTouchStart={(event) => {
-                        event.stopPropagation();
-                        setSelectedWord(word);
-                      }}
-                      onTouchEnd={(event) => {
-                        event.stopPropagation();
-                      }}
-                      className="absolute cursor-pointer bg-transparent hover:bg-amber-300/25 focus-visible:bg-amber-300/30 focus-visible:outline-none"
-                      style={{
-                        left: percent(tapBox.x, imageWidth),
-                        top: percent(tapBox.y, imageHeight),
-                        width: percent(tapBox.width, imageWidth),
-                        height: percent(tapBox.height, imageHeight),
-                      }}
-                    />
-                  );
-                })}
+                {wordHitboxButtons}
                 {activeWord ? (
                   <div
                     className="pointer-events-none absolute border-2 border-amber-500"

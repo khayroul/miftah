@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 
-import Link from "next/link";
 import { FahamWorkspace } from "@/components/FahamWorkspace";
 import { ModeNavigator } from "@/components/ModeNavigator";
 import { TOP_FAHAM_WORD_LIMIT } from "@/lib/faham/config";

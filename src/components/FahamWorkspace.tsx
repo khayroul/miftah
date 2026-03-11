@@ -605,20 +605,6 @@ export function FahamWorkspace({
             Teruskan membaca atau buka tema dahulu supaya enjin ini mempunyai
             pendedahan yang cukup untuk membuka kad baharu.
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/read/1"
-              className="rounded-xl bg-teal-900 px-5 py-2.5 text-sm font-medium text-teal-50 transition hover:bg-teal-800 dark:bg-teal-700 dark:hover:bg-teal-600"
-            >
-              Buka Baca
-            </Link>
-            <Link
-              href="/read/surah/2/themes"
-              className="rounded-xl border border-stone-300 bg-white px-5 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
-            >
-              Buka Tema
-            </Link>
-          </div>
         </section>
       )}
     </div>

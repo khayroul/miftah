@@ -229,12 +229,6 @@ export function HifzWorkspace({ plan, stats, juzProgress }: HifzWorkspaceProps) 
         >
           Kembali ke Ringkasan
         </button>
-        <Link
-          href="/read/1"
-          className="rounded-xl bg-teal-900 px-5 py-2.5 text-sm font-medium text-teal-50 transition hover:bg-teal-800 dark:bg-teal-700 dark:hover:bg-teal-600"
-        >
-          Buka Baca
-        </Link>
       </div>
     </div>
   );

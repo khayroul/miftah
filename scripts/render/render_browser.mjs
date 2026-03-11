@@ -793,15 +793,45 @@ async function main() {
     } else if (pagesArg) {
       const [s, e] = pagesArg.split('-').map(Number);
       const end = e || s;
-      let count = 0;
+      
+      const tasks = [];
       for (let p = s; p <= end; p++) {
         const layout = loadLayout(p);
-        if (!layout) continue;
-        await renderPage(browser, p, layout, surahMeta, join(ASSETS_DIR), theme);
-        count++;
-        if (count % 20 === 0) console.log(`  Rendered ${count} pages (current: ${p})`);
+        if (layout) tasks.push({ page: p, layout });
       }
-      console.log(`Done: ${count} pages`);
+
+      const CONCURRENCY = 6;
+      let currentIndex = 0;
+      let completed = 0;
+
+      const workers = Array.from({ length: CONCURRENCY }, async () => {
+        // give each worker a separate browser context to avoid racing
+        const context = await browser.newContext({
+          viewport: { width: PAGE_WIDTH, height: PAGE_HEIGHT },
+          deviceScaleFactor: 2
+        });
+
+        while (true) {
+          const idx = currentIndex++;
+          if (idx >= tasks.length) break;
+          const { page, layout } = tasks[idx];
+          try {
+            // pass context in place of generic browser
+            await renderPage(context, page, layout, surahMeta, join(ASSETS_DIR), theme);
+            completed++;
+            if (completed % 20 === 0 || completed === tasks.length) {
+              console.log(`  Rendered ${completed} pages (current: ${page})`);
+            }
+          } catch (err) {
+            console.error(`Failed on page ${page}:`, err);
+          }
+        }
+        await context.close();
+      });
+
+      console.log(`Starting ${tasks.length} pages across ${CONCURRENCY} workers...`);
+      await Promise.all(workers);
+      console.log(`Done: ${completed} pages`);
     } else {
       // Default: render page 6 as test
       const layout = loadLayout(6);

@@ -51,27 +51,35 @@
   .header {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
-    padding: 18px 28px 12px;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 18px 10px;
     border-bottom: 1px solid #dddcd8;
     direction: ltr;
   }
   .header .juz {
-    font-size: 18px;
+    font-size: 17px;
     color: #555;
     font-family: -apple-system, 'Helvetica Neue', sans-serif;
     font-weight: 400;
+    white-space: nowrap;
   }
   .header .surah-name {
-    font-size: 18px;
+    font-size: 15px;
     color: #555;
     font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    flex: 1 1 auto;
+    min-width: 0;
     direction: rtl;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-weight: 400;
   }
   .header .surah-ar {
     font-family: 'Geeza Pro', 'Traditional Arabic', serif;
-    font-size: 24px;
+    font-size: 20px;
     color: #333;
     font-weight: 700;
   }
@@ -82,13 +90,13 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 20px 28px 0;
+    padding: 16px 26px 0;
   }
 
   /* Short pages (<15 elements): use fixed gap matching 15-line spacing, content at top */
   .text-area.short-page {
     justify-content: flex-start;
-    gap: 41px;
+    gap: 36px;
   }
 
   /* Opening pages (1-2): circular/oval text arrangement — centered, larger font */
@@ -116,15 +124,17 @@
     justify-content: space-between;
     align-items: baseline;
     font-family: 'QCF2_P604', serif;
-    font-size: 40px;
+    font-size: 37.2px;
     line-height: 1.0;
-    color: #111;
+    color: #1b1b1b;
+    padding: 0 2px;
+    font-weight: 400;
   }
 
   /* Last line of a surah — natural word spacing, not stretched edge-to-edge */
   .text-line.last-line {
     justify-content: center;
-    gap: 18px;
+    gap: 14px;
   }
 
   /* Individual word spans */
@@ -138,9 +148,11 @@
     direction: rtl;
     text-align: center;
     font-family: 'QCF2_P604', serif;
-    font-size: 40px;
+    font-size: 37.2px;
     line-height: 1.0;
-    color: #111;
+    color: #1b1b1b;
+    padding: 0 4px;
+    font-weight: 400;
   }
 
   .basmala .qcf {
@@ -158,13 +170,24 @@
   .surah-banner .surah-frame {
     display: block;
     position: relative;
-    width: 90%;
-    height: 68px;
+    width: 92%;
+    height: 62px;
     margin: 0 auto;
     background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2ODAgODAiIGZpbGw9Im5vbmUiPgogIDwhLS0gT3V0ZXIgZnJhbWUgLS0+CiAgPHJlY3QgeD0iMiIgeT0iMiIgd2lkdGg9IjY3NiIgaGVpZ2h0PSI3NiIgcng9IjQiIHN0cm9rZT0iIzRhNDAzMCIgc3Ryb2tlLXdpZHRoPSIxLjUiIGZpbGw9Im5vbmUiLz4KICA8cmVjdCB4PSI2IiB5PSI2IiB3aWR0aD0iNjY4IiBoZWlnaHQ9IjY4IiByeD0iMyIgc3Ryb2tlPSIjNGE0MDMwIiBzdHJva2Utd2lkdGg9IjAuOCIgZmlsbD0ibm9uZSIvPgoKICA8IS0tIExlZnQgZGVjb3JhdGl2ZSBlbmRjYXAgLS0+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTAsMTApIj4KICAgIDwhLS0gQXJhYmVzcXVlIGNvcm5lciBsZWZ0IC0tPgogICAgPHBhdGggZD0iTTAsMzAgQzAsMTUgOCw0IDIwLDIgQzEyLDggOCwxOCA4LDMwIEM4LDQyIDEyLDUyIDIwLDU4IEM4LDU2IDAsNDUgMCwzMFoiIGZpbGw9IiM0YTQwMzAiIG9wYWNpdHk9IjAuNyIvPgogICAgPHBhdGggZD0iTTIwLDIgQzI4LDAgMzYsNCA0MCwxMiBDMzYsOCAzMCw2IDI0LDggQzE4LDEwIDE0LDE2IDEyLDI0IEMxMCwxNiAxNCw2IDIwLDJaIiBmaWxsPSIjNGE0MDMwIiBvcGFjaXR5PSIwLjUiLz4KICAgIDxwYXRoIGQ9Ik0yMCw1OCBDMjgsNjAgMzYsNTYgNDAsNDggQzM2LDUyIDMwLDU0IDI0LDUyIEMxOCw1MCAxNCw0NCAxMiwzNiBDMTAsNDQgMTQsNTQgMjAsNThaIiBmaWxsPSIjNGE0MDMwIiBvcGFjaXR5PSIwLjUiLz4KICAgIDwhLS0gU2Nyb2xsIGVsZW1lbnQgLS0+CiAgICA8ZWxsaXBzZSBjeD0iNDQiIGN5PSIzMCIgcng9IjE0IiByeT0iMjAiIHN0cm9rZT0iIzRhNDAzMCIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIi8+CiAgICA8ZWxsaXBzZSBjeD0iNDQiIGN5PSIzMCIgcng9IjgiIHJ5PSIxNCIgc3Ryb2tlPSIjNGE0MDMwIiBzdHJva2Utd2lkdGg9IjAuNiIgZmlsbD0ibm9uZSIvPgogIDwvZz4KCiAgPCEtLSBSaWdodCBkZWNvcmF0aXZlIGVuZGNhcCAobWlycm9yZWQpIC0tPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDY3MCw3MCkgc2NhbGUoLTEsLTEpIj4KICAgIDxwYXRoIGQ9Ik0wLDMwIEMwLDE1IDgsNCAyMCwyIEMxMiw4IDgsMTggOCwzMCBDOCw0MiAxMiw1MiAyMCw1OCBDOCw1NiAwLDQ1IDAsMzBaIiBmaWxsPSIjNGE0MDMwIiBvcGFjaXR5PSIwLjciLz4KICAgIDxwYXRoIGQ9Ik0yMCwyIEMyOCwwIDM2LDQgNDAsMTIgQzM2LDggMzAsNiAyNCw4IEMxOCwxMCAxNCwxNiAxMiwyNCBDMTAsMTYgMTQsNiAyMCwyWiIgZmlsbD0iIzRhNDAzMCIgb3BhY2l0eT0iMC41Ii8+CiAgICA8cGF0aCBkPSJNMjAsNTggQzI4LDYwIDM2LDU2IDQwLDQ4IEMzNiw1MiAzMCw1NCAyNCw1MiBDMTgsNTAgMTQsNDQgMTIsMzYgQzEwLDQ0IDE0LDU0IDIwLDU4WiIgZmlsbD0iIzRhNDAzMCIgb3BhY2l0eT0iMC41Ii8+CiAgICA8ZWxsaXBzZSBjeD0iNDQiIGN5PSIzMCIgcng9IjE0IiByeT0iMjAiIHN0cm9rZT0iIzRhNDAzMCIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIi8+CiAgICA8ZWxsaXBzZSBjeD0iNDQiIGN5PSIzMCIgcng9IjgiIHJ5PSIxNCIgc3Ryb2tlPSIjNGE0MDMwIiBzdHJva2Utd2lkdGg9IjAuNiIgZmlsbD0ibm9uZSIvPgogIDwvZz4KCiAgPCEtLSBDZW50ZXIgY2FydG91Y2hlIGZvciBzdXJhaCBuYW1lIC0tPgogIDxyZWN0IHg9IjIwMCIgeT0iMTAiIHdpZHRoPSIyODAiIGhlaWdodD0iNjAiIHJ4PSIzMCIgc3Ryb2tlPSIjNGE0MDMwIiBzdHJva2Utd2lkdGg9IjEuMiIgZmlsbD0ibm9uZSIvPgogIDxyZWN0IHg9IjIwNCIgeT0iMTQiIHdpZHRoPSIyNzIiIGhlaWdodD0iNTIiIHJ4PSIyNiIgc3Ryb2tlPSIjNGE0MDMwIiBzdHJva2Utd2lkdGg9IjAuNiIgZmlsbD0ibm9uZSIvPgoKICA8IS0tIERlY29yYXRpdmUgbGluZSBmaWxscyBiZXR3ZWVuIGVuZGNhcHMgYW5kIGNhcnRvdWNoZSAtLT4KICA8bGluZSB4MT0iNzIiIHkxPSIyNSIgeDI9IjE5NiIgeTI9IjI1IiBzdHJva2U9IiM0YTQwMzAiIHN0cm9rZS13aWR0aD0iMC42IiBvcGFjaXR5PSIwLjQiLz4KICA8bGluZSB4MT0iNzIiIHkxPSI0MCIgeDI9IjE5NiIgeTI9IjQwIiBzdHJva2U9IiM0YTQwMzAiIHN0cm9rZS13aWR0aD0iMC44IiBvcGFjaXR5PSIwLjYiLz4KICA8bGluZSB4MT0iNzIiIHkxPSI1NSIgeDI9IjE5NiIgeTI9IjU1IiBzdHJva2U9IiM0YTQwMzAiIHN0cm9rZS13aWR0aD0iMC42IiBvcGFjaXR5PSIwLjQiLz4KCiAgPGxpbmUgeDE9IjQ4NCIgeTE9IjI1IiB4Mj0iNjA4IiB5Mj0iMjUiIHN0cm9rZT0iIzRhNDAzMCIgc3Ryb2tlLXdpZHRoPSIwLjYiIG9wYWNpdHk9IjAuNCIvPgogIDxsaW5lIHgxPSI0ODQiIHkxPSI0MCIgeDI9IjYwOCIgeTI9IjQwIiBzdHJva2U9IiM0YTQwMzAiIHN0cm9rZS13aWR0aD0iMC44IiBvcGFjaXR5PSIwLjYiLz4KICA8bGluZSB4MT0iNDg0IiB5MT0iNTUiIHgyPSI2MDgiIHkyPSI1NSIgc3Ryb2tlPSIjNGE0MDMwIiBzdHJva2Utd2lkdGg9IjAuNiIgb3BhY2l0eT0iMC40Ii8+CgogIDwhLS0gU21hbGwgZGlhbW9uZCBhY2NlbnRzIC0tPgogIDxwb2x5Z29uIHBvaW50cz0iMTM0LDM3IDE0MCwzMCAxNDYsMzcgMTQwLDQ0IiBmaWxsPSIjNGE0MDMwIiBvcGFjaXR5PSIwLjMiLz4KICA8cG9seWdvbiBwb2ludHM9IjUzNCwzNyA1NDAsMzAgNTQ2LDM3IDU0MCw0NCIgZmlsbD0iIzRhNDAzMCIgb3BhY2l0eT0iMC4zIi8+Cjwvc3ZnPgo=);
     background-repeat: no-repeat;
     background-size: 100% 100%;
     border: none;
+  }
+  .surah-banner .surah-frame::before {
+    content: '';
+    position: absolute;
+    left: 28%;
+    right: 28%;
+    top: 8px;
+    bottom: 8px;
+    border: 1.5px solid #1f1f1f;
+    border-radius: 999px;
+    background: #f5f4f0;
   }
   .surah-banner .surah-title {
     position: absolute;
@@ -173,11 +196,15 @@
     align-items: center;
     justify-content: center;
     font-family: 'Geeza Pro', 'Traditional Arabic', serif;
-    font-size: 46px;
-    color: #111;
+    font-size: 40px;
+    color: #1b1b1b;
     font-weight: 700;
     line-height: 1;
     transform: translateY(-1px);
+    z-index: 1;
+  }
+  .surah-banner.trailing {
+    margin: 8px 0 0;
   }
 
   /* Page number */
@@ -213,6 +240,7 @@
       <div class="text-line"><span class="word" data-loc="114:5:2">ﲁ</span> <span class="word" data-loc="114:5:3">ﲂ</span> <span class="word" data-loc="114:5:4">ﲃ</span> <span class="word" data-loc="114:5:5">ﲄ ﲅ</span></div>
       <div class="text-line last-line"><span class="word" data-loc="114:6:1">ﲆ</span> <span class="word" data-loc="114:6:2">ﲇ</span> <span class="word" data-loc="114:6:3">ﲈ ﲉ</span></div>
     </div>
+    
     <div class="page-number">604</div>
   </div>
 </body>

@@ -113,7 +113,15 @@ export function ReadJumpControls({
             Surah
             <select
               value={surahInput}
-              onChange={(event) => setSurahInput(event.target.value)}
+              onChange={(event) => {
+                const value = event.target.value;
+                setSurahInput(value);
+                const surahId = parseBoundedIntegerInput(value, 1, 114);
+                if (surahId) {
+                  const targetPage = getMarkerPageById(surahMarkers, surahId);
+                  if (targetPage) jumpToPage(targetPage);
+                }
+              }}
               className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 outline-none focus:border-stone-500 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
             >
               {surahOptions.map((option) => (
@@ -123,12 +131,6 @@ export function ReadJumpControls({
               ))}
             </select>
           </label>
-          <button
-            type="submit"
-            className="rounded-lg border border-stone-300 px-2.5 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
-          >
-            Buka
-          </button>
         </form>
 
         <form
@@ -154,7 +156,15 @@ export function ReadJumpControls({
             Juz
             <select
               value={juzInput}
-              onChange={(event) => setJuzInput(event.target.value)}
+              onChange={(event) => {
+                const value = event.target.value;
+                setJuzInput(value);
+                const juzNumber = parseBoundedIntegerInput(value, 1, 30);
+                if (juzNumber) {
+                  const targetPage = getMarkerPageById(juzMarkers, juzNumber);
+                  if (targetPage) jumpToPage(targetPage);
+                }
+              }}
               className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 outline-none focus:border-stone-500 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
             >
               {juzOptions.map((option) => (
@@ -164,12 +174,6 @@ export function ReadJumpControls({
               ))}
             </select>
           </label>
-          <button
-            type="submit"
-            className="rounded-lg border border-stone-300 px-2.5 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
-          >
-            Buka
-          </button>
         </form>
       </div>
 

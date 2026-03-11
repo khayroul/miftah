@@ -271,29 +271,28 @@ export default async function SurahThemeAppearancePage({
             {surahNumber > 1 ? (
               <Link
                 href={`/read/surah/${surahNumber - 1}/themes`}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-900 transition dark:hover:bg-stone-800 dark:hover:text-stone-100"
-                title="Surah Sebelum"
+                className="flex h-10 items-center justify-center rounded-full px-3 sm:px-4 text-xs sm:text-sm font-medium text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100 whitespace-nowrap"
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
+                &laquo; Surah
               </Link>
             ) : (
-              <span className="h-10 w-10 shrink-0 opacity-0" />
+              <span className="flex h-10 items-center justify-center px-3 sm:px-4 text-xs sm:text-sm font-medium opacity-0 whitespace-nowrap">
+                &laquo; Surah
+              </span>
             )}
 
             {/* Central Controls */}
-            <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 border-x border-stone-200/60 dark:border-stone-700/60 px-1 sm:px-2">
               {previousThemeHref ? (
                 <Link
                   href={previousThemeHref}
                   className="flex h-10 items-center justify-center rounded-full border border-stone-200 bg-stone-50 px-4 text-xs sm:text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700 whitespace-nowrap"
                 >
-                  &larr; Sebelum
+                  &larr; Tema
                 </Link>
               ) : (
                 <span className="flex h-10 items-center justify-center rounded-full border border-stone-100 bg-stone-50/50 px-4 text-xs sm:text-sm font-medium text-stone-400 dark:border-stone-800 dark:bg-stone-800/30 dark:text-stone-600 whitespace-nowrap">
-                  &larr; Sebelum
+                  &larr; Tema
                 </span>
               )}
               
@@ -304,6 +303,7 @@ export default async function SurahThemeAppearancePage({
                 <select
                   name="chunk"
                   defaultValue={String(selectedChunkIndex)}
+                  onChange={(e) => e.target.form?.submit()}
                   className="max-w-[12rem] h-10 truncate rounded-full border border-stone-200 bg-white px-3 pr-8 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 cursor-pointer"
                 >
                   {chunks.map((chunk) => (
@@ -312,12 +312,6 @@ export default async function SurahThemeAppearancePage({
                     </option>
                   ))}
                 </select>
-                <button
-                  type="submit"
-                  className="flex h-10 items-center justify-center rounded-full bg-stone-200 px-3 text-xs font-semibold text-stone-700 transition hover:bg-stone-300 dark:bg-stone-700 dark:text-stone-200 dark:hover:bg-stone-600"
-                >
-                  Buka
-                </button>
               </form>
               
               {nextThemeHref ? (
@@ -325,7 +319,7 @@ export default async function SurahThemeAppearancePage({
                   href={nextThemeHref}
                   className="flex h-10 items-center justify-center rounded-full bg-stone-900 px-4 text-xs sm:text-sm font-medium text-white shadow-sm transition hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white whitespace-nowrap"
                 >
-                  Seterusnya &rarr;
+                  Tema &rarr;
                 </Link>
               ) : (
                 <span className="flex h-10 items-center justify-center rounded-full bg-stone-100 px-4 text-xs sm:text-sm font-medium text-stone-400 dark:bg-stone-800 dark:text-stone-600 whitespace-nowrap">
@@ -338,15 +332,14 @@ export default async function SurahThemeAppearancePage({
             {surahNumber < 114 ? (
               <Link
                 href={`/read/surah/${surahNumber + 1}/themes`}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-900 transition dark:hover:bg-stone-800 dark:hover:text-stone-100"
-                title="Surah Seterusnya"
+                className="flex h-10 items-center justify-center rounded-full px-3 sm:px-4 text-xs sm:text-sm font-medium text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100 whitespace-nowrap"
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
+                Surah &raquo;
               </Link>
             ) : (
-              <span className="h-10 w-10 shrink-0 opacity-0" />
+              <span className="flex h-10 items-center justify-center px-3 sm:px-4 text-xs sm:text-sm font-medium opacity-0 whitespace-nowrap">
+                Surah &raquo;
+              </span>
             )}
           </nav>
         </div>
