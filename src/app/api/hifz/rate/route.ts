@@ -8,7 +8,7 @@ import {
   demoteManzilToSabqi,
 } from "@/lib/hifz/study-progress";
 import { logReview } from "@/lib/hifz/review-log";
-import { createSupabaseServerClient } from "@/lib/supabase-auth-server";
+import { getOptionalAuthUser } from "@/lib/auth";
 import type { FsrsRating, FsrsState } from "@/types/database";
 import type { Grade } from "@/lib/fsrs";
 
@@ -37,14 +37,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   try {
-    const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const user = await getOptionalAuthUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

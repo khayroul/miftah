@@ -82,13 +82,18 @@ export function ReadPageWorkspace({
   }, [pageNumber]);
 
   useEffect(() => {
+    const controller = new AbortController();
     const handleScroll = () => {
       setAudioDockVisible(false);
+      controller.abort();
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, {
+      passive: true,
+      signal: controller.signal,
+    });
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      controller.abort();
     };
   }, []);
 

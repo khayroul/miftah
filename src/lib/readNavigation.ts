@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { supabase } from "./supabase";
 
 interface AyahNavigationRow {
@@ -222,13 +222,17 @@ async function buildTargetsFromLocalSeed(): Promise<ReadJumpTargets> {
   };
 }
 
-export const getReadJumpTargets = cache(async (): Promise<ReadJumpTargets> => {
-  try {
-    return await buildTargetsFromSupabase();
-  } catch {
-    return buildTargetsFromLocalSeed();
-  }
-});
+export const getReadJumpTargets = unstable_cache(
+  async (): Promise<ReadJumpTargets> => {
+    try {
+      return await buildTargetsFromSupabase();
+    } catch {
+      return buildTargetsFromLocalSeed();
+    }
+  },
+  ["read-jump-targets"],
+  { revalidate: 3600, tags: ["read-navigation"] },
+);
 
 export function parseReadPage(value: string): number | null {
   const parsed = Number.parseInt(value, 10);

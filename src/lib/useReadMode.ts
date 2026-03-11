@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import {
   defaultReadMode,
   loadReadMode,
@@ -15,10 +15,12 @@ export function useReadMode(): {
 } {
   const mode = useSyncExternalStore(subscribeReadMode, loadReadMode, defaultReadMode);
 
+  const setMode = useCallback((nextMode: ReadMode) => {
+    saveReadMode(nextMode);
+  }, []);
+
   return {
     mode,
-    setMode: (nextMode: ReadMode) => {
-      saveReadMode(nextMode);
-    },
+    setMode,
   };
 }

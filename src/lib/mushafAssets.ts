@@ -172,13 +172,10 @@ async function findExistingFile(
   dirs: string[],
   filename: string,
 ): Promise<string | null> {
-  for (const dir of dirs) {
-    const candidate = path.join(dir, filename);
-    if (await fileExists(candidate)) {
-      return candidate;
-    }
-  }
-  return null;
+  const candidates = dirs.map((dir) => path.join(dir, filename));
+  const results = await Promise.all(candidates.map(fileExists));
+  const foundIndex = results.indexOf(true);
+  return foundIndex >= 0 ? candidates[foundIndex] : null;
 }
 
 function toFiniteNumber(value: unknown): number | null {

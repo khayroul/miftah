@@ -159,22 +159,26 @@ export async function getWordByWordForAyahIds(
   const grouped: Record<number, AyahWordByWordEntry[]> = {};
   const batches = chunkValues(uniqueAyahIds, 40);
 
-  for (const ayahIdBatch of batches) {
-    const { data, error } = await supabase
-      .from("word_occurrences")
-      .select("ayah_id, position, words(text_uthmani, translation_bm, translation_en)")
-      .in("ayah_id", ayahIdBatch)
-      .order("ayah_id")
-      .order("position");
+  const batchResults = await Promise.all(
+    batches.map(async (ayahIdBatch) => {
+      const { data, error } = await supabase
+        .from("word_occurrences")
+        .select("ayah_id, position, words(text_uthmani, translation_bm, translation_en)")
+        .in("ayah_id", ayahIdBatch)
+        .order("ayah_id")
+        .order("position");
 
-    if (error) {
-      throw error;
-    }
+      if (error) {
+        throw error;
+      }
 
-    const normalizedRows = normalizeWordOccurrenceWbwRows(
-      (data ?? []) as WordOccurrenceWbwRow[],
-    );
+      return normalizeWordOccurrenceWbwRows(
+        (data ?? []) as WordOccurrenceWbwRow[],
+      );
+    }),
+  );
 
+  for (const normalizedRows of batchResults) {
     for (const entry of normalizedRows) {
       const current = grouped[entry.ayah_id] ?? [];
       current.push(entry);

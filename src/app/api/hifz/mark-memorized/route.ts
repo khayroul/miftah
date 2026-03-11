@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrCreateProgress, updateHifzStatus } from "@/lib/hifz/study-progress";
-import { createSupabaseServerClient } from "@/lib/supabase-auth-server";
+import { getOptionalAuthUser } from "@/lib/auth";
 import type { HifzStatus } from "@/types/database";
 
 interface MarkMemorizedBody {
@@ -35,27 +35,22 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   try {
-    const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const user = await getOptionalAuthUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userId = user.id;
     const now = new Date();
-    for (const ayahId of ayahIds) {
-      const progress = await getOrCreateProgress(userId, ayahId);
-      const currentStatus: HifzStatus = progress.hifz_status;
-      if (currentStatus !== "sabqi" && currentStatus !== "manzil") {
-        await updateHifzStatus(progress.id, "sabqi", now);
-      }
-    }
+    await Promise.all(
+      ayahIds.map(async (ayahId) => {
+        const progress = await getOrCreateProgress(userId, ayahId);
+        const currentStatus: HifzStatus = progress.hifz_status;
+        if (currentStatus !== "sabqi" && currentStatus !== "manzil") {
+          await updateHifzStatus(progress.id, "sabqi", now);
+        }
+      }),
+    );
 
     return NextResponse.json({
       ok: true,
