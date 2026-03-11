@@ -14,11 +14,16 @@ coverage/
 # Ignore heavy data folders, keep only lightweight runtime fallbacks
 data/*
 !data/theme_chunk_overrides.json
+!data/bm_wbw_complete.json
+!data/qul/
 !data/seed/
 
 data/seed/*
 !data/seed/ayat.json
 !data/seed/surahs.json
+
+data/qul/*
+!data/qul/english-wbw-translation.json
 
 # Dev/ops artifacts
 scripts/

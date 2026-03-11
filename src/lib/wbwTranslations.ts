@@ -4,8 +4,8 @@ import type { MushafWordHitbox, MushafWordTranslationMap } from "@/types/mushaf"
 
 type RawTranslationMap = Record<string, unknown>;
 
-const BM_WBW_PATH = path.resolve("data/bm_wbw_complete.json");
-const EN_WBW_PATH = path.resolve("data/qul/english-wbw-translation.json");
+const BM_WBW_PATH = path.join(process.cwd(), "data", "bm_wbw_complete.json");
+const EN_WBW_PATH = path.join(process.cwd(), "data", "qul", "english-wbw-translation.json");
 
 let bmCachePromise: Promise<Record<string, string>> | null = null;
 let enCachePromise: Promise<Record<string, string>> | null = null;
