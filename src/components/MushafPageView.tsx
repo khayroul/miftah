@@ -778,7 +778,7 @@ export function MushafPageView({
         </p>
       ) : mode === "read" && canSelectAyah ? (
         <p className="text-sm text-stone-600 dark:text-stone-300">
-          Ketik ayat untuk melihat terjemahan BM. Leret kiri atau kanan untuk menukar halaman.
+          Klik perkataan untuk melihat makna ringkas. Leret kiri atau kanan untuk menukar halaman.
         </p>
       ) : mode === "hifz" ? (
         <p className="text-sm text-teal-700 dark:text-teal-300">
