@@ -97,10 +97,8 @@ export default async function ReadPage({ params }: ReadPageProps) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
       <header className="flex flex-col gap-6">
-        <nav className="flex items-center justify-between text-sm text-stone-500 dark:text-stone-400">
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-          </div>
+        <nav className="flex w-full items-center justify-end">
+          <ThemeToggle />
         </nav>
       </header>
 
