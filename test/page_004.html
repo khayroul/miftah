@@ -32,7 +32,7 @@
   body {
     width: 768px;
     height: 1280px;
-    background: #f5f4f0;
+    background: #0d1b2a;
     overflow: hidden;
     font-family: sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -49,24 +49,26 @@
 
   /* Header bar */
   .header {
-    display: flex;
+    display: none;
     justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    padding: 16px 18px 10px;
-    border-bottom: 1px solid #dddcd8;
-    direction: ltr;
+    align-items: flex-end;
+    padding: 0 10px 10px;
+    border-bottom: 2px solid #c8d6e5;
+    margin: 10px 10px 15px;
+    font-size: 20px;
+    color: #c8d6e5;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
   }
   .header .juz {
     font-size: 17px;
-    color: #555;
+    color: #6b8299;
     font-family: -apple-system, 'Helvetica Neue', sans-serif;
     font-weight: 400;
     white-space: nowrap;
   }
   .header .surah-name {
     font-size: 15px;
-    color: #555;
+    color: #6b8299;
     font-family: -apple-system, 'Helvetica Neue', sans-serif;
     flex: 1 1 auto;
     min-width: 0;
@@ -80,7 +82,7 @@
   .header .surah-ar {
     font-family: 'Geeza Pro', 'Traditional Arabic', serif;
     font-size: 20px;
-    color: #333;
+    color: #a0b8d0;
     font-weight: 700;
   }
 
@@ -126,7 +128,7 @@
     font-family: 'QCF2_P004', serif;
     font-size: 37.2px;
     line-height: 1.0;
-    color: #1b1b1b;
+    color: #c8d6e5;
     padding: 0 2px;
     font-weight: 400;
   }
@@ -138,7 +140,13 @@
   }
 
   /* Individual word spans */
-  .word {
+  .word-group {
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: baseline;
+  }
+  .word, .sign {
     white-space: nowrap;
     flex-shrink: 0;
   }
@@ -150,7 +158,7 @@
     font-family: 'QCF2_P004', serif;
     font-size: 37.2px;
     line-height: 1.0;
-    color: #1b1b1b;
+    color: #c8d6e5;
     padding: 0 4px;
     font-weight: 400;
   }
@@ -165,29 +173,19 @@
     text-align: center;
     direction: ltr;
     padding: 0;
-    margin: 2px 0;
+    margin: 12px 0 4px;
   }
   .surah-banner .surah-frame {
     display: block;
     position: relative;
-    width: 92%;
-    height: 62px;
+    width: 94%;
+    height: 72px;
     margin: 0 auto;
     background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2ODAgODAiIGZpbGw9Im5vbmUiPgogIDwhLS0gT3V0ZXIgZnJhbWUgLS0+CiAgPHJlY3QgeD0iMiIgeT0iMiIgd2lkdGg9IjY3NiIgaGVpZ2h0PSI3NiIgcng9IjQiIHN0cm9rZT0iIzRhNDAzMCIgc3Ryb2tlLXdpZHRoPSIxLjUiIGZpbGw9Im5vbmUiLz4KICA8cmVjdCB4PSI2IiB5PSI2IiB3aWR0aD0iNjY4IiBoZWlnaHQ9IjY4IiByeD0iMyIgc3Ryb2tlPSIjNGE0MDMwIiBzdHJva2Utd2lkdGg9IjAuOCIgZmlsbD0ibm9uZSIvPgoKICA8IS0tIExlZnQgZGVjb3JhdGl2ZSBlbmRjYXAgLS0+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTAsMTApIj4KICAgIDwhLS0gQXJhYmVzcXVlIGNvcm5lciBsZWZ0IC0tPgogICAgPHBhdGggZD0iTTAsMzAgQzAsMTUgOCw0IDIwLDIgQzEyLDggOCwxOCA4LDMwIEM4LDQyIDEyLDUyIDIwLDU4IEM4LDU2IDAsNDUgMCwzMFoiIGZpbGw9IiM0YTQwMzAiIG9wYWNpdHk9IjAuNyIvPgogICAgPHBhdGggZD0iTTIwLDIgQzI4LDAgMzYsNCA0MCwxMiBDMzYsOCAzMCw2IDI0LDggQzE4LDEwIDE0LDE2IDEyLDI0IEMxMCwxNiAxNCw2IDIwLDJaIiBmaWxsPSIjNGE0MDMwIiBvcGFjaXR5PSIwLjUiLz4KICAgIDxwYXRoIGQ9Ik0yMCw1OCBDMjgsNjAgMzYsNTYgNDAsNDggQzM2LDUyIDMwLDU0IDI0LDUyIEMxOCw1MCAxNCw0NCAxMiwzNiBDMTAsNDQgMTQsNTQgMjAsNThaIiBmaWxsPSIjNGE0MDMwIiBvcGFjaXR5PSIwLjUiLz4KICAgIDwhLS0gU2Nyb2xsIGVsZW1lbnQgLS0+CiAgICA8ZWxsaXBzZSBjeD0iNDQiIGN5PSIzMCIgcng9IjE0IiByeT0iMjAiIHN0cm9rZT0iIzRhNDAzMCIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIi8+CiAgICA8ZWxsaXBzZSBjeD0iNDQiIGN5PSIzMCIgcng9IjgiIHJ5PSIxNCIgc3Ryb2tlPSIjNGE0MDMwIiBzdHJva2Utd2lkdGg9IjAuNiIgZmlsbD0ibm9uZSIvPgogIDwvZz4KCiAgPCEtLSBSaWdodCBkZWNvcmF0aXZlIGVuZGNhcCAobWlycm9yZWQpIC0tPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDY3MCw3MCkgc2NhbGUoLTEsLTEpIj4KICAgIDxwYXRoIGQ9Ik0wLDMwIEMwLDE1IDgsNCAyMCwyIEMxMiw4IDgsMTggOCwzMCBDOCw0MiAxMiw1MiAyMCw1OCBDOCw1NiAwLDQ1IDAsMzBaIiBmaWxsPSIjNGE0MDMwIiBvcGFjaXR5PSIwLjciLz4KICAgIDxwYXRoIGQ9Ik0yMCwyIEMyOCwwIDM2LDQgNDAsMTIgQzM2LDggMzAsNiAyNCw4IEMxOCwxMCAxNCwxNiAxMiwyNCBDMTAsMTYgMTQsNiAyMCwyWiIgZmlsbD0iIzRhNDAzMCIgb3BhY2l0eT0iMC41Ii8+CiAgICA8cGF0aCBkPSJNMjAsNTggQzI4LDYwIDM2LDU2IDQwLDQ4IEMzNiw1MiAzMCw1NCAyNCw1MiBDMTgsNTAgMTQsNDQgMTIsMzYgQzEwLDQ0IDE0LDU0IDIwLDU4WiIgZmlsbD0iIzRhNDAzMCIgb3BhY2l0eT0iMC41Ii8+CiAgICA8ZWxsaXBzZSBjeD0iNDQiIGN5PSIzMCIgcng9IjE0IiByeT0iMjAiIHN0cm9rZT0iIzRhNDAzMCIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIi8+CiAgICA8ZWxsaXBzZSBjeD0iNDQiIGN5PSIzMCIgcng9IjgiIHJ5PSIxNCIgc3Ryb2tlPSIjNGE0MDMwIiBzdHJva2Utd2lkdGg9IjAuNiIgZmlsbD0ibm9uZSIvPgogIDwvZz4KCiAgPCEtLSBDZW50ZXIgY2FydG91Y2hlIGZvciBzdXJhaCBuYW1lIC0tPgogIDxyZWN0IHg9IjIwMCIgeT0iMTAiIHdpZHRoPSIyODAiIGhlaWdodD0iNjAiIHJ4PSIzMCIgc3Ryb2tlPSIjNGE0MDMwIiBzdHJva2Utd2lkdGg9IjEuMiIgZmlsbD0ibm9uZSIvPgogIDxyZWN0IHg9IjIwNCIgeT0iMTQiIHdpZHRoPSIyNzIiIGhlaWdodD0iNTIiIHJ4PSIyNiIgc3Ryb2tlPSIjNGE0MDMwIiBzdHJva2Utd2lkdGg9IjAuNiIgZmlsbD0ibm9uZSIvPgoKICA8IS0tIERlY29yYXRpdmUgbGluZSBmaWxscyBiZXR3ZWVuIGVuZGNhcHMgYW5kIGNhcnRvdWNoZSAtLT4KICA8bGluZSB4MT0iNzIiIHkxPSIyNSIgeDI9IjE5NiIgeTI9IjI1IiBzdHJva2U9IiM0YTQwMzAiIHN0cm9rZS13aWR0aD0iMC42IiBvcGFjaXR5PSIwLjQiLz4KICA8bGluZSB4MT0iNzIiIHkxPSI0MCIgeDI9IjE5NiIgeTI9IjQwIiBzdHJva2U9IiM0YTQwMzAiIHN0cm9rZS13aWR0aD0iMC44IiBvcGFjaXR5PSIwLjYiLz4KICA8bGluZSB4MT0iNzIiIHkxPSI1NSIgeDI9IjE5NiIgeTI9IjU1IiBzdHJva2U9IiM0YTQwMzAiIHN0cm9rZS13aWR0aD0iMC42IiBvcGFjaXR5PSIwLjQiLz4KCiAgPGxpbmUgeDE9IjQ4NCIgeTE9IjI1IiB4Mj0iNjA4IiB5Mj0iMjUiIHN0cm9rZT0iIzRhNDAzMCIgc3Ryb2tlLXdpZHRoPSIwLjYiIG9wYWNpdHk9IjAuNCIvPgogIDxsaW5lIHgxPSI0ODQiIHkxPSI0MCIgeDI9IjYwOCIgeTI9IjQwIiBzdHJva2U9IiM0YTQwMzAiIHN0cm9rZS13aWR0aD0iMC44IiBvcGFjaXR5PSIwLjYiLz4KICA8bGluZSB4MT0iNDg0IiB5MT0iNTUiIHgyPSI2MDgiIHkyPSI1NSIgc3Ryb2tlPSIjNGE0MDMwIiBzdHJva2Utd2lkdGg9IjAuNiIgb3BhY2l0eT0iMC40Ii8+CgogIDwhLS0gU21hbGwgZGlhbW9uZCBhY2NlbnRzIC0tPgogIDxwb2x5Z29uIHBvaW50cz0iMTM0LDM3IDE0MCwzMCAxNDYsMzcgMTQwLDQ0IiBmaWxsPSIjNGE0MDMwIiBvcGFjaXR5PSIwLjMiLz4KICA8cG9seWdvbiBwb2ludHM9IjUzNCwzNyA1NDAsMzAgNTQ2LDM3IDU0MCw0NCIgZmlsbD0iIzRhNDAzMCIgb3BhY2l0eT0iMC4zIi8+Cjwvc3ZnPgo=);
     background-repeat: no-repeat;
     background-size: 100% 100%;
-    border: none;
-  }
-  .surah-banner .surah-frame::before {
-    content: '';
-    position: absolute;
-    left: 28%;
-    right: 28%;
-    top: 8px;
-    bottom: 8px;
-    border: 1.5px solid #1f1f1f;
-    border-radius: 999px;
-    background: #f5f4f0;
+    /* In dark mode, invert the frame to make it light */
+    filter: invert(1) brightness(1.2);
   }
   .surah-banner .surah-title {
     position: absolute;
@@ -195,16 +193,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Geeza Pro', 'Traditional Arabic', serif;
-    font-size: 40px;
-    color: #1b1b1b;
-    font-weight: 700;
+    font-family: 'surah_names', serif;
+    font-size: 52px;
+    color: #c8d6e5;
+    font-weight: normal;
     line-height: 1;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     z-index: 1;
+    /* Counter-invert the text if the parent is inverted */
+    filter: invert(1) brightness(0.8);
   }
   .surah-banner.trailing {
-    margin: 8px 0 0;
+    margin: 20px 0 0;
   }
 
   /* Page number */
@@ -212,7 +212,7 @@
     text-align: center;
     padding: 6px 0 14px;
     font-size: 18px;
-    color: #888;
+    color: #4a6580;
     font-family: -apple-system, 'Helvetica Neue', sans-serif;
   }
 </style>
@@ -224,21 +224,21 @@
       <span class="surah-name"><span class="surah-ar">البقرة</span> Al-Baqara</span>
     </div>
     <div class="text-area">
-      <div class="text-line"><span class="word" data-loc="2:17:1">ﱁ</span> <span class="word" data-loc="2:17:2">ﱂ</span> <span class="word" data-loc="2:17:3">ﱃ</span> <span class="word" data-loc="2:17:4">ﱄ</span> <span class="word" data-loc="2:17:5">ﱅ</span> <span class="word" data-loc="2:17:6">ﱆ</span> <span class="word" data-loc="2:17:7">ﱇ</span> <span class="word" data-loc="2:17:8">ﱈ</span> <span class="word" data-loc="2:17:9">ﱉ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:17:10">ﱊ</span> <span class="word" data-loc="2:17:11">ﱋ</span> <span class="word" data-loc="2:17:12">ﱌ</span> <span class="word" data-loc="2:17:13">ﱍ</span> <span class="word" data-loc="2:17:14">ﱎ</span> <span class="word" data-loc="2:17:15">ﱏ</span> <span class="word" data-loc="2:17:16">ﱐ</span> <span class="word" data-loc="2:17:17">ﱑ ﱒ</span> <span class="word" data-loc="2:18:1">ﱓ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:18:2">ﱔ</span> <span class="word" data-loc="2:18:3">ﱕ</span> <span class="word" data-loc="2:18:4">ﱖ</span> <span class="word" data-loc="2:18:5">ﱗ</span> <span class="word" data-loc="2:18:6">ﱘ ﱙ</span> <span class="word" data-loc="2:19:1">ﱚ</span> <span class="word" data-loc="2:19:2">ﱛ</span> <span class="word" data-loc="2:19:3">ﱜ</span> <span class="word" data-loc="2:19:4">ﱝ</span> <span class="word" data-loc="2:19:5">ﱞ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:19:6">ﱟ</span> <span class="word" data-loc="2:19:7">ﱠ</span> <span class="word" data-loc="2:19:8">ﱡ</span> <span class="word" data-loc="2:19:9">ﱢ</span> <span class="word" data-loc="2:19:10">ﱣ</span> <span class="word" data-loc="2:19:11">ﱤ</span> <span class="word" data-loc="2:19:12">ﱥ</span> <span class="word" data-loc="2:19:13">ﱦ</span> <span class="word" data-loc="2:19:14">ﱧ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:19:15">ﱨ</span> <span class="word" data-loc="2:19:16">ﱩﱪ</span> <span class="word" data-loc="2:19:17">ﱫ</span> <span class="word" data-loc="2:19:18">ﱬ</span> <span class="word" data-loc="2:19:19">ﱭ ﱮ</span> <span class="word" data-loc="2:20:1">ﱯ</span> <span class="word" data-loc="2:20:2">ﱰ</span> <span class="word" data-loc="2:20:3">ﱱ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:20:4">ﱲﱳ</span> <span class="word" data-loc="2:20:5">ﱴ</span> <span class="word" data-loc="2:20:6">ﱵ</span> <span class="word" data-loc="2:20:7">ﱶ</span> <span class="word" data-loc="2:20:8">ﱷ</span> <span class="word" data-loc="2:20:9">ﱸ</span> <span class="word" data-loc="2:20:10">ﱹ</span> <span class="word" data-loc="2:20:11">ﱺ</span> <span class="word" data-loc="2:20:12">ﱻ</span> <span class="word" data-loc="2:20:13">ﱼﱽ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:20:14">ﱾ</span> <span class="word" data-loc="2:20:15">ﱿ</span> <span class="word" data-loc="2:20:16">ﲀ</span> <span class="word" data-loc="2:20:17">ﲁ</span> <span class="word" data-loc="2:20:18">ﲂ</span> <span class="word" data-loc="2:20:19">ﲃﲄ</span> <span class="word" data-loc="2:20:20">ﲅ</span> <span class="word" data-loc="2:20:21">ﲆ</span> <span class="word" data-loc="2:20:22">ﲇ</span> <span class="word" data-loc="2:20:23">ﲈ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:20:24">ﲉ</span> <span class="word" data-loc="2:20:25">ﲊ ﲋ</span> <span class="word" data-loc="2:21:1">ﲌ</span> <span class="word" data-loc="2:21:2">ﲍ</span> <span class="word" data-loc="2:21:3">ﲎ</span> <span class="word" data-loc="2:21:4">ﲏ</span> <span class="word" data-loc="2:21:5">ﲐ</span> <span class="word" data-loc="2:21:6">ﲑ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:21:7">ﲒ</span> <span class="word" data-loc="2:21:8">ﲓ</span> <span class="word" data-loc="2:21:9">ﲔ</span> <span class="word" data-loc="2:21:10">ﲕ</span> <span class="word" data-loc="2:21:11">ﲖ ﲗ</span> <span class="word" data-loc="2:22:1">ﲘ</span> <span class="word" data-loc="2:22:2">ﲙ</span> <span class="word" data-loc="2:22:3">ﲚ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:22:4">ﲛ</span> <span class="word" data-loc="2:22:5">ﲜ</span> <span class="word" data-loc="2:22:6">ﲝ</span> <span class="word" data-loc="2:22:7">ﲞ</span> <span class="word" data-loc="2:22:8">ﲟ</span> <span class="word" data-loc="2:22:9">ﲠ</span> <span class="word" data-loc="2:22:10">ﲡ</span> <span class="word" data-loc="2:22:11">ﲢ</span> <span class="word" data-loc="2:22:12">ﲣ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:22:13">ﲤ</span> <span class="word" data-loc="2:22:14">ﲥ</span> <span class="word" data-loc="2:22:15">ﲦ</span> <span class="word" data-loc="2:22:16">ﲧ</span> <span class="word" data-loc="2:22:17">ﲨﲩ</span> <span class="word" data-loc="2:22:18">ﲪ</span> <span class="word" data-loc="2:22:19">ﲫ</span> <span class="word" data-loc="2:22:20">ﲬ</span> <span class="word" data-loc="2:22:21">ﲭ</span> <span class="word" data-loc="2:22:22">ﲮ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:22:23">ﲯ ﲰ</span> <span class="word" data-loc="2:23:1">ﲱ</span> <span class="word" data-loc="2:23:2">ﲲ</span> <span class="word" data-loc="2:23:3">ﲳ</span> <span class="word" data-loc="2:23:4">ﲴ</span> <span class="word" data-loc="2:23:5">ﲵ</span> <span class="word" data-loc="2:23:6">ﲶ</span> <span class="word" data-loc="2:23:7">ﲷ</span> <span class="word" data-loc="2:23:8">ﲸ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:23:9">ﲹ</span> <span class="word" data-loc="2:23:10">ﲺ</span> <span class="word" data-loc="2:23:11">ﲻ</span> <span class="word" data-loc="2:23:12">ﲼ</span> <span class="word" data-loc="2:23:13">ﲽ</span> <span class="word" data-loc="2:23:14">ﲾ</span> <span class="word" data-loc="2:23:15">ﲿ</span> <span class="word" data-loc="2:23:16">ﳀ</span> <span class="word" data-loc="2:23:17">ﳁ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:23:18">ﳂ</span> <span class="word" data-loc="2:23:19">ﳃ</span> <span class="word" data-loc="2:23:20">ﳄ ﳅ</span> <span class="word" data-loc="2:24:1">ﳆ</span> <span class="word" data-loc="2:24:2">ﳇ</span> <span class="word" data-loc="2:24:3">ﳈ</span> <span class="word" data-loc="2:24:4">ﳉ</span> <span class="word" data-loc="2:24:5">ﳊ</span> <span class="word" data-loc="2:24:6">ﳋ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:24:7">ﳌ</span> <span class="word" data-loc="2:24:8">ﳍ</span> <span class="word" data-loc="2:24:9">ﳎ</span> <span class="word" data-loc="2:24:10">ﳏ</span> <span class="word" data-loc="2:24:11">ﳐﳑ</span> <span class="word" data-loc="2:24:12">ﳒ</span> <span class="word" data-loc="2:24:13">ﳓ ﳔ</span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:17:1">ﱁ</span></span> <span class="word-group"><span class="word" data-loc="2:17:2">ﱂ</span></span> <span class="word-group"><span class="word" data-loc="2:17:3">ﱃ</span></span> <span class="word-group"><span class="word" data-loc="2:17:4">ﱄ</span></span> <span class="word-group"><span class="word" data-loc="2:17:5">ﱅ</span></span> <span class="word-group"><span class="word" data-loc="2:17:6">ﱆ</span></span> <span class="word-group"><span class="word" data-loc="2:17:7">ﱇ</span></span> <span class="word-group"><span class="word" data-loc="2:17:8">ﱈ</span></span> <span class="word-group"><span class="word" data-loc="2:17:9">ﱉ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:17:10">ﱊ</span></span> <span class="word-group"><span class="word" data-loc="2:17:11">ﱋ</span></span> <span class="word-group"><span class="word" data-loc="2:17:12">ﱌ</span></span> <span class="word-group"><span class="word" data-loc="2:17:13">ﱍ</span></span> <span class="word-group"><span class="word" data-loc="2:17:14">ﱎ</span></span> <span class="word-group"><span class="word" data-loc="2:17:15">ﱏ</span></span> <span class="word-group"><span class="word" data-loc="2:17:16">ﱐ</span></span> <span class="word-group"><span class="word" data-loc="2:17:17">ﱑ</span><span class="sign"> </span><span class="sign">ﱒ</span></span> <span class="word-group"><span class="word" data-loc="2:18:1">ﱓ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:18:2">ﱔ</span></span> <span class="word-group"><span class="word" data-loc="2:18:3">ﱕ</span></span> <span class="word-group"><span class="word" data-loc="2:18:4">ﱖ</span></span> <span class="word-group"><span class="word" data-loc="2:18:5">ﱗ</span></span> <span class="word-group"><span class="word" data-loc="2:18:6">ﱘ</span><span class="sign"> </span><span class="sign">ﱙ</span></span> <span class="word-group"><span class="word" data-loc="2:19:1">ﱚ</span></span> <span class="word-group"><span class="word" data-loc="2:19:2">ﱛ</span></span> <span class="word-group"><span class="word" data-loc="2:19:3">ﱜ</span></span> <span class="word-group"><span class="word" data-loc="2:19:4">ﱝ</span></span> <span class="word-group"><span class="word" data-loc="2:19:5">ﱞ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:19:6">ﱟ</span></span> <span class="word-group"><span class="word" data-loc="2:19:7">ﱠ</span></span> <span class="word-group"><span class="word" data-loc="2:19:8">ﱡ</span></span> <span class="word-group"><span class="word" data-loc="2:19:9">ﱢ</span></span> <span class="word-group"><span class="word" data-loc="2:19:10">ﱣ</span></span> <span class="word-group"><span class="word" data-loc="2:19:11">ﱤ</span></span> <span class="word-group"><span class="word" data-loc="2:19:12">ﱥ</span></span> <span class="word-group"><span class="word" data-loc="2:19:13">ﱦ</span></span> <span class="word-group"><span class="word" data-loc="2:19:14">ﱧ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:19:15">ﱨ</span></span> <span class="word-group"><span class="word" data-loc="2:19:16">ﱩﱪ</span></span> <span class="word-group"><span class="word" data-loc="2:19:17">ﱫ</span></span> <span class="word-group"><span class="word" data-loc="2:19:18">ﱬ</span></span> <span class="word-group"><span class="word" data-loc="2:19:19">ﱭ</span><span class="sign"> </span><span class="sign">ﱮ</span></span> <span class="word-group"><span class="word" data-loc="2:20:1">ﱯ</span></span> <span class="word-group"><span class="word" data-loc="2:20:2">ﱰ</span></span> <span class="word-group"><span class="word" data-loc="2:20:3">ﱱ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:20:4">ﱲﱳ</span></span> <span class="word-group"><span class="word" data-loc="2:20:5">ﱴ</span></span> <span class="word-group"><span class="word" data-loc="2:20:6">ﱵ</span></span> <span class="word-group"><span class="word" data-loc="2:20:7">ﱶ</span></span> <span class="word-group"><span class="word" data-loc="2:20:8">ﱷ</span></span> <span class="word-group"><span class="word" data-loc="2:20:9">ﱸ</span></span> <span class="word-group"><span class="word" data-loc="2:20:10">ﱹ</span></span> <span class="word-group"><span class="word" data-loc="2:20:11">ﱺ</span></span> <span class="word-group"><span class="word" data-loc="2:20:12">ﱻ</span></span> <span class="word-group"><span class="word" data-loc="2:20:13">ﱼﱽ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:20:14">ﱾ</span></span> <span class="word-group"><span class="word" data-loc="2:20:15">ﱿ</span></span> <span class="word-group"><span class="word" data-loc="2:20:16">ﲀ</span></span> <span class="word-group"><span class="word" data-loc="2:20:17">ﲁ</span></span> <span class="word-group"><span class="word" data-loc="2:20:18">ﲂ</span></span> <span class="word-group"><span class="word" data-loc="2:20:19">ﲃﲄ</span></span> <span class="word-group"><span class="word" data-loc="2:20:20">ﲅ</span></span> <span class="word-group"><span class="word" data-loc="2:20:21">ﲆ</span></span> <span class="word-group"><span class="word" data-loc="2:20:22">ﲇ</span></span> <span class="word-group"><span class="word" data-loc="2:20:23">ﲈ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:20:24">ﲉ</span></span> <span class="word-group"><span class="word" data-loc="2:20:25">ﲊ</span><span class="sign"> </span><span class="sign">ﲋ</span></span> <span class="word-group"><span class="word" data-loc="2:21:1">ﲌ</span></span> <span class="word-group"><span class="word" data-loc="2:21:2">ﲍ</span></span> <span class="word-group"><span class="word" data-loc="2:21:3">ﲎ</span></span> <span class="word-group"><span class="word" data-loc="2:21:4">ﲏ</span></span> <span class="word-group"><span class="word" data-loc="2:21:5">ﲐ</span></span> <span class="word-group"><span class="word" data-loc="2:21:6">ﲑ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:21:7">ﲒ</span></span> <span class="word-group"><span class="word" data-loc="2:21:8">ﲓ</span></span> <span class="word-group"><span class="word" data-loc="2:21:9">ﲔ</span></span> <span class="word-group"><span class="word" data-loc="2:21:10">ﲕ</span></span> <span class="word-group"><span class="word" data-loc="2:21:11">ﲖ</span><span class="sign"> </span><span class="sign">ﲗ</span></span> <span class="word-group"><span class="word" data-loc="2:22:1">ﲘ</span></span> <span class="word-group"><span class="word" data-loc="2:22:2">ﲙ</span></span> <span class="word-group"><span class="word" data-loc="2:22:3">ﲚ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:22:4">ﲛ</span></span> <span class="word-group"><span class="word" data-loc="2:22:5">ﲜ</span></span> <span class="word-group"><span class="word" data-loc="2:22:6">ﲝ</span></span> <span class="word-group"><span class="word" data-loc="2:22:7">ﲞ</span></span> <span class="word-group"><span class="word" data-loc="2:22:8">ﲟ</span></span> <span class="word-group"><span class="word" data-loc="2:22:9">ﲠ</span></span> <span class="word-group"><span class="word" data-loc="2:22:10">ﲡ</span></span> <span class="word-group"><span class="word" data-loc="2:22:11">ﲢ</span></span> <span class="word-group"><span class="word" data-loc="2:22:12">ﲣ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:22:13">ﲤ</span></span> <span class="word-group"><span class="word" data-loc="2:22:14">ﲥ</span></span> <span class="word-group"><span class="word" data-loc="2:22:15">ﲦ</span></span> <span class="word-group"><span class="word" data-loc="2:22:16">ﲧ</span></span> <span class="word-group"><span class="word" data-loc="2:22:17">ﲨﲩ</span></span> <span class="word-group"><span class="word" data-loc="2:22:18">ﲪ</span></span> <span class="word-group"><span class="word" data-loc="2:22:19">ﲫ</span></span> <span class="word-group"><span class="word" data-loc="2:22:20">ﲬ</span></span> <span class="word-group"><span class="word" data-loc="2:22:21">ﲭ</span></span> <span class="word-group"><span class="word" data-loc="2:22:22">ﲮ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:22:23">ﲯ</span><span class="sign"> </span><span class="sign">ﲰ</span></span> <span class="word-group"><span class="word" data-loc="2:23:1">ﲱ</span></span> <span class="word-group"><span class="word" data-loc="2:23:2">ﲲ</span></span> <span class="word-group"><span class="word" data-loc="2:23:3">ﲳ</span></span> <span class="word-group"><span class="word" data-loc="2:23:4">ﲴ</span></span> <span class="word-group"><span class="word" data-loc="2:23:5">ﲵ</span></span> <span class="word-group"><span class="word" data-loc="2:23:6">ﲶ</span></span> <span class="word-group"><span class="word" data-loc="2:23:7">ﲷ</span></span> <span class="word-group"><span class="word" data-loc="2:23:8">ﲸ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:23:9">ﲹ</span></span> <span class="word-group"><span class="word" data-loc="2:23:10">ﲺ</span></span> <span class="word-group"><span class="word" data-loc="2:23:11">ﲻ</span></span> <span class="word-group"><span class="word" data-loc="2:23:12">ﲼ</span></span> <span class="word-group"><span class="word" data-loc="2:23:13">ﲽ</span></span> <span class="word-group"><span class="word" data-loc="2:23:14">ﲾ</span></span> <span class="word-group"><span class="word" data-loc="2:23:15">ﲿ</span></span> <span class="word-group"><span class="word" data-loc="2:23:16">ﳀ</span></span> <span class="word-group"><span class="word" data-loc="2:23:17">ﳁ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:23:18">ﳂ</span></span> <span class="word-group"><span class="word" data-loc="2:23:19">ﳃ</span></span> <span class="word-group"><span class="word" data-loc="2:23:20">ﳄ</span><span class="sign"> </span><span class="sign">ﳅ</span></span> <span class="word-group"><span class="word" data-loc="2:24:1">ﳆ</span></span> <span class="word-group"><span class="word" data-loc="2:24:2">ﳇ</span></span> <span class="word-group"><span class="word" data-loc="2:24:3">ﳈ</span></span> <span class="word-group"><span class="word" data-loc="2:24:4">ﳉ</span></span> <span class="word-group"><span class="word" data-loc="2:24:5">ﳊ</span></span> <span class="word-group"><span class="word" data-loc="2:24:6">ﳋ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:24:7">ﳌ</span></span> <span class="word-group"><span class="word" data-loc="2:24:8">ﳍ</span></span> <span class="word-group"><span class="word" data-loc="2:24:9">ﳎ</span></span> <span class="word-group"><span class="word" data-loc="2:24:10">ﳏ</span></span> <span class="word-group"><span class="word" data-loc="2:24:11">ﳐﳑ</span></span> <span class="word-group"><span class="word" data-loc="2:24:12">ﳒ</span></span> <span class="word-group"><span class="word" data-loc="2:24:13">ﳓ</span><span class="sign"> </span><span class="sign">ﳔ</span></span></div>
     </div>
     
     <div class="page-number">4</div>

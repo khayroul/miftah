@@ -220,11 +220,11 @@ export function FahamWorkspace({
     });
   };
 
-  const playWordAudio = (text: string, lang: "ar" | "ms") => {
+  const playWordAudio = (text: string, lang: "ar" | "ms", explicitUrl?: string | null) => {
     if (!audioEnabled || !text) return;
     
-    // Using our backend proxy to bypass ORB/CORS
-    const url = `/api/audio/tts?text=${encodeURIComponent(text)}&lang=${lang}`;
+    // Explicit URL (like Quran.com WBW) takes precedence
+    const url = explicitUrl || `/api/audio/tts?text=${encodeURIComponent(text)}&lang=${lang}&voice=male`;
     
     const audio = new Audio(url);
     audio.play().catch(() => {
@@ -268,7 +268,7 @@ export function FahamWorkspace({
   // Autoplay prompt when card changes
   useEffect(() => {
     if (currentCard && !answerState) {
-      playWordAudio(currentCard.mcq.promptPrimary, currentCard.mcq.promptLang);
+      playWordAudio(currentCard.mcq.promptPrimary, currentCard.mcq.promptLang, currentCard.mcq.promptAudioUrl);
     }
   }, [currentCard?.word.id, audioEnabled, directionMode, answerState]);
 
@@ -276,7 +276,7 @@ export function FahamWorkspace({
   useEffect(() => {
     if (currentCard && answerState) {
       const lang = currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms";
-      playWordAudio(currentCard.mcq.answerPrimary, lang);
+      playWordAudio(currentCard.mcq.answerPrimary, lang, currentCard.mcq.answerAudioUrl);
       
       // Auto-continue to next card after 3 seconds if correct
       if (answerState.isCorrect) {
@@ -288,8 +288,8 @@ export function FahamWorkspace({
     }
   }, [answerState, currentCard?.word.id, audioEnabled]);
 
-  const handleManualAudio = (lang: "ar" | "ms", text: string) => {
-    playWordAudio(text, lang);
+  const handleManualAudio = (lang: "ar" | "ms", text: string, explicitUrl?: string | null) => {
+    playWordAudio(text, lang, explicitUrl);
   };
 
   const handleContinue = () => {
@@ -553,7 +553,7 @@ export function FahamWorkspace({
               <p
                 dir={currentCard.mcq.promptDir}
                 lang={currentCard.mcq.promptLang}
-                onClick={() => handleManualAudio(currentCard.mcq.promptLang, currentCard.mcq.promptPrimary)}
+                onClick={() => handleManualAudio(currentCard.mcq.promptLang, currentCard.mcq.promptPrimary, currentCard.mcq.promptAudioUrl)}
                 className={`mt-10 cursor-pointer text-center leading-tight text-stone-950 transition hover:scale-[1.03] active:scale-95 sm:text-6xl dark:text-stone-50 ${
                   currentCard.mcq.promptLang === "ar"
                     ? "font-arabic text-5xl"
@@ -661,7 +661,7 @@ export function FahamWorkspace({
                       lang={currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms"}
                       onClick={() => {
                         const lang = currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms";
-                        handleManualAudio(lang, currentCard.mcq.answerPrimary);
+                        handleManualAudio(lang, currentCard.mcq.answerPrimary, currentCard.mcq.answerAudioUrl);
                       }}
                       className={`cursor-pointer transition hover:opacity-75 ${
                         currentCard.mcq.direction === "bm_to_arab"

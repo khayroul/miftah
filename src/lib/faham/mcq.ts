@@ -1,9 +1,33 @@
 import type { Word } from "@/types/database";
+import { getQuranWordAudioUrl } from "../mushafAssets";
+
+function getAudioKey(word: any): string | null {
+  const occs = word.word_occurrences;
+  const occ = Array.isArray(occs) ? occs[0] : occs;
+  if (!occ) return null;
+  const ayahs = occ.ayats;
+  const ayah = Array.isArray(ayahs) ? ayahs[0] : ayahs;
+  if (!ayah) return null;
+  return `${ayah.surah_id}:${ayah.ayah_number}:${occ.position}`;
+}
+
+function getAudioUrlForKey(key: string | null): string | null {
+  if (!key) return null;
+  const parts = key.split(":").map(Number);
+  if (parts.length !== 3) return null;
+  return getQuranWordAudioUrl(parts[0], parts[1], parts[2]);
+}
+
+function getMalayAudioUrl(text: string): string {
+  // Use our proxy with a voice hint for male
+  return `/api/audio/tts?text=${encodeURIComponent(text)}&lang=ms&voice=male`;
+}
 
 export type FahamMcqDirection = "arab_to_bm" | "bm_to_arab";
 export type FahamMcqDirectionMode = FahamMcqDirection | "mixed";
 
 export interface FahamMcqPoolWord {
+  audioKey: string | null;
   frequency: number;
   id: number;
   lemma: string | null;
@@ -22,12 +46,14 @@ export interface FahamMcqOption {
 }
 
 export interface FahamBuiltMcq {
+  answerAudioUrl: string | null;
   answerLabel: string;
   answerPrimary: string;
   answerSecondary: string | null;
   correctIndex: number;
   direction: FahamMcqDirection;
   options: FahamMcqOption[];
+  promptAudioUrl: string | null;
   promptDir: "ltr" | "rtl";
   promptHint: string;
   promptLabel: string;
@@ -244,7 +270,7 @@ function selectDistractors(params: {
 }
 
 function buildArabicToMalayMcq(
-  word: Word,
+  word: Word & { word_occurrences?: any },
   pool: FahamMcqPoolWord[],
   optionCount: number,
 ): FahamBuiltMcq | null {
@@ -288,18 +314,20 @@ function buildArabicToMalayMcq(
       lang: "ms",
       value,
     })),
+    promptAudioUrl: getAudioUrlForKey(getAudioKey(word)),
     promptDir: "rtl",
     promptHint: "Pilih makna BM paling tepat untuk perkataan Arab ini.",
     promptLabel: "Perkataan Arab",
     promptLang: "ar",
     promptPrimary: correctArabic,
     promptSecondary: word.transliteration?.trim() || null,
+    answerAudioUrl: getMalayAudioUrl(correctMeaning),
     whyThisSet: buildWhyThisSetNotes(word, "arab_to_bm"),
   };
 }
 
 function buildMalayToArabicMcq(
-  word: Word,
+  word: Word & { word_occurrences?: any },
   pool: FahamMcqPoolWord[],
   optionCount: number,
 ): FahamBuiltMcq | null {
@@ -343,12 +371,14 @@ function buildMalayToArabicMcq(
       lang: "ar",
       value,
     })),
+    promptAudioUrl: getMalayAudioUrl(correctMeaning),
     promptDir: "ltr",
     promptHint: "Pilih perkataan Arab yang paling sepadan dengan makna BM ini.",
     promptLabel: "Makna BM",
     promptLang: "ms",
     promptPrimary: correctMeaning,
     promptSecondary: word.translation_en?.trim() || null,
+    answerAudioUrl: getAudioUrlForKey(getAudioKey(word)),
     whyThisSet: buildWhyThisSetNotes(word, "bm_to_arab"),
   };
 }
@@ -365,7 +395,7 @@ function resolveDirectionOrder(word: Word, mode: FahamMcqDirectionMode): FahamMc
 }
 
 export function buildFahamMcqForWord(
-  word: Word,
+  word: Word & { word_occurrences?: any },
   pool: FahamMcqPoolWord[],
   directionMode: FahamMcqDirectionMode,
   optionCount = 4,

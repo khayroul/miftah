@@ -358,9 +358,9 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
   for (let i = 0; i < allLines.length; i++) {
     const line = allLines[i];
     if (line.type === 'surah-header') {
-      const sn = parseInt(line.surah || '0');
-      const name = surahMeta[sn]?.name_ar || `سورة ${sn}`;
-      linesHTML.push(`<div class="surah-banner"><div class="surah-frame"><span class="surah-title">${name}</span></div></div>`);
+      const sn = parseInt(line.surah || '0', 10);
+      const char = String.fromCharCode(0xE000 + sn);
+      linesHTML.push(`<div class="surah-banner"><div class="surah-frame"><span class="surah-title">${char}</span></div></div>`);
     } else if (line.type === 'basmala') {
       const qpc = line.qpcV2 || '';
       linesHTML.push(`<div class="basmala"><span class="qcf">${qpc}</span></div>`);
@@ -424,7 +424,7 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
   }
 
   const trailingBannerHTML = trailingSurah
-    ? `<div class="surah-banner trailing"><div class="surah-frame"><span class="surah-title">${surahMeta[trailingSurah]?.name_ar || `سورة ${trailingSurah}`}</span></div></div>`
+    ? `<div class="surah-banner trailing"><div class="surah-frame"><span class="surah-title">${String.fromCharCode(0xE000 + trailingSurah)}</span></div></div>`
     : '';
 
   return `<!DOCTYPE html>
@@ -602,29 +602,19 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
     text-align: center;
     direction: ltr;
     padding: 0;
-    margin: 2px 0;
+    margin: 12px 0 4px;
   }
   .surah-banner .surah-frame {
     display: block;
     position: relative;
-    width: 92%;
-    height: 62px;
+    width: 94%;
+    height: 72px;
     margin: 0 auto;
     background-image: ${surahFrameBg ? surahFrameBg : 'none'};
     background-repeat: no-repeat;
     background-size: 100% 100%;
-    border: ${surahFrameBg ? 'none' : `2px solid ${t.textColor}`};
-  }
-  .surah-banner .surah-frame::before {
-    content: '';
-    position: absolute;
-    left: 28%;
-    right: 28%;
-    top: 8px;
-    bottom: 8px;
-    border: 1.5px solid #1f1f1f;
-    border-radius: 999px;
-    background: ${t.pageBg};
+    /* In dark mode, invert the frame to make it light */
+    ${theme === 'dark' || theme === 'night' ? 'filter: invert(1) brightness(1.2);' : ''}
   }
   .surah-banner .surah-title {
     position: absolute;
@@ -632,16 +622,18 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Geeza Pro', 'Traditional Arabic', serif;
-    font-size: 40px;
+    font-family: 'surah_names', serif;
+    font-size: 52px;
     color: ${t.textColor};
-    font-weight: 700;
+    font-weight: normal;
     line-height: 1;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     z-index: 1;
+    /* Counter-invert the text if the parent is inverted */
+    ${theme === 'dark' || theme === 'night' ? 'filter: invert(1) brightness(0.8);' : ''}
   }
   .surah-banner.trailing {
-    margin: 8px 0 0;
+    margin: 20px 0 0;
   }
 
   /* Page number */

@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { supabaseServer } from "@/lib/supabase-server";
-import { normalizeMalayMeaning } from "./mcq";
+import { normalizeMalayMeaning, FahamMcqPoolWord } from "./mcq";
 import { TOP_FAHAM_WORD_LIMIT } from "./config";
 import type {
   VocabExposureSummary,
@@ -15,15 +15,30 @@ import type {
   FahamExposureInput,
 } from "./types";
 
+interface AyahLite {
+  surah_id: number;
+  ayah_number: number;
+}
+
+interface WordOccurrenceLite {
+  ayah_id: number;
+  position: number;
+  ayats: AyahLite | AyahLite[] | null;
+}
+
+interface WordWithOccurrences extends Word {
+  word_occurrences: WordOccurrenceLite | WordOccurrenceLite[] | null;
+}
+
 interface VocabProgressWordJoinRow extends VocabProgress {
-  words: Word | Word[] | null;
+  words: WordWithOccurrences | WordWithOccurrences[] | null;
 }
 
 interface WordOccurrenceJoinRow {
   ayah_id: number;
   position: number;
   word_id: number;
-  words: Word | Word[] | null;
+  words: WordWithOccurrences | WordWithOccurrences[] | null;
 }
 
 function firstRelation<T>(value: T | T[] | null): T | null {
@@ -165,7 +180,7 @@ export async function getDueFahamCards(
   const { data, error } = await supabaseServer
     .from("vocab_progress")
     .select(
-      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency)",
+      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayats(surah_id, ayah_number)))",
     )
     .eq("user_id", userId)
     .in("word_id", topWordIds)
@@ -204,10 +219,10 @@ export async function getDueFahamCards(
           created_at: row.created_at,
           updated_at: row.updated_at,
         },
-        word,
-      };
+        word: word as any,
+      } as FahamDueCard;
     })
-    .filter((row): row is FahamDueCard => row !== null);
+    .filter((row: any): row is FahamDueCard => row !== null);
 }
 
 export async function getFahamExposureCandidates(
@@ -241,7 +256,7 @@ export async function getFahamExposureCandidates(
       supabaseServer
         .from("words")
         .select(
-          "id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency",
+          "id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayats(surah_id, ayah_number))",
         )
         .in("id", wordIds),
       supabaseServer
@@ -258,8 +273,8 @@ export async function getFahamExposureCandidates(
     throw progressError;
   }
 
-  const wordsById = new Map<number, Word>();
-  for (const word of (wordData ?? []) as Word[]) {
+  const wordsById = new Map<number, WordWithOccurrences>();
+  for (const word of (wordData ?? []) as WordWithOccurrences[]) {
     wordsById.set(word.id, word);
   }
 
@@ -278,9 +293,9 @@ export async function getFahamExposureCandidates(
         return null;
       }
 
-      return { summary, word };
+      return { summary, word: word as any } as FahamCandidateWord;
     })
-    .filter((row): row is FahamCandidateWord => row !== null);
+    .filter((row: any): row is FahamCandidateWord => row !== null);
 }
 
 export async function materializeNewFahamCards(
@@ -306,7 +321,7 @@ export async function getFahamMcqWordPool(limit: number) {
   const { data, error } = await supabaseServer
     .from("words")
     .select(
-      "id, text_uthmani, text_simple, translation_bm, transliteration, root, lemma, pos, frequency",
+      "id, text_uthmani, text_simple, translation_bm, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayats(surah_id, ayah_number))",
     )
     .in("id", topWordIds)
     .not("translation_bm", "is", null)
@@ -329,19 +344,9 @@ export async function getFahamMcqWordPool(limit: number) {
     transliteration: string | null;
   }> = [];
 
-  for (const row of (data ?? []) as Array<{
-    frequency: number;
-    id: number;
-    lemma: string | null;
-    pos: string | null;
-    root: string | null;
-    text_simple: string;
-    text_uthmani: string;
-    translation_bm: string | null;
-    transliteration: string | null;
-  }>) {
+  for (const row of (data ?? []) as any[]) {
     const normalizedMeaning = normalizeMalayMeaning(row.translation_bm);
-    const normalizedArabic = row.text_uthmani.trim();
+    const normalizedArabic = row.text_uthmani ? row.text_uthmani.trim() : "";
     if (
       !normalizedMeaning ||
       normalizedArabic.length === 0 ||
@@ -350,8 +355,15 @@ export async function getFahamMcqWordPool(limit: number) {
       continue;
     }
 
+    const firstOcc = firstRelation(row.word_occurrences);
+    const ayah = firstOcc ? firstRelation(firstOcc.ayats) : null;
+    const audioKey = (firstOcc && ayah) 
+      ? `${ayah.surah_id}:${ayah.ayah_number}:${firstOcc.position}` 
+      : null;
+
     seen.add(`${normalizedMeaning}::${normalizedArabic}`);
     pool.push({
+      audioKey,
       frequency: row.frequency,
       id: row.id,
       lemma: row.lemma,
@@ -361,8 +373,8 @@ export async function getFahamMcqWordPool(limit: number) {
       textUthmani: normalizedArabic,
       translationBm: normalizedMeaning,
       transliteration: row.transliteration,
-    });
+    } as any);
   }
 
-  return pool;
+  return pool as FahamMcqPoolWord[];
 }

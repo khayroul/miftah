@@ -7,12 +7,12 @@ import type {
 
 export interface FahamDueCard {
   progress: VocabProgress;
-  word: Word;
+  word: Word & { word_occurrences?: any };
 }
 
 export interface FahamCandidateWord {
   summary: VocabExposureSummary;
-  word: Word;
+  word: Word & { word_occurrences?: any };
 }
 
 export interface FahamEngineConfig {
