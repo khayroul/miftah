@@ -115,9 +115,16 @@ function getWordTooltipPlacement(
 
   const preferredTop = word.y + word.height + verticalGap;
   const fallbackTop = word.y - estimatedTooltipHeight - verticalGap;
-  const top = preferredTop + estimatedTooltipHeight <= imageHeight - verticalPadding
-    ? preferredTop
-    : fallbackTop;
+  
+  // If the word is in the lower 45% of the page, flip the tooltip to appear above the word
+  // to prevent it from being cut off by the bottom of the viewport or floating docks.
+  const isBottomHalf = word.y > imageHeight * 0.55;
+  
+  const top = isBottomHalf 
+    ? fallbackTop 
+    : (preferredTop + estimatedTooltipHeight <= imageHeight - verticalPadding 
+        ? preferredTop 
+        : fallbackTop);
 
   return {
     left,
