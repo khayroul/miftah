@@ -150,35 +150,9 @@ export default async function SurahThemeAppearancePage({
             </span>
           </h1>
           
-          <div className="flex items-center justify-center gap-4 text-sm font-medium text-stone-500 dark:text-stone-400">
-            {surahNumber > 1 ? (
-              <Link
-                href={`/read/surah/${surahNumber - 1}/themes`}
-                className="hover:text-stone-900 transition dark:hover:text-stone-200 px-2 py-1"
-                title="Surah Sebelum"
-              >
-                &larr;
-              </Link>
-            ) : (
-              <span className="px-2 py-1 opacity-0">&larr;</span>
-            )}
-
-            <span>
-              Surah {surahMeta.id} &bull; Bacaan bertema
-            </span>
-
-            {surahNumber < 114 ? (
-              <Link
-                href={`/read/surah/${surahNumber + 1}/themes`}
-                className="hover:text-stone-900 transition dark:hover:text-stone-200 px-2 py-1"
-                title="Surah Seterusnya"
-              >
-                &rarr;
-              </Link>
-            ) : (
-              <span className="px-2 py-1 opacity-0">&rarr;</span>
-            )}
-          </div>
+          <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
+            Surah {surahMeta.id} &bull; Bacaan bertema
+          </p>
         </div>
       </header>
 
@@ -299,61 +273,94 @@ export default async function SurahThemeAppearancePage({
           </section>
 
           {/* Theme Navigation Bottom Bar */}
-          <nav className="sticky bottom-6 z-10 mx-auto w-full max-w-2xl mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-full border border-stone-200/80 bg-white/90 px-4 py-3 backdrop-blur-xl shadow-xl shadow-black/5 dark:border-stone-700/80 dark:bg-stone-900/90">
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              {previousThemeHref ? (
-                <Link
-                  href={previousThemeHref}
-                  className="flex flex-1 items-center justify-center rounded-full border border-stone-200 bg-stone-50 px-5 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-                >
-                  {previousThemeLabel}
-                </Link>
-              ) : (
-                <span className="flex flex-1 items-center justify-center rounded-full border border-stone-100 bg-stone-50/50 px-5 py-2 text-sm font-medium text-stone-400 dark:border-stone-800 dark:bg-stone-800/30 dark:text-stone-600">
-                  &larr; Sebelum
-                </span>
-              )}
-              {nextThemeHref ? (
-                <Link
-                  href={nextThemeHref}
-                  className="flex flex-1 items-center justify-center rounded-full bg-stone-900 px-5 py-2 text-sm font-medium text-white shadow-md transition hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
-                >
-                  {nextThemeLabel}
-                </Link>
-              ) : (
-                <span className="flex flex-1 items-center justify-center rounded-full bg-stone-100 px-5 py-2 text-sm font-medium text-stone-400 dark:bg-stone-800 dark:text-stone-600">
-                  Tema Seterusnya &rarr;
-                </span>
-              )}
+          <nav className="sticky bottom-6 z-10 mx-auto w-full max-w-2xl mt-4 flex items-center justify-between gap-2 sm:gap-4 rounded-full border border-stone-200/80 bg-white/90 px-2 sm:px-4 py-3 backdrop-blur-xl shadow-xl shadow-black/5 dark:border-stone-700/80 dark:bg-stone-900/90">
+            {/* Surah Prev Button */}
+            {surahNumber > 1 ? (
+              <Link
+                href={`/read/surah/${surahNumber - 1}/themes`}
+                className="flex h-10 w-10 sm:h-auto sm:w-auto shrink-0 items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-900 transition dark:hover:bg-stone-800 dark:hover:text-stone-100 sm:px-3 sm:py-2 text-sm font-medium"
+                title="Surah Sebelum"
+              >
+                <svg className="h-5 w-5 sm:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span className="hidden sm:inline-block">&larr; Surah</span>
+              </Link>
+            ) : (
+              <span className="h-10 w-10 sm:h-auto sm:w-auto shrink-0 sm:px-3 sm:py-2 opacity-0" />
+            )}
+
+            {/* Central Controls */}
+            <div className="flex flex-1 items-center justify-between sm:justify-center gap-3 w-full sm:w-auto">
+              <div className="flex flex-1 items-center gap-2 w-full sm:w-auto">
+                {previousThemeHref ? (
+                  <Link
+                    href={previousThemeHref}
+                    className="flex flex-1 items-center justify-center rounded-full border border-stone-200 bg-stone-50 px-4 sm:px-5 py-2 text-xs sm:text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                  >
+                    {previousThemeLabel}
+                  </Link>
+                ) : (
+                  <span className="flex flex-1 items-center justify-center rounded-full border border-stone-100 bg-stone-50/50 px-4 sm:px-5 py-2 text-xs sm:text-sm font-medium text-stone-400 dark:border-stone-800 dark:bg-stone-800/30 dark:text-stone-600 truncate">
+                    &larr; Sebelum
+                  </span>
+                )}
+                
+                {nextThemeHref ? (
+                  <Link
+                    href={nextThemeHref}
+                    className="flex flex-1 items-center justify-center rounded-full bg-stone-900 px-4 sm:px-5 py-2 text-xs sm:text-sm font-medium text-white shadow-md transition hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white whitespace-nowrap"
+                  >
+                    {nextThemeLabel}
+                  </Link>
+                ) : (
+                  <span className="flex flex-1 items-center justify-center rounded-full bg-stone-100 px-4 sm:px-5 py-2 text-xs sm:text-sm font-medium text-stone-400 dark:bg-stone-800 dark:text-stone-600 whitespace-nowrap">
+                    Tamat Surah
+                  </span>
+                )}
+              </div>
+
+              <form
+                method="get"
+                className="hidden lg:flex items-center gap-3 pl-2 border-l border-stone-200 dark:border-stone-700"
+              >
+                <div className="flex items-center gap-2">
+                  <select
+                    name="chunk"
+                    defaultValue={String(selectedChunkIndex)}
+                    className="max-w-[10rem] truncate rounded-lg border border-stone-200 bg-stone-50 px-2 py-1.5 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                  >
+                    {chunks.map((chunk) => (
+                      <option key={chunk.chunk_index} value={chunk.chunk_index}>
+                        {chunk.chunk_index}. {chunkTitleBm(chunk)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="submit"
+                    className="rounded-lg bg-stone-200 px-2.5 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-300 dark:bg-stone-700 dark:text-stone-200 dark:hover:bg-stone-600"
+                  >
+                    Buka
+                  </button>
+                </div>
+              </form>
             </div>
 
-            <form
-              method="get"
-              className="hidden sm:flex items-center gap-3 pr-2"
-            >
-              <label className="text-sm font-medium text-stone-500 dark:text-stone-400">
-                Pergi ke
-              </label>
-              <div className="flex items-center gap-2">
-                <select
-                  name="chunk"
-                  defaultValue={String(selectedChunkIndex)}
-                  className="max-w-[12rem] truncate rounded-lg border border-stone-200 bg-stone-50 px-2 py-1.5 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
-                >
-                  {chunks.map((chunk) => (
-                    <option key={chunk.chunk_index} value={chunk.chunk_index}>
-                      {chunk.chunk_index}. {chunkTitleBm(chunk)}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="submit"
-                  className="rounded-lg bg-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-300 dark:bg-stone-700 dark:text-stone-200 dark:hover:bg-stone-600"
-                >
-                  Buka
-                </button>
-              </div>
-            </form>
+            {/* Surah Next Button */}
+            {surahNumber < 114 ? (
+              <Link
+                href={`/read/surah/${surahNumber + 1}/themes`}
+                className="flex h-10 w-10 sm:h-auto sm:w-auto shrink-0 items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-900 transition dark:hover:bg-stone-800 dark:hover:text-stone-100 sm:px-3 sm:py-2 text-sm font-medium"
+                title="Surah Seterusnya"
+              >
+                <span className="hidden sm:inline-block">Surah &rarr;</span>
+                <svg className="h-5 w-5 sm:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            ) : (
+              <span className="h-10 w-10 sm:h-auto sm:w-auto shrink-0 sm:px-3 sm:py-2 opacity-0" />
+            )}
           </nav>
         </div>
       ) : null}

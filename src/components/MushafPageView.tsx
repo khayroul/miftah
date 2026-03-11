@@ -561,7 +561,7 @@ export function MushafPageView({
   return (
     <section className="space-y-3">
       <div
-        className="relative overflow-visible rounded-2xl border border-stone-300 bg-[#fffdfa] shadow-[0_18px_34px_-30px_rgba(28,25,23,0.7)] dark:border-stone-600 dark:bg-slate-950 dark:shadow-[0_22px_38px_-30px_rgba(2,6,23,0.9)]"
+        className="relative overflow-visible cursor-pointer rounded-2xl border border-stone-300 bg-[#fffdfa] shadow-[0_18px_34px_-30px_rgba(28,25,23,0.7)] dark:border-stone-600 dark:bg-slate-950 dark:shadow-[0_22px_38px_-30px_rgba(2,6,23,0.9)]"
         style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -602,7 +602,7 @@ export function MushafPageView({
             ) : null}
             {canSelectAyah ? (
               <div
-                className="absolute inset-0"
+                className="absolute inset-0 cursor-pointer"
                 onClick={() => {
                   setSelectedAyahKey(null);
                   setMarkMemorizedError(null);
@@ -639,7 +639,7 @@ export function MushafPageView({
             ) : null}
             {canInteract ? (
               <div
-                className="absolute inset-0"
+                className="absolute inset-0 cursor-pointer"
                 onClick={() => setSelectedWord(null)}
               >
                 {words.map((word, index) => {
