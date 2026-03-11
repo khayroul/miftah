@@ -26,13 +26,7 @@ export default async function HifzPage() {
 
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 lg:py-12">
         {/* Nav */}
-        <header className="flex w-full items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-          >
-            &larr; Utama
-          </Link>
+        <header className="flex w-full justify-end">
           <ThemeToggle />
         </header>
 

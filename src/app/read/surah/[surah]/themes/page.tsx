@@ -129,26 +129,8 @@ export default async function SurahThemeAppearancePage({
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 sm:px-6 md:py-12">
       {/* Refined Header */}
       <header className="flex flex-col gap-6">
-        <nav className="flex items-center justify-between text-sm text-stone-500 dark:text-stone-400">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-          >
-            &larr; Utama
-          </Link>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <Link
-              href={
-                surahMeta.page_start
-                  ? `/read/${surahMeta.page_start}`
-                  : "/read/1"
-              }
-              className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-            >
-              Buka Baca &rarr;
-            </Link>
-          </div>
+        <nav className="flex w-full items-center justify-end">
+          <ThemeToggle />
         </nav>
 
         <ModeNavigator
@@ -157,39 +139,45 @@ export default async function SurahThemeAppearancePage({
           fallbackThemeSurahId={surahNumber}
         />
 
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-stone-900 hover:text-stone-800 dark:text-stone-100 flex items-center gap-3">
-              Surah {surahMeta.name_en}
-              <span
-                className="font-arabic font-normal text-2xl opacity-80 mt-1"
-                lang="ar"
-              >
-                {surahMeta.name_arabic}
-              </span>
-            </h1>
-            <p className="mt-1 text-stone-500 dark:text-stone-400">
-              Surah {surahMeta.id} • Bacaan bertema
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center text-center gap-2 mt-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-100 flex items-center justify-center gap-3">
+            Surah {surahMeta.name_en}
+            <span
+              className="font-arabic font-normal text-2xl opacity-80 mt-1"
+              lang="ar"
+            >
+              {surahMeta.name_arabic}
+            </span>
+          </h1>
+          
+          <div className="flex items-center justify-center gap-4 text-sm font-medium text-stone-500 dark:text-stone-400">
             {surahNumber > 1 ? (
               <Link
                 href={`/read/surah/${surahNumber - 1}/themes`}
-                className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                className="hover:text-stone-900 transition dark:hover:text-stone-200 px-2 py-1"
+                title="Surah Sebelum"
               >
-                Surah Sebelum
+                &larr;
               </Link>
-            ) : null}
+            ) : (
+              <span className="px-2 py-1 opacity-0">&larr;</span>
+            )}
+
+            <span>
+              Surah {surahMeta.id} &bull; Bacaan bertema
+            </span>
+
             {surahNumber < 114 ? (
               <Link
                 href={`/read/surah/${surahNumber + 1}/themes`}
-                className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                className="hover:text-stone-900 transition dark:hover:text-stone-200 px-2 py-1"
+                title="Surah Seterusnya"
               >
-                Surah Seterusnya
+                &rarr;
               </Link>
-            ) : null}
+            ) : (
+              <span className="px-2 py-1 opacity-0">&rarr;</span>
+            )}
           </div>
         </div>
       </header>
