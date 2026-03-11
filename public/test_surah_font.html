@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @font-face {
+            font-family: 'surah_names';
+            src: url('file:///Users/Executor/miftah/assets/fonts/surah-names/sura_names.woff2');
+        }
+        .glyph {
+            font-family: 'surah_names';
+            font-size: 80px;
+            display: inline-block;
+            margin: 10px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        .label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <script>
+        const container = document.getElementById('container');
+        // Test various ranges
+        const ranges = [
+            [0xE000, 0xE07F], // PUA
+            [0x0020, 0x007E], // ASCII
+            [0x0600, 0x06FF], // Arabic
+            [0xFB50, 0xFDFF], // Arabic presentation forms A
+            [0xFE70, 0xFEFF], // Arabic presentation forms B
+        ];
+        
+        ranges.forEach(([start, end]) => {
+            for (let i = start; i <= end; i++) {
+                const div = document.createElement('div');
+                div.className = 'glyph';
+                div.innerHTML = String.fromCharCode(i) + '<div class="label">0x' + i.toString(16).toUpperCase() + '</div>';
+                container.appendChild(div);
+            }
+        });
+    </script>
+</body>
+</html>

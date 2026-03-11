@@ -655,7 +655,7 @@ export function MushafPageView({
       )}
 
       <div
-        className="relative overflow-visible cursor-pointer rounded-2xl border border-stone-300 bg-[#fffdfa] shadow-[0_18px_34px_-30px_rgba(28,25,23,0.7)] dark:border-stone-600 dark:bg-slate-950 dark:shadow-[0_22px_38px_-30px_rgba(2,6,23,0.9)]"
+        className="relative overflow-visible cursor-pointer rounded-2xl border border-stone-300 bg-[#fffdfa] shadow-[0_18px_34px_-30px_rgba(28,25,23,0.7)] dark:border-[#162a44] dark:bg-[#0d1b2a] dark:shadow-[0_22px_38px_-30px_rgba(2,6,23,0.95)]"
         style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -676,7 +676,7 @@ export function MushafPageView({
                 fill
                 unoptimized
                 sizes="(max-width: 1024px) 100vw, 960px"
-                className={`object-contain transition-opacity duration-200 dark:invert dark:brightness-105 dark:contrast-110 ${
+                className={`object-contain transition-opacity duration-200 dark:invert dark:[mix-blend-mode:lighten] ${
                   fullImageReady ? "opacity-0" : "opacity-100"
                 }`}
                 onError={() => setThumbnailFailed(true)}
@@ -689,7 +689,7 @@ export function MushafPageView({
                 fill
                 unoptimized
                 sizes="(max-width: 1024px) 100vw, 960px"
-                className={`object-contain transition-opacity duration-200 dark:invert dark:brightness-105 dark:contrast-110 ${
+                className={`object-contain transition-opacity duration-200 dark:invert dark:[mix-blend-mode:lighten] ${
                   fullImageReady ? "opacity-100" : "opacity-0"
                 }`}
                 onLoad={() => setFullImageReady(true)}
@@ -747,7 +747,7 @@ export function MushafPageView({
             ) : null}
             {hifzRevealContext && revealEnabled && revealMaskTop ? (
               <div
-                className="absolute left-0 right-0 bottom-0 z-30 border-t border-dashed border-teal-500/60 bg-[#fffdfa] dark:bg-slate-950"
+                className="absolute left-0 right-0 bottom-0 z-30 border-t border-dashed border-teal-500/60 bg-[#fffdfa] dark:bg-[#0d1b2a]"
                 style={{ top: revealMaskTop }}
                 onClick={(event) => event.stopPropagation()}
                 onTouchStart={(event) => event.stopPropagation()}
