@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
-import { getOptionalAuthUser } from "@/lib/auth";
+import { getOptionalAuthUser } from "@/lib/auth-server";
 import { saveUserReadingState } from "@/lib/userReadingState";
 
 const readingStateSchema = z.object({

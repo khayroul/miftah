@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrCreateProgress, updateHifzStatus } from "@/lib/hifz/study-progress";
-import { getOptionalAuthUser } from "@/lib/auth";
+import { getOptionalAuthUser } from "@/lib/auth-server";
 import type { HifzStatus } from "@/types/database";
 
 interface MarkMemorizedBody {

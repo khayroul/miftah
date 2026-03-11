@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { recordVocabExposureEvents } from "@/lib/faham/repository";
 import { fahamExposureSchema } from "@/lib/faham/schemas";
-import { getOptionalAuthUser } from "@/lib/auth";
+import { getOptionalAuthUser } from "@/lib/auth-server";
 
 export async function POST(request: Request): Promise<NextResponse> {
   let rawBody: unknown;

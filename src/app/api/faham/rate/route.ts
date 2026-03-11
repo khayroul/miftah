@@ -4,7 +4,7 @@ import { applyRating } from "@/lib/fsrs";
 import { dbRowToCard, cardToDbRow } from "@/lib/hifz/fsrs-bridge";
 import { logVocabReview } from "@/lib/faham/review-log";
 import { fahamRateRequestSchema } from "@/lib/faham/schemas";
-import { getOptionalAuthUser } from "@/lib/auth";
+import { getOptionalAuthUser } from "@/lib/auth-server";
 import {
   getVocabProgressById,
   updateVocabProgressAfterReview,

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { sanitizeNextPath, getOptionalAuthUser } from "@/lib/auth";
+import { sanitizeNextPath } from "@/lib/auth";
+import { getOptionalAuthUser } from "@/lib/auth-server";
 import { AuthSignInForm } from "@/components/AuthSignInForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
 

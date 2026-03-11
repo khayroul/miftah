@@ -8,7 +8,7 @@ import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { getHifzStats, getJuzProgress } from "@/lib/hifz/stats";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 
-import { getOptionalAuthUser } from "@/lib/auth";
+import { getOptionalAuthUser } from "@/lib/auth-server";
 
 export default async function HifzPage() {
   const user = await getOptionalAuthUser();

@@ -8,7 +8,7 @@ import {
   demoteManzilToSabqi,
 } from "@/lib/hifz/study-progress";
 import { logReview } from "@/lib/hifz/review-log";
-import { getOptionalAuthUser } from "@/lib/auth";
+import { getOptionalAuthUser } from "@/lib/auth-server";
 import type { FsrsRating, FsrsState } from "@/types/database";
 import type { Grade } from "@/lib/fsrs";
 

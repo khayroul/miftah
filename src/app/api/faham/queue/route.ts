@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { buildFahamQueueSnapshot } from "@/lib/faham/queue";
 import { fahamQueueRequestSchema } from "@/lib/faham/schemas";
-import { getOptionalAuthUser } from "@/lib/auth";
+import { getOptionalAuthUser } from "@/lib/auth-server";
 
 export async function POST(request: Request): Promise<NextResponse> {
   let rawBody: unknown = {};

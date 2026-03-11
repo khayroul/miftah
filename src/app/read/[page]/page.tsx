@@ -12,7 +12,7 @@ import {
   parseReadPage,
 } from "@/lib/readNavigation";
 import { findMarkerForPage } from "@/lib/readNavigationUtils";
-import { getOptionalAuthUser } from "@/lib/auth";
+import { getOptionalAuthUser } from "@/lib/auth-server";
 import { getWordTranslationsByHitboxes } from "@/lib/wbwTranslations";
 import type { Ayah } from "@/types/database";
 
