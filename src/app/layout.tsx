@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: "Memorize the Quran by understanding, not just repetition.",
 };
 
+import { FeedbackButton } from "@/components/FeedbackButton";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,7 +30,9 @@ export default function RootLayout({
     <html lang="ms">
       <body className={`${geist.variable} ${arabicText.variable} antialiased`}>
         {children}
+        <FeedbackButton />
       </body>
     </html>
   );
 }
+

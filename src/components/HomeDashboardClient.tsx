@@ -242,35 +242,35 @@ export function HomeDashboardClient({
   ];
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="animate-fade-in-up rounded-[32px] border border-stone-200/90 bg-white/82 p-5 shadow-[0_28px_90px_-48px_rgba(28,25,23,0.55)] backdrop-blur-sm sm:p-7 dark:border-stone-700 dark:bg-stone-900/78">
-        <div className="space-y-5">
-          <div className="inline-flex items-center rounded-full border border-teal-900/15 bg-teal-950/6 px-3 py-1 text-xs font-medium tracking-wide text-teal-900 dark:border-teal-300/20 dark:bg-teal-900/35 dark:text-teal-100">
-            Dashboard Utama
-          </div>
-
-          <div className="space-y-3">
-            <h1 className="max-w-4xl text-4xl font-medium leading-tight tracking-tight text-stone-900 sm:text-5xl dark:text-stone-50">
-              Di Sebalik Setiap Ayat, Ada Khazanah Menanti.
+    <div className="flex flex-col gap-10">
+      {/* Beta Welcome Banner */}
+      <section className="animate-fade-in-up relative overflow-hidden rounded-[40px] border border-stone-200/60 bg-white/50 p-8 shadow-sm backdrop-blur-md dark:border-stone-800/60 dark:bg-stone-900/50 sm:p-12">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="max-w-2xl">
+            <h1 className="text-4xl font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:text-5xl">
+              Selamat Datang ke Miftah Beta 🌙
             </h1>
-            <p className="max-w-4xl text-base leading-relaxed text-stone-600 sm:text-lg dark:text-stone-300">
-              Miftah membantu anda bergerak melalui empat mod: Baca, Faham,
-              Tema, dan Hafal. Fokusnya mudah: fahami apa yang dibaca, lalu
-              hafal dengan lebih bermakna.
+            <p className="mt-5 text-lg leading-relaxed text-stone-600 dark:text-stone-400">
+              Hafal Al-Quran dengan kefahaman. Sebagai pengguna beta awal, 
+              setiap maklum balas anda (klik butang di penjuru bawah) amat kami hargai.
             </p>
           </div>
-
-          <Link
-            href={`/read/${continuePage}`}
-            onClick={() => {
-              saveReadMode("read");
-            }}
-            className="inline-flex rounded-xl bg-teal-900 px-5 py-2.5 text-sm font-medium text-teal-50 transition hover:bg-teal-800 dark:bg-teal-700 dark:hover:bg-teal-600"
-          >
-            {readingState.lastPage ? "Sambung Baca" : "Mulakan Baca"}
-          </Link>
+          <div className="flex shrink-0 gap-3">
+            <Link
+              href={`/read/${continuePage}`}
+              onClick={() => {
+                saveReadMode("read");
+              }}
+              className="flex items-center justify-center rounded-2xl bg-teal-900 px-8 py-4 text-sm font-semibold text-white transition hover:bg-teal-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
+            >
+              {readingState.lastPage ? `Sambung Hal. ${continuePage}` : "Mula Membaca"}
+            </Link>
+          </div>
         </div>
+        {/* Subtle decoration */}
+        <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-teal-200/20 blur-3xl dark:bg-teal-900/10" />
       </section>
+
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {modeCards.map((card) => (

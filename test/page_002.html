@@ -138,7 +138,13 @@
   }
 
   /* Individual word spans */
-  .word {
+  .word-group {
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: baseline;
+  }
+  .word, .sign {
     white-space: nowrap;
     flex-shrink: 0;
   }
@@ -226,12 +232,12 @@
     <div class="text-area opening-page">
       <div class="surah-banner"><div class="surah-frame"><span class="surah-title">البقرة</span></div></div>
       <div class="basmala"><span class="qcf">ﭑﭒﭓ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:1:1">ﱁ ﱂ</span> <span class="word" data-loc="2:2:1">ﱃ</span> <span class="word" data-loc="2:2:2">ﱄ</span> <span class="word" data-loc="2:2:3">ﱅ</span> <span class="word" data-loc="2:2:4">ﱆﱇ</span> <span class="word" data-loc="2:2:5">ﱈﱉ</span> <span class="word" data-loc="2:2:6">ﱊ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:2:7">ﱋ ﱌ</span> <span class="word" data-loc="2:3:1">ﱍ</span> <span class="word" data-loc="2:3:2">ﱎ</span> <span class="word" data-loc="2:3:3">ﱏ</span> <span class="word" data-loc="2:3:4">ﱐ</span> <span class="word" data-loc="2:3:5">ﱑ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:3:6">ﱒ</span> <span class="word" data-loc="2:3:7">ﱓ</span> <span class="word" data-loc="2:3:8">ﱔ ﱕ</span> <span class="word" data-loc="2:4:1">ﱖ</span> <span class="word" data-loc="2:4:2">ﱗ</span> <span class="word" data-loc="2:4:3">ﱘ</span> <span class="word" data-loc="2:4:4">ﱙ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:4:5">ﱚ</span> <span class="word" data-loc="2:4:6">ﱛ</span> <span class="word" data-loc="2:4:7">ﱜ</span> <span class="word" data-loc="2:4:8">ﱝ</span> <span class="word" data-loc="2:4:9">ﱞ</span> <span class="word" data-loc="2:4:10">ﱟ</span> <span class="word" data-loc="2:4:11">ﱠ</span> <span class="word" data-loc="2:4:12">ﱡ ﱢ</span></div>
-      <div class="text-line"><span class="word" data-loc="2:5:1">ﱣ</span> <span class="word" data-loc="2:5:2">ﱤ</span> <span class="word" data-loc="2:5:3">ﱥ</span> <span class="word" data-loc="2:5:4">ﱦ</span> <span class="word" data-loc="2:5:5">ﱧﱨ</span> <span class="word" data-loc="2:5:6">ﱩ</span></div>
-      <div class="text-line last-line"><span class="word" data-loc="2:5:7">ﱪ</span> <span class="word" data-loc="2:5:8">ﱫ ﱬ</span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:1:1">ﱁ</span><span class="sign"> </span><span class="sign">ﱂ</span></span> <span class="word-group"><span class="word" data-loc="2:2:1">ﱃ</span></span> <span class="word-group"><span class="word" data-loc="2:2:2">ﱄ</span></span> <span class="word-group"><span class="word" data-loc="2:2:3">ﱅ</span></span> <span class="word-group"><span class="word" data-loc="2:2:4">ﱆﱇ</span></span> <span class="word-group"><span class="word" data-loc="2:2:5">ﱈﱉ</span></span> <span class="word-group"><span class="word" data-loc="2:2:6">ﱊ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:2:7">ﱋ</span><span class="sign"> </span><span class="sign">ﱌ</span></span> <span class="word-group"><span class="word" data-loc="2:3:1">ﱍ</span></span> <span class="word-group"><span class="word" data-loc="2:3:2">ﱎ</span></span> <span class="word-group"><span class="word" data-loc="2:3:3">ﱏ</span></span> <span class="word-group"><span class="word" data-loc="2:3:4">ﱐ</span></span> <span class="word-group"><span class="word" data-loc="2:3:5">ﱑ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:3:6">ﱒ</span></span> <span class="word-group"><span class="word" data-loc="2:3:7">ﱓ</span></span> <span class="word-group"><span class="word" data-loc="2:3:8">ﱔ</span><span class="sign"> </span><span class="sign">ﱕ</span></span> <span class="word-group"><span class="word" data-loc="2:4:1">ﱖ</span></span> <span class="word-group"><span class="word" data-loc="2:4:2">ﱗ</span></span> <span class="word-group"><span class="word" data-loc="2:4:3">ﱘ</span></span> <span class="word-group"><span class="word" data-loc="2:4:4">ﱙ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:4:5">ﱚ</span></span> <span class="word-group"><span class="word" data-loc="2:4:6">ﱛ</span></span> <span class="word-group"><span class="word" data-loc="2:4:7">ﱜ</span></span> <span class="word-group"><span class="word" data-loc="2:4:8">ﱝ</span></span> <span class="word-group"><span class="word" data-loc="2:4:9">ﱞ</span></span> <span class="word-group"><span class="word" data-loc="2:4:10">ﱟ</span></span> <span class="word-group"><span class="word" data-loc="2:4:11">ﱠ</span></span> <span class="word-group"><span class="word" data-loc="2:4:12">ﱡ</span><span class="sign"> </span><span class="sign">ﱢ</span></span></div>
+      <div class="text-line"><span class="word-group"><span class="word" data-loc="2:5:1">ﱣ</span></span> <span class="word-group"><span class="word" data-loc="2:5:2">ﱤ</span></span> <span class="word-group"><span class="word" data-loc="2:5:3">ﱥ</span></span> <span class="word-group"><span class="word" data-loc="2:5:4">ﱦ</span></span> <span class="word-group"><span class="word" data-loc="2:5:5">ﱧﱨ</span></span> <span class="word-group"><span class="word" data-loc="2:5:6">ﱩ</span></span></div>
+      <div class="text-line last-line"><span class="word-group"><span class="word" data-loc="2:5:7">ﱪ</span></span> <span class="word-group"><span class="word" data-loc="2:5:8">ﱫ</span><span class="sign"> </span><span class="sign">ﱬ</span></span></div>
     </div>
     
     <div class="page-number">2</div>
