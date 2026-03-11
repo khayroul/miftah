@@ -35,6 +35,16 @@
   }
 }
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 200ms ease-in-out 2;
+}
+
 .animate-fade-in-up {
   animation: fade-in-up 520ms ease-out both;
 }

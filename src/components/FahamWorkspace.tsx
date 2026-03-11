@@ -208,6 +208,8 @@ export function FahamWorkspace({
       isCorrect: selectedIndex === currentCard.mcq.correctIndex,
       selectedIndex,
     });
+
+    playFeedbackSound(selectedIndex === currentCard.mcq.correctIndex ? "correct" : "incorrect");
   };
 
   const handleToggleAudio = () => {
@@ -221,15 +223,46 @@ export function FahamWorkspace({
   const playWordAudio = (text: string, lang: "ar" | "ms") => {
     if (!audioEnabled || !text) return;
     
-    // Using a reliable public TTS for Arabic/Malay
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(
-      text
-    )}&tl=${lang}&client=tw-ob`;
+    // Using our backend proxy to bypass ORB/CORS
+    const url = `/api/audio/tts?text=${encodeURIComponent(text)}&lang=${lang}`;
     
     const audio = new Audio(url);
     audio.play().catch(() => {
       // Ignore autoplay blocks or failures
     });
+  };
+
+  const playFeedbackSound = (kind: "correct" | "incorrect") => {
+    if (!audioEnabled) return;
+    
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    const now = ctx.currentTime;
+    
+    if (kind === "correct") {
+      // Pleasant bright chime (Major triad)
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(523.25, now); // C5
+      osc.frequency.exponentialRampToValueAtTime(1046.5, now + 0.1); // C6
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+      osc.start(now);
+      osc.stop(now + 0.5);
+    } else {
+      // Subtle corrective low tone
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(110.0, now); // A2
+      osc.frequency.linearRampToValueAtTime(80.0, now + 0.2);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    }
   };
 
   // Autoplay prompt when card changes
@@ -239,11 +272,19 @@ export function FahamWorkspace({
     }
   }, [currentCard?.word.id, audioEnabled, directionMode, answerState]);
 
-  // Autoplay correct answer when selection result appears
+  // Autoplay correct answer when selection result appears + Auto-continue
   useEffect(() => {
     if (currentCard && answerState) {
       const lang = currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms";
       playWordAudio(currentCard.mcq.answerPrimary, lang);
+      
+      // Auto-continue to next card after 3 seconds if correct
+      if (answerState.isCorrect) {
+        const timer = setTimeout(() => {
+          handleContinue();
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
     }
   }, [answerState, currentCard?.word.id, audioEnabled]);
 
@@ -546,7 +587,7 @@ export function FahamWorkspace({
                       index,
                       isPending,
                       isSelected,
-                    })}`}
+                    })} ${isSelected && !answerState?.isCorrect ? "animate-shake" : ""}`}
                   >
                     <span className="flex items-start gap-3">
                       <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-current/15 bg-white/70 text-xs font-semibold dark:bg-white/10">
@@ -591,9 +632,29 @@ export function FahamWorkspace({
                   >
                     {answerState.isCorrect
                       ? "Betul. Kad ini akan dijarakkan."
-                      : "Kurang tepat. Perkataan ini ditanda untuk pengukuhan dan akan muncul semula lebih awal."}
+                      : "Kurang tepat. Perkataan ini ditanda untuk pengukuhan."}
                   </p>
-                  <p className="mt-2 text-sm text-stone-800 dark:text-stone-100">
+                  
+                  {!answerState.isCorrect && (
+                    <div className="mt-4 rounded-xl border border-rose-200/50 bg-white/40 p-3 dark:border-rose-800/30 dark:bg-black/20">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-rose-600 dark:text-rose-400">
+                        Nota Pembelajaran
+                      </p>
+                      <div className="mt-2 text-sm leading-relaxed text-stone-800 dark:text-stone-100">
+                        Perkataan <span className="font-arabic text-xl">{currentCard.word.textUthmani}</span> bermaksud <span className="font-bold text-emerald-700 dark:text-emerald-400">{currentCard.word.translationBm}</span>.
+                        {currentCard.word.transliteration && (
+                          <div className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                            Sebutan: {currentCard.word.transliteration}
+                          </div>
+                        )}
+                        <p className="mt-2 text-xs opacity-75">
+                          Tips: Fokus pada hubungan bunyi dan makna sebelum menukar kad.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="mt-3 text-sm text-stone-800 dark:text-stone-100">
                     {currentCard.mcq.answerLabel}:{" "}
                     <span
                       dir={currentCard.mcq.direction === "bm_to_arab" ? "rtl" : "ltr"}
