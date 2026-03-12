@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import type { FahamSourceType } from "@/types/database";
 import type { FahamQueueSnapshot, SerializedFahamCard } from "@/lib/faham/queue";
+import type { FahamLevelProgress } from "@/lib/faham/levels";
 import type { FahamMcqDirectionMode } from "@/lib/faham/mcq";
 
 type SourcePreset = "mixed" | "reading" | "theme" | "hifz";
@@ -151,6 +152,7 @@ interface FahamStats {
   learning: number;
   dueToday: number;
   retentionRate7d: number;
+  levelProgress?: FahamLevelProgress;
 }
 
 export function FahamWorkspace({
@@ -178,6 +180,13 @@ export function FahamWorkspace({
   const [isPending, startTransition] = useTransition();
   const cards = useMemo(() => queueItems(snapshot), [snapshot]);
   const currentCard = cards[currentIndex] ?? null;
+  const levelProgress = stats?.levelProgress ?? snapshot.levelProgress;
+  const foundUnlockPct = levelProgress.unlockFoundRequired > 0
+    ? Math.min(100, (levelProgress.unlockFoundProgress / levelProgress.unlockFoundRequired) * 100)
+    : 0;
+  const masteredUnlockPct = levelProgress.unlockMasteredRequired > 0
+    ? Math.min(100, (levelProgress.unlockMasteredProgress / levelProgress.unlockMasteredRequired) * 100)
+    : 0;
   const progressPct = cards.length > 0 ? ((currentIndex + 1) / cards.length) * 100 : 0;
 
   useEffect(() => {
@@ -539,6 +548,46 @@ export function FahamWorkspace({
                 Faham kini menggunakan algoritma FSRS untuk penjadualan kad yang tepat.
                 60% sesi adalah perkataan baharu/lemah, 25% ulang kaji, dan 15% sampling pengukuhan.
               </p>
+              <div className="mt-4 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4 dark:border-amber-500/30 dark:bg-amber-950/20">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 dark:border-amber-500/50 dark:bg-amber-900/40 dark:text-amber-100">
+                    Level {levelProgress.activeLevel}/{levelProgress.maxLevel}
+                  </span>
+                  <span className="text-sm text-stone-700 dark:text-stone-200">
+                    Scope aktif: Top {levelProgress.activeWordLimit}
+                  </span>
+                </div>
+
+                {levelProgress.isMaxLevel ? (
+                  <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">
+                    Tahap maksimum telah dibuka. Teruskan naikkan Mahir.
+                  </p>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-sm text-stone-700 dark:text-stone-200">
+                      Buka Level {levelProgress.nextLevel}: Ditemui {levelProgress.unlockFoundProgress}/{levelProgress.unlockFoundRequired} · Mahir {levelProgress.unlockMasteredProgress}/{levelProgress.unlockMasteredRequired}
+                    </p>
+                    <div>
+                      <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-300">
+                        <span>Ditemui</span>
+                        <span>{Math.round(foundUnlockPct)}%</span>
+                      </div>
+                      <div className="mt-1 h-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30">
+                        <div className="h-full rounded-full bg-amber-500" style={{ width: `${foundUnlockPct}%` }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-300">
+                        <span>Mahir</span>
+                        <span>{Math.round(masteredUnlockPct)}%</span>
+                      </div>
+                      <div className="mt-1 h-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${masteredUnlockPct}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className={`grid gap-3 sm:grid-cols-3 ${isConfigExpanded ? "grid-cols-2 lg:grid-cols-3 xl:grid-cols-5" : "grid-cols-2 md:grid-cols-5"}`}>
