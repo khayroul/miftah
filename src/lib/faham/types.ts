@@ -44,11 +44,13 @@ export interface FahamQueuePlan {
   dueCards: FahamDueCard[];
   newCandidates: FahamCandidateWord[];
   masteredCards: FahamDueCard[];
+  learningCards?: FahamDueCard[];
   stats: {
     dueCount: number;
     eligibleNewCount: number;
     totalCandidateCount: number;
     masteredCount: number;
+    learningCount: number;
   };
 }
 

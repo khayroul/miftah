@@ -244,8 +244,117 @@ export function HomeDashboardClient({
     },
   ];
 
+  const goalTypeLabel =
+    snapshot.activity?.dailyGoalType === "faham_words"
+      ? "perkataan"
+      : snapshot.activity?.dailyGoalType === "read_pages"
+        ? "halaman"
+        : "ayat";
+
+  const goalProgressPct = clampPercent(
+    snapshot.activity
+      ? (snapshot.activity.todayProgress / snapshot.activity.dailyGoalCount) * 100
+      : 0,
+  );
+
   return (
     <div className="flex flex-col gap-10">
+      {/* Activity Bar: Streaks & Goals */}
+      <section className="animate-fade-in-up flex flex-wrap items-center justify-between gap-6 px-2">
+        <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4">
+            <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-900/30">
+              <svg
+                className="h-7 w-7 text-amber-600 dark:text-amber-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {snapshot.activity && snapshot.activity.streak > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-orange-600 text-[10px] font-bold text-white shadow-lg ring-2 ring-white dark:ring-stone-900">
+                  {snapshot.activity.streak}
+                </span>
+              )}
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400">
+                Streak Semasa
+              </p>
+              <p className="text-xl font-bold text-stone-900 dark:text-white">
+                {snapshot.activity?.streak ?? 0} Hari
+              </p>
+            </div>
+          </div>
+
+          <div className="hidden h-10 w-px bg-stone-200 dark:bg-stone-800 sm:block" />
+
+          <div className="flex items-center gap-4">
+            <div className={`relative h-14 w-14 transition-transform duration-500 ${goalProgressPct >= 100 ? "scale-110" : ""}`}>
+              <svg className="h-14 w-14 -rotate-90">
+                <circle
+                  cx="28"
+                  cy="28"
+                  r="24"
+                  fill="transparent"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  className="text-stone-100 dark:text-stone-800"
+                />
+                <circle
+                  cx="28"
+                  cy="28"
+                  r="24"
+                  fill="transparent"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  strokeDasharray={2 * Math.PI * 24}
+                  strokeDashoffset={2 * Math.PI * 24 * (1 - goalProgressPct / 100)}
+                  strokeLinecap="round"
+                  className={`${goalProgressPct >= 100 ? "text-emerald-500" : "text-teal-600 dark:text-teal-400"} transition-all duration-1000`}
+                />
+              </svg>
+              <div className={`absolute inset-0 flex items-center justify-center font-bold ${goalProgressPct >= 100 ? "text-emerald-600 dark:text-emerald-400" : "text-teal-700 dark:text-teal-300"}`}>
+                {goalProgressPct >= 100 ? (
+                  <svg className="h-6 w-6 animate-bounce-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                    <path d="M20 6L9 17L4 12" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                ) : (
+                  <span className="text-[10px]">{goalProgressPct}%</span>
+                )}
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400">
+                Sasaran Harian
+              </p>
+              <p className="text-xl font-bold text-stone-900 dark:text-white">
+                {snapshot.activity?.todayProgress ?? 0} /{" "}
+                {snapshot.activity?.dailyGoalCount ?? 10}{" "}
+                <span className="text-sm font-medium text-stone-500">{goalTypeLabel}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 rounded-full border border-stone-200 bg-white/50 px-4 py-2 dark:border-stone-800 dark:bg-stone-900/50">
+          <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+          <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
+            Sesi aktif: {formattedLastRead}
+          </span>
+        </div>
+      </section>
       {/* Beta Welcome Banner */}
       <section className="animate-fade-in-up relative overflow-hidden rounded-[40px] border border-stone-200/60 bg-white/50 p-8 shadow-sm backdrop-blur-md dark:border-stone-800/60 dark:bg-stone-900/50 sm:p-12">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">

@@ -175,6 +175,7 @@ export function buildFahamQueuePlan(params: {
   config: FahamEngineConfig;
   dueCards: FahamDueCard[];
   masteredCards: FahamDueCard[];
+  learningCards?: FahamDueCard[];
   isRevision?: boolean;
 }): FahamQueuePlan {
   const config = normalizeFahamEngineConfig(params.config);
@@ -182,27 +183,34 @@ export function buildFahamQueuePlan(params: {
   const isRevision = params.isRevision ?? false;
 
   // 1. ALLOCATE MASTERED (Strict 10%)
-  // In normal mode, we cap it at 10%. In Revision mode if they want more, 
-  // they can have more if nothing else is available, but let's stick to 10% 
-  // as the standard mix unless bank is empty.
   const targetMasteredCount = Math.max(1, Math.floor(total * 0.10));
   const masteredCards = params.masteredCards.slice(0, targetMasteredCount);
 
-  // 2. FILL REMAINING SLOTS WITH DUE THEN NEW
+  // 2. FILL REMAINING SLOTS WITH DUE THEN LEARNING (even if not due) THEN NEW
   let remainingSlots = total - masteredCards.length;
   
-  // If revision mode, we might want to prioritize things that are NOT yet mastered 
-  // but let's assume standard priority for now: Due > New.
+  // Prioritize due cards
   const dueCards = params.dueCards.slice(0, remainingSlots);
   remainingSlots -= dueCards.length;
 
+  // If we still have slots and we have cards being learned (not yet due), take them
+  // This helps when the user wants to "push mastery fast" by reviewing even if not technically due.
+  const learningCards: FahamDueCard[] = [];
+  if (remainingSlots > 0 && params.learningCards) {
+    const additionalLearning = params.learningCards.slice(0, remainingSlots);
+    learningCards.push(...additionalLearning);
+    remainingSlots -= additionalLearning.length;
+  }
+
+  // Then fill with new candidates
   const newCandidates = remainingSlots > 0 
     ? selectNewFahamCandidates(params.candidates, config, remainingSlots)
     : [];
+  remainingSlots -= newCandidates.length;
 
-  // 3. IF STILL SLOTS REMAINING (e.g. no more due/new), fill more mastered
-  if (remainingSlots > (newCandidates.length)) {
-    const extraMasteredNeeded = remainingSlots - newCandidates.length;
+  // 3. IF STILL SLOTS REMAINING (e.g. no more due/learning/new), fill more mastered
+  if (remainingSlots > 0) {
+    const extraMasteredNeeded = remainingSlots;
     const additionalMastered = params.masteredCards.slice(
       masteredCards.length,
       masteredCards.length + extraMasteredNeeded,
@@ -219,6 +227,7 @@ export function buildFahamQueuePlan(params: {
     return {
       blockedReason: "due_backlog",
       dueCards,
+      learningCards,
       masteredCards,
       newCandidates: [],
       stats: {
@@ -226,6 +235,7 @@ export function buildFahamQueuePlan(params: {
         eligibleNewCount,
         totalCandidateCount: params.candidates.length,
         masteredCount: params.masteredCards.length,
+        learningCount: params.learningCards?.length ?? 0,
       },
     };
   }
@@ -233,6 +243,7 @@ export function buildFahamQueuePlan(params: {
   return {
     blockedReason: null,
     dueCards,
+    learningCards,
     masteredCards,
     newCandidates,
     stats: {
@@ -240,6 +251,7 @@ export function buildFahamQueuePlan(params: {
       eligibleNewCount,
       totalCandidateCount: params.candidates.length,
       masteredCount: params.masteredCards.length,
+      learningCount: params.learningCards?.length ?? 0,
     },
   };
 }

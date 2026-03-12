@@ -10,6 +10,7 @@ import {
   getDueFahamCards,
   getFahamExposureCandidates,
   getFahamMcqWordPool,
+  getLearningFahamCards,
   getMasteredFahamCards,
   materializeNewFahamCards,
 } from "./repository";
@@ -62,12 +63,14 @@ export interface FahamQueueSnapshot {
   due: SerializedFahamCard[];
   new: SerializedFahamCard[];
   mastered: SerializedFahamCard[];
+  learning: SerializedFahamCard[];
   stats: {
     dueCount: number;
     eligibleNewCount: number;
     focusWordLimit: number;
     totalCandidateCount: number;
     masteredCount: number;
+    learningCount: number;
   };
 }
 
@@ -111,13 +114,14 @@ export async function buildFahamQueueSnapshot(
   overrides: QueueOverrides = {},
 ): Promise<FahamQueueSnapshot> {
   const config = normalizeFahamEngineConfig(overrides);
-  const [dueCardsPool, candidatesPool, masteredPool] = await Promise.all([
+  const [dueCardsPool, candidatesPool, masteredPool, learningPool] = await Promise.all([
     getDueFahamCards(
       userId,
       Math.max(config.sessionSize, config.pauseNewCardsAboveDueCount),
     ),
     getFahamExposureCandidates(userId, config.candidatePoolSize),
     getMasteredFahamCards(userId, config.sessionSize),
+    getLearningFahamCards(userId, config.sessionSize),
   ]);
 
   const plan = buildFahamQueuePlan({
@@ -125,6 +129,7 @@ export async function buildFahamQueueSnapshot(
     config,
     dueCards: dueCardsPool,
     masteredCards: masteredPool,
+    learningCards: learningPool,
     isRevision: overrides.isRevision,
   });
 
@@ -144,6 +149,10 @@ export async function buildFahamQueueSnapshot(
 
   const surfacedMasteredCards = plan.masteredCards
     .map((card) => serializeCard(card, "mastered", mcqPool, directionMode))
+    .filter((card): card is SerializedFahamCard => card !== null);
+
+  const surfacedLearningCards = (plan.learningCards ?? [])
+    .map((card) => serializeCard(card, "due" as any, mcqPool, directionMode)) // Treat as "due" in kind for now to simplify UI logic, but can separate later
     .filter((card): card is SerializedFahamCard => card !== null);
 
   const surfacedNewCards: SerializedFahamCard[] = [];
@@ -173,6 +182,7 @@ export async function buildFahamQueueSnapshot(
     due: surfacedDueCards,
     new: surfacedNewCards,
     mastered: surfacedMasteredCards,
+    learning: surfacedLearningCards,
     stats: {
       ...plan.stats,
       focusWordLimit: TOP_FAHAM_WORD_LIMIT,

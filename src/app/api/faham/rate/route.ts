@@ -11,6 +11,7 @@ import {
 } from "@/lib/faham/vocab-progress";
 import type { FsrsState } from "@/types/database";
 import { ZodError } from "zod";
+import { logUserActivity } from "@/lib/activity";
 
 export async function POST(request: Request): Promise<NextResponse> {
   let rawBody: unknown;
@@ -58,6 +59,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       stateBefore: progress.state as FsrsState,
       userId,
     });
+    
+    // Log global activity for streak tracking
+    await logUserActivity(userId, "faham", { word_id: progress.word_id, rating: body.rating });
 
     return NextResponse.json({
       due: nextCard.due.toISOString(),

@@ -78,7 +78,7 @@ const DIRECTION_CONFIGS: Record<
 };
 
 function queueItems(snapshot: FahamQueueSnapshot): SerializedFahamCard[] {
-  return [...snapshot.due, ...snapshot.new, ...snapshot.mastered];
+  return [...snapshot.due, ...snapshot.learning, ...snapshot.new, ...snapshot.mastered];
 }
 
 function dueLabel(count: number): string {
@@ -394,7 +394,7 @@ export function FahamWorkspace({
       )}
 
       <section className="animate-fade-in-up rounded-[2rem] border border-stone-200/85 bg-white/85 p-5 shadow-[0_30px_80px_-52px_rgba(41,37,36,0.65)] backdrop-blur-sm sm:p-7 dark:border-stone-700 dark:bg-stone-900/78 dark:shadow-[0_30px_80px_-52px_rgba(2,6,23,0.95)]">
-        <div className={`grid gap-6 transition-all duration-300 ${isConfigExpanded ? "lg:grid-cols-[1.1fr_0.9fr]" : "grid-cols-1"}`}>
+        <div className="flex flex-col gap-6 transition-all duration-300">
           <div className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="inline-flex items-center rounded-full border border-amber-900/15 bg-amber-100/80 px-3 py-1 text-xs font-medium tracking-wide text-amber-950 dark:border-amber-300/20 dark:bg-amber-900/35 dark:text-amber-100">
@@ -445,6 +445,82 @@ export function FahamWorkspace({
               </div>
             </div>
 
+            {isConfigExpanded && (
+              <aside className="animate-in fade-in slide-in-from-top-4 duration-500 rounded-[1.75rem] border border-stone-200/80 bg-stone-50/90 p-5 dark:border-stone-700 dark:bg-stone-950/60 shadow-inner">
+                <div className="grid gap-8 lg:grid-cols-2">
+                  {/* Keutamaan Deck */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
+                        Susun deck sesi ini
+                      </p>
+                      <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-[10px] font-bold text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
+                        {PRESET_CONFIGS[preset].shortLabel}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(Object.keys(PRESET_CONFIGS) as SourcePreset[]).map((key) => {
+                        const active = preset === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => reloadQueue(key, directionMode)}
+                            disabled={isPending}
+                            className={`rounded-xl border px-3 py-2.5 text-left text-xs font-semibold transition ${
+                              active
+                                ? "border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-500/50 dark:bg-amber-900/30 dark:text-amber-100"
+                                : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
+                            }`}
+                          >
+                            {PRESET_CONFIGS[key].label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="rounded-xl border border-stone-200/80 bg-white/60 p-3 text-[11px] leading-relaxed text-stone-600 dark:border-stone-700 dark:bg-stone-900/50 dark:text-stone-400">
+                      {PRESET_CONFIGS[preset].helper}
+                    </div>
+                  </div>
+
+                  {/* Arah Soalan */}
+                  <div className="space-y-4 border-t border-stone-200/80 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0 dark:border-stone-700">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
+                        Arah soalan
+                      </p>
+                      <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-[10px] font-bold text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
+                        {DIRECTION_CONFIGS[directionMode].shortLabel}
+                      </span>
+                    </div>
+                    <div className="grid gap-2">
+                      {(Object.keys(DIRECTION_CONFIGS) as FahamMcqDirectionMode[]).map((key) => {
+                        const active = directionMode === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => reloadQueue(preset, key)}
+                            disabled={isPending}
+                            className={`rounded-xl border px-4 py-2.5 text-left transition ${
+                              active
+                                ? "border-teal-300 bg-teal-50 text-teal-900 dark:border-teal-500/50 dark:bg-teal-950/30 dark:text-teal-100"
+                                : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
+                            }`}
+                          >
+                            <div className="text-xs font-bold">{DIRECTION_CONFIGS[key].label}</div>
+                            <div className="mt-0.5 text-[10px] text-stone-500 dark:text-stone-400 leading-tight">
+                              {DIRECTION_CONFIGS[key].helper}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </aside>
+            )}
+
             <div className={isConfigExpanded ? "" : "max-w-4xl"}>
               <h1 className="text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-50">
                 Fahami makna tanpa membuka jawapan terlebih dahulu.
@@ -490,91 +566,6 @@ export function FahamWorkspace({
               />
             </div>
           </div>
-
-          {isConfigExpanded && (
-            <aside className="animate-in fade-in slide-in-from-right-4 duration-300 rounded-[1.75rem] border border-stone-200/80 bg-stone-50/90 p-4 dark:border-stone-700 dark:bg-stone-950/60">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
-                    Susun deck sesi ini
-                  </p>
-                  <p className="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-300">
-                    Hanya ubah keutamaan kad baru untuk sesi semasa. Ia tidak
-                    menyimpan tetapan kekal, dan kad ulang kaji tetap datang
-                    dahulu.
-                  </p>
-                </div>
-                <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
-                  {PRESET_CONFIGS[preset].shortLabel}
-                </span>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                {(Object.keys(PRESET_CONFIGS) as SourcePreset[]).map((key) => {
-                  const active = preset === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => reloadQueue(key, directionMode)}
-                      disabled={isPending}
-                      className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition ${
-                        active
-                          ? "border-amber-300 bg-amber-100 text-amber-950 dark:border-amber-500/50 dark:bg-amber-900/30 dark:text-amber-100"
-                          : "border-stone-200 bg-white/90 text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-200 dark:hover:bg-stone-900"
-                      }`}
-                    >
-                      {PRESET_CONFIGS[key].label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-stone-200/80 bg-white/80 p-4 text-sm leading-relaxed text-stone-600 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-300">
-                {PRESET_CONFIGS[preset].helper}
-              </div>
-
-              <div className="mt-4 border-t border-stone-200/80 pt-4 dark:border-stone-700">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
-                      Arah soalan
-                    </p>
-                    <p className="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-300">
-                      Tukar bentuk recall untuk sesi ini sahaja.
-                    </p>
-                  </div>
-                  <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
-                    {DIRECTION_CONFIGS[directionMode].shortLabel}
-                  </span>
-                </div>
-
-                <div className="mt-4 grid gap-2">
-                  {(Object.keys(DIRECTION_CONFIGS) as FahamMcqDirectionMode[]).map((key) => {
-                    const active = directionMode === key;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => reloadQueue(preset, key)}
-                        disabled={isPending}
-                        className={`rounded-2xl border px-4 py-3 text-left transition ${
-                          active
-                            ? "border-teal-300 bg-teal-50 text-teal-950 dark:border-teal-500/50 dark:bg-teal-950/30 dark:text-teal-100"
-                            : "border-stone-200 bg-white/90 text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-200 dark:hover:bg-stone-900"
-                        }`}
-                      >
-                        <div className="text-sm font-medium">{DIRECTION_CONFIGS[key].label}</div>
-                        <div className="mt-1 text-xs text-stone-500 dark:text-stone-400">
-                          {DIRECTION_CONFIGS[key].helper}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </aside>
-          )}
         </div>
       </section>
 

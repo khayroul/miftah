@@ -9,6 +9,7 @@ import {
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { getHifzStats } from "@/lib/hifz/stats";
 import { supabaseServer } from "@/lib/supabase-server";
+import { getUserStreak, getUserDailyGoal, getDailyActivityCount } from "@/lib/activity";
 
 const TOTAL_QURAN_AYAT = 6236;
 
@@ -42,6 +43,12 @@ export interface HomeDashboardSnapshot {
   faham: HomeFahamSnapshot | null;
   hifz: HomeHifzSnapshot | null;
   tema: HomeTemaSnapshot | null;
+  activity: {
+    streak: number;
+    dailyGoalCount: number;
+    dailyGoalType: string;
+    todayProgress: number;
+  } | null;
 }
 
 function percentage(value: number, total: number): number {
@@ -190,6 +197,24 @@ async function loadTemaSnapshot(userId: string): Promise<HomeTemaSnapshot> {
   };
 }
 
+async function loadActivitySnapshot(userId: string) {
+  const [streak, goal, todayProgress] = await Promise.all([
+    getUserStreak(userId),
+    getUserDailyGoal(userId),
+    // We need to know which type to count based on the goal
+  ]).then(async ([streak, goal]) => {
+    const progress = await getDailyActivityCount(userId, goal.type.split('_')[0] as any);
+    return [streak, goal, progress] as const;
+  });
+
+  return {
+    streak: streak?.current_streak ?? 0,
+    dailyGoalCount: goal.count,
+    dailyGoalType: goal.type,
+    todayProgress,
+  };
+}
+
 async function loadSafely<T>(
   label: string,
   loader: () => Promise<T>,
@@ -210,14 +235,16 @@ export async function loadHomeDashboardSnapshot(
       faham: null,
       hifz: null,
       tema: null,
+      activity: null,
     };
   }
 
-  const [faham, hifz, tema] = await Promise.all([
+  const [faham, hifz, tema, activity] = await Promise.all([
     loadSafely("home faham snapshot", () => loadFahamSnapshot(userId)),
     loadSafely("home hifz snapshot", () => loadHifzSnapshot(userId)),
     loadSafely("home tema snapshot", () => loadTemaSnapshot(userId)),
+    loadSafely("home activity snapshot", () => loadActivitySnapshot(userId)),
   ]);
 
-  return { faham, hifz, tema };
+  return { faham, hifz, tema, activity };
 }

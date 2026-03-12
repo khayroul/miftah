@@ -181,7 +181,7 @@ export async function getDueFahamCards(
   const { data, error } = await supabaseServer
     .from("vocab_progress")
     .select(
-      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayats(surah_id, ayah_number)))",
+      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayats(surah_id, ayah_number)))",
     )
     .eq("user_id", userId)
     .in("word_id", topWordIds)
@@ -217,6 +217,9 @@ export async function getDueFahamCards(
           last_review: row.last_review,
           needs_reinforcement: row.needs_reinforcement,
           mistake_streak: row.mistake_streak,
+          is_mastered: row.is_mastered,
+          correct_streak: row.correct_streak,
+          incorrect_streak: row.incorrect_streak,
           last_incorrect_at: row.last_incorrect_at,
           created_at: row.created_at,
           updated_at: row.updated_at,
@@ -326,7 +329,7 @@ export async function getMasteredFahamCards(
   const { data, error } = await supabaseServer
     .from("vocab_progress")
     .select(
-      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayats(surah_id, ayah_number)))",
+      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayats(surah_id, ayah_number)))",
     )
     .eq("user_id", userId)
     .in("word_id", topWordIds)
@@ -360,6 +363,70 @@ export async function getMasteredFahamCards(
           last_review: row.last_review,
           needs_reinforcement: row.needs_reinforcement,
           mistake_streak: row.mistake_streak,
+          is_mastered: row.is_mastered,
+          correct_streak: row.correct_streak,
+          incorrect_streak: row.incorrect_streak,
+          last_incorrect_at: row.last_incorrect_at,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        },
+        word: word as WordWithOccurrences,
+      };
+    })
+    .filter((row): row is FahamDueCard => row !== null);
+}
+
+export async function getLearningFahamCards(
+  userId: string,
+  limit: number,
+): Promise<FahamDueCard[]> {
+  const topWordIds = await getTopFahamWordIds();
+  if (topWordIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabaseServer
+    .from("vocab_progress")
+    .select(
+      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayats(surah_id, ayah_number)))",
+    )
+    .eq("user_id", userId)
+    .in("word_id", topWordIds)
+    .gt("due", new Date().toISOString())
+    .eq("is_mastered", false)
+    .gt("reps", 0)
+    .order("due", { ascending: true })
+    .limit(limit);
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as VocabProgressWordJoinRow[])
+    .map((row) => {
+      const word = firstRelation(row.words);
+      if (!word) {
+        return null;
+      }
+
+      return {
+        progress: {
+          id: row.id,
+          user_id: row.user_id,
+          word_id: row.word_id,
+          stability: row.stability,
+          difficulty: row.difficulty,
+          elapsed_days: row.elapsed_days,
+          scheduled_days: row.scheduled_days,
+          reps: row.reps,
+          lapses: row.lapses,
+          state: row.state,
+          due: row.due,
+          last_review: row.last_review,
+          needs_reinforcement: row.needs_reinforcement,
+          mistake_streak: row.mistake_streak,
+          is_mastered: row.is_mastered,
+          correct_streak: row.correct_streak,
+          incorrect_streak: row.incorrect_streak,
           last_incorrect_at: row.last_incorrect_at,
           created_at: row.created_at,
           updated_at: row.updated_at,
@@ -405,8 +472,10 @@ export async function getFahamStats(userId: string) {
   for (const row of (progressStats ?? []) as Array<{ is_mastered: boolean; reps: number; due: string }>) {
     if (row.is_mastered) {
       masteredCount++;
-    } else if (row.reps > 0) {
-      learningCount++;
+    } else {
+      if (row.reps > 0) {
+        learningCount++;
+      }
       if (row.due <= now) {
         dueTodayCount++;
       }
