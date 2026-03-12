@@ -19,9 +19,10 @@ interface HomeDashboardClientProps {
 }
 
 interface ModeCard {
-  helper: string;
-  metricLabel: string;
-  metricValue: string;
+  lines: Array<{
+    label: string;
+    value: string;
+  }>;
   percent: number;
   title: string;
   tone: CardTone;
@@ -113,13 +114,20 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
         </div>
 
         <div className="mt-6">
-          <div>
-            <div className={`text-4xl font-semibold tracking-tight ${classes.value}`}>
-              {card.metricValue}
-            </div>
-            <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
-              {card.metricLabel}
-            </p>
+          <div className="space-y-2.5">
+            {card.lines.slice(0, 2).map((line) => (
+              <div
+                key={`${card.title}-${line.label}`}
+                className="flex items-baseline justify-between gap-3"
+              >
+                <p className="text-[11px] uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
+                  {line.label}
+                </p>
+                <p className={`text-sm font-semibold ${classes.value}`}>
+                  {line.value}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -130,9 +138,6 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
           />
         </div>
 
-        <p className="mt-4 text-sm leading-relaxed text-stone-600 dark:text-stone-300">
-          {card.helper}
-        </p>
       </div>
 
       <div className="mt-6">
@@ -161,13 +166,16 @@ export function HomeDashboardClient({
   surahTargets,
 }: HomeDashboardClientProps) {
   const readingState = useReadingProgressState();
-  const continuePage = readingState.lastPage ?? 1;
+  const readSnapshot = snapshot.read;
+  const continuePage = readSnapshot?.lastPage ?? readingState.lastPage ?? 1;
+  const uniquePagesLifetime = readSnapshot?.uniquePagesLifetime ?? (readingState.lastPage ? 1 : 0);
+  const uniquePages7d = readSnapshot?.uniquePages7d ?? (readingState.lastPage ? 1 : 0);
   const readingPositionPct = clampPercent(
-    readingState.lastPage
-      ? (readingState.lastPage / TOTAL_QURAN_PAGES) * 100
-      : 0,
+    (uniquePagesLifetime / TOTAL_QURAN_PAGES) * 100,
   );
-  const formattedLastRead = formatActivityDate(readingState.lastReadAt);
+  const formattedLastRead = formatActivityDate(
+    readSnapshot?.lastReadAt ?? readingState.lastReadAt,
+  );
   const activeSurah = useMemo(() => {
     const markers = surahTargets.map((target) => ({
       id: target.surah,
@@ -178,33 +186,41 @@ export function HomeDashboardClient({
     return findMarkerForPage(markers, continuePage);
   }, [continuePage, surahTargets]);
   const activeSurahId = activeSurah?.id ?? 1;
-  const activeSurahLabel = activeSurah?.name ?? "Al-Fatihah";
 
   const modeCards: ModeCard[] = [
     {
-      helper: readingState.lastPage
-        ? `Sambung dari halaman ${readingState.lastPage}. Baca kekal ringkas, dan alat tambahan hanya muncul apabila diperlukan.`
-        : "Mushaf sengaja diringkaskan. Masuk terus ke bacaan, kemudian buka alat tambahan apabila perlu.",
-      metricLabel: readingState.lastPage
-        ? `Bacaan terakhir ${formattedLastRead}`
-        : "Belum ada sesi bacaan",
-      metricValue: readingState.lastPage ? `p. ${readingState.lastPage}` : "Baru",
+      lines: [
+        {
+          label: "Liputan",
+          value: `${uniquePagesLifetime} / ${TOTAL_QURAN_PAGES} halaman`,
+        },
+        {
+          label: "7 Hari",
+          value: `${uniquePages7d} halaman`,
+        },
+      ],
       percent: readingPositionPct,
       title: "Baca",
       tone: "teal",
       href: `/read/${continuePage}`,
-      buttonLabel: readingState.lastPage ? "Sambung Baca" : "Mula Baca",
+      buttonLabel: continuePage > 1 ? "Sambung Baca" : "Mula Baca",
     },
     {
-      helper: snapshot.faham
-        ? snapshot.faham.blockedReason === "due_backlog"
-          ? `${snapshot.faham.dueCount} kad ulang kaji masih menunggu. Kad baharu dijeda sehingga baki ini selesai.`
-          : `${snapshot.faham.dueCount} kad ulang kaji dan ${snapshot.faham.eligibleNewCount} kad baharu sedia dibuka daripada 3,000 perkataan teras.`
-        : "Enjin kata demi kata sudah sedia, tetapi statistiknya belum dapat dimuat sekarang.",
-      metricLabel: "perkataan dalam enjin Faham",
-      metricValue: snapshot.faham
-        ? `${snapshot.faham.reviewedWordCount} / ${snapshot.faham.totalWords}`
-        : `0 / ${TOP_FAHAM_WORD_LIMIT}`,
+      lines: snapshot.faham
+        ? [
+            {
+              label: "Ditemui",
+              value: `${snapshot.faham.encounteredWordCount} / ${snapshot.faham.totalWords}`,
+            },
+            {
+              label: "Mahir",
+              value: `${snapshot.faham.masteredWordCount}`,
+            },
+          ]
+        : [
+            { label: "Ditemui", value: `0 / ${TOP_FAHAM_WORD_LIMIT}` },
+            { label: "Mahir", value: "0" },
+          ],
       percent: snapshot.faham?.coveragePct ?? 0,
       title: "Faham",
       tone: "amber",
@@ -212,13 +228,21 @@ export function HomeDashboardClient({
       buttonLabel: snapshot.faham?.dueCount ? "Mula Ulang Kaji" : "Buka Faham",
     },
     {
-      helper: snapshot.tema && snapshot.tema.totalChunks > 0
-        ? `${snapshot.tema.exploredCount} bahagian tema sudah diteroka. Laluan seterusnya ikut surah semasa: ${activeSurahLabel}.`
-        : `Tema diatur mengikut surah. Teruskan dari surah semasa ${activeSurahLabel} supaya bacaan dan tema bergerak seiring.`,
-      metricLabel: snapshot.tema && snapshot.tema.totalChunks > 0
-        ? `${snapshot.tema.exploredCount} / ${snapshot.tema.totalChunks} bahagian telah dibuka`
-        : `Sedia untuk Surah ${activeSurahId}`,
-      metricValue: `${snapshot.tema?.exploredPct ?? 0}%`,
+      lines: snapshot.tema && snapshot.tema.totalChunks > 0
+        ? [
+            {
+              label: "Diteroka",
+              value: `${snapshot.tema.exploredCount} / ${snapshot.tema.totalChunks}`,
+            },
+            {
+              label: "Selesai",
+              value: `${snapshot.tema.completedCount}`,
+            },
+          ]
+        : [
+            { label: "Diteroka", value: "0 / 0" },
+            { label: "Selesai", value: "0" },
+          ],
       percent: snapshot.tema?.exploredPct ?? 0,
       title: "Tema",
       tone: "indigo",
@@ -226,15 +250,21 @@ export function HomeDashboardClient({
       buttonLabel: "Teroka Tema",
     },
     {
-      helper: snapshot.hifz
-        ? snapshot.hifz.todayTotal > 0
-          ? `${snapshot.hifz.todayTotal} ayat aktif hari ini. ${snapshot.hifz.nextAyahLabel ? `Ayat seterusnya ${snapshot.hifz.nextAyahLabel}.` : "Sesi seterusnya sudah siap disusun."}`
-          : "Ruang Hafal kekal fokus pada Sabak, Sabqi, dan Manzil."
-        : "Ruang Hafal sedia digunakan, tetapi statistik server belum dapat dimuat.",
-      metricLabel: snapshot.hifz
-        ? `${snapshot.hifz.totalManzil} ayat sudah stabil di Manzil`
-        : "Belum ada data hafal",
-      metricValue: `${snapshot.hifz?.manzilCoveragePct ?? 0}%`,
+      lines: snapshot.hifz
+        ? [
+            {
+              label: "Manzil",
+              value: `${snapshot.hifz.totalManzil} ayat`,
+            },
+            {
+              label: "Due Hari Ini",
+              value: `${snapshot.hifz.dueTodayCount}`,
+            },
+          ]
+        : [
+            { label: "Manzil", value: "0 ayat" },
+            { label: "Due Hari Ini", value: "0" },
+          ],
       percent: snapshot.hifz?.manzilCoveragePct ?? 0,
       title: "Hafal",
       tone: "stone",

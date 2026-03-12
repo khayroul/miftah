@@ -8,7 +8,7 @@ import type {
 interface WordOccurrenceLite {
   ayah_id: number;
   position: number;
-  ayats: { surah_id: number; ayah_number: number } | { surah_id: number; ayah_number: number }[] | null;
+  ayat: { surah_id: number; ayah_number: number } | { surah_id: number; ayah_number: number }[] | null;
 }
 
 export type WordWithOccurrences = Word & {

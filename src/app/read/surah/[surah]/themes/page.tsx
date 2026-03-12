@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import { ModeNavigator } from "@/components/ModeNavigator";
+import { ThemeChunkProgressTracker } from "@/components/ThemeChunkProgressTracker";
 import { ThemeChunkSelect } from "@/components/ThemeChunkSelect";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthStatusButton } from "@/components/AuthStatusButton";
@@ -174,6 +175,12 @@ export default async function SurahThemeAppearancePage({
                 surahId: surahNumber,
                 themeChunkIndex: selectedChunk.chunk_index,
               }}
+            />
+          ) : null}
+          {selectedChunk ? (
+            <ThemeChunkProgressTracker
+              chunkIndex={selectedChunk.chunk_index}
+              surahId={surahNumber}
             />
           ) : null}
 

@@ -10,6 +10,7 @@ import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { getHifzStats } from "@/lib/hifz/stats";
 import { supabaseServer } from "@/lib/supabase-server";
 import { getUserStreak, getUserDailyGoal, getDailyActivityCount } from "@/lib/activity";
+import type { ActivityType } from "@/lib/activity";
 
 const TOTAL_QURAN_AYAT = 6236;
 
@@ -17,11 +18,20 @@ export interface HomeFahamSnapshot {
   blockedReason: "due_backlog" | null;
   coveragePct: number;
   dueCount: number;
+  encounteredWordCount: number;
   eligibleNewCount: number;
   focusWordLimit: number;
+  masteredWordCount: number;
   reviewedWordCount: number;
   totalCandidateCount: number;
   totalWords: number;
+}
+
+export interface HomeReadSnapshot {
+  lastPage: number | null;
+  lastReadAt: string | null;
+  uniquePages7d: number;
+  uniquePagesLifetime: number;
 }
 
 export interface HomeHifzSnapshot {
@@ -34,6 +44,8 @@ export interface HomeHifzSnapshot {
 }
 
 export interface HomeTemaSnapshot {
+  completedCount: number;
+  completedPct: number;
   exploredCount: number;
   exploredPct: number;
   totalChunks: number;
@@ -42,6 +54,7 @@ export interface HomeTemaSnapshot {
 export interface HomeDashboardSnapshot {
   faham: HomeFahamSnapshot | null;
   hifz: HomeHifzSnapshot | null;
+  read: HomeReadSnapshot | null;
   tema: HomeTemaSnapshot | null;
   activity: {
     streak: number;
@@ -95,15 +108,17 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
       blockedReason: null,
       coveragePct: 0,
       dueCount: 0,
+      encounteredWordCount: 0,
       eligibleNewCount: 0,
       focusWordLimit: TOP_FAHAM_WORD_LIMIT,
+      masteredWordCount: 0,
       reviewedWordCount: 0,
       totalCandidateCount: 0,
       totalWords: 0,
     };
   }
 
-  const [dueCards, candidates, topWordCount, dueCountResult, progressResult] = await Promise.all([
+  const [dueCards, candidates, topWordCount, dueCountResult, progressResult, encounteredCountResult, masteredCountResult] = await Promise.all([
     getDueFahamCards(
       userId,
       Math.max(config.dueLimit, config.pauseNewCardsAboveDueCount),
@@ -121,6 +136,17 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
       .in("word_id", topWordIds),
+    supabaseServer
+      .from("v_vocab_exposure_summary")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .in("word_id", topWordIds),
+    supabaseServer
+      .from("vocab_progress")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .in("word_id", topWordIds)
+      .eq("is_mastered", true),
   ]);
 
   if (dueCountResult.error) {
@@ -129,6 +155,12 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
   if (progressResult.error) {
     throw progressResult.error;
   }
+  if (encounteredCountResult.error) {
+    throw encounteredCountResult.error;
+  }
+  if (masteredCountResult.error) {
+    throw masteredCountResult.error;
+  }
   const plan = buildFahamQueuePlan({
     candidates,
     config,
@@ -136,15 +168,19 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
     masteredCards: [],
   });
   const dueCount = dueCountResult.count ?? 0;
+  const encounteredWordCount = encounteredCountResult.count ?? 0;
+  const masteredWordCount = masteredCountResult.count ?? 0;
   const reviewedWordCount = progressResult.count ?? 0;
   const totalWords = topWordCount;
 
   return {
     blockedReason: plan.blockedReason,
-    coveragePct: percentage(reviewedWordCount, totalWords),
+    coveragePct: percentage(encounteredWordCount, totalWords),
     dueCount,
+    encounteredWordCount,
     eligibleNewCount: plan.stats.eligibleNewCount,
     focusWordLimit: TOP_FAHAM_WORD_LIMIT,
+    masteredWordCount,
     reviewedWordCount,
     totalCandidateCount: plan.stats.totalCandidateCount,
     totalWords,
@@ -161,7 +197,7 @@ function isMissingRelation(error: { message?: string } | null): boolean {
 }
 
 async function loadTemaSnapshot(userId: string): Promise<HomeTemaSnapshot> {
-  const [totalChunksResult, exposuresResult] = await Promise.all([
+  const [totalChunksResult, exposuresResult, completedResult] = await Promise.all([
     supabaseServer
       .from("ayah_theme_chunks")
       .select("id", { count: "exact", head: true }),
@@ -170,6 +206,11 @@ async function loadTemaSnapshot(userId: string): Promise<HomeTemaSnapshot> {
       .select("source_key")
       .eq("user_id", userId)
       .eq("source_type", "theme_chunk"),
+    supabaseServer
+      .from("theme_chunk_progress")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("status", "completed"),
   ]);
 
   if (totalChunksResult.error && !isMissingRelation(totalChunksResult.error)) {
@@ -177,6 +218,9 @@ async function loadTemaSnapshot(userId: string): Promise<HomeTemaSnapshot> {
   }
   if (exposuresResult.error && !isMissingRelation(exposuresResult.error)) {
     throw exposuresResult.error;
+  }
+  if (completedResult.error && !isMissingRelation(completedResult.error)) {
+    throw completedResult.error;
   }
 
   const sourceKeys = new Set(
@@ -189,21 +233,95 @@ async function loadTemaSnapshot(userId: string): Promise<HomeTemaSnapshot> {
       ? 0
       : totalChunksResult.count ?? 0;
   const exploredCount = sourceKeys.size;
+  const completedCount =
+    completedResult.error && isMissingRelation(completedResult.error)
+      ? 0
+      : completedResult.count ?? 0;
 
   return {
+    completedCount,
+    completedPct: percentage(completedCount, totalChunks),
     exploredCount,
     exploredPct: percentage(exploredCount, totalChunks),
     totalChunks,
   };
 }
 
+async function loadReadSnapshot(userId: string): Promise<HomeReadSnapshot> {
+  const [readingStateResult, readActivityResult] = await Promise.all([
+    supabaseServer
+      .from("user_reading_state")
+      .select("last_page, last_read_at")
+      .eq("user_id", userId)
+      .maybeSingle(),
+    supabaseServer
+      .from("user_activity_log")
+      .select("activity_date, metadata")
+      .eq("user_id", userId)
+      .eq("activity_type", "read"),
+  ]);
+
+  if (readingStateResult.error && readingStateResult.error.code !== "PGRST116") {
+    throw readingStateResult.error;
+  }
+  if (readActivityResult.error) {
+    throw readActivityResult.error;
+  }
+
+  const uniquePagesLifetime = new Set<number>();
+  const uniquePages7d = new Set<number>();
+  const cutoffKey = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+
+  const rows = (readActivityResult.data ?? []) as Array<{
+    activity_date: string;
+    metadata: unknown;
+  }>;
+  for (const row of rows) {
+    const meta = row.metadata as { pages?: unknown };
+    const pages = Array.isArray(meta?.pages)
+      ? meta.pages.filter((value): value is number => typeof value === "number")
+      : [];
+    for (const page of pages) {
+      uniquePagesLifetime.add(page);
+      if (row.activity_date >= cutoffKey) {
+        uniquePages7d.add(page);
+      }
+    }
+  }
+
+  return {
+    lastPage: readingStateResult.data?.last_page ?? null,
+    lastReadAt: readingStateResult.data?.last_read_at ?? null,
+    uniquePages7d: uniquePages7d.size,
+    uniquePagesLifetime: uniquePagesLifetime.size,
+  };
+}
+
 async function loadActivitySnapshot(userId: string) {
+  const goalTypeToActivityType = (value: string): ActivityType => {
+    if (value === "read_pages") {
+      return "read";
+    }
+    if (value === "hifz_ayat") {
+      return "hifz";
+    }
+    if (value === "theme_chunks") {
+      return "theme";
+    }
+    return "faham";
+  };
+
   const [streak, goal, todayProgress] = await Promise.all([
     getUserStreak(userId),
     getUserDailyGoal(userId),
     // We need to know which type to count based on the goal
   ]).then(async ([streak, goal]) => {
-    const progress = await getDailyActivityCount(userId, goal.type.split('_')[0] as any);
+    const progress = await getDailyActivityCount(
+      userId,
+      goalTypeToActivityType(goal.type),
+    );
     return [streak, goal, progress] as const;
   });
 
@@ -234,17 +352,19 @@ export async function loadHomeDashboardSnapshot(
     return {
       faham: null,
       hifz: null,
+      read: null,
       tema: null,
       activity: null,
     };
   }
 
-  const [faham, hifz, tema, activity] = await Promise.all([
+  const [faham, hifz, read, tema, activity] = await Promise.all([
     loadSafely("home faham snapshot", () => loadFahamSnapshot(userId)),
     loadSafely("home hifz snapshot", () => loadHifzSnapshot(userId)),
+    loadSafely("home read snapshot", () => loadReadSnapshot(userId)),
     loadSafely("home tema snapshot", () => loadTemaSnapshot(userId)),
     loadSafely("home activity snapshot", () => loadActivitySnapshot(userId)),
   ]);
 
-  return { faham, hifz, tema, activity };
+  return { faham, hifz, read, tema, activity };
 }
