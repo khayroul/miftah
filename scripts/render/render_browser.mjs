@@ -26,6 +26,7 @@ const FONT_DIR = join(ASSETS_DIR, 'fonts', 'qcf-v2');
 const WOFF2_DIR = join(ASSETS_DIR, 'fonts', 'qcf-v2-woff2');
 const SURAH_NAMES_FONT = join(ASSETS_DIR, 'fonts', 'surah-names', 'sura_names.woff2');
 const SURAH_FRAME_REFERENCE = join(ASSETS_DIR, 'surah-frame-reference.png');
+const SURAH_FRAME_IOS = join(ASSETS_DIR, 'surah-frame-ios.png');
 const SURAH_FRAME_SVG = join(ASSETS_DIR, 'surah-frame.svg');
 const BASMALA_FONT = join(FONT_DIR, 'QCF_BSML.TTF');
 const TEST_DIR = join(PROJECT_ROOT, 'test');
@@ -307,7 +308,10 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
   }
 
   let surahFrameBg = '';
-  if (existsSync(SURAH_FRAME_REFERENCE)) {
+  if (existsSync(SURAH_FRAME_IOS)) {
+    const frameData = readFileSync(SURAH_FRAME_IOS).toString('base64');
+    surahFrameBg = `url(data:image/png;base64,${frameData})`;
+  } else if (existsSync(SURAH_FRAME_REFERENCE)) {
     const frameData = readFileSync(SURAH_FRAME_REFERENCE).toString('base64');
     surahFrameBg = `url(data:image/png;base64,${frameData})`;
   } else if (existsSync(SURAH_FRAME_SVG)) {
@@ -607,14 +611,15 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
   .surah-banner .surah-frame {
     display: block;
     position: relative;
-    width: 94%;
-    height: 72px;
+    width: 96%;
+    height: 80px;
     margin: 0 auto;
     background-image: ${surahFrameBg ? surahFrameBg : 'none'};
     background-repeat: no-repeat;
-    background-size: 100% 100%;
+    background-size: contain;
+    background-position: center;
     /* In dark mode, invert the frame to make it light */
-    ${theme === 'dark' || theme === 'night' ? 'filter: invert(1) brightness(1.2);' : ''}
+    ${theme === 'dark' || theme === 'night' ? 'filter: invert(1) brightness(1.2) contrast(1.1);' : ''}
   }
   .surah-banner .surah-title {
     position: absolute;
@@ -623,7 +628,7 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
     align-items: center;
     justify-content: center;
     font-family: 'surah_names', serif;
-    font-size: 52px;
+    font-size: 48px;
     color: ${t.textColor};
     font-weight: normal;
     line-height: 1;

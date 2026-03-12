@@ -19,11 +19,13 @@ export default async function FahamPage() {
     blockedReason: null,
     due: [],
     new: [],
+    mastered: [],
     stats: {
       dueCount: 0,
       eligibleNewCount: 0,
       focusWordLimit: TOP_FAHAM_WORD_LIMIT,
       totalCandidateCount: 0,
+      masteredCount: 0,
     },
   };
 
@@ -58,6 +60,8 @@ export default async function FahamPage() {
           promptLang: "ar",
           promptPrimary: "بِسْمِ",
           promptSecondary: "bis'mi",
+          promptAudioUrl: null,
+          answerAudioUrl: null,
           whyThisSet: ["Contoh pratonton (Preview)"],
         },
         mistakeStreak: 0,
@@ -96,6 +100,8 @@ export default async function FahamPage() {
           promptLang: "ar",
           promptPrimary: "ٱلدِّينِ",
           promptSecondary: "al-dini",
+          promptAudioUrl: null,
+          answerAudioUrl: null,
           whyThisSet: ["Contoh pratonton (Preview)"],
         },
         mistakeStreak: 0,

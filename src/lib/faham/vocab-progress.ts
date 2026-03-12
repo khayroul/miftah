@@ -60,8 +60,21 @@ export async function updateVocabProgressAfterReview(
     lastIncorrectAt: string | null;
     mistakeStreak: number;
     needsReinforcement: boolean;
+    rating: number;
+    currentProgress: VocabProgress;
   },
 ): Promise<void> {
+  const isCorrect = params.rating > 1;
+  const newCorrectStreak = isCorrect ? params.currentProgress.correct_streak + 1 : 0;
+  const newIncorrectStreak = isCorrect ? 0 : params.currentProgress.incorrect_streak + 1;
+
+  let isMastered = params.currentProgress.is_mastered;
+  if (!isMastered && newCorrectStreak >= 2) {
+    isMastered = true;
+  } else if (isMastered && newIncorrectStreak >= 2) {
+    isMastered = false;
+  }
+
   const { error } = await supabaseServer
     .from("vocab_progress")
     .update({
@@ -77,6 +90,9 @@ export async function updateVocabProgressAfterReview(
       stability: params.stability,
       state: params.state,
       mistake_streak: params.mistakeStreak,
+      correct_streak: newCorrectStreak,
+      incorrect_streak: newIncorrectStreak,
+      is_mastered: isMastered,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);

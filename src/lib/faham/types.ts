@@ -17,11 +17,13 @@ export interface FahamCandidateWord {
 
 export interface FahamEngineConfig {
   candidatePoolSize: number;
-  dueLimit: number;
+  sessionSize: number;
   minDistinctContextCount: number;
   minExposureEventCount: number;
   minOccurrenceWeight: number;
-  newLimit: number;
+  newWeight: number;
+  dueWeight: number;
+  masteredWeight: number;
   pauseNewCardsAboveDueCount: number;
   preferredSources: FahamSourceType[];
 }
@@ -30,10 +32,12 @@ export interface FahamQueuePlan {
   blockedReason: "due_backlog" | null;
   dueCards: FahamDueCard[];
   newCandidates: FahamCandidateWord[];
+  masteredCards: FahamDueCard[];
   stats: {
     dueCount: number;
     eligibleNewCount: number;
     totalCandidateCount: number;
+    masteredCount: number;
   };
 }
 

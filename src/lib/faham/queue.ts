@@ -10,16 +10,19 @@ import {
   getDueFahamCards,
   getFahamExposureCandidates,
   getFahamMcqWordPool,
+  getMasteredFahamCards,
   materializeNewFahamCards,
 } from "./repository";
 
 interface QueueOverrides {
   directionMode?: FahamMcqDirectionMode;
-  dueLimit?: number;
+  sessionSize?: number;
   minDistinctContextCount?: number;
   minExposureEventCount?: number;
   minOccurrenceWeight?: number;
-  newLimit?: number;
+  newWeight?: number;
+  dueWeight?: number;
+  masteredWeight?: number;
   pauseNewCardsAboveDueCount?: number;
   preferredSources?: FahamSourceType[];
 }
@@ -33,7 +36,7 @@ export interface SerializedFahamCard {
     readingOccurrenceWeight: number;
     themeOccurrenceWeight: number;
   };
-  kind: "due" | "new";
+  kind: "due" | "new" | "mastered";
   mcq: FahamBuiltMcq;
   mistakeStreak: number;
   needsReinforcement: boolean;
@@ -55,16 +58,21 @@ export interface FahamQueueSnapshot {
   blockedReason: "due_backlog" | null;
   due: SerializedFahamCard[];
   new: SerializedFahamCard[];
+  mastered: SerializedFahamCard[];
   stats: {
     dueCount: number;
     eligibleNewCount: number;
     focusWordLimit: number;
     totalCandidateCount: number;
+    masteredCount: number;
   };
 }
 
-function serializeDueCard(
-  card: Awaited<ReturnType<typeof getDueFahamCards>>[number],
+type FahamDueCard = Awaited<ReturnType<typeof getDueFahamCards>>[number];
+
+function serializeCard(
+  card: FahamDueCard,
+  kind: "due" | "new" | "mastered",
   mcqPool: Awaited<ReturnType<typeof getFahamMcqWordPool>>,
   directionMode: FahamMcqDirectionMode,
 ): SerializedFahamCard | null {
@@ -76,7 +84,7 @@ function serializeDueCard(
 
   return {
     due: card.progress.due,
-    kind: "due",
+    kind,
     mcq,
     mistakeStreak: card.progress.mistake_streak,
     needsReinforcement: card.progress.needs_reinforcement,
@@ -100,32 +108,43 @@ export async function buildFahamQueueSnapshot(
   overrides: QueueOverrides = {},
 ): Promise<FahamQueueSnapshot> {
   const config = normalizeFahamEngineConfig(overrides);
-  const [dueCards, candidates] = await Promise.all([
+  const [dueCardsPool, candidatesPool, masteredPool] = await Promise.all([
     getDueFahamCards(
       userId,
-      Math.max(config.dueLimit, config.pauseNewCardsAboveDueCount),
+      Math.max(config.sessionSize, config.pauseNewCardsAboveDueCount),
     ),
     getFahamExposureCandidates(userId, config.candidatePoolSize),
+    getMasteredFahamCards(userId, config.sessionSize),
   ]);
 
   const plan = buildFahamQueuePlan({
-    candidates,
+    candidates: candidatesPool,
     config,
-    dueCards,
+    dueCards: dueCardsPool,
+    masteredCards: masteredPool,
   });
-  const newCards = await materializeNewFahamCards(userId, plan.newCandidates);
-  const mcqPool = await getFahamMcqWordPool(1200);
+
+  const [newCards, mcqPool] = await Promise.all([
+    materializeNewFahamCards(userId, plan.newCandidates),
+    getFahamMcqWordPool(1200),
+  ]);
+
   const directionMode = overrides.directionMode ?? "arab_to_bm";
   const candidateByWordId = new Map(
     plan.newCandidates.map((candidate) => [candidate.word.id, candidate]),
   );
-  const surfacedDueCards = plan.dueCards
-    .map((card) => serializeDueCard(card, mcqPool, directionMode))
-    .filter((card): card is SerializedFahamCard => card !== null);
-  const surfacedNewCards: SerializedFahamCard[] = [];
 
+  const surfacedDueCards = plan.dueCards
+    .map((card) => serializeCard(card, "due", mcqPool, directionMode))
+    .filter((card): card is SerializedFahamCard => card !== null);
+
+  const surfacedMasteredCards = plan.masteredCards
+    .map((card) => serializeCard(card, "mastered", mcqPool, directionMode))
+    .filter((card): card is SerializedFahamCard => card !== null);
+
+  const surfacedNewCards: SerializedFahamCard[] = [];
   for (const card of newCards) {
-    const serialized = serializeDueCard(card, mcqPool, directionMode);
+    const serialized = serializeCard(card, "new", mcqPool, directionMode);
     if (!serialized) {
       continue;
     }
@@ -142,7 +161,6 @@ export async function buildFahamQueueSnapshot(
             themeOccurrenceWeight: candidate.summary.theme_occurrence_weight,
           }
         : undefined,
-      kind: "new",
     });
   }
 
@@ -150,6 +168,7 @@ export async function buildFahamQueueSnapshot(
     blockedReason: plan.blockedReason,
     due: surfacedDueCards,
     new: surfacedNewCards,
+    mastered: surfacedMasteredCards,
     stats: {
       ...plan.stats,
       focusWordLimit: TOP_FAHAM_WORD_LIMIT,

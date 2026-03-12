@@ -185,6 +185,7 @@ export async function getDueFahamCards(
     .eq("user_id", userId)
     .in("word_id", topWordIds)
     .lte("due", new Date().toISOString())
+    .eq("is_mastered", false)
     .order("needs_reinforcement", { ascending: false })
     .order("due", { ascending: true })
     .limit(limit);
@@ -310,6 +311,125 @@ export async function materializeNewFahamCards(
   );
 
   return cards;
+}
+
+export async function getMasteredFahamCards(
+  userId: string,
+  limit: number,
+): Promise<FahamDueCard[]> {
+  const topWordIds = await getTopFahamWordIds();
+  if (topWordIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabaseServer
+    .from("vocab_progress")
+    .select(
+      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayats(surah_id, ayah_number)))",
+    )
+    .eq("user_id", userId)
+    .in("word_id", topWordIds)
+    .eq("is_mastered", true)
+    .order("last_review", { ascending: true }) // Review least recently reviewed mastered cards
+    .limit(limit);
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as VocabProgressWordJoinRow[])
+    .map((row) => {
+      const word = firstRelation(row.words);
+      if (!word) {
+        return null;
+      }
+
+      return {
+        progress: {
+          id: row.id,
+          user_id: row.user_id,
+          word_id: row.word_id,
+          stability: row.stability,
+          difficulty: row.difficulty,
+          elapsed_days: row.elapsed_days,
+          scheduled_days: row.scheduled_days,
+          reps: row.reps,
+          lapses: row.lapses,
+          state: row.state,
+          due: row.due,
+          last_review: row.last_review,
+          needs_reinforcement: row.needs_reinforcement,
+          mistake_streak: row.mistake_streak,
+          last_incorrect_at: row.last_incorrect_at,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        },
+        word: word as any,
+      } as FahamDueCard;
+    })
+    .filter((row: any): row is FahamDueCard => row !== null);
+}
+
+export async function getFahamStats(userId: string) {
+  const [
+    { count: encounteredCount },
+    { data: progressStats, error: progressError },
+    { data: retentionData, error: retentionError },
+  ] = await Promise.all([
+    supabaseServer
+      .from("v_vocab_exposure_summary")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId),
+    supabaseServer
+      .from("vocab_progress")
+      .select("is_mastered, reps, due")
+      .eq("user_id", userId),
+    supabaseServer
+      .from("review_log")
+      .select("rating")
+      .eq("user_id", userId)
+      .eq("review_type", "vocab")
+      .gte("reviewed_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+  ]);
+
+  if (progressError) {
+    throw progressError;
+  }
+  if (retentionError) {
+    throw retentionError;
+  }
+
+  const now = new Date().toISOString();
+  let masteredCount = 0;
+  let learningCount = 0;
+  let dueTodayCount = 0;
+
+  for (const row of (progressStats ?? []) as any[]) {
+    if (row.is_mastered) {
+      masteredCount++;
+    } else if (row.reps > 0) {
+      learningCount++;
+      if (row.due <= now) {
+        dueTodayCount++;
+      }
+    } else if (row.due <= now) {
+      // New cards shown in session are also counted as "due" for dashboard if were already assigned progress?
+      // Actually usually new is not in progress yet.
+      // But getDueFahamCards only returns items with progress.
+      dueTodayCount++;
+    }
+  }
+
+  const ratings = (retentionData ?? []) as Array<{ rating: number }>;
+  const successCount = ratings.filter((r) => r.rating > 1).length;
+  const retentionRate = ratings.length > 0 ? successCount / ratings.length : 0;
+
+  return {
+    wordBank: encounteredCount ?? 0,
+    mastered: masteredCount,
+    learning: learningCount,
+    dueToday: dueTodayCount,
+    retentionRate7d: retentionRate,
+  };
 }
 
 export async function getFahamMcqWordPool(limit: number) {

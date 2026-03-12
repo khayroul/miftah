@@ -78,7 +78,7 @@ const DIRECTION_CONFIGS: Record<
 };
 
 function queueItems(snapshot: FahamQueueSnapshot): SerializedFahamCard[] {
-  return [...snapshot.due, ...snapshot.new];
+  return [...snapshot.due, ...snapshot.new, ...snapshot.mastered];
 }
 
 function dueLabel(count: number): string {
@@ -139,6 +139,14 @@ function optionButtonClassName(params: {
   return "border-stone-200 bg-stone-100/80 text-stone-500 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-400";
 }
 
+interface FahamStats {
+  wordBank: number;
+  mastered: number;
+  learning: number;
+  dueToday: number;
+  retentionRate7d: number;
+}
+
 export function FahamWorkspace({
   initialQueue,
   setupMessage = null,
@@ -146,6 +154,7 @@ export function FahamWorkspace({
   const [preset, setPreset] = useState<SourcePreset>("mixed");
   const [directionMode, setDirectionMode] = useState<FahamMcqDirectionMode>("arab_to_bm");
   const [snapshot, setSnapshot] = useState<FahamQueueSnapshot>(initialQueue);
+  const [stats, setStats] = useState<FahamStats | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answerState, setAnswerState] = useState<AnswerState | null>(null);
   const [sessionDoneCount, setSessionDoneCount] = useState(0);
@@ -160,6 +169,13 @@ export function FahamWorkspace({
   const cards = useMemo(() => queueItems(snapshot), [snapshot]);
   const currentCard = cards[currentIndex] ?? null;
   const progressPct = cards.length > 0 ? ((currentIndex + 1) / cards.length) * 100 : 0;
+
+  useEffect(() => {
+    void fetch("/api/faham/stats")
+      .then((res) => res.json())
+      .then((data) => setStats(data as FahamStats))
+      .catch(console.error);
+  }, [sessionDoneCount]);
 
   const reloadQueue = (
     nextPreset: SourcePreset,
@@ -328,7 +344,7 @@ export function FahamWorkspace({
         <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="space-y-5">
             <div className="inline-flex items-center rounded-full border border-amber-900/15 bg-amber-100/80 px-3 py-1 text-xs font-medium tracking-wide text-amber-950 dark:border-amber-300/20 dark:bg-amber-900/35 dark:text-amber-100">
-              Faham Engine · MCQ dua arah
+              Faham Engine · Dashboard Metrics
             </div>
 
             <div>
@@ -336,27 +352,37 @@ export function FahamWorkspace({
                 Fahami makna tanpa membuka jawapan terlebih dahulu.
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600 dark:text-stone-300">
-                Faham kini menyokong Arab ke Melayu, Melayu ke Arab, atau mod
-                campuran. Enjin ini memfokuskan 3,000 perkataan teras. Jika
-                tersalah jawab, perkataan itu akan ditanda untuk pengukuhan dan
-                muncul semula lebih awal.
+                Faham kini menggunakan algoritma FSRS untuk penjadualan kad yang tepat.
+                60% sesi adalah perkataan baharu/lemah, 25% ulang kaji, dan 15% sampling pengukuhan.
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
               <StatCard
-                label="Perkataan teras"
-                value={String(snapshot.stats.focusWordLimit)}
+                label="Word Bank"
+                value={String(stats?.wordBank ?? 0)}
+                helper="Pendedahan"
               />
               <StatCard
-                label="Kad ulang kaji"
-                value={String(snapshot.stats.dueCount)}
+                label="Mastered"
+                value={String(stats?.mastered ?? 0)}
+                helper="2x Betul"
               />
               <StatCard
-                label="Kad baharu sedia"
-                value={String(snapshot.stats.eligibleNewCount)}
+                label="Learning"
+                value={String(stats?.learning ?? 0)}
+                helper="Sedang Belajar"
               />
-              <StatCard label="Siap sesi ini" value={String(sessionDoneCount)} />
+              <StatCard
+                label="Due Today"
+                value={String(stats?.dueToday ?? 0)}
+                helper="Ulang kaji"
+              />
+              <StatCard
+                label="7-Day Retention"
+                value={stats ? `${(stats.retentionRate7d * 100).toFixed(0)}%` : "0%"}
+                helper="Kadar Ingatan"
+              />
             </div>
           </div>
 
@@ -473,10 +499,12 @@ export function FahamWorkspace({
                 className={`rounded-full border px-3 py-1 text-xs font-medium ${
                   currentCard.kind === "due"
                     ? "border-teal-900/15 bg-teal-950/5 text-teal-900 dark:border-teal-300/20 dark:bg-teal-900/35 dark:text-teal-100"
+                    : currentCard.kind === "mastered"
+                    ? "border-indigo-900/15 bg-indigo-950/5 text-indigo-900 dark:border-indigo-300/20 dark:bg-indigo-900/35 dark:text-indigo-100"
                     : "border-amber-900/15 bg-amber-100/75 text-amber-900 dark:border-amber-300/20 dark:bg-amber-900/35 dark:text-amber-100"
                 }`}
               >
-                {currentCard.kind === "due" ? "Ulang kaji" : "Kad baharu"}
+                {currentCard.kind === "due" ? "Ulang kaji" : currentCard.kind === "mastered" ? "Pengukuhan" : "Kad baharu"}
               </span>
 
               <button
@@ -511,6 +539,8 @@ export function FahamWorkspace({
               <span className="rounded-full border border-stone-200 bg-stone-100 px-3 py-1 text-xs text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300">
                 {currentCard.kind === "due"
                   ? dueLabel(snapshot.due.length)
+                  : currentCard.kind === "mastered"
+                  ? masteredLabel(snapshot.mastered.length)
                   : newLabel(snapshot.new.length)}
               </span>
               <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
@@ -741,15 +771,20 @@ export function FahamWorkspace({
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value, helper }: { label: string; value: string; helper?: string }) {
   return (
     <div className="rounded-2xl border border-stone-200/80 bg-stone-50/90 px-4 py-3 dark:border-stone-700 dark:bg-stone-950/60">
-      <p className="text-xs uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
         {label}
       </p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+      <p className="mt-1 text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
         {value}
       </p>
+      {helper && (
+        <p className="mt-1 text-[10px] text-stone-400 dark:text-stone-500">
+          {helper}
+        </p>
+      )}
     </div>
   );
 }

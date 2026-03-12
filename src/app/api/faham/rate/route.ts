@@ -46,6 +46,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       lastIncorrectAt: body.rating === 1 ? now.toISOString() : null,
       mistakeStreak: body.rating === 1 ? progress.mistake_streak + 1 : 0,
       needsReinforcement: body.rating === 1,
+      rating: body.rating,
+      currentProgress: progress,
     });
     await logVocabReview({
       elapsedDays: nextCard.elapsed_days,

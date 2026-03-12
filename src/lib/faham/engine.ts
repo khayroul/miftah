@@ -8,12 +8,14 @@ import type {
 
 export const DEFAULT_FAHAM_ENGINE_CONFIG: FahamEngineConfig = {
   candidatePoolSize: 240,
-  dueLimit: 20,
+  sessionSize: 20,
   minDistinctContextCount: 2,
   minExposureEventCount: 3,
   minOccurrenceWeight: 5,
-  newLimit: 5,
-  pauseNewCardsAboveDueCount: 12,
+  newWeight: 0.60,
+  dueWeight: 0.25,
+  masteredWeight: 0.15,
+  pauseNewCardsAboveDueCount: 40,
   preferredSources: ["reading_page", "theme_chunk", "hifz_ayah"],
 };
 
@@ -168,20 +170,40 @@ function compareCandidates(
 export function selectNewFahamCandidates(
   candidates: FahamCandidateWord[],
   config: FahamEngineConfig,
+  limit: number,
 ): FahamCandidateWord[] {
   return candidates
     .filter((candidate) => isEligibleForNewCard(candidate, config))
     .sort((left, right) => compareCandidates(left, right, config))
-    .slice(0, config.newLimit);
+    .slice(0, limit);
 }
 
 export function buildFahamQueuePlan(params: {
   candidates: FahamCandidateWord[];
   config: FahamEngineConfig;
   dueCards: FahamDueCard[];
+  masteredCards: FahamDueCard[];
 }): FahamQueuePlan {
   const config = normalizeFahamEngineConfig(params.config);
-  const dueCards = params.dueCards.slice(0, config.dueLimit);
+  const total = config.sessionSize;
+
+  // Calculate target counts for each bucket
+  const targetDueCount = Math.floor(total * config.dueWeight);
+  const targetMasteredCount = Math.floor(total * config.masteredWeight);
+  const targetNewCount = total - targetDueCount - targetMasteredCount;
+
+  // Fill buckets
+  const dueCards = params.dueCards.slice(0, targetDueCount);
+  const masteredCards = params.masteredCards.slice(0, targetMasteredCount);
+  
+  // Allocate remaining slots to "new" cards
+  const remainingSlots = total - dueCards.length - masteredCards.length;
+  const newCandidates = selectNewFahamCandidates(
+    params.candidates,
+    config,
+    remainingSlots,
+  );
+
   const eligibleNewCount = params.candidates.filter((candidate) =>
     isEligibleForNewCard(candidate, config),
   ).length;
@@ -190,11 +212,13 @@ export function buildFahamQueuePlan(params: {
     return {
       blockedReason: "due_backlog",
       dueCards,
+      masteredCards,
       newCandidates: [],
       stats: {
         dueCount: params.dueCards.length,
         eligibleNewCount,
         totalCandidateCount: params.candidates.length,
+        masteredCount: params.masteredCards.length,
       },
     };
   }
@@ -202,11 +226,13 @@ export function buildFahamQueuePlan(params: {
   return {
     blockedReason: null,
     dueCards,
-    newCandidates: selectNewFahamCandidates(params.candidates, config),
+    masteredCards,
+    newCandidates,
     stats: {
       dueCount: params.dueCards.length,
       eligibleNewCount,
       totalCandidateCount: params.candidates.length,
+      masteredCount: params.masteredCards.length,
     },
   };
 }
