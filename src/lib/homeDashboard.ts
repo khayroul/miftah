@@ -126,6 +126,7 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
     candidates,
     config,
     dueCards,
+    masteredCards: [],
   });
   const dueCount = dueCountResult.count ?? 0;
   const reviewedWordCount = progressResult.count ?? 0;

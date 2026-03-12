@@ -13,6 +13,7 @@ import type {
   FahamCandidateWord,
   FahamDueCard,
   FahamExposureInput,
+  WordWithOccurrences,
 } from "./types";
 
 interface AyahLite {
@@ -26,19 +27,19 @@ interface WordOccurrenceLite {
   ayats: AyahLite | AyahLite[] | null;
 }
 
-interface WordWithOccurrences extends Word {
+interface RepoWordWithOccurrences extends Word {
   word_occurrences: WordOccurrenceLite | WordOccurrenceLite[] | null;
 }
 
 interface VocabProgressWordJoinRow extends VocabProgress {
-  words: WordWithOccurrences | WordWithOccurrences[] | null;
+  words: RepoWordWithOccurrences | RepoWordWithOccurrences[] | null;
 }
 
 interface WordOccurrenceJoinRow {
   ayah_id: number;
   position: number;
   word_id: number;
-  words: WordWithOccurrences | WordWithOccurrences[] | null;
+  words: RepoWordWithOccurrences | RepoWordWithOccurrences[] | null;
 }
 
 function firstRelation<T>(value: T | T[] | null): T | null {
@@ -220,10 +221,10 @@ export async function getDueFahamCards(
           created_at: row.created_at,
           updated_at: row.updated_at,
         },
-        word: word as any,
-      } as FahamDueCard;
+        word: word as WordWithOccurrences,
+      };
     })
-    .filter((row: any): row is FahamDueCard => row !== null);
+    .filter((row): row is FahamDueCard => row !== null);
 }
 
 export async function getFahamExposureCandidates(
@@ -274,8 +275,8 @@ export async function getFahamExposureCandidates(
     throw progressError;
   }
 
-  const wordsById = new Map<number, WordWithOccurrences>();
-  for (const word of (wordData ?? []) as WordWithOccurrences[]) {
+  const wordsById = new Map<number, RepoWordWithOccurrences>();
+  for (const word of (wordData ?? []) as RepoWordWithOccurrences[]) {
     wordsById.set(word.id, word);
   }
 
@@ -294,9 +295,9 @@ export async function getFahamExposureCandidates(
         return null;
       }
 
-      return { summary, word: word as any } as FahamCandidateWord;
+      return { summary, word: word as WordWithOccurrences };
     })
-    .filter((row: any): row is FahamCandidateWord => row !== null);
+    .filter((row): row is FahamCandidateWord => row !== null);
 }
 
 export async function materializeNewFahamCards(
@@ -363,10 +364,10 @@ export async function getMasteredFahamCards(
           created_at: row.created_at,
           updated_at: row.updated_at,
         },
-        word: word as any,
-      } as FahamDueCard;
+        word: word as WordWithOccurrences,
+      };
     })
-    .filter((row: any): row is FahamDueCard => row !== null);
+    .filter((row): row is FahamDueCard => row !== null);
 }
 
 export async function getFahamStats(userId: string) {
@@ -401,7 +402,7 @@ export async function getFahamStats(userId: string) {
   let learningCount = 0;
   let dueTodayCount = 0;
 
-  for (const row of (progressStats ?? []) as any[]) {
+  for (const row of (progressStats ?? []) as Array<{ is_mastered: boolean; reps: number; due: string }>) {
     if (row.is_mastered) {
       masteredCount++;
     } else if (row.reps > 0) {
@@ -448,19 +449,9 @@ export async function getFahamMcqWordPool(limit: number) {
   }
 
   const seen = new Set<string>();
-  const pool: Array<{
-    frequency: number;
-    id: number;
-    lemma: string | null;
-    pos: string | null;
-    root: string | null;
-    textSimple: string;
-    textUthmani: string;
-    translationBm: string | null;
-    transliteration: string | null;
-  }> = [];
+  const pool: FahamMcqPoolWord[] = [];
 
-  for (const row of (data ?? []) as any[]) {
+  for (const row of (data ?? []) as RepoWordWithOccurrences[]) {
     const normalizedMeaning = normalizeMalayMeaning(row.translation_bm);
     const normalizedArabic = row.text_uthmani ? row.text_uthmani.trim() : "";
     if (
@@ -489,8 +480,8 @@ export async function getFahamMcqWordPool(limit: number) {
       textUthmani: normalizedArabic,
       translationBm: normalizedMeaning,
       transliteration: row.transliteration,
-    } as any);
+    });
   }
 
-  return pool as FahamMcqPoolWord[];
+  return pool;
 }

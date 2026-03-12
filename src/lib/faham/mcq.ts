@@ -1,7 +1,8 @@
 import type { Word } from "@/types/database";
+import type { WordWithOccurrences } from "./types";
 import { getQuranWordAudioUrl } from "../mushafAssets";
 
-function getAudioKey(word: any): string | null {
+function getAudioKey(word: WordWithOccurrences): string | null {
   const occs = word.word_occurrences;
   const occ = Array.isArray(occs) ? occs[0] : occs;
   if (!occ) return null;
@@ -270,7 +271,7 @@ function selectDistractors(params: {
 }
 
 function buildArabicToMalayMcq(
-  word: Word & { word_occurrences?: any },
+  word: WordWithOccurrences,
   pool: FahamMcqPoolWord[],
   optionCount: number,
 ): FahamBuiltMcq | null {
@@ -327,7 +328,7 @@ function buildArabicToMalayMcq(
 }
 
 function buildMalayToArabicMcq(
-  word: Word & { word_occurrences?: any },
+  word: WordWithOccurrences,
   pool: FahamMcqPoolWord[],
   optionCount: number,
 ): FahamBuiltMcq | null {
@@ -395,7 +396,7 @@ function resolveDirectionOrder(word: Word, mode: FahamMcqDirectionMode): FahamMc
 }
 
 export function buildFahamMcqForWord(
-  word: Word & { word_occurrences?: any },
+  word: WordWithOccurrences,
   pool: FahamMcqPoolWord[],
   directionMode: FahamMcqDirectionMode,
   optionCount = 4,

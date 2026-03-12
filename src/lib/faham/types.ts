@@ -5,18 +5,29 @@ import type {
   Word,
 } from "@/types/database";
 
+interface WordOccurrenceLite {
+  ayah_id: number;
+  position: number;
+  ayats: { surah_id: number; ayah_number: number } | { surah_id: number; ayah_number: number }[] | null;
+}
+
+export type WordWithOccurrences = Word & {
+  word_occurrences?: WordOccurrenceLite | WordOccurrenceLite[] | null;
+};
+
 export interface FahamDueCard {
   progress: VocabProgress;
-  word: Word & { word_occurrences?: any };
+  word: WordWithOccurrences;
 }
 
 export interface FahamCandidateWord {
   summary: VocabExposureSummary;
-  word: Word & { word_occurrences?: any };
+  word: WordWithOccurrences;
 }
 
 export interface FahamEngineConfig {
   candidatePoolSize: number;
+  dueLimit: number;
   sessionSize: number;
   minDistinctContextCount: number;
   minExposureEventCount: number;

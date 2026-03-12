@@ -259,7 +259,8 @@ export function FahamWorkspace({
   const playFeedbackSound = (kind: "correct" | "incorrect") => {
     if (!audioEnabled) return;
     
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const AudioCtx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new AudioCtx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     
@@ -296,22 +297,6 @@ export function FahamWorkspace({
     }
   }, [currentCard?.word.id, audioEnabled, directionMode, answerState]);
 
-  // Autoplay correct answer when selection result appears + Auto-continue
-  useEffect(() => {
-    if (currentCard && answerState) {
-      const lang = currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms";
-      playWordAudio(currentCard.mcq.answerPrimary, lang, currentCard.mcq.answerAudioUrl);
-      
-      // Auto-continue to next card after 3 seconds if correct
-      if (answerState.isCorrect) {
-        const timer = setTimeout(() => {
-          handleContinue();
-        }, 3000);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [answerState, currentCard?.word.id, audioEnabled]);
-
   const handleManualAudio = (lang: "ar" | "ms", text: string, explicitUrl?: string | null) => {
     playWordAudio(text, lang, explicitUrl);
   };
@@ -345,6 +330,22 @@ export function FahamWorkspace({
         });
     });
   };
+
+  // Autoplay correct answer when selection result appears + Auto-continue
+  useEffect(() => {
+    if (currentCard && answerState) {
+      const lang = currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms";
+      playWordAudio(currentCard.mcq.answerPrimary, lang, currentCard.mcq.answerAudioUrl);
+
+      // Auto-continue to next card after 3 seconds if correct
+      if (answerState.isCorrect) {
+        const timer = setTimeout(() => {
+          handleContinue();
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [answerState, currentCard?.word.id, audioEnabled]);
 
   return (
     <div className="flex flex-col gap-6">

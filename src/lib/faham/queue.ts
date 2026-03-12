@@ -16,10 +16,12 @@ import {
 
 interface QueueOverrides {
   directionMode?: FahamMcqDirectionMode;
+  dueLimit?: number;
   sessionSize?: number;
   minDistinctContextCount?: number;
   minExposureEventCount?: number;
   minOccurrenceWeight?: number;
+  newLimit?: number;
   newWeight?: number;
   dueWeight?: number;
   masteredWeight?: number;
