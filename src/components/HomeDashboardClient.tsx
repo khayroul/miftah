@@ -257,13 +257,13 @@ export function HomeDashboardClient({
               value: `${snapshot.hifz.totalManzil} ayat`,
             },
             {
-              label: "Due Hari Ini",
+              label: "Ulangan Hari Ini",
               value: `${snapshot.hifz.dueTodayCount}`,
             },
           ]
         : [
             { label: "Manzil", value: "0 ayat" },
-            { label: "Due Hari Ini", value: "0" },
+            { label: "Ulangan Hari Ini", value: "0" },
           ],
       percent: snapshot.hifz?.manzilCoveragePct ?? 0,
       title: "Hafal",

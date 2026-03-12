@@ -96,7 +96,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <header className="sticky top-0 z-30 flex flex-col gap-4 border-b border-stone-200 bg-white/95 pb-4 pt-4 backdrop-blur-md dark:border-[#162a44] dark:bg-[#0d1b2a]/95 sm:pt-6">
+      <header className="flex flex-col gap-4 pt-2 sm:pt-4">
         <nav className="flex w-full items-center justify-end gap-2">
           <AuthStatusButton />
           <ThemeToggle />
