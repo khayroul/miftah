@@ -4,12 +4,14 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 import { ReadAudioDock } from "@/components/ReadAudioDock";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
+import { trackReadAudioTelemetry } from "@/lib/readAudioTelemetry";
 
 interface ReadAudioContextValue {
   activePlaybackAyahKey: string | null;
@@ -40,21 +42,40 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
   );
 
   const setAudioVisible = useCallback((next: boolean) => {
+    if (!next) {
+      trackReadAudioTelemetry("read_audio_drop_off", {
+        source: "provider_set_visible",
+        panelOpen: isAudioPanelOpen,
+      });
+    }
     setIsAudioVisible(next);
     if (!next) {
       setIsAudioPanelOpen(false);
     }
-  }, []);
+  }, [isAudioPanelOpen]);
 
   const toggleAudioVisibility = useCallback(() => {
     setIsAudioVisible((previous) => {
       const next = !previous;
       if (!next) {
+        trackReadAudioTelemetry("read_audio_drop_off", {
+          source: "provider_toggle",
+          panelOpen: isAudioPanelOpen,
+        });
         setIsAudioPanelOpen(false);
       }
       return next;
     });
-  }, []);
+  }, [isAudioPanelOpen]);
+
+  useEffect(() => {
+    if (!isAudioVisible || tracks.length === 0) {
+      return;
+    }
+    trackReadAudioTelemetry("read_audio_open", {
+      trackCount: tracks.length,
+    });
+  }, [isAudioVisible, tracks.length]);
 
   const feedbackHidden = isAudioVisible && isAudioPanelOpen;
   const feedbackOffsetPx = isAudioVisible ? 104 : 24;

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
+import { trackReadAudioTelemetry } from "@/lib/readAudioTelemetry";
 
 interface ReadAudioDockProps {
   tracks: ReadAudioTrack[];
@@ -19,6 +20,11 @@ const RANGE_PRESETS: Array<{ value: RangePreset; label: string }> = [
   { value: "surah", label: "Surah" },
   { value: "juz", label: "Juz" },
 ];
+const RANGE_PRESET_SHORT_LABEL: Record<RangePreset, string> = {
+  page: "Hlm",
+  surah: "Surah",
+  juz: "Juz",
+};
 
 const REPEAT_OPTIONS: RepeatOption[] = [1, 2, 3, -1];
 
@@ -99,7 +105,7 @@ function SegmentedRepeat({ title, value, onChange }: SegmentedRepeatProps) {
               key={`${title}-${option}`}
               type="button"
               onClick={() => onChange(option)}
-              className={`rounded-lg px-2 py-2 text-sm font-medium transition ${
+              className={`min-h-11 rounded-lg px-2 py-2 text-sm font-medium transition ${
                 selected
                   ? "bg-white text-stone-900 shadow-sm dark:bg-stone-200 dark:text-stone-900"
                   : "text-stone-600 hover:bg-white/60 dark:text-stone-300 dark:hover:bg-stone-700"
@@ -123,6 +129,7 @@ export function ReadAudioDock({
 }: ReadAudioDockProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const shouldAutoplayRef = useRef(false);
+  const wasPanelVisibleRef = useRef(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -168,6 +175,16 @@ export function ReadAudioDock({
   useEffect(() => {
     onPanelOpenChange?.(panelVisible);
   }, [onPanelOpenChange, panelVisible]);
+
+  useEffect(() => {
+    if (panelVisible && !wasPanelVisibleRef.current) {
+      trackReadAudioTelemetry("read_audio_expand", {
+        rangePreset,
+        rangeSize: normalizedRangeEnd - normalizedRangeStart + 1,
+      });
+    }
+    wasPanelVisibleRef.current = panelVisible;
+  }, [normalizedRangeEnd, normalizedRangeStart, panelVisible, rangePreset]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -218,6 +235,30 @@ export function ReadAudioDock({
     setRepeatEachStep(0);
   };
 
+  const handleNextTrack = () => {
+    if (safeIndex >= normalizedRangeEnd) {
+      return;
+    }
+    trackReadAudioTelemetry("read_audio_next", {
+      currentAyah: currentTrack?.key ?? null,
+      nextIndex: safeIndex + 1,
+    });
+    goToTrack(safeIndex + 1);
+  };
+
+  const cycleRangePreset = () => {
+    const orderedPresets: RangePreset[] = ["page", "surah", "juz"];
+    const currentPresetIndex = orderedPresets.indexOf(rangePreset);
+    const nextPreset =
+      orderedPresets[(currentPresetIndex + 1) % orderedPresets.length] ?? "page";
+    trackReadAudioTelemetry("read_audio_range_preset", {
+      from: rangePreset,
+      to: nextPreset,
+      fromAyah: tracks[normalizedRangeStart]?.key ?? null,
+    });
+    applyRangePreset(nextPreset, safeIndex);
+  };
+
   const togglePlayback = async () => {
     const audio = audioRef.current;
     if (!audio || !canPlay) {
@@ -226,6 +267,10 @@ export function ReadAudioDock({
     if (isPlaying) {
       audio.pause();
       setIsPlaying(false);
+      trackReadAudioTelemetry("read_audio_drop_off", {
+        source: "manual_pause",
+        ayah: currentTrack?.key ?? null,
+      });
       return;
     }
     try {
@@ -292,7 +337,7 @@ export function ReadAudioDock({
             setPanelOpen(false);
             onRequestClose();
           }}
-          className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+          className="inline-flex min-h-11 items-center rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
         >
           Tutup
         </button>
@@ -309,8 +354,15 @@ export function ReadAudioDock({
               <button
                 key={preset.value}
                 type="button"
-                onClick={() => applyRangePreset(preset.value, normalizedRangeStart)}
-                className={`rounded-full px-3 py-2 text-[15px] font-medium transition sm:text-base ${
+                onClick={() => {
+                  trackReadAudioTelemetry("read_audio_range_preset", {
+                    from: rangePreset,
+                    to: preset.value,
+                    source: "panel",
+                  });
+                  applyRangePreset(preset.value, normalizedRangeStart);
+                }}
+                className={`min-h-11 rounded-full px-3 py-2 text-[15px] font-medium transition sm:text-base ${
                   active
                     ? "bg-teal-700 text-white shadow-sm dark:bg-teal-500 dark:text-teal-950"
                     : "border border-stone-300 text-stone-600 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
@@ -332,7 +384,7 @@ export function ReadAudioDock({
               const nextStart = Number.parseInt(event.target.value, 10);
               applyRangePreset(rangePreset, nextStart);
             }}
-            className="mt-1.5 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
+            className="mt-1.5 h-11 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
           >
             {tracks.map((track, index) => (
               <option key={`from-${track.key}`} value={index}>
@@ -349,7 +401,7 @@ export function ReadAudioDock({
             onChange={(event) =>
               setRangeEndIndex(Number.parseInt(event.target.value, 10))
             }
-            className="mt-1.5 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
+            className="mt-1.5 h-11 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
           >
             {tracks.map((track, index) => (
               <option key={`to-${track.key}`} value={index}>
@@ -373,6 +425,10 @@ export function ReadAudioDock({
           onChange={(next) => {
             setRepeatEachVerse(next);
             setRepeatEachStep(0);
+            trackReadAudioTelemetry("read_audio_repeat_change", {
+              target: "verse",
+              value: next,
+            });
           }}
         />
       </div>
@@ -384,6 +440,10 @@ export function ReadAudioDock({
           onChange={(next) => {
             setRepeatSet(next);
             setRepeatSetStep(0);
+            trackReadAudioTelemetry("read_audio_repeat_change", {
+              target: "set",
+              value: next,
+            });
           }}
         />
       </div>
@@ -393,15 +453,15 @@ export function ReadAudioDock({
           type="button"
           onClick={() => goToTrack(safeIndex - 1)}
           disabled={safeIndex <= normalizedRangeStart}
-          className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
+          className="min-h-11 rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
         >
           Ayat Sebelum
         </button>
         <button
           type="button"
-          onClick={() => goToTrack(safeIndex + 1)}
+          onClick={handleNextTrack}
           disabled={safeIndex >= normalizedRangeEnd}
-          className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
+          className="min-h-11 rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
         >
           Ayat Seterusnya
         </button>
@@ -429,7 +489,9 @@ export function ReadAudioDock({
       ) : null}
       <div
         className={`fixed inset-x-0 bottom-0 z-[70] transition-all duration-300 ${
-          visible === false ? "pointer-events-none translate-y-full opacity-0" : "translate-y-0 opacity-100"
+          visible === false || panelVisible
+            ? "pointer-events-none translate-y-full opacity-0"
+            : "translate-y-0 opacity-100"
         }`}
       >
       <audio
@@ -443,49 +505,71 @@ export function ReadAudioDock({
 
         <div className="mx-auto w-full max-w-4xl px-2 pb-[calc(12px+env(safe-area-inset-bottom))] sm:px-4">
           <section className="rounded-[24px] border border-stone-200 bg-white/96 shadow-[0_16px_44px_rgba(0,0,0,0.18)] backdrop-blur dark:border-stone-700 dark:bg-stone-900/94">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <button
-              type="button"
-              onClick={togglePlayback}
-              disabled={!canPlay}
-              className="grid h-11 w-11 place-items-center rounded-full border border-teal-300 bg-teal-50 text-teal-800 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-teal-700/60 dark:bg-teal-900/35 dark:text-teal-100 dark:hover:bg-teal-900/55"
-              aria-label={isPlaying ? "Jeda audio" : "Mainkan audio"}
-            >
-              {isPlaying ? (
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="5" width="4" height="14" rx="1" />
-                  <rect x="14" y="5" width="4" height="14" rx="1" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8.5 6.2c0-.8.9-1.3 1.6-.8l8.2 5.8a1 1 0 0 1 0 1.6L10.1 18.6c-.7.5-1.6 0-1.6-.8V6.2Z" />
-                </svg>
-              )}
-            </button>
+            <div className="flex items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4">
+              <button
+                type="button"
+                onClick={togglePlayback}
+                disabled={!canPlay}
+                className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-teal-300 bg-teal-50 text-teal-800 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-teal-700/60 dark:bg-teal-900/35 dark:text-teal-100 dark:hover:bg-teal-900/55"
+                aria-label={isPlaying ? "Jeda audio" : "Mainkan audio"}
+              >
+                {isPlaying ? (
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="5" width="4" height="14" rx="1" />
+                    <rect x="14" y="5" width="4" height="14" rx="1" />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8.5 6.2c0-.8.9-1.3 1.6-.8l8.2 5.8a1 1 0 0 1 0 1.6L10.1 18.6c-.7.5-1.6 0-1.6-.8V6.2Z" />
+                  </svg>
+                )}
+              </button>
 
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-medium text-stone-900 sm:text-base dark:text-stone-100">
-                Mishary Al-Afasy
-              </p>
-              <p className="truncate text-sm text-stone-500 dark:text-stone-400">
-                {currentTrack ? `Ayat ${formatTrackLabel(currentTrack)}` : "Tiada audio untuk halaman ini"}
-              </p>
+              <button
+                type="button"
+                onClick={handleNextTrack}
+                disabled={!canPlay || safeIndex >= normalizedRangeEnd}
+                className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-stone-300 text-stone-700 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+                aria-label="Ayat seterusnya"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 5l8 7-8 7" />
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                onClick={cycleRangePreset}
+                disabled={!canPlay}
+                className="inline-flex h-12 shrink-0 items-center rounded-full border border-stone-300 px-3 text-sm font-medium text-stone-700 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+                aria-label="Tukar tetapan julat"
+              >
+                Julat {RANGE_PRESET_SHORT_LABEL[rangePreset]}
+              </button>
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-medium text-stone-900 sm:text-base dark:text-stone-100">
+                  Mishary Al-Afasy
+                </p>
+                <p className="truncate text-sm text-stone-500 dark:text-stone-400">
+                  {currentTrack ? `Ayat ${formatTrackLabel(currentTrack)}` : "Tiada audio untuk halaman ini"}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPanelOpen((open) => !open)}
+                disabled={!canPlay}
+                className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-teal-300 text-teal-800 transition hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-45 dark:border-teal-700/60 dark:text-teal-100 dark:hover:bg-teal-900/35"
+                aria-label="Buka kawalan lanjut audio"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="6" cy="12" r="2" />
+                  <circle cx="12" cy="12" r="2" />
+                  <circle cx="18" cy="12" r="2" />
+                </svg>
+              </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setPanelOpen((open) => !open)}
-              disabled={!canPlay}
-              className="grid h-11 w-11 place-items-center rounded-full border border-teal-300 text-teal-800 transition hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-45 dark:border-teal-700/60 dark:text-teal-100 dark:hover:bg-teal-900/35"
-              aria-label="Buka tetapan audio"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="6" cy="12" r="2" />
-                <circle cx="12" cy="12" r="2" />
-                <circle cx="18" cy="12" r="2" />
-              </svg>
-            </button>
-          </div>
           </section>
         </div>
       </div>
