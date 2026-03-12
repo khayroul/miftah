@@ -470,48 +470,95 @@ export function MushafPageView({
     ? getWordTooltipPlacement(activeWord, imageWidth, imageHeight)
     : null;
   const selectableAyahTargets = ayahOverlayTargets;
-  const activePlaybackAyahBox = useMemo(() => {
+  const activePlaybackAyahSegments = useMemo(() => {
     if (!activePlaybackAyahKey) {
-      return null;
+      return [] as AyahBoundingBox[];
     }
 
-    const ayahBox = ayahBoxes.get(activePlaybackAyahKey);
-    if (!ayahBox) {
-      return null;
+    const ayahWords = words.filter((word) => {
+      const ayahKey = getAyahKeyFromWord(word);
+      return ayahKey === activePlaybackAyahKey;
+    });
+    if (ayahWords.length === 0) {
+      return [] as AyahBoundingBox[];
+    }
+
+    const lineThreshold = Math.max(16, imageHeight / 70);
+    const sortedWords = [...ayahWords].sort((a, b) => {
+      const aCenterY = a.y + a.height / 2;
+      const bCenterY = b.y + b.height / 2;
+      if (Math.abs(aCenterY - bCenterY) > lineThreshold) {
+        return aCenterY - bCenterY;
+      }
+      return a.x - b.x;
+    });
+
+    const lineSegments: AyahBoundingBox[] = [];
+    for (const word of sortedWords) {
+      const current = lineSegments[lineSegments.length - 1];
+      if (!current) {
+        lineSegments.push({
+          x: word.x,
+          y: word.y,
+          width: word.width,
+          height: word.height,
+        });
+        continue;
+      }
+
+      const currentCenterY = current.y + current.height / 2;
+      const wordCenterY = word.y + word.height / 2;
+      if (Math.abs(wordCenterY - currentCenterY) > lineThreshold) {
+        lineSegments.push({
+          x: word.x,
+          y: word.y,
+          width: word.width,
+          height: word.height,
+        });
+        continue;
+      }
+
+      const minX = Math.min(current.x, word.x);
+      const minY = Math.min(current.y, word.y);
+      const maxX = Math.max(current.x + current.width, word.x + word.width);
+      const maxY = Math.max(current.y + current.height, word.y + word.height);
+      current.x = minX;
+      current.y = minY;
+      current.width = maxX - minX;
+      current.height = maxY - minY;
     }
 
     const paddingX = Math.max(8, imageWidth * 0.004);
     const paddingY = Math.max(6, imageHeight * 0.003);
-    const expanded = expandHitbox(
-      ayahBox,
-      paddingX,
-      paddingY,
-      imageWidth,
-      imageHeight,
-    );
-
-    if (expanded.y >= revealVisibleBoundaryY) {
-      return null;
-    }
-
-    const clippedHeight = Math.min(
-      expanded.height,
-      revealVisibleBoundaryY - expanded.y,
-    );
-    if (clippedHeight <= 1) {
-      return null;
-    }
-
-    return {
-      ...expanded,
-      height: clippedHeight,
-    };
+    return lineSegments
+      .map((segment) =>
+        expandHitbox(
+          segment,
+          paddingX,
+          paddingY,
+          imageWidth,
+          imageHeight,
+        ),
+      )
+      .flatMap((expanded) => {
+        if (expanded.y >= revealVisibleBoundaryY) {
+          return [];
+        }
+        const clippedHeight = Math.min(
+          expanded.height,
+          revealVisibleBoundaryY - expanded.y,
+        );
+        if (clippedHeight <= 1) {
+          return [];
+        }
+        return [{ ...expanded, height: clippedHeight }];
+      });
   }, [
     activePlaybackAyahKey,
-    ayahBoxes,
     imageHeight,
     imageWidth,
     revealVisibleBoundaryY,
+    words,
   ]);
   const selectedAyahDetail = selectedAyahKey && canSelectAyah
     ? ayahDetailsMap.get(selectedAyahKey) ?? null
@@ -1000,17 +1047,18 @@ export function MushafPageView({
                 </span>
               </div>
             ) : null}
-            {activePlaybackAyahBox ? (
+            {activePlaybackAyahSegments.map((segment, index) => (
               <div
+                key={`playback-ayah-segment-${index}`}
                 className="pointer-events-none absolute rounded-md border-2 border-sky-500/90 bg-sky-400/10 shadow-[0_0_0_1px_rgba(14,165,233,0.16)] transition-all"
                 style={{
-                  left: percent(activePlaybackAyahBox.x, imageWidth),
-                  top: percent(activePlaybackAyahBox.y, imageHeight),
-                  width: percent(activePlaybackAyahBox.width, imageWidth),
-                  height: percent(activePlaybackAyahBox.height, imageHeight),
+                  left: percent(segment.x, imageWidth),
+                  top: percent(segment.y, imageHeight),
+                  width: percent(segment.width, imageWidth),
+                  height: percent(segment.height, imageHeight),
                 }}
               />
-            ) : null}
+            ))}
             {canInteract ? (
               <>
                 {wordHitboxButtons}
