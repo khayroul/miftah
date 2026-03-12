@@ -20,12 +20,14 @@ export default async function FahamPage() {
     due: [],
     new: [],
     mastered: [],
+    learning: [],
     stats: {
       dueCount: 0,
       eligibleNewCount: 0,
       focusWordLimit: TOP_FAHAM_WORD_LIMIT,
       totalCandidateCount: 0,
       masteredCount: 0,
+      learningCount: 0,
     },
   };
 
