@@ -6,10 +6,13 @@ function getAudioKey(word: WordWithOccurrences): string | null {
   const occs = word.word_occurrences;
   const occ = Array.isArray(occs) ? occs[0] : occs;
   if (!occ) return null;
-  const ayahs = occ.ayats;
-  const ayah = Array.isArray(ayahs) ? ayahs[0] : ayahs;
+  const ayahValue = (occ as { ayat?: unknown; ayats?: unknown }).ayat
+    ?? (occ as { ayat?: unknown; ayats?: unknown }).ayats;
+  const ayah = Array.isArray(ayahValue) ? ayahValue[0] : ayahValue;
   if (!ayah) return null;
-  return `${ayah.surah_id}:${ayah.ayah_number}:${occ.position}`;
+  const normalizedAyah = ayah as { surah_id?: number; ayah_number?: number };
+  if (!normalizedAyah.surah_id || !normalizedAyah.ayah_number) return null;
+  return `${normalizedAyah.surah_id}:${normalizedAyah.ayah_number}:${occ.position}`;
 }
 
 function getAudioUrlForKey(key: string | null): string | null {

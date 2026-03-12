@@ -24,7 +24,7 @@ interface AyahLite {
 interface WordOccurrenceLite {
   ayah_id: number;
   position: number;
-  ayats: AyahLite | AyahLite[] | null;
+  ayat: AyahLite | AyahLite[] | null;
 }
 
 interface RepoWordWithOccurrences extends Word {
@@ -181,7 +181,7 @@ export async function getDueFahamCards(
   const { data, error } = await supabaseServer
     .from("vocab_progress")
     .select(
-      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayats(surah_id, ayah_number)))",
+      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayat(surah_id, ayah_number)))",
     )
     .eq("user_id", userId)
     .in("word_id", topWordIds)
@@ -261,7 +261,7 @@ export async function getFahamExposureCandidates(
       supabaseServer
         .from("words")
         .select(
-          "id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayats(surah_id, ayah_number))",
+          "id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayat(surah_id, ayah_number))",
         )
         .in("id", wordIds),
       supabaseServer
@@ -329,7 +329,7 @@ export async function getMasteredFahamCards(
   const { data, error } = await supabaseServer
     .from("vocab_progress")
     .select(
-      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayats(surah_id, ayah_number)))",
+      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayat(surah_id, ayah_number)))",
     )
     .eq("user_id", userId)
     .in("word_id", topWordIds)
@@ -388,7 +388,7 @@ export async function getLearningFahamCards(
   const { data, error } = await supabaseServer
     .from("vocab_progress")
     .select(
-      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayats(surah_id, ayah_number)))",
+      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayat(surah_id, ayah_number)))",
     )
     .eq("user_id", userId)
     .in("word_id", topWordIds)
@@ -507,7 +507,7 @@ export async function getFahamMcqWordPool(limit: number) {
   const { data, error } = await supabaseServer
     .from("words")
     .select(
-      "id, text_uthmani, text_simple, translation_bm, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayats(surah_id, ayah_number))",
+      "id, text_uthmani, text_simple, translation_bm, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayat(surah_id, ayah_number))",
     )
     .in("id", topWordIds)
     .not("translation_bm", "is", null)
@@ -532,7 +532,7 @@ export async function getFahamMcqWordPool(limit: number) {
     }
 
     const firstOcc = firstRelation(row.word_occurrences);
-    const ayah = firstOcc ? firstRelation(firstOcc.ayats) : null;
+    const ayah = firstOcc ? firstRelation(firstOcc.ayat) : null;
     const audioKey = (firstOcc && ayah) 
       ? `${ayah.surah_id}:${ayah.ayah_number}:${firstOcc.position}` 
       : null;

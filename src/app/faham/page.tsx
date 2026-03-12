@@ -34,9 +34,12 @@ export default async function FahamPage() {
   if (userId) {
     try {
       initialQueue = await buildFahamQueueSnapshot(userId, {});
-    } catch {
+    } catch (error: unknown) {
+      const debugMessage = error instanceof Error ? error.message : String(error);
+      console.error("[faham/page] Failed to build initial queue:", error);
       setupMessage =
-        "Enjin Faham perlukan migration SQL baharu sebelum queue boleh dimuatkan. Jalankan SQL di Supabase editor dahulu.";
+        "Enjin Faham perlukan migration SQL baharu sebelum queue boleh dimuatkan. Jalankan SQL di Supabase editor dahulu. Debug: " +
+        debugMessage;
     }
   } else {
     setupMessage = "Akaun Diperlukan: Anda sedang menggunakan mod pratonton. Log masuk untuk menyimpan kemajuan anda.";
