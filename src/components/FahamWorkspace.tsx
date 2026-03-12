@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import type { FahamSourceType } from "@/types/database";
 import type { FahamQueueSnapshot, SerializedFahamCard } from "@/lib/faham/queue";
 import type { FahamLevelProgress } from "@/lib/faham/levels";
@@ -216,7 +216,7 @@ export function FahamWorkspace({
     });
   };
 
-  const moveToNextCard = async () => {
+  const moveToNextCard = useCallback(async () => {
     const nextIndex = currentIndex + 1;
     setSessionDoneCount((value) => value + 1);
 
@@ -232,7 +232,7 @@ export function FahamWorkspace({
     setCurrentIndex(0);
     setAnswerState(null);
     setErrorMessage(null);
-  };
+  }, [cards.length, currentIndex, directionMode, isRevision, preset]);
 
   const handleAnswer = (selectedIndex: number) => {
     if (!currentCard || answerState || isPending) {
@@ -255,7 +255,7 @@ export function FahamWorkspace({
     });
   };
 
-  const playWordAudio = (text: string, lang: "ar" | "ms", explicitUrl?: string | null) => {
+  const playWordAudio = useCallback((text: string, lang: "ar" | "ms", explicitUrl?: string | null) => {
     if (!audioEnabled || !text) return;
 
     const normalizedExplicitUrl =
@@ -273,9 +273,9 @@ export function FahamWorkspace({
     audio.play().catch(() => {
       // Ignore autoplay blocks or failures
     });
-  };
+  }, [audioEnabled]);
 
-  function playFeedbackSound(kind: "correct" | "incorrect" | "mastered") {
+  const playFeedbackSound = useCallback((kind: "correct" | "incorrect" | "mastered") => {
     if (!audioEnabled) return;
     
     const AudioCtx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -318,7 +318,7 @@ export function FahamWorkspace({
       osc.start(now);
       osc.stop(now + 0.3);
     }
-  }
+  }, [audioEnabled]);
 
   useEffect(() => {
     void fetch("/api/faham/stats")
@@ -336,20 +336,20 @@ export function FahamWorkspace({
         }
       })
       .catch(console.error);
-  }, [sessionDoneCount, prevMastered]);
+  }, [playFeedbackSound, prevMastered, sessionDoneCount]);
 
   // Autoplay prompt when card changes
   useEffect(() => {
     if (currentCard && !answerState) {
       playWordAudio(currentCard.mcq.promptPrimary, currentCard.mcq.promptLang, currentCard.mcq.promptAudioUrl);
     }
-  }, [currentCard?.word.id, audioEnabled, directionMode, answerState]);
+  }, [answerState, currentCard, playWordAudio]);
 
   const handleManualAudio = (lang: "ar" | "ms", text: string, explicitUrl?: string | null) => {
     playWordAudio(text, lang, explicitUrl);
   };
 
-  const handleContinue = () => {
+  const handleContinue = useCallback(() => {
     if (!currentCard || !answerState) {
       return;
     }
@@ -377,7 +377,7 @@ export function FahamWorkspace({
           setErrorMessage("Jawapan tak dapat disimpan. Cuba sekali lagi.");
         });
     });
-  };
+  }, [answerState, currentCard, moveToNextCard, startTransition]);
 
   // Autoplay correct answer when selection result appears + Auto-continue
   useEffect(() => {
@@ -393,7 +393,7 @@ export function FahamWorkspace({
         return () => clearTimeout(timer);
       }
     }
-  }, [answerState, currentCard?.word.id, audioEnabled]);
+  }, [answerState, currentCard, handleContinue, playWordAudio]);
 
   return (
     <div className="relative flex flex-col gap-6">
