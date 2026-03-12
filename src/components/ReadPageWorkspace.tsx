@@ -56,6 +56,9 @@ export function ReadPageWorkspace({
 }: ReadPageWorkspaceProps) {
   const router = useRouter();
   const [audioDockVisible, setAudioDockVisible] = useState(false);
+  const [activePlaybackAyahKey, setActivePlaybackAyahKey] = useState<string | null>(
+    null,
+  );
   const [audioDiscovered, setAudioDiscovered] = useState(() => {
     if (typeof window === "undefined") {
       return true;
@@ -256,6 +259,7 @@ export function ReadPageWorkspace({
         onCanvasTap={handleMushafTap}
         audioDiscovered={audioDiscovered}
         onAudioDiscovered={markAudioDiscovered}
+        activePlaybackAyahKey={activePlaybackAyahKey}
       />
 
       <ReadAudioDock
@@ -263,6 +267,7 @@ export function ReadPageWorkspace({
         tracks={audioTracks}
         visible={audioDockVisible}
         onRequestClose={() => setAudioDockVisible(false)}
+        onPlaybackAyahChange={setActivePlaybackAyahKey}
       />
     </>
   );

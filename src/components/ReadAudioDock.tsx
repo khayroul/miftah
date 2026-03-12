@@ -7,6 +7,7 @@ interface ReadAudioDockProps {
   tracks: ReadAudioTrack[];
   visible?: boolean;
   onRequestClose: () => void;
+  onPlaybackAyahChange?: (ayahKey: string | null) => void;
 }
 
 type RangePreset = "page" | "surah" | "juz";
@@ -116,6 +117,7 @@ export function ReadAudioDock({
   tracks,
   visible,
   onRequestClose,
+  onPlaybackAyahChange,
 }: ReadAudioDockProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const shouldAutoplayRef = useRef(false);
@@ -142,6 +144,23 @@ export function ReadAudioDock({
     : 0;
   const currentTrack = tracks[safeIndex] ?? null;
   const canPlay = currentTrack !== null;
+
+  useEffect(() => {
+    if (!onPlaybackAyahChange) {
+      return;
+    }
+    if (!isPlaying || !currentTrack) {
+      onPlaybackAyahChange(null);
+      return;
+    }
+    onPlaybackAyahChange(currentTrack.key);
+  }, [currentTrack, isPlaying, onPlaybackAyahChange]);
+
+  useEffect(() => {
+    return () => {
+      onPlaybackAyahChange?.(null);
+    };
+  }, [onPlaybackAyahChange]);
 
   useEffect(() => {
     const audio = audioRef.current;
