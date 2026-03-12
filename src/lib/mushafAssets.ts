@@ -94,7 +94,7 @@ function getRemoteBaseUrl(
 
 // CDN asset version — bump this whenever pages are re-rendered and re-uploaded
 // to force browser and Cloudflare edge caches to fetch the new files.
-const CDN_ASSET_VERSION = "3";
+const CDN_ASSET_VERSION = "4";
 
 function joinUrl(baseUrl: string, filename: string): string {
   return `${trimTrailingSlashes(baseUrl)}/${filename}?v=${CDN_ASSET_VERSION}`;
