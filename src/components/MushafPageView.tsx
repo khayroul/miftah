@@ -475,6 +475,11 @@ export function MushafPageView({
   const canMarkHifz = mode === "hifz" && remainingAyahKeys.length > 0;
   const showHifzEdgeDock =
     mode === "hifz" && canShowAnyImage && hifzRevealByThirdsEnabled;
+  const hifzDockTranslateClass = isHifzDockHidden
+    ? "translate-x-[112%]"
+    : isHifzDockOpen
+      ? "translate-x-0"
+      : "translate-x-[42%]";
   const hifzHafalButtonLabel = allAyatMemorized
     ? "Halaman Sudah Hafal"
     : markingMemorized
@@ -815,9 +820,7 @@ export function MushafPageView({
 
       {showHifzEdgeDock ? (
         <div
-          className={`fixed right-0 top-1/2 z-40 -translate-y-1/2 transition-transform duration-200 ${
-            isHifzDockHidden ? "translate-x-[112%]" : "translate-x-0"
-          }`}
+          className={`fixed right-0 top-1/2 z-40 -translate-y-1/2 transition-transform duration-200 ${hifzDockTranslateClass}`}
         >
           <div className="flex items-center gap-2">
             <button
@@ -825,7 +828,7 @@ export function MushafPageView({
               aria-expanded={isHifzDockOpen}
               aria-label={isHifzDockOpen ? "Tutup panel Hafal" : "Buka panel Hafal"}
               onClick={() => setIsHifzDockOpen((current) => !current)}
-              className="h-32 w-8 rounded-l-xl border border-r-0 border-teal-300 bg-white/96 text-[11px] font-semibold tracking-wide text-teal-900 shadow-[0_8px_24px_rgba(13,148,136,0.18)] backdrop-blur-sm transition hover:bg-teal-50 dark:border-teal-900/60 dark:bg-stone-900/96 dark:text-teal-200 dark:hover:bg-stone-800"
+              className="h-32 w-7 rounded-l-xl border border-r-0 border-teal-300 bg-white/96 text-[11px] font-semibold tracking-wide text-teal-900 shadow-[0_8px_24px_rgba(13,148,136,0.18)] backdrop-blur-sm transition hover:bg-teal-50 dark:border-teal-900/60 dark:bg-stone-900/96 dark:text-teal-200 dark:hover:bg-stone-800"
             >
               <span className="[writing-mode:vertical-rl]">Hafal</span>
             </button>
