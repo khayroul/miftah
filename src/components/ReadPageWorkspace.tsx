@@ -262,6 +262,7 @@ export function ReadPageWorkspace({
         audioDiscovered={audioDiscovered}
         onAudioDiscovered={markAudioDiscovered}
         activePlaybackAyahKey={activePlaybackAyahKey}
+        isAudioDockVisible={isAudioVisible}
       />
     </>
   );

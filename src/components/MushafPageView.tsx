@@ -46,6 +46,7 @@ interface MushafPageViewProps {
   audioDiscovered?: boolean;
   onAudioDiscovered?: () => void;
   activePlaybackAyahKey?: string | null;
+  isAudioDockVisible?: boolean;
 }
 
 interface AyahBoundingBox {
@@ -161,6 +162,29 @@ function revealStageLabel(stage: HifzRevealStage): string {
   return "Penuh";
 }
 
+function trackHifzUiEvent(
+  eventName: "hafal_click" | "hafal_success" | "hafal_fail",
+  payload: Record<string, unknown>,
+): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent("miftah:hifz-ui", {
+      detail: {
+        eventName,
+        ...payload,
+      },
+    }),
+  );
+
+  const maybeGtag = Reflect.get(window, "gtag");
+  if (typeof maybeGtag === "function") {
+    maybeGtag("event", eventName, payload);
+  }
+}
+
 function deriveLineCenters(
   words: MushafWordHitbox[],
   imageHeight: number,
@@ -244,6 +268,7 @@ export function MushafPageView({
   audioDiscovered = true,
   onAudioDiscovered,
   activePlaybackAyahKey = null,
+  isAudioDockVisible = false,
 }: MushafPageViewProps) {
   const [selectedWord, setSelectedWord] = useState<MushafWordHitbox | null>(
     null,
@@ -256,15 +281,15 @@ export function MushafPageView({
   const [markMemorizedError, setMarkMemorizedError] = useState<string | null>(
     null,
   );
+  const [hifzFeedbackMessage, setHifzFeedbackMessage] = useState<string | null>(
+    null,
+  );
   const [memorizedAyahKeySet, setMemorizedAyahKeySet] = useState(
     () => new Set(memorizedAyahKeys),
   );
-  const [isHifzDockOpen, setIsHifzDockOpen] = useState(false);
-  const [isHifzDockHidden, setIsHifzDockHidden] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(
     null,
   );
-  const lastScrollYRef = useRef(0);
   const { mode } = useReadMode();
 
   const imageWidth = manifest?.image_width ?? 1200;
@@ -494,6 +519,12 @@ export function MushafPageView({
         .map((entry) => entry.key),
     [ayahLayoutEntries, memorizedAyahKeySet],
   );
+  const memorizedOnPageCount = useMemo(
+    () =>
+      ayahLayoutEntries.filter((entry) => memorizedAyahKeySet.has(entry.key))
+        .length,
+    [ayahLayoutEntries, memorizedAyahKeySet],
+  );
   const hifzStageTargetAyahKeys = useMemo(() => {
     if (mode !== "hifz") {
       return [];
@@ -510,13 +541,31 @@ export function MushafPageView({
     return hifzRevealContext.thirdSegmentAyahKeys;
   }, [hifzRevealContext, mode, remainingAyahKeys]);
   const canMarkHifz = mode === "hifz" && remainingAyahKeys.length > 0;
-  const showHifzEdgeDock =
+  const showHifzSessionControls =
     mode === "hifz" && canShowAnyImage && hifzRevealByThirdsEnabled;
-  const hifzDockTranslateClass = isHifzDockHidden
-    ? "translate-x-[112%]"
-    : isHifzDockOpen
-      ? "translate-x-0"
-      : "translate-x-[42%]";
+  const hifzTargetStage = hifzRevealSessionActive ? hifzRevealContext.stage : 3;
+  const hifzCompletedStageCount = allAyatMemorized
+    ? 3
+    : hifzRevealSessionActive
+      ? Math.max(hifzTargetStage - 1, 0)
+      : 0;
+  const hifzActiveStage = allAyatMemorized
+    ? null
+    : hifzRevealSessionActive
+      ? Math.min(hifzTargetStage, 3)
+      : null;
+  const hifzStages = [
+    { label: "1/3", step: 1 },
+    { label: "2/3", step: 2 },
+    { label: "Penuh", step: 3 },
+  ] as const;
+  const hifzActionHint = hifzRevealSessionActive
+    ? "Tekan sekali untuk buka bahagian seterusnya."
+    : "Semua ayat pada halaman ini akan ditanda sebagai hafal.";
+  const hifzProgressHint =
+    ayahLayoutEntries.length > 0
+      ? `${memorizedOnPageCount}/${ayahLayoutEntries.length} ayat sudah ditanda hafal`
+      : "Tiada ayat ditemui pada halaman ini";
   const hifzHafalButtonLabel = allAyatMemorized
     ? "Halaman Sudah Hafal"
     : markingMemorized
@@ -524,46 +573,23 @@ export function MushafPageView({
       : !canMarkHifz
         ? "Tiada Ayat Untuk Ditanda"
         : !hifzRevealSessionActive
-          ? "Hafal Halaman Ini"
+          ? "Sahkan Hafal Halaman"
           : hifzRevealContext?.stage === 1
-            ? "Hafal 1/3 Pertama"
+            ? "Sahkan Hafal 1/3 Pertama"
             : hifzRevealContext?.stage === 2
-              ? "Hafal 1/3 Kedua"
-              : "Hafal Baki Halaman";
+              ? "Sahkan Hafal 1/3 Kedua"
+              : "Sahkan Hafal Baki Halaman";
   useEffect(() => {
-    if (showHifzEdgeDock) {
+    if (!hifzFeedbackMessage) {
       return;
     }
-    setIsHifzDockOpen(false);
-    setIsHifzDockHidden(false);
-  }, [showHifzEdgeDock]);
-
-  useEffect(() => {
-    if (!showHifzEdgeDock) {
-      return;
-    }
-
-    lastScrollYRef.current = window.scrollY;
-    const handleScroll = () => {
-      const currentY = window.scrollY;
-      const delta = currentY - lastScrollYRef.current;
-      if (Math.abs(delta) < 6) {
-        return;
-      }
-      if (delta > 0) {
-        setIsHifzDockHidden(true);
-        setIsHifzDockOpen(false);
-      } else {
-        setIsHifzDockHidden(false);
-      }
-      lastScrollYRef.current = currentY;
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    const timer = window.setTimeout(() => {
+      setHifzFeedbackMessage(null);
+    }, 2600);
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      window.clearTimeout(timer);
     };
-  }, [showHifzEdgeDock]);
+  }, [hifzFeedbackMessage]);
 
   const handleMarkHifzMemorized = async () => {
     if (mode !== "hifz" || markingMemorized || allAyatMemorized || !canMarkHifz) {
@@ -586,8 +612,22 @@ export function MushafPageView({
       return;
     }
 
+    const completedStageLabel = !hifzRevealSessionActive
+      ? "Halaman selesai ditanda hafal."
+      : hifzRevealContext?.stage === 1
+        ? "1/3 pertama selesai."
+        : hifzRevealContext?.stage === 2
+          ? "2/3 selesai."
+          : "Baki halaman selesai.";
+
     setMarkingMemorized(true);
     setMarkMemorizedError(null);
+    setHifzFeedbackMessage(null);
+    trackHifzUiEvent("hafal_click", {
+      pageNumber,
+      stage: hifzRevealContext?.stage ?? null,
+      targetCount: targetAyahIds.length,
+    });
     try {
       const response = await fetch("/api/hifz/mark-memorized", {
         method: "POST",
@@ -596,6 +636,11 @@ export function MushafPageView({
       });
       if (!response.ok) {
         setMarkMemorizedError("Gagal simpan status hafal. Cuba lagi.");
+        trackHifzUiEvent("hafal_fail", {
+          pageNumber,
+          stage: hifzRevealContext?.stage ?? null,
+          reason: "response_not_ok",
+        });
         return;
       }
       setMemorizedAyahKeySet((current) => {
@@ -605,8 +650,19 @@ export function MushafPageView({
         }
         return next;
       });
+      setHifzFeedbackMessage(completedStageLabel);
+      trackHifzUiEvent("hafal_success", {
+        pageNumber,
+        stage: hifzRevealContext?.stage ?? null,
+        targetCount: targetAyahIds.length,
+      });
     } catch {
       setMarkMemorizedError("Gagal simpan status hafal. Cuba lagi.");
+      trackHifzUiEvent("hafal_fail", {
+        pageNumber,
+        stage: hifzRevealContext?.stage ?? null,
+        reason: "network_or_exception",
+      });
     } finally {
       setMarkingMemorized(false);
     }
@@ -724,7 +780,15 @@ export function MushafPageView({
   }, [words, wordTapPaddingX, wordTapPaddingY, imageWidth, imageHeight]);
 
   return (
-    <section className="space-y-3">
+    <section
+      className={`space-y-3 ${
+        showHifzSessionControls
+          ? isAudioDockVisible
+            ? "pb-64 sm:pb-0"
+            : "pb-40 sm:pb-0"
+          : ""
+      }`}
+    >
       {/* Discovery Hint */}
       {!audioDiscovered && mode === "read" && canShowFullImage && (
         <div className="flex justify-center">
@@ -737,15 +801,114 @@ export function MushafPageView({
         </div>
       )}
 
+      {showHifzSessionControls ? (
+        <>
+          <div className="sticky top-2 z-40 hidden sm:block">
+            <div className="rounded-2xl border border-teal-200 bg-white/96 p-4 shadow-[0_16px_36px_rgba(13,148,136,0.16)] backdrop-blur dark:border-teal-900/60 dark:bg-stone-900/95">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  {hifzStages.map((stage) => {
+                    const isDone = stage.step <= hifzCompletedStageCount;
+                    const isActive = stage.step === hifzActiveStage;
+                    return (
+                      <span
+                        key={stage.step}
+                        className={`inline-flex min-h-10 items-center rounded-full border px-4 text-sm font-semibold transition ${
+                          isDone
+                            ? "border-teal-600 bg-teal-600 text-white dark:border-teal-400 dark:bg-teal-500 dark:text-stone-950"
+                            : isActive
+                              ? "border-teal-500 bg-teal-50 text-teal-900 dark:border-teal-400 dark:bg-teal-900/45 dark:text-teal-100"
+                              : "border-stone-300 bg-stone-100 text-stone-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300"
+                        }`}
+                      >
+                        {stage.label}
+                      </span>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  disabled={allAyatMemorized || markingMemorized || !canMarkHifz}
+                  onClick={handleMarkHifzMemorized}
+                  className="inline-flex min-h-11 items-center justify-center rounded-full bg-teal-900 px-6 text-[15px] font-semibold text-teal-50 transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-55 dark:bg-teal-600 dark:hover:bg-teal-500"
+                >
+                  {hifzHafalButtonLabel}
+                </button>
+              </div>
+              <p className="mt-3 text-sm text-teal-800 dark:text-teal-200">
+                {hifzActionHint} {hifzProgressHint}
+              </p>
+              {hifzFeedbackMessage ? (
+                <p className="mt-1 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  {hifzFeedbackMessage}
+                </p>
+              ) : null}
+              {markMemorizedError ? (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {markMemorizedError}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div
+            className={`fixed inset-x-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] sm:hidden ${
+              isAudioDockVisible ? "bottom-[104px]" : "bottom-0"
+            }`}
+          >
+            <div className="rounded-2xl border border-teal-200 bg-white/96 p-3 shadow-[0_14px_34px_rgba(13,148,136,0.22)] backdrop-blur dark:border-teal-900/60 dark:bg-stone-900/95">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                {hifzStages.map((stage) => {
+                  const isDone = stage.step <= hifzCompletedStageCount;
+                  const isActive = stage.step === hifzActiveStage;
+                  return (
+                    <span
+                      key={`mobile-${stage.step}`}
+                      className={`inline-flex min-h-9 shrink-0 items-center rounded-full border px-3 text-xs font-semibold ${
+                        isDone
+                          ? "border-teal-600 bg-teal-600 text-white dark:border-teal-400 dark:bg-teal-500 dark:text-stone-950"
+                          : isActive
+                            ? "border-teal-500 bg-teal-50 text-teal-900 dark:border-teal-400 dark:bg-teal-900/45 dark:text-teal-100"
+                            : "border-stone-300 bg-stone-100 text-stone-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300"
+                      }`}
+                    >
+                      {stage.label}
+                    </span>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                disabled={allAyatMemorized || markingMemorized || !canMarkHifz}
+                onClick={handleMarkHifzMemorized}
+                className="mt-2 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-teal-900 px-4 text-sm font-semibold text-teal-50 transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-55 dark:bg-teal-600 dark:hover:bg-teal-500"
+              >
+                {hifzHafalButtonLabel}
+              </button>
+              <p className="mt-2 text-xs text-teal-800 dark:text-teal-200">
+                {hifzActionHint}
+              </p>
+              <p className="text-xs text-stone-600 dark:text-stone-300">
+                {hifzProgressHint}
+              </p>
+              {hifzFeedbackMessage ? (
+                <p className="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                  {hifzFeedbackMessage}
+                </p>
+              ) : null}
+              {markMemorizedError ? (
+                <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                  {markMemorizedError}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </>
+      ) : null}
+
       <div
         className="relative overflow-visible cursor-pointer rounded-2xl border border-stone-300 bg-[#fffdfa] shadow-[0_18px_34px_-30px_rgba(28,25,23,0.7)] dark:border-[#162a44] dark:bg-[#0d1b2a] dark:shadow-[0_22px_38px_-30px_rgba(2,6,23,0.95)]"
         style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
-        onTouchStartCapture={() => {
-          setIsHifzDockHidden(false);
-        }}
-        onClickCapture={() => {
-          setIsHifzDockHidden(false);
-        }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={() => {
@@ -848,7 +1011,7 @@ export function MushafPageView({
             ) : null}
             {hifzRevealContext && revealEnabled && revealMaskTop ? (
               <div
-                className="absolute left-0 right-0 bottom-0 z-30 border-t border-dashed border-teal-500/60 bg-[#fffdfa] dark:bg-[#0d1b2a]"
+                className="absolute left-0 right-0 bottom-0 z-30 border-t border-dashed border-teal-500/60 bg-[#fffdfa] transition-[top] duration-500 ease-out dark:bg-[#0d1b2a]"
                 style={{ top: revealMaskTop }}
                 onClick={(event) => event.stopPropagation()}
                 onTouchStart={(event) => event.stopPropagation()}
@@ -866,58 +1029,6 @@ export function MushafPageView({
           </div>
         )}
       </div>
-
-      {showHifzEdgeDock ? (
-        <div
-          className={`fixed right-0 top-1/2 z-40 -translate-y-1/2 transition-transform duration-200 ${hifzDockTranslateClass}`}
-        >
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-expanded={isHifzDockOpen}
-              aria-label={isHifzDockOpen ? "Tutup panel Hafal" : "Buka panel Hafal"}
-              onClick={() => setIsHifzDockOpen((current) => !current)}
-              className="h-32 w-7 rounded-l-xl border border-r-0 border-teal-300 bg-white/96 text-[11px] font-semibold tracking-wide text-teal-900 shadow-[0_8px_24px_rgba(13,148,136,0.18)] backdrop-blur-sm transition hover:bg-teal-50 dark:border-teal-900/60 dark:bg-stone-900/96 dark:text-teal-200 dark:hover:bg-stone-800"
-            >
-              <span className="[writing-mode:vertical-rl]">Hafal</span>
-            </button>
-            {isHifzDockOpen ? (
-              <div className="mr-2 w-[min(88vw,320px)] rounded-2xl border border-teal-200 bg-white/96 p-3 shadow-[0_10px_30px_rgba(13,148,136,0.22)] backdrop-blur-md dark:border-teal-900/60 dark:bg-stone-900/92">
-                <div className="mb-2 flex items-start justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-teal-900 dark:text-teal-200">
-                    Hafal
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setIsHifzDockOpen(false)}
-                    className="rounded-md border border-teal-200 px-2 py-1 text-[11px] text-teal-700 transition hover:bg-teal-50 dark:border-teal-800 dark:text-teal-200 dark:hover:bg-stone-800"
-                  >
-                    Tutup
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  disabled={allAyatMemorized || markingMemorized || !canMarkHifz}
-                  onClick={handleMarkHifzMemorized}
-                  className="w-full rounded-xl bg-teal-900 px-4 py-2.5 text-sm font-semibold text-teal-50 transition hover:bg-teal-800 sm:text-base disabled:cursor-not-allowed disabled:opacity-55 dark:bg-teal-700 dark:hover:bg-teal-600"
-                >
-                  {hifzHafalButtonLabel}
-                </button>
-                <p className="mt-2 text-sm text-teal-800 dark:text-teal-200">
-                  {hifzRevealSessionActive
-                    ? "Setiap kali ditekan, paparan akan buka bahagian seterusnya sehingga penuh."
-                    : "Semua ayat pada halaman ini akan ditanda sebagai hafal."}
-                </p>
-                {markMemorizedError ? (
-                  <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                    {markMemorizedError}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
 
       {!manifest ? (
         <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
