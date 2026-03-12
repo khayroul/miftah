@@ -4,6 +4,7 @@ import { ModeNavigator } from "@/components/ModeNavigator";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthStatusButton } from "@/components/AuthStatusButton";
 import { HifzWorkspace } from "@/components/HifzWorkspace";
+import { HifzPageNav } from "@/components/HifzPageNav";
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { getHifzStats, getJuzProgress } from "@/lib/hifz/stats";
 import { getReadJumpTargets } from "@/lib/readNavigation";
@@ -90,6 +91,7 @@ export default async function HifzPage() {
           activeMode="hifz"
           surahTargets={jumpTargets.surahs}
         />
+        <HifzPageNav />
 
         {!userId && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center text-sm text-amber-900 shadow-sm dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">

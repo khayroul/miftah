@@ -12,7 +12,6 @@ import { ReadModeTools } from "@/components/ReadModeTools";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
 import { rememberLastReadPage } from "@/lib/readingProgressStorage";
 import { useRouter } from "next/navigation";
-import { useReadMode } from "@/lib/useReadMode";
 import type { JuzJumpTarget, SurahJumpTarget } from "@/lib/readNavigation";
 import type { MushafPageManifest, MushafWordTranslationMap } from "@/types/mushaf";
 import type { ReactNode } from "react";
@@ -56,7 +55,6 @@ export function ReadPageWorkspace({
   mushafHeader,
 }: ReadPageWorkspaceProps) {
   const router = useRouter();
-  const { mode } = useReadMode();
   const [audioDockVisible, setAudioDockVisible] = useState(false);
   const [audioDiscovered, setAudioDiscovered] = useState(() => {
     if (typeof window === "undefined") {
@@ -165,16 +163,16 @@ export function ReadPageWorkspace({
 
       {mushafHeader}
 
-      {mode === "read" && (
-        <div className="flex w-full justify-between items-center px-1 mb-2">
+      <div className="mb-2 flex w-full justify-end">
+        <div className="flex items-center gap-2">
           {pageNumber > 1 ? (
             <Link
               href={`/read/${pageNumber - 1}`}
               title="Halaman Sebelum"
-              className="flex items-center justify-center p-2 rounded-full border border-stone-300 bg-white text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
             >
               <svg
-                className="h-5 w-5"
+                className="h-4 w-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -182,18 +180,37 @@ export function ReadPageWorkspace({
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
+              Prev
             </Link>
           ) : (
-            <div className="w-9 h-9" />
+            <button
+              type="button"
+              disabled
+              aria-label="Halaman Sebelum"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-stone-200 bg-stone-100 px-3 text-sm font-medium text-stone-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-600"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Prev
+            </button>
           )}
+
           {pageNumber < 604 ? (
             <Link
               href={`/read/${pageNumber + 1}`}
               title="Halaman Seterusnya"
-              className="flex items-center justify-center p-2 rounded-full border border-stone-300 bg-white text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
             >
+              Next
               <svg
-                className="h-5 w-5"
+                className="h-4 w-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -203,10 +220,26 @@ export function ReadPageWorkspace({
               </svg>
             </Link>
           ) : (
-            <div className="w-9 h-9" />
+            <button
+              type="button"
+              disabled
+              aria-label="Halaman Seterusnya"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-stone-200 bg-stone-100 px-3 text-sm font-medium text-stone-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-600"
+            >
+              Next
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           )}
         </div>
-      )}
+      </div>
 
       <MushafPageView
         key={pageNumber}
