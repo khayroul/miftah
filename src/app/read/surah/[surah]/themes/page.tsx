@@ -11,6 +11,7 @@ import {
   getSurah,
   getThemeAppearanceChunksBySurah,
 } from "@/lib/queries";
+import { resolveThemeChunkLabelBm } from "@/lib/themeLabels";
 import type { AyahWordByWordEntry, ThemeAppearanceChunk } from "@/lib/queries";
 import type { Surah } from "@/types/database";
 
@@ -39,7 +40,13 @@ function rangeLabel(
 }
 
 function chunkTitleBm(chunk: ThemeAppearanceChunk): string {
-  return chunk.label_bm ?? chunk.theme?.name_bm ?? "Tanpa tema";
+  return resolveThemeChunkLabelBm({
+    surahId: chunk.surah_id,
+    startAyah: chunk.start_ayah,
+    endAyah: chunk.end_ayah,
+    labelBm: chunk.label_bm,
+    themeNameBm: chunk.theme?.name_bm ?? null,
+  });
 }
 
 export default async function SurahThemeAppearancePage({

@@ -625,8 +625,8 @@ function buildManualChunk(
   }
 
   const theme = override.theme_id ? themeMap.get(override.theme_id) ?? null : null;
-  const labelBm = override.label_bm ?? (theme ? null : "Chunk Manual");
-  const labelEn = override.label_en ?? (theme ? null : "Manual Chunk");
+  const labelBm = override.label_bm ?? (theme ? null : "Tema manual");
+  const labelEn = override.label_en ?? null;
 
   return {
     surah_id: ayat[0].surah_id,

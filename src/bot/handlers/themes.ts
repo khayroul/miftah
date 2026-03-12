@@ -1,6 +1,7 @@
 import type { Context } from "grammy";
 import { InlineKeyboard } from "grammy";
 import { supabaseAdmin } from "../supabase-admin.js";
+import { resolveThemeChunkLabelBm } from "../../lib/themeLabels.js";
 
 export type ThemeViewMode = "summary" | "full";
 const DEFAULT_VIEW_MODE: ThemeViewMode = "summary";
@@ -119,15 +120,18 @@ export async function sendThemeChunksByPage(
     chunks.forEach((chunk, idx) => {
       const surahName = surahNames.get(chunk.surah_id) ?? `Surah ${chunk.surah_id}`;
       const ayatInChunk = pickAyatWithinChunk(ayat, chunk);
+      const bmLabel = resolveThemeChunkLabelBm({
+        surahId: chunk.surah_id,
+        startAyah: chunk.ayah_from,
+        endAyah: chunk.ayah_to,
+        labelBm: chunk.theme_bm,
+      });
       const range =
         chunk.ayah_from === chunk.ayah_to
           ? `${chunk.surah_id}:${chunk.ayah_from}`
           : `${chunk.surah_id}:${chunk.ayah_from}-${chunk.ayah_to}`;
       text += `${idx + 1}. ${range} (${surahName})\n`;
-      text += `Tema (BM): ${chunk.theme_bm ?? chunk.theme}\n`;
-      if (chunk.theme_bm && chunk.theme_bm !== chunk.theme) {
-        text += `Theme (EN): ${chunk.theme}\n`;
-      }
+      text += `Tema (BM): ${bmLabel}\n`;
       if (chunk.keywords.length > 0) {
         text += `Kata kunci: ${chunk.keywords.join(", ")}\n`;
       }
