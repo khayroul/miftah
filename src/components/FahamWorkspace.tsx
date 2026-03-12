@@ -176,8 +176,12 @@ export function FahamWorkspace({
 
   useEffect(() => {
     void fetch("/api/faham/stats")
-      .then((res) => res.json())
-      .then((data) => setStats(data as FahamStats))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && !data.error) {
+          setStats(data as FahamStats);
+        }
+      })
       .catch(console.error);
   }, [sessionDoneCount]);
 
@@ -384,7 +388,11 @@ export function FahamWorkspace({
               />
               <StatCard
                 label="7-Day Retention"
-                value={stats ? `${(stats.retentionRate7d * 100).toFixed(0)}%` : "0%"}
+                value={
+                  stats && Number.isFinite(stats.retentionRate7d)
+                    ? `${(stats.retentionRate7d * 100).toFixed(0)}%`
+                    : "0%"
+                }
                 helper="Kadar Ingatan"
               />
             </div>

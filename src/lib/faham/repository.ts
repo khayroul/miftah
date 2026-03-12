@@ -414,16 +414,17 @@ export async function getFahamStats(userId: string) {
     // Usually reps=0 means "New".
   }
 
-  const ratings = (retentionData ?? []) as Array<{ rating: number }>;
-  const successCount = ratings.filter((r) => r.rating > 1).length;
-  const retentionRate = ratings.length > 0 ? successCount / ratings.length : 0;
+  const ratings = Array.isArray(retentionData) ? retentionData : [];
+  const successCount = ratings.filter((r) => r && typeof r.rating === 'number' && r.rating > 1).length;
+  const totalCount = ratings.length;
+  const retentionRate = totalCount > 0 ? successCount / totalCount : 0;
 
   return {
     wordBank: encounteredCount ?? 0,
     mastered: masteredCount,
     learning: learningCount,
     dueToday: dueTodayCount,
-    retentionRate7d: retentionRate,
+    retentionRate7d: retentionRate || 0,
   };
 }
 
