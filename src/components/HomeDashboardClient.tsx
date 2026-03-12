@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { TOP_FAHAM_WORD_LIMIT } from "@/lib/faham/config";
 import type { SurahJumpTarget } from "@/lib/readNavigation";
 import { saveReadMode } from "@/lib/readMode";
 import { findMarkerForPage } from "@/lib/readNavigationUtils";
@@ -93,6 +92,10 @@ function toneClasses(tone: CardTone) {
   };
 }
 
+function shouldPrefetch(href: string): boolean {
+  return !href.startsWith("/read/");
+}
+
 function ModeProgressCard({ card }: { card: ModeCard }) {
   const classes = toneClasses(card.tone);
 
@@ -157,6 +160,7 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
       <div className="mt-6">
         <Link
           href={card.href}
+          prefetch={shouldPrefetch(card.href)}
           onClick={card.onClick}
           className={`block w-full rounded-xl py-2.5 text-center text-sm font-medium transition ${
             card.tone === "teal"
@@ -201,6 +205,10 @@ export function HomeDashboardClient({
   }, [continuePage, surahTargets]);
   const activeSurahId = activeSurah?.id ?? 1;
   const fahamLevel = snapshot.faham?.levelProgress ?? null;
+  const currentFahamCap = snapshot.faham?.focusWordLimit ?? 1000;
+  const nextFahamCapLabel = fahamLevel?.nextWordLimit
+    ? `${Math.round(fahamLevel.nextWordLimit / 1000)}k`
+    : "seterusnya";
 
   const modeCards: ModeCard[] = [
     {
@@ -225,7 +233,7 @@ export function HomeDashboardClient({
         ? [
             {
               label: "Ditemui",
-              value: `${snapshot.faham.encounteredWordCount} / ${TOP_FAHAM_WORD_LIMIT}`,
+              value: `${snapshot.faham.encounteredWordCount} / ${snapshot.faham.focusWordLimit}`,
             },
             {
               label: "Mahir",
@@ -233,14 +241,14 @@ export function HomeDashboardClient({
             },
           ]
         : [
-            { label: "Ditemui", value: `0 / ${TOP_FAHAM_WORD_LIMIT}` },
+            { label: "Ditemui", value: `0 / ${currentFahamCap}` },
             { label: "Mahir", value: "0 / 0" },
           ],
-      badge: fahamLevel ? `L${fahamLevel.activeLevel}/${fahamLevel.maxLevel}` : undefined,
+      badge: fahamLevel ? `L${fahamLevel.activeLevel}` : undefined,
       detail: fahamLevel
         ? fahamLevel.isMaxLevel
           ? "Tahap maksimum dibuka."
-          : `Buka L${fahamLevel.nextLevel}: Ditemui ${fahamLevel.unlockFoundProgress}/${fahamLevel.unlockFoundRequired} · Mahir ${fahamLevel.unlockMasteredProgress}/${fahamLevel.unlockMasteredRequired}`
+          : `L${fahamLevel.nextLevel} akan buka cap ke ${nextFahamCapLabel} perkataan.`
         : undefined,
       percent: snapshot.faham?.coveragePct ?? 0,
       title: "Faham",
@@ -421,6 +429,7 @@ export function HomeDashboardClient({
           <div className="flex shrink-0 gap-3">
             <Link
               href={`/read/${continuePage}`}
+              prefetch={false}
               onClick={() => {
                 saveReadMode("read");
               }}

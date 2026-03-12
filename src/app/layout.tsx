@@ -12,6 +12,7 @@ const arabicText = localFont({
   src: "../../assets/fonts/UthmanicHafs_V22.ttf",
   variable: "--font-quran-arabic",
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {

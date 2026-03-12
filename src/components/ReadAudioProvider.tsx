@@ -9,9 +9,20 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { ReadAudioDock } from "@/components/ReadAudioDock";
+import dynamic from "next/dynamic";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
 import { trackReadAudioTelemetry } from "@/lib/readAudioTelemetry";
+
+const ReadAudioDock = dynamic(
+  () =>
+    import("@/components/ReadAudioDock").then(
+      (module) => module.ReadAudioDock,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
 
 interface ReadAudioContextValue {
   activePlaybackAyahKey: string | null;
@@ -91,6 +102,7 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
 
   const feedbackHidden = isAudioVisible && isAudioPanelOpen;
   const feedbackOffsetPx = isAudioVisible ? 104 : 24;
+  const shouldRenderAudioDock = isAudioVisible && tracks.length > 0;
 
   const contextValue = useMemo<ReadAudioContextValue>(
     () => ({
@@ -120,14 +132,16 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
   return (
     <ReadAudioContext.Provider value={contextValue}>
       {children}
-      <ReadAudioDock
-        tracks={tracks}
-        playableAyahKeys={playableAyahKeys}
-        visible={isAudioVisible && tracks.length > 0}
-        onRequestClose={() => setAudioVisible(false)}
-        onPlaybackAyahChange={setActivePlaybackAyahKey}
-        onPanelOpenChange={setIsAudioPanelOpen}
-      />
+      {shouldRenderAudioDock ? (
+        <ReadAudioDock
+          tracks={tracks}
+          playableAyahKeys={playableAyahKeys}
+          visible
+          onRequestClose={() => setAudioVisible(false)}
+          onPlaybackAyahChange={setActivePlaybackAyahKey}
+          onPanelOpenChange={setIsAudioPanelOpen}
+        />
+      ) : null}
     </ReadAudioContext.Provider>
   );
 }

@@ -17,6 +17,7 @@ export function HifzPageNav() {
         {pageNumber > 1 ? (
           <Link
             href={`/read/${pageNumber - 1}`}
+            prefetch={false}
             title="Halaman Sebelum"
             onClick={() => saveReadMode("hifz")}
             className="inline-flex h-9 items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
@@ -62,6 +63,7 @@ export function HifzPageNav() {
         {pageNumber < 604 ? (
           <Link
             href={`/read/${pageNumber + 1}`}
+            prefetch={false}
             title="Halaman Seterusnya"
             onClick={() => saveReadMode("hifz")}
             className="inline-flex h-9 items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"

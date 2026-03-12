@@ -1,4 +1,5 @@
-export const TOP_FAHAM_WORD_LIMIT = 3000;
-export const FAHAM_LEVEL_WORD_LIMITS = [1000, 2000, 3000] as const;
+export const TOP_FAHAM_WORD_LIMIT = 4000;
+export const FAHAM_LEVEL_WORD_LIMITS = [1000, 2000, 3000, 4000] as const;
 export const FAHAM_LEVEL_FOUND_UNLOCK_RATIO = 0.6;
 export const FAHAM_LEVEL_MAHIR_UNLOCK_RATIO = 0.3;
+export const FAHAM_LEMMA_UNLOCK_LEVEL = 4;

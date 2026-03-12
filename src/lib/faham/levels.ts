@@ -1,4 +1,5 @@
 import {
+  FAHAM_LEMMA_UNLOCK_LEVEL,
   FAHAM_LEVEL_FOUND_UNLOCK_RATIO,
   FAHAM_LEVEL_MAHIR_UNLOCK_RATIO,
   FAHAM_LEVEL_WORD_LIMITS,
@@ -29,8 +30,10 @@ export interface FahamLevelProgress {
   activeLevel: number;
   activeWordLimit: number;
   isMaxLevel: boolean;
+  lemmaUnlocked: boolean;
   maxLevel: number;
   nextLevel: number | null;
+  nextWordLimit: number | null;
   unlockFoundProgress: number;
   unlockFoundRequired: number;
   unlockMasteredProgress: number;
@@ -90,14 +93,17 @@ export function buildFahamLevelProgress(
   const activeMetrics = state.levels[state.activeLevel - 1] ?? null;
   const isMaxLevel = state.activeLevel >= state.maxLevel;
   const nextLevel = isMaxLevel ? null : state.activeLevel + 1;
+  const nextWordLimit = nextLevel ? state.levels[nextLevel - 1]?.wordLimit ?? null : null;
 
   if (!activeMetrics) {
     return {
       activeLevel: state.activeLevel,
       activeWordLimit: state.activeWordLimit,
       isMaxLevel,
+      lemmaUnlocked: state.activeLevel >= FAHAM_LEMMA_UNLOCK_LEVEL,
       maxLevel: state.maxLevel,
       nextLevel,
+      nextWordLimit,
       unlockFoundProgress: 0,
       unlockFoundRequired: 0,
       unlockMasteredProgress: 0,
@@ -110,8 +116,10 @@ export function buildFahamLevelProgress(
     activeLevel: state.activeLevel,
     activeWordLimit: state.activeWordLimit,
     isMaxLevel,
+    lemmaUnlocked: state.activeLevel >= FAHAM_LEMMA_UNLOCK_LEVEL,
     maxLevel: state.maxLevel,
     nextLevel,
+    nextWordLimit,
     unlockFoundProgress: Math.min(activeMetrics.foundCount, activeMetrics.foundRequired),
     unlockFoundRequired: activeMetrics.foundRequired,
     unlockMasteredProgress: Math.min(
@@ -134,8 +142,9 @@ async function countFoundWords(
 
   const { count, error } = await supabase
     .from("v_vocab_exposure_summary")
-    .select("*", { count: "exact", head: true })
+    .select("word_id", { count: "exact", head: true })
     .eq("user_id", userId)
+    .gt("reading_event_count", 0)
     .in("word_id", wordIds);
   if (error) {
     throw error;

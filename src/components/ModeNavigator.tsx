@@ -44,6 +44,10 @@ function modeHref(params: {
   return "/faham";
 }
 
+function isReadRoute(href: string): boolean {
+  return href.startsWith("/read/");
+}
+
 export function ModeNavigator({
   activeMode,
   fallbackReadPage = 1,
@@ -89,14 +93,16 @@ export function ModeNavigator({
         </Link>
         {MODE_ITEMS.map((item) => {
           const active = item.value === activeMode;
+          const href = modeHref({
+            mode: item.value,
+            readPage,
+            themeSurahId: derivedThemeSurahId,
+          });
           return (
             <Link
               key={item.value}
-              href={modeHref({
-                mode: item.value,
-                readPage,
-                themeSurahId: derivedThemeSurahId,
-              })}
+              href={href}
+              prefetch={!isReadRoute(href)}
               onClick={(e) => {
                 saveReadMode(item.value);
                 if (onModeClick) {

@@ -187,6 +187,11 @@ export function FahamWorkspace({
   const masteredUnlockPct = levelProgress.unlockMasteredRequired > 0
     ? Math.min(100, (levelProgress.unlockMasteredProgress / levelProgress.unlockMasteredRequired) * 100)
     : 0;
+  const foundCount = stats?.wordBank ?? 0;
+  const foundCap = levelProgress.activeWordLimit;
+  const nextCapLabel = levelProgress.nextWordLimit
+    ? `${Math.round(levelProgress.nextWordLimit / 1000)}k`
+    : "seterusnya";
   const progressPct = cards.length > 0 ? ((currentIndex + 1) / cards.length) * 100 : 0;
 
   const reloadQueue = (
@@ -545,15 +550,19 @@ export function FahamWorkspace({
               </h1>
               <p className="mt-2 text-[15px] leading-relaxed text-stone-600 sm:text-base dark:text-stone-300">
                 Faham kini menggunakan algoritma FSRS untuk penjadualan kad yang tepat.
-                60% sesi adalah perkataan baharu/lemah, 25% ulang kaji, dan 15% sampling pengukuhan.
+                Sesi akan utamakan kad due, mengekalkan momentum learning, dan sentiasa
+                tambah pengukuhan mastery supaya queue tidak kosong.
               </p>
               <div className="mt-4 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4 dark:border-amber-500/30 dark:bg-amber-950/20">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 dark:border-amber-500/50 dark:bg-amber-900/40 dark:text-amber-100">
-                    Level {levelProgress.activeLevel}/{levelProgress.maxLevel}
+                    L{levelProgress.activeLevel}
                   </span>
                   <span className="text-sm text-stone-700 dark:text-stone-200">
                     Scope aktif: Top {levelProgress.activeWordLimit}
+                  </span>
+                  <span className="text-sm text-stone-700 dark:text-stone-200">
+                    Lemma: {levelProgress.lemmaUnlocked ? "Dibuka" : "Belum dibuka (L4)"}
                   </span>
                 </div>
 
@@ -564,7 +573,7 @@ export function FahamWorkspace({
                 ) : (
                   <div className="mt-3 space-y-2">
                     <p className="text-sm text-stone-700 dark:text-stone-200">
-                      Buka Level {levelProgress.nextLevel}: Ditemui {levelProgress.unlockFoundProgress}/{levelProgress.unlockFoundRequired} · Mahir {levelProgress.unlockMasteredProgress}/{levelProgress.unlockMasteredRequired}
+                      L{levelProgress.nextLevel} akan buka cap ke {nextCapLabel} perkataan.
                     </p>
                     <div>
                       <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-300">
@@ -591,17 +600,17 @@ export function FahamWorkspace({
 
             <div className={`grid gap-3 sm:grid-cols-3 ${isConfigExpanded ? "grid-cols-2 lg:grid-cols-3 xl:grid-cols-5" : "grid-cols-2 md:grid-cols-5"}`}>
               <StatCard
-                label="Mastered"
-                value={String(stats?.mastered ?? 0)}
+                label="Found"
+                value={`${foundCount} / ${foundCap}`}
                 highlight
-                helper="Lancar 2x"
-                progress={(stats?.mastered ?? 0) / 3000}
-                progressLabel={`${Math.floor(((stats?.mastered ?? 0) / 3000) * 100)}% matlamat`}
+                helper="Perkataan ditemui"
+                progress={foundCap > 0 ? foundCount / foundCap : 0}
+                progressLabel={`${Math.floor((foundCap > 0 ? (foundCount / foundCap) * 100 : 0))}% sasaran`}
               />
               <StatCard
-                label="Word Bank"
-                value={String(stats?.wordBank ?? 0)}
-                helper="Pendedahan"
+                label="Mahir"
+                value={`${stats?.mastered ?? 0} / ${foundCount}`}
+                helper="Mastered / Found"
               />
               <StatCard
                 label="Learning"
@@ -960,7 +969,6 @@ function StatCard({
           <p className="text-4xl font-extrabold tracking-tight text-emerald-950 dark:text-emerald-50">
             {value}
           </p>
-          <span className="text-sm font-medium text-emerald-600/70 sm:text-base dark:text-emerald-500/60">/ 3000</span>
         </div>
 
         {progress !== undefined && (

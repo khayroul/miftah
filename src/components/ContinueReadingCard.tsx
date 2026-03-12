@@ -21,6 +21,7 @@ export function ContinueReadingCard() {
 
       <Link
         href={`/read/${continuePage}`}
+        prefetch={false}
         className="mt-3 inline-flex rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-stone-50 transition hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
       >
         Sambung Baca

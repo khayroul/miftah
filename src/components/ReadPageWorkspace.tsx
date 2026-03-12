@@ -11,6 +11,7 @@ import { ReadModeTools } from "@/components/ReadModeTools";
 import { useReadAudio } from "@/components/ReadAudioProvider";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
 import { rememberLastReadPage } from "@/lib/readingProgressStorage";
+import { useReadMode } from "@/lib/useReadMode";
 import { useRouter } from "next/navigation";
 import type { JuzJumpTarget, SurahJumpTarget } from "@/lib/readNavigation";
 import type { MushafPageManifest, MushafWordTranslationMap } from "@/types/mushaf";
@@ -59,9 +60,12 @@ export function ReadPageWorkspace({
     activePlaybackAyahKey,
     isAudioVisible,
     setPlayableAyahKeys,
+    setAudioVisible,
     syncAudioTracks,
     toggleAudioVisibility,
   } = useReadAudio();
+  const { mode } = useReadMode();
+  const audioEnabledForMode = mode === "read" || mode === "hifz";
   const [audioDiscovered, setAudioDiscovered] = useState(() => {
     if (typeof window === "undefined") {
       return true;
@@ -78,9 +82,12 @@ export function ReadPageWorkspace({
   }, [audioDiscovered]);
 
   const handleToggleAudio = useCallback(() => {
+    if (!audioEnabledForMode) {
+      return;
+    }
     toggleAudioVisibility();
     markAudioDiscovered();
-  }, [markAudioDiscovered, toggleAudioVisibility]);
+  }, [audioEnabledForMode, markAudioDiscovered, toggleAudioVisibility]);
 
   const [hifzRevealByThirdsEnabled, setHifzRevealByThirdsEnabled] = useState(
     () => {
@@ -105,8 +112,22 @@ export function ReadPageWorkspace({
   }, [pageNumber]);
 
   useEffect(() => {
+    if (!audioEnabledForMode) {
+      setAudioVisible(false);
+      setPlayableAyahKeys(null);
+      syncAudioTracks(pageNumber, []);
+      return;
+    }
+
     syncAudioTracks(pageNumber, audioTracks);
-  }, [audioTracks, pageNumber, syncAudioTracks]);
+  }, [
+    audioEnabledForMode,
+    audioTracks,
+    pageNumber,
+    setAudioVisible,
+    setPlayableAyahKeys,
+    syncAudioTracks,
+  ]);
 
   const handleNavigatePrevPage = useCallback(() => {
     if (pageNumber <= 1) {
@@ -121,9 +142,12 @@ export function ReadPageWorkspace({
     router.push(`/read/${pageNumber + 1}`);
   }, [pageNumber, router]);
   const handleMushafTap = useCallback(() => {
+    if (!audioEnabledForMode) {
+      return;
+    }
     toggleAudioVisibility();
     markAudioDiscovered();
-  }, [markAudioDiscovered, toggleAudioVisibility]);
+  }, [audioEnabledForMode, markAudioDiscovered, toggleAudioVisibility]);
 
   return (
     <>
@@ -144,6 +168,7 @@ export function ReadPageWorkspace({
         onToggleJumpControls={() =>
           setShowJumpControls((current) => !current)
         }
+        audioEnabled={audioEnabledForMode}
         isAudioVisible={isAudioVisible}
         onToggleAudio={handleToggleAudio}
       />

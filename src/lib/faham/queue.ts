@@ -12,6 +12,7 @@ import {
   normalizeFahamEngineConfig,
 } from "./engine";
 import {
+  getBootstrapFahamCards,
   getDueFahamCards,
   getFahamExposureCandidates,
   getFahamMcqWordPool,
@@ -123,15 +124,16 @@ export async function buildFahamQueueSnapshot(
   const levelState = await getFahamLevelState(userId);
   const levelProgress = buildFahamLevelProgress(levelState);
   const focusWordLimit = levelState.activeWordLimit;
+  const reinforcementPoolLimit = Math.max(config.sessionSize * 6, 120);
   const [dueCardsPool, candidatesPool, masteredPool, learningPool] = await Promise.all([
     getDueFahamCards(
       userId,
-      Math.max(config.sessionSize, config.pauseNewCardsAboveDueCount),
+      Math.max(reinforcementPoolLimit, config.pauseNewCardsAboveDueCount),
       focusWordLimit,
     ),
     getFahamExposureCandidates(userId, config.candidatePoolSize, focusWordLimit),
-    getMasteredFahamCards(userId, config.sessionSize, focusWordLimit),
-    getLearningFahamCards(userId, config.sessionSize, focusWordLimit),
+    getMasteredFahamCards(userId, reinforcementPoolLimit, focusWordLimit),
+    getLearningFahamCards(userId, reinforcementPoolLimit, focusWordLimit),
   ]);
 
   const plan = buildFahamQueuePlan({
@@ -185,6 +187,65 @@ export async function buildFahamQueueSnapshot(
           }
         : undefined,
     });
+  }
+
+  const surfaceCount =
+    surfacedDueCards.length +
+    surfacedLearningCards.length +
+    surfacedMasteredCards.length +
+    surfacedNewCards.length;
+  if (surfaceCount === 0) {
+    const fallbackQueue: SerializedFahamCard[] = [];
+    const seenProgressIds = new Set<number>();
+    const pushUnique = (card: SerializedFahamCard | null) => {
+      if (!card || seenProgressIds.has(card.progressId)) {
+        return;
+      }
+      seenProgressIds.add(card.progressId);
+      fallbackQueue.push(card);
+    };
+
+    for (const card of learningPool) {
+      if (fallbackQueue.length >= config.sessionSize) break;
+      pushUnique(serializeCard(card, "due", mcqPool, directionMode));
+    }
+    for (const card of dueCardsPool) {
+      if (fallbackQueue.length >= config.sessionSize) break;
+      pushUnique(serializeCard(card, "due", mcqPool, directionMode));
+    }
+    for (const card of masteredPool) {
+      if (fallbackQueue.length >= config.sessionSize) break;
+      pushUnique(serializeCard(card, "mastered", mcqPool, directionMode));
+    }
+
+    if (fallbackQueue.length < config.sessionSize) {
+      const bootstrapCards = await getBootstrapFahamCards(
+        userId,
+        config.sessionSize - fallbackQueue.length,
+        focusWordLimit,
+      );
+      for (const card of bootstrapCards) {
+        if (fallbackQueue.length >= config.sessionSize) break;
+        pushUnique(serializeCard(card, "new", mcqPool, directionMode));
+      }
+    }
+
+    const fallbackDueCards = fallbackQueue.filter((card) => card.kind === "due");
+    const fallbackMasteredCards = fallbackQueue.filter((card) => card.kind === "mastered");
+    const fallbackNewCards = fallbackQueue.filter((card) => card.kind === "new");
+
+    return {
+      blockedReason: plan.blockedReason,
+      due: fallbackDueCards,
+      levelProgress,
+      new: fallbackNewCards,
+      mastered: fallbackMasteredCards,
+      learning: [],
+      stats: {
+        ...plan.stats,
+        focusWordLimit: Math.min(TOP_FAHAM_WORD_LIMIT, focusWordLimit),
+      },
+    };
   }
 
   return {

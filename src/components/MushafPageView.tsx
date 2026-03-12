@@ -470,40 +470,48 @@ export function MushafPageView({
     ? getWordTooltipPlacement(activeWord, imageWidth, imageHeight)
     : null;
   const selectableAyahTargets = ayahOverlayTargets;
-  const activePlaybackWordBoxes = useMemo(() => {
+  const activePlaybackAyahBox = useMemo(() => {
     if (!activePlaybackAyahKey) {
-      return [] as AyahBoundingBox[];
+      return null;
     }
 
-    const paddingX = Math.max(2, imageWidth * 0.0015);
-    const paddingY = Math.max(2, imageHeight * 0.0012);
-    return words
-      .filter((word) => {
-        const ayahKey = getAyahKeyFromWord(word);
-        return (
-          ayahKey === activePlaybackAyahKey && word.y < revealVisibleBoundaryY
-        );
-      })
-      .map((word) =>
-        expandHitbox(
-          {
-            x: word.x,
-            y: word.y,
-            width: word.width,
-            height: word.height,
-          },
-          paddingX,
-          paddingY,
-          imageWidth,
-          imageHeight,
-        ),
-      );
+    const ayahBox = ayahBoxes.get(activePlaybackAyahKey);
+    if (!ayahBox) {
+      return null;
+    }
+
+    const paddingX = Math.max(8, imageWidth * 0.004);
+    const paddingY = Math.max(6, imageHeight * 0.003);
+    const expanded = expandHitbox(
+      ayahBox,
+      paddingX,
+      paddingY,
+      imageWidth,
+      imageHeight,
+    );
+
+    if (expanded.y >= revealVisibleBoundaryY) {
+      return null;
+    }
+
+    const clippedHeight = Math.min(
+      expanded.height,
+      revealVisibleBoundaryY - expanded.y,
+    );
+    if (clippedHeight <= 1) {
+      return null;
+    }
+
+    return {
+      ...expanded,
+      height: clippedHeight,
+    };
   }, [
     activePlaybackAyahKey,
+    ayahBoxes,
     imageHeight,
     imageWidth,
     revealVisibleBoundaryY,
-    words,
   ]);
   const selectedAyahDetail = selectedAyahKey && canSelectAyah
     ? ayahDetailsMap.get(selectedAyahKey) ?? null
@@ -992,21 +1000,20 @@ export function MushafPageView({
                 </span>
               </div>
             ) : null}
+            {activePlaybackAyahBox ? (
+              <div
+                className="pointer-events-none absolute rounded-md border-2 border-sky-500/90 bg-sky-400/10 shadow-[0_0_0_1px_rgba(14,165,233,0.16)] transition-all"
+                style={{
+                  left: percent(activePlaybackAyahBox.x, imageWidth),
+                  top: percent(activePlaybackAyahBox.y, imageHeight),
+                  width: percent(activePlaybackAyahBox.width, imageWidth),
+                  height: percent(activePlaybackAyahBox.height, imageHeight),
+                }}
+              />
+            ) : null}
             {canInteract ? (
               <>
                 {wordHitboxButtons}
-                {activePlaybackWordBoxes.map((box, index) => (
-                  <div
-                    key={`playback-word-${index}`}
-                    className="pointer-events-none absolute border border-sky-500 bg-sky-400/14 shadow-[0_0_0_1px_rgba(14,165,233,0.15)] transition-all"
-                    style={{
-                      left: percent(box.x, imageWidth),
-                      top: percent(box.y, imageHeight),
-                      width: percent(box.width, imageWidth),
-                      height: percent(box.height, imageHeight),
-                    }}
-                  />
-                ))}
                 {activeWord ? (
                   <div
                     className="pointer-events-none absolute border-2 border-amber-500"

@@ -319,6 +319,57 @@ export async function materializeNewFahamCards(
   return cards;
 }
 
+export async function getBootstrapFahamCards(
+  userId: string,
+  limit: number,
+  wordLimit = TOP_FAHAM_WORD_LIMIT,
+): Promise<FahamDueCard[]> {
+  const topWordIds = await getTopFahamWordIds(wordLimit);
+  if (topWordIds.length === 0 || limit <= 0) {
+    return [];
+  }
+
+  const fetchLimit = Math.max(limit * 4, limit);
+  const [{ data: wordData, error: wordError }, { data: knownProgress, error: progressError }] =
+    await Promise.all([
+      supabaseServer
+        .from("words")
+        .select(
+          "id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayat(surah_id, ayah_number))",
+        )
+        .in("id", topWordIds)
+        .not("translation_bm", "is", null)
+        .order("frequency", { ascending: false })
+        .limit(fetchLimit),
+      supabaseServer
+        .from("vocab_progress")
+        .select("word_id")
+        .eq("user_id", userId)
+        .in("word_id", topWordIds),
+    ]);
+  if (wordError) {
+    throw wordError;
+  }
+  if (progressError) {
+    throw progressError;
+  }
+
+  const knownWordIds = new Set(
+    ((knownProgress ?? []) as Array<{ word_id: number }>).map((row) => row.word_id),
+  );
+
+  const words = ((wordData ?? []) as RepoWordWithOccurrences[])
+    .filter((word) => !knownWordIds.has(word.id))
+    .slice(0, limit);
+
+  return Promise.all(
+    words.map(async (word) => ({
+      progress: await getOrCreateVocabProgress(userId, word.id),
+      word: word as WordWithOccurrences,
+    })),
+  );
+}
+
 export async function getMasteredFahamCards(
   userId: string,
   limit: number,
@@ -446,6 +497,15 @@ export async function getFahamStats(
   wordLimit = TOP_FAHAM_WORD_LIMIT,
 ) {
   const topWordIds = await getTopFahamWordIds(wordLimit);
+  if (topWordIds.length === 0) {
+    return {
+      wordBank: 0,
+      mastered: 0,
+      learning: 0,
+      dueToday: 0,
+      retentionRate7d: 0,
+    };
+  }
   const [
     { count: encounteredCount },
     { data: progressStats, error: progressError },
@@ -458,8 +518,9 @@ export async function getFahamStats(
       .in("word_id", topWordIds),
     supabaseServer
       .from("vocab_progress")
-      .select("is_mastered, reps, due")
-      .eq("user_id", userId),
+      .select("word_id, is_mastered, reps, due")
+      .eq("user_id", userId)
+      .in("word_id", topWordIds),
     supabaseServer
       .from("review_log")
       .select("rating")

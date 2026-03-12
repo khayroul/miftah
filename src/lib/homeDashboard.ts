@@ -125,6 +125,21 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
   }
 
   const focusWordIds = await getTopFahamWordIds(levelProgress.activeWordLimit);
+  if (focusWordIds.length === 0) {
+    return {
+      blockedReason: null,
+      coveragePct: 0,
+      dueCount: 0,
+      encounteredWordCount: 0,
+      eligibleNewCount: 0,
+      focusWordLimit: levelProgress.activeWordLimit,
+      levelProgress,
+      masteredWordCount: 0,
+      reviewedWordCount: 0,
+      totalCandidateCount: 0,
+      totalWords: levelProgress.activeWordLimit,
+    };
+  }
   const [dueCards, candidates, dueCountResult, progressResult, encounteredCountResult, masteredCountResult] = await Promise.all([
     getDueFahamCards(
       userId,
@@ -142,17 +157,17 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
       .from("vocab_progress")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
-      .in("word_id", topWordIds),
+      .in("word_id", focusWordIds),
     supabaseServer
       .from("v_vocab_exposure_summary")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
-      .in("word_id", topWordIds),
+      .in("word_id", focusWordIds),
     supabaseServer
       .from("vocab_progress")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
-      .in("word_id", topWordIds)
+      .in("word_id", focusWordIds)
       .eq("is_mastered", true),
   ]);
 
@@ -178,11 +193,11 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
   const encounteredWordCount = encounteredCountResult.count ?? 0;
   const masteredWordCount = masteredCountResult.count ?? 0;
   const reviewedWordCount = progressResult.count ?? 0;
-  const totalWords = TOP_FAHAM_WORD_LIMIT;
+  const totalWords = levelProgress.activeWordLimit;
 
   return {
     blockedReason: plan.blockedReason,
-    coveragePct: percentage(encounteredWordCount, TOP_FAHAM_WORD_LIMIT),
+    coveragePct: percentage(encounteredWordCount, levelProgress.activeWordLimit),
     dueCount,
     encounteredWordCount,
     eligibleNewCount: plan.stats.eligibleNewCount,

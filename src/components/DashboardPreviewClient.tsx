@@ -97,6 +97,10 @@ function toneClasses(tone: CardTone) {
   };
 }
 
+function shouldPrefetch(href: string): boolean {
+  return !href.startsWith("/read/");
+}
+
 function ModeProgressCard({
   card,
 }: {
@@ -164,6 +168,7 @@ function ModeProgressCard({
 
       <Link
         href={card.href}
+        prefetch={shouldPrefetch(card.href)}
         className="mt-6 inline-flex rounded-xl border border-stone-900/10 bg-white/80 px-4 py-2 text-sm font-medium text-stone-800 transition hover:bg-white dark:border-white/10 dark:bg-stone-950/60 dark:text-stone-100 dark:hover:bg-stone-950"
       >
         {card.ctaLabel}
@@ -293,6 +298,7 @@ export function DashboardPreviewClient({
             <div className="flex flex-wrap gap-3">
               <Link
                 href={`/read/${continuePage}`}
+                prefetch={false}
                 className="rounded-xl bg-teal-900 px-5 py-2.5 text-sm font-medium text-teal-50 transition hover:bg-teal-800 dark:bg-teal-700 dark:hover:bg-teal-600"
               >
                 Masuk Baca
@@ -349,6 +355,7 @@ export function DashboardPreviewClient({
               <div className="mt-5 space-y-3">
                 <Link
                   href={`/read/${continuePage}`}
+                  prefetch={false}
                   className="block rounded-2xl border border-teal-900/10 bg-white/92 px-4 py-4 transition hover:bg-white dark:border-teal-300/10 dark:bg-stone-900/80 dark:hover:bg-stone-900"
                 >
                   <p className="text-xs uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
@@ -385,6 +392,7 @@ export function DashboardPreviewClient({
 
                 <Link
                   href={`/read/${continuePage}`}
+                  prefetch={false}
                   className="block rounded-2xl border border-stone-900/8 bg-white/92 px-4 py-4 transition hover:bg-white dark:border-white/8 dark:bg-stone-900/80 dark:hover:bg-stone-900"
                 >
                   <p className="text-xs uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">

@@ -11,10 +11,8 @@ export async function GET(): Promise<NextResponse> {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const [stats, levelState] = await Promise.all([
-      getFahamStats(userId),
-      getFahamLevelState(userId),
-    ]);
+    const levelState = await getFahamLevelState(userId);
+    const stats = await getFahamStats(userId, levelState.activeWordLimit);
 
     return NextResponse.json({
       ...stats,
