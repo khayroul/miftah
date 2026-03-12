@@ -29,6 +29,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       newLimit: body.newLimit,
       pauseNewCardsAboveDueCount: body.pauseNewCardsAboveDueCount,
       preferredSources: body.preferredSources,
+      isRevision: body.isRevision,
     });
 
     return NextResponse.json(snapshot);

@@ -10,13 +10,13 @@ export const DEFAULT_FAHAM_ENGINE_CONFIG: FahamEngineConfig = {
   candidatePoolSize: 240,
   dueLimit: 20,
   sessionSize: 20,
-  minDistinctContextCount: 2,
-  minExposureEventCount: 3,
-  minOccurrenceWeight: 5,
-  newWeight: 0.60,
+  minDistinctContextCount: 1, // Available immediately
+  minExposureEventCount: 1,   // Available immediately
+  minOccurrenceWeight: 1,     // Available immediately
+  newWeight: 0.65,
   dueWeight: 0.25,
-  masteredWeight: 0.15,
-  pauseNewCardsAboveDueCount: 40,
+  masteredWeight: 0.10,       // Strictly 10%
+  pauseNewCardsAboveDueCount: 100, // Relaxed backlog threshold
   preferredSources: ["reading_page", "theme_chunk", "hifz_ayah"],
 };
 
@@ -115,14 +115,10 @@ function preferenceScore(
 
 export function isEligibleForNewCard(
   candidate: FahamCandidateWord,
-  config: FahamEngineConfig,
+  _config: FahamEngineConfig,
 ): boolean {
-  const summary = candidate.summary;
-  return (
-    summary.distinct_context_count >= config.minDistinctContextCount ||
-    summary.exposure_event_count >= config.minExposureEventCount ||
-    summary.total_occurrence_weight >= config.minOccurrenceWeight
-  );
+  // Always available if encountered at least once
+  return candidate.summary.exposure_event_count >= 1;
 }
 
 export function scoreFahamCandidate(
@@ -146,11 +142,7 @@ function compareCandidates(
   right: FahamCandidateWord,
   config: FahamEngineConfig,
 ): number {
-  const scoreDelta = scoreFahamCandidate(right, config) - scoreFahamCandidate(left, config);
-  if (scoreDelta !== 0) {
-    return scoreDelta;
-  }
-
+  // PRIORITY 1: Recency (latest encountered first)
   const recencyDelta =
     new Date(right.summary.last_exposed_at).getTime() -
     new Date(left.summary.last_exposed_at).getTime();
@@ -158,11 +150,10 @@ function compareCandidates(
     return recencyDelta;
   }
 
-  const sourceDelta =
-    sourceOccurrenceWeight(right.summary, config.preferredSources[0]) -
-    sourceOccurrenceWeight(left.summary, config.preferredSources[0]);
-  if (sourceDelta !== 0) {
-    return sourceDelta;
+  // PRIORITY 2: Score (sources, frequency, etc)
+  const scoreDelta = scoreFahamCandidate(right, config) - scoreFahamCandidate(left, config);
+  if (scoreDelta !== 0) {
+    return scoreDelta;
   }
 
   return right.word.frequency - left.word.frequency;
@@ -184,32 +175,47 @@ export function buildFahamQueuePlan(params: {
   config: FahamEngineConfig;
   dueCards: FahamDueCard[];
   masteredCards: FahamDueCard[];
+  isRevision?: boolean;
 }): FahamQueuePlan {
   const config = normalizeFahamEngineConfig(params.config);
   const total = config.sessionSize;
+  const isRevision = params.isRevision ?? false;
 
-  // Calculate target counts for each bucket
-  const targetDueCount = Math.floor(total * config.dueWeight);
-  const targetMasteredCount = Math.floor(total * config.masteredWeight);
-  const targetNewCount = total - targetDueCount - targetMasteredCount;
-
-  // Fill buckets
-  const dueCards = params.dueCards.slice(0, targetDueCount);
+  // 1. ALLOCATE MASTERED (Strict 10%)
+  // In normal mode, we cap it at 10%. In Revision mode if they want more, 
+  // they can have more if nothing else is available, but let's stick to 10% 
+  // as the standard mix unless bank is empty.
+  const targetMasteredCount = Math.max(1, Math.floor(total * 0.10));
   const masteredCards = params.masteredCards.slice(0, targetMasteredCount);
+
+  // 2. FILL REMAINING SLOTS WITH DUE THEN NEW
+  let remainingSlots = total - masteredCards.length;
   
-  // Allocate remaining slots to "new" cards
-  const remainingSlots = total - dueCards.length - masteredCards.length;
-  const newCandidates = selectNewFahamCandidates(
-    params.candidates,
-    config,
-    remainingSlots,
-  );
+  // If revision mode, we might want to prioritize things that are NOT yet mastered 
+  // but let's assume standard priority for now: Due > New.
+  const dueCards = params.dueCards.slice(0, remainingSlots);
+  remainingSlots -= dueCards.length;
+
+  const newCandidates = remainingSlots > 0 
+    ? selectNewFahamCandidates(params.candidates, config, remainingSlots)
+    : [];
+
+  // 3. IF STILL SLOTS REMAINING (e.g. no more due/new), fill more mastered
+  if (remainingSlots > (newCandidates.length)) {
+    const extraMasteredNeeded = remainingSlots - newCandidates.length;
+    const additionalMastered = params.masteredCards.slice(
+      masteredCards.length,
+      masteredCards.length + extraMasteredNeeded,
+    );
+    masteredCards.push(...additionalMastered);
+  }
 
   const eligibleNewCount = params.candidates.filter((candidate) =>
     isEligibleForNewCard(candidate, config),
   ).length;
 
-  if (params.dueCards.length >= config.pauseNewCardsAboveDueCount) {
+  // Revision mode ignores the due_backlog block to allow constant availability
+  if (!isRevision && params.dueCards.length >= config.pauseNewCardsAboveDueCount) {
     return {
       blockedReason: "due_backlog",
       dueCards,

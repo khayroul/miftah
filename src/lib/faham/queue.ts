@@ -27,6 +27,7 @@ interface QueueOverrides {
   masteredWeight?: number;
   pauseNewCardsAboveDueCount?: number;
   preferredSources?: FahamSourceType[];
+  isRevision?: boolean;
 }
 
 export interface SerializedFahamCard {
@@ -124,6 +125,7 @@ export async function buildFahamQueueSnapshot(
     config,
     dueCards: dueCardsPool,
     masteredCards: masteredPool,
+    isRevision: overrides.isRevision,
   });
 
   const [newCards, mcqPool] = await Promise.all([

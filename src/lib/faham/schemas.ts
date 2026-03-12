@@ -27,13 +27,14 @@ export const fahamExposureSchema = z.discriminatedUnion("sourceType", [
 
 export const fahamQueueRequestSchema = z.object({
   directionMode: fahamDirectionEnum.optional(),
-  dueLimit: z.number().int().min(1).max(40).optional(),
+  dueLimit: z.number().int().min(1).max(100).optional(),
   minDistinctContextCount: z.number().int().min(1).max(5).optional(),
-  minExposureEventCount: z.number().int().min(1).max(8).optional(),
-  minOccurrenceWeight: z.number().int().min(1).max(12).optional(),
-  newLimit: z.number().int().min(0).max(10).optional(),
-  pauseNewCardsAboveDueCount: z.number().int().min(0).max(50).optional(),
+  minExposureEventCount: z.number().int().min(1).max(10).optional(),
+  minOccurrenceWeight: z.number().int().min(1).max(20).optional(),
+  newLimit: z.number().int().min(0).max(100).optional(),
+  pauseNewCardsAboveDueCount: z.number().int().min(0).max(200).optional(),
   preferredSources: z.array(fahamSourceEnum).max(3).optional(),
+  isRevision: z.boolean().optional(),
 });
 
 export const fahamRateRequestSchema = z.object({

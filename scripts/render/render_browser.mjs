@@ -220,39 +220,37 @@ function normalizeLayoutForRender(layout, surahMeta) {
 
   const hasSurahHeader = lines.some(line => line.type === 'surah-header');
   const hasBasmala = lines.some(line => line.type === 'basmala');
+  
+  // Find the first text line
   const firstTextLine = lines.find(
-    line => line.type === 'text' && typeof line.verseRange === 'string',
+    line => line.type === 'text' && typeof line.verseRange === 'string'
   );
 
-  if (!firstTextLine) {
-    return { ...layout, lines };
-  }
+  if (!firstTextLine) return { ...layout, lines };
 
   const startRef = firstTextLine.verseRange.split('-')[0];
   const startVerse = parseVerseRef(startRef);
 
-  // Dataset fallback: pages 586/590 ship with only text lines despite surah start.
-  if (
-    startVerse &&
-    startVerse.ayah === 1 &&
-    !hasSurahHeader &&
-    !hasBasmala &&
-    lines.length <= 12
-  ) {
-    const prefix = [
-      {
-        type: 'surah-header',
-        text: surahMeta[startVerse.surah]?.name_ar || '',
-        surah: String(startVerse.surah).padStart(3, '0'),
-      },
-    ];
-    if (startVerse.surah !== 1 && startVerse.surah !== 9) {
+  // If it's a verse 1 start and missing a surah header, add it.
+  if (startVerse && startVerse.ayah === 1 && !hasSurahHeader) {
+    const prefix = [];
+    prefix.push({
+      type: 'surah-header',
+      text: surahMeta[startVerse.surah]?.name_ar || '',
+      surah: String(startVerse.surah).padStart(3, '0'),
+    });
+
+    // If it lacks basmala and is not Surah 1 or 9, add it.
+    if (!hasBasmala && startVerse.surah !== 1 && startVerse.surah !== 9) {
       prefix.push({
         type: 'basmala',
         qpcV2: BASMALA_GLYPHS_QPC2,
         qpcV1: '#"!',
       });
     }
+
+    // Merge: insert headers at the top, BEFORE existing lines
+    // If the existing lines already started with a basmala (unlikely), they will be pushed down.
     return { ...layout, lines: [...prefix, ...lines] };
   }
 
