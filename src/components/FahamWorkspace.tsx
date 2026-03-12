@@ -89,6 +89,10 @@ function newLabel(count: number): string {
   return count === 1 ? "1 kad baharu" : `${count} kad baharu`;
 }
 
+function masteredLabel(count: number): string {
+  return count === 1 ? "1 kad pengukuhan" : `${count} kad pengukuhan`;
+}
+
 async function requestQueue(
   preset: SourcePreset,
   directionMode: FahamMcqDirectionMode,
