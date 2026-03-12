@@ -370,6 +370,7 @@ export async function getMasteredFahamCards(
 }
 
 export async function getFahamStats(userId: string) {
+  const topWordIds = await getTopFahamWordIds();
   const [
     { count: encounteredCount },
     { data: progressStats, error: progressError },
@@ -378,7 +379,8 @@ export async function getFahamStats(userId: string) {
     supabaseServer
       .from("v_vocab_exposure_summary")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", userId),
+      .eq("user_id", userId)
+      .in("word_id", topWordIds),
     supabaseServer
       .from("vocab_progress")
       .select("is_mastered, reps, due")
@@ -391,12 +393,8 @@ export async function getFahamStats(userId: string) {
       .gte("reviewed_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
   ]);
 
-  if (progressError) {
-    throw progressError;
-  }
-  if (retentionError) {
-    throw retentionError;
-  }
+  if (progressError) throw progressError;
+  if (retentionError) throw retentionError;
 
   const now = new Date().toISOString();
   let masteredCount = 0;
@@ -411,12 +409,9 @@ export async function getFahamStats(userId: string) {
       if (row.due <= now) {
         dueTodayCount++;
       }
-    } else if (row.due <= now) {
-      // New cards shown in session are also counted as "due" for dashboard if were already assigned progress?
-      // Actually usually new is not in progress yet.
-      // But getDueFahamCards only returns items with progress.
-      dueTodayCount++;
     }
+    // New (reps == 0) cards that were already assigned progress but not yet mastered are learning? 
+    // Usually reps=0 means "New".
   }
 
   const ratings = (retentionData ?? []) as Array<{ rating: number }>;
