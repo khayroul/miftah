@@ -14,31 +14,36 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Text is required" }, { status: 400 });
   }
 
-  // If male voice requested, try edge-tts CLI
+  // If male voice requested, try edge-tts CLI (for local dev)
   if (voiceType === "male") {
-    let edgeVoice = "";
-    if (lang === "ar") edgeVoice = "ar-SA-HamedNeural";
-    else if (lang === "ms") edgeVoice = "ms-MY-OsmanNeural";
+    try {
+      // Dynamic import to avoid build-time issues with node-only modules if needed, 
+      // but here we use child_process which is standard in Node.
+      // We check if the environment is NOT Vercel for this, or just catch the error.
+      const isVercel = process.env.VERCEL === "1";
+      if (!isVercel) {
+        let edgeVoice = "";
+        if (lang === "ar") edgeVoice = "ar-SA-HamedNeural";
+        else if (lang === "ms") edgeVoice = "ms-MY-OsmanNeural";
 
-    if (edgeVoice) {
-      try {
-        // Execute edge-tts and get buffer directly
-        // We use a temporary file or pipe. Base64 via stdout is safest for large text but simple works here.
-        const { stdout } = await execAsync(`edge-tts --voice ${edgeVoice} --text "${text.replace(/"/g, '\\"')}"`, {
-          encoding: "buffer",
-        });
-
-        if (stdout && stdout.length > 0) {
-          return new NextResponse(stdout, {
-            headers: {
-              "Content-Type": "audio/mpeg",
-              "Cache-Control": "public, max-age=31536000, immutable",
-            },
+        if (edgeVoice) {
+          const { stdout } = await execAsync(`edge-tts --voice ${edgeVoice} --text "${text.replace(/"/g, '\\"')}"`, {
+            encoding: "buffer",
           });
+
+          if (stdout && stdout.length > 0) {
+            return new NextResponse(stdout, {
+              headers: {
+                "Content-Type": "audio/mpeg",
+                "Cache-Control": "public, max-age=31536000, immutable",
+              },
+            });
+          }
         }
-      } catch (error) {
-        console.error("Edge TTS Error (falling back to Google):", error);
       }
+    } catch (error) {
+      // Silent ignore - will fallback to Google
+      console.warn("Male voice (edge-tts) skipped or failed:", error);
     }
   }
 
