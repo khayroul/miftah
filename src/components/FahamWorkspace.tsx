@@ -262,10 +262,18 @@ export function FahamWorkspace({
 
   const playWordAudio = (text: string, lang: "ar" | "ms", explicitUrl?: string | null) => {
     if (!audioEnabled || !text) return;
-    
-    // Explicit URL (like Quran.com WBW) takes precedence
-    const url = explicitUrl || `/api/audio/tts?text=${encodeURIComponent(text)}&lang=${lang}&voice=male`;
-    
+
+    const normalizedExplicitUrl =
+      typeof explicitUrl === "string" ? explicitUrl.trim() : "";
+    // Quranic Arabic must come from recitation audio; never fallback to TTS.
+    const url =
+      normalizedExplicitUrl.length > 0
+        ? normalizedExplicitUrl
+        : lang === "ms"
+          ? `/api/audio/tts?text=${encodeURIComponent(text)}&lang=ms&voice=male`
+          : null;
+    if (!url) return;
+
     const audio = new Audio(url);
     audio.play().catch(() => {
       // Ignore autoplay blocks or failures

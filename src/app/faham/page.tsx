@@ -10,6 +10,17 @@ import { buildFahamQueueSnapshot } from "@/lib/faham/queue";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 
+function buildQuranWordAudioUrl(
+  surah: number,
+  ayah: number,
+  wordPosition: number,
+): string {
+  const s = String(surah).padStart(3, "0");
+  const a = String(ayah).padStart(3, "0");
+  const w = String(wordPosition).padStart(3, "0");
+  return `https://audio.qurancdn.com/wbw/${s}_${a}_${w}.mp3`;
+}
+
 export default async function FahamPage() {
   const user = await getOptionalAuthUser();
   const userId = user?.id;
@@ -65,7 +76,7 @@ export default async function FahamPage() {
           promptLang: "ar",
           promptPrimary: "بِسْمِ",
           promptSecondary: "bis'mi",
-          promptAudioUrl: null,
+          promptAudioUrl: buildQuranWordAudioUrl(1, 1, 1),
           answerAudioUrl: null,
           whyThisSet: ["Contoh pratonton (Preview)"],
         },
@@ -105,7 +116,7 @@ export default async function FahamPage() {
           promptLang: "ar",
           promptPrimary: "ٱلدِّينِ",
           promptSecondary: "al-dini",
-          promptAudioUrl: null,
+          promptAudioUrl: buildQuranWordAudioUrl(1, 4, 2),
           answerAudioUrl: null,
           whyThisSet: ["Contoh pratonton (Preview)"],
         },
