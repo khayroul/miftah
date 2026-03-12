@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo } from "react";
-import type { ReactNode } from "react";
 import { saveReadMode, type ReadMode } from "@/lib/readMode";
 import { findMarkerForPage } from "@/lib/readNavigationUtils";
 import { useReadingProgressState } from "@/lib/useReadingProgressState";
@@ -15,7 +14,6 @@ interface ModeNavigatorProps {
     page: number;
     surah: number;
   }>;
-  leftAccessory?: ReactNode;
   onModeClick?: (mode: ReadMode, e: React.MouseEvent) => void;
 }
 
@@ -41,7 +39,7 @@ function modeHref(params: {
     return `/read/surah/${params.themeSurahId}/themes`;
   }
   if (params.mode === "hifz") {
-    return "/hifz";
+    return `/read/${params.readPage}`;
   }
   return "/faham";
 }
@@ -51,7 +49,6 @@ export function ModeNavigator({
   fallbackReadPage = 1,
   fallbackThemeSurahId = 1,
   surahTargets = [],
-  leftAccessory,
   onModeClick,
 }: ModeNavigatorProps) {
   const readingState = useReadingProgressState();
@@ -75,7 +72,21 @@ export function ModeNavigator({
   return (
     <div className="flex w-full justify-center">
       <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-full border border-stone-200 bg-white/92 p-1.5 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
-        {leftAccessory}
+        <Link
+          href="/"
+          className="mr-2 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+          title="Utama"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+        </Link>
         {MODE_ITEMS.map((item) => {
           const active = item.value === activeMode;
           return (
@@ -87,10 +98,9 @@ export function ModeNavigator({
                 themeSurahId: derivedThemeSurahId,
               })}
               onClick={(e) => {
+                saveReadMode(item.value);
                 if (onModeClick) {
                   onModeClick(item.value, e);
-                } else {
-                  saveReadMode(item.value);
                 }
               }}
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${

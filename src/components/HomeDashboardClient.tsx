@@ -27,6 +27,7 @@ interface ModeCard {
   tone: CardTone;
   href: string;
   buttonLabel: string;
+  onClick?: () => void;
 }
 
 function clampPercent(value: number): number {
@@ -137,6 +138,7 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
       <div className="mt-6">
         <Link
           href={card.href}
+          onClick={card.onClick}
           className={`block w-full rounded-xl py-2.5 text-center text-sm font-medium transition ${
             card.tone === "teal"
               ? "bg-teal-800/10 text-teal-900 hover:bg-teal-800/15 dark:bg-teal-300/10 dark:text-teal-200 dark:hover:bg-teal-300/20"
@@ -236,8 +238,9 @@ export function HomeDashboardClient({
       percent: snapshot.hifz?.manzilCoveragePct ?? 0,
       title: "Hafal",
       tone: "stone",
-      href: "/hifz",
+      href: `/read/${continuePage}`,
       buttonLabel: "Buka Hafal",
+      onClick: () => saveReadMode("hifz"),
     },
   ];
 
