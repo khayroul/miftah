@@ -1,5 +1,10 @@
 import type { FahamSourceType } from "@/types/database";
 import { TOP_FAHAM_WORD_LIMIT } from "./config";
+import {
+  buildFahamLevelProgress,
+  getFahamLevelState,
+  type FahamLevelProgress,
+} from "./levels";
 import type { FahamBuiltMcq, FahamMcqDirectionMode } from "./mcq";
 import { buildFahamMcqForWord, normalizeMalayMeaning } from "./mcq";
 import {
@@ -61,6 +66,7 @@ export interface SerializedFahamCard {
 export interface FahamQueueSnapshot {
   blockedReason: "due_backlog" | null;
   due: SerializedFahamCard[];
+  levelProgress: FahamLevelProgress;
   new: SerializedFahamCard[];
   mastered: SerializedFahamCard[];
   learning: SerializedFahamCard[];
@@ -114,14 +120,18 @@ export async function buildFahamQueueSnapshot(
   overrides: QueueOverrides = {},
 ): Promise<FahamQueueSnapshot> {
   const config = normalizeFahamEngineConfig(overrides);
+  const levelState = await getFahamLevelState(userId);
+  const levelProgress = buildFahamLevelProgress(levelState);
+  const focusWordLimit = levelState.activeWordLimit;
   const [dueCardsPool, candidatesPool, masteredPool, learningPool] = await Promise.all([
     getDueFahamCards(
       userId,
       Math.max(config.sessionSize, config.pauseNewCardsAboveDueCount),
+      focusWordLimit,
     ),
-    getFahamExposureCandidates(userId, config.candidatePoolSize),
-    getMasteredFahamCards(userId, config.sessionSize),
-    getLearningFahamCards(userId, config.sessionSize),
+    getFahamExposureCandidates(userId, config.candidatePoolSize, focusWordLimit),
+    getMasteredFahamCards(userId, config.sessionSize, focusWordLimit),
+    getLearningFahamCards(userId, config.sessionSize, focusWordLimit),
   ]);
 
   const plan = buildFahamQueuePlan({
@@ -135,7 +145,7 @@ export async function buildFahamQueueSnapshot(
 
   const [newCards, mcqPool] = await Promise.all([
     materializeNewFahamCards(userId, plan.newCandidates),
-    getFahamMcqWordPool(1200),
+    getFahamMcqWordPool(1200, focusWordLimit),
   ]);
 
   const directionMode = overrides.directionMode ?? "arab_to_bm";
@@ -152,7 +162,7 @@ export async function buildFahamQueueSnapshot(
     .filter((card): card is SerializedFahamCard => card !== null);
 
   const surfacedLearningCards = (plan.learningCards ?? [])
-    .map((card) => serializeCard(card, "due" as any, mcqPool, directionMode)) // Treat as "due" in kind for now to simplify UI logic, but can separate later
+    .map((card) => serializeCard(card, "due", mcqPool, directionMode))
     .filter((card): card is SerializedFahamCard => card !== null);
 
   const surfacedNewCards: SerializedFahamCard[] = [];
@@ -180,12 +190,13 @@ export async function buildFahamQueueSnapshot(
   return {
     blockedReason: plan.blockedReason,
     due: surfacedDueCards,
+    levelProgress,
     new: surfacedNewCards,
     mastered: surfacedMasteredCards,
     learning: surfacedLearningCards,
     stats: {
       ...plan.stats,
-      focusWordLimit: TOP_FAHAM_WORD_LIMIT,
+      focusWordLimit: Math.min(TOP_FAHAM_WORD_LIMIT, focusWordLimit),
     },
   };
 }

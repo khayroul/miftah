@@ -49,12 +49,12 @@ function firstRelation<T>(value: T | T[] | null): T | null {
   return value ?? null;
 }
 
-export const getTopFahamWordIds = cache(async (): Promise<number[]> => {
+export const getTopFahamWordIds = cache(async (wordLimit = TOP_FAHAM_WORD_LIMIT): Promise<number[]> => {
   const { data, error } = await supabaseServer
     .from("words")
     .select("id")
     .order("frequency", { ascending: false })
-    .limit(TOP_FAHAM_WORD_LIMIT);
+    .limit(wordLimit);
   if (error) {
     throw error;
   }
@@ -62,8 +62,8 @@ export const getTopFahamWordIds = cache(async (): Promise<number[]> => {
   return ((data ?? []) as Array<{ id: number }>).map((row) => row.id);
 });
 
-export const getTopFahamWordCount = cache(async (): Promise<number> => {
-  const wordIds = await getTopFahamWordIds();
+export const getTopFahamWordCount = cache(async (wordLimit = TOP_FAHAM_WORD_LIMIT): Promise<number> => {
+  const wordIds = await getTopFahamWordIds(wordLimit);
   return wordIds.length;
 });
 
@@ -172,8 +172,9 @@ export async function recordVocabExposureEvents(
 export async function getDueFahamCards(
   userId: string,
   limit: number,
+  wordLimit = TOP_FAHAM_WORD_LIMIT,
 ): Promise<FahamDueCard[]> {
-  const topWordIds = await getTopFahamWordIds();
+  const topWordIds = await getTopFahamWordIds(wordLimit);
   if (topWordIds.length === 0) {
     return [];
   }
@@ -233,8 +234,9 @@ export async function getDueFahamCards(
 export async function getFahamExposureCandidates(
   userId: string,
   limit: number,
+  wordLimit = TOP_FAHAM_WORD_LIMIT,
 ): Promise<FahamCandidateWord[]> {
-  const topWordIds = await getTopFahamWordIds();
+  const topWordIds = await getTopFahamWordIds(wordLimit);
   if (topWordIds.length === 0) {
     return [];
   }
@@ -320,8 +322,9 @@ export async function materializeNewFahamCards(
 export async function getMasteredFahamCards(
   userId: string,
   limit: number,
+  wordLimit = TOP_FAHAM_WORD_LIMIT,
 ): Promise<FahamDueCard[]> {
-  const topWordIds = await getTopFahamWordIds();
+  const topWordIds = await getTopFahamWordIds(wordLimit);
   if (topWordIds.length === 0) {
     return [];
   }
@@ -379,8 +382,9 @@ export async function getMasteredFahamCards(
 export async function getLearningFahamCards(
   userId: string,
   limit: number,
+  wordLimit = TOP_FAHAM_WORD_LIMIT,
 ): Promise<FahamDueCard[]> {
-  const topWordIds = await getTopFahamWordIds();
+  const topWordIds = await getTopFahamWordIds(wordLimit);
   if (topWordIds.length === 0) {
     return [];
   }
@@ -437,8 +441,11 @@ export async function getLearningFahamCards(
     .filter((row): row is FahamDueCard => row !== null);
 }
 
-export async function getFahamStats(userId: string) {
-  const topWordIds = await getTopFahamWordIds();
+export async function getFahamStats(
+  userId: string,
+  wordLimit = TOP_FAHAM_WORD_LIMIT,
+) {
+  const topWordIds = await getTopFahamWordIds(wordLimit);
   const [
     { count: encounteredCount },
     { data: progressStats, error: progressError },
@@ -498,8 +505,11 @@ export async function getFahamStats(userId: string) {
   };
 }
 
-export async function getFahamMcqWordPool(limit: number) {
-  const topWordIds = await getTopFahamWordIds();
+export async function getFahamMcqWordPool(
+  limit: number,
+  wordLimit = TOP_FAHAM_WORD_LIMIT,
+) {
+  const topWordIds = await getTopFahamWordIds(wordLimit);
   if (topWordIds.length === 0) {
     return [];
   }

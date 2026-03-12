@@ -58,6 +58,7 @@ export function ReadPageWorkspace({
   const {
     activePlaybackAyahKey,
     isAudioVisible,
+    setPlayableAyahKeys,
     syncAudioTracks,
     toggleAudioVisibility,
   } = useReadAudio();
@@ -263,6 +264,7 @@ export function ReadPageWorkspace({
         onAudioDiscovered={markAudioDiscovered}
         activePlaybackAyahKey={activePlaybackAyahKey}
         isAudioDockVisible={isAudioVisible}
+        onPlayableAyahKeysChange={setPlayableAyahKeys}
       />
     </>
   );

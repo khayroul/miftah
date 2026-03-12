@@ -6,6 +6,7 @@ import { trackReadAudioTelemetry } from "@/lib/readAudioTelemetry";
 
 interface ReadAudioDockProps {
   tracks: ReadAudioTrack[];
+  playableAyahKeys?: string[] | null;
   visible?: boolean;
   onRequestClose: () => void;
   onPlaybackAyahChange?: (ayahKey: string | null) => void;
@@ -121,7 +122,8 @@ function SegmentedRepeat({ title, value, onChange }: SegmentedRepeatProps) {
 }
 
 export function ReadAudioDock({
-  tracks,
+  tracks: sourceTracks,
+  playableAyahKeys = null,
   visible,
   onRequestClose,
   onPlaybackAyahChange,
@@ -136,16 +138,32 @@ export function ReadAudioDock({
   const [rangePreset, setRangePreset] = useState<RangePreset>("page");
   const [rangeStartIndex, setRangeStartIndex] = useState(0);
   const [rangeEndIndex, setRangeEndIndex] = useState(() =>
-    Math.max(tracks.length - 1, 0),
+    Math.max(sourceTracks.length - 1, 0),
   );
   const [repeatEachVerse, setRepeatEachVerse] = useState<RepeatOption>(1);
   const [repeatSet, setRepeatSet] = useState<RepeatOption>(1);
   const [repeatEachStep, setRepeatEachStep] = useState(0);
   const [repeatSetStep, setRepeatSetStep] = useState(0);
+  const playableAyahKeySet = useMemo(() => {
+    if (!playableAyahKeys || playableAyahKeys.length === 0) {
+      return null;
+    }
+    return new Set(playableAyahKeys);
+  }, [playableAyahKeys]);
+  const tracks = useMemo(() => {
+    if (!playableAyahKeySet) {
+      return sourceTracks;
+    }
+    return sourceTracks.filter((track) => playableAyahKeySet.has(track.key));
+  }, [playableAyahKeySet, sourceTracks]);
+  const hasPlaybackCap =
+    playableAyahKeySet !== null && tracks.length < sourceTracks.length;
 
   const maxIndex = Math.max(tracks.length - 1, 0);
   const clampedRangeStart = clamp(rangeStartIndex, 0, maxIndex);
-  const clampedRangeEnd = clamp(rangeEndIndex, 0, maxIndex);
+  const clampedRangeEnd = hasPlaybackCap
+    ? maxIndex
+    : clamp(rangeEndIndex, 0, maxIndex);
   const normalizedRangeStart = Math.min(clampedRangeStart, clampedRangeEnd);
   const normalizedRangeEnd = Math.max(clampedRangeStart, clampedRangeEnd);
   const safeIndex = tracks.length
@@ -171,6 +189,14 @@ export function ReadAudioDock({
       onPlaybackAyahChange?.(null);
     };
   }, [onPlaybackAyahChange]);
+
+  useEffect(() => {
+    if (tracks.length > 0) {
+      return;
+    }
+    const audio = audioRef.current;
+    audio?.pause();
+  }, [tracks.length]);
 
   useEffect(() => {
     onPanelOpenChange?.(panelVisible);
@@ -417,6 +443,11 @@ export function ReadAudioDock({
           Sedang dimainkan: {rangeSummary}
         </p>
       ) : null}
+      {hasPlaybackCap ? (
+        <p className="mt-1 text-sm text-teal-700 dark:text-teal-300">
+          Mod Hafal aktif: audio dihadkan kepada ayat yang sudah dibuka.
+        </p>
+      ) : null}
 
       <div className="mt-4">
         <SegmentedRepeat
@@ -551,10 +582,12 @@ export function ReadAudioDock({
                 <p className="truncate text-[15px] font-medium text-stone-900 sm:text-base dark:text-stone-100">
                   Mishary Al-Afasy
                 </p>
-                <p className="truncate text-sm text-stone-500 dark:text-stone-400">
-                  {currentTrack ? `Ayat ${formatTrackLabel(currentTrack)}` : "Tiada audio untuk halaman ini"}
-                </p>
-              </div>
+              <p className="truncate text-sm text-stone-500 dark:text-stone-400">
+                {currentTrack
+                  ? `Ayat ${formatTrackLabel(currentTrack)}${hasPlaybackCap ? " · ikut bahagian Hafal" : ""}`
+                  : "Tiada audio untuk ayat terbuka"}
+              </p>
+            </div>
 
               <button
                 type="button"

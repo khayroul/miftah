@@ -1,9 +1,9 @@
 import { TOP_FAHAM_WORD_LIMIT } from "@/lib/faham/config";
 import { buildFahamQueuePlan, DEFAULT_FAHAM_ENGINE_CONFIG } from "@/lib/faham/engine";
+import { buildFahamLevelProgress, getFahamLevelState, type FahamLevelProgress } from "@/lib/faham/levels";
 import {
   getDueFahamCards,
   getFahamExposureCandidates,
-  getTopFahamWordCount,
   getTopFahamWordIds,
 } from "@/lib/faham/repository";
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
@@ -21,6 +21,7 @@ export interface HomeFahamSnapshot {
   encounteredWordCount: number;
   eligibleNewCount: number;
   focusWordLimit: number;
+  levelProgress: FahamLevelProgress;
   masteredWordCount: number;
   reviewedWordCount: number;
   totalCandidateCount: number;
@@ -102,7 +103,11 @@ async function loadHifzSnapshot(userId: string): Promise<HomeHifzSnapshot> {
 async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
   const config = DEFAULT_FAHAM_ENGINE_CONFIG;
   const now = new Date().toISOString();
-  const topWordIds = await getTopFahamWordIds();
+  const [topWordIds, levelState] = await Promise.all([
+    getTopFahamWordIds(),
+    getFahamLevelState(userId),
+  ]);
+  const levelProgress = buildFahamLevelProgress(levelState);
   if (topWordIds.length === 0) {
     return {
       blockedReason: null,
@@ -110,26 +115,28 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
       dueCount: 0,
       encounteredWordCount: 0,
       eligibleNewCount: 0,
-      focusWordLimit: TOP_FAHAM_WORD_LIMIT,
+      focusWordLimit: levelProgress.activeWordLimit,
+      levelProgress,
       masteredWordCount: 0,
       reviewedWordCount: 0,
       totalCandidateCount: 0,
-      totalWords: 0,
+      totalWords: TOP_FAHAM_WORD_LIMIT,
     };
   }
 
-  const [dueCards, candidates, topWordCount, dueCountResult, progressResult, encounteredCountResult, masteredCountResult] = await Promise.all([
+  const focusWordIds = await getTopFahamWordIds(levelProgress.activeWordLimit);
+  const [dueCards, candidates, dueCountResult, progressResult, encounteredCountResult, masteredCountResult] = await Promise.all([
     getDueFahamCards(
       userId,
       Math.max(config.dueLimit, config.pauseNewCardsAboveDueCount),
+      levelProgress.activeWordLimit,
     ),
-    getFahamExposureCandidates(userId, config.candidatePoolSize),
-    getTopFahamWordCount(),
+    getFahamExposureCandidates(userId, config.candidatePoolSize, levelProgress.activeWordLimit),
     supabaseServer
       .from("vocab_progress")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
-      .in("word_id", topWordIds)
+      .in("word_id", focusWordIds)
       .lte("due", now),
     supabaseServer
       .from("vocab_progress")
@@ -171,15 +178,16 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
   const encounteredWordCount = encounteredCountResult.count ?? 0;
   const masteredWordCount = masteredCountResult.count ?? 0;
   const reviewedWordCount = progressResult.count ?? 0;
-  const totalWords = topWordCount;
+  const totalWords = TOP_FAHAM_WORD_LIMIT;
 
   return {
     blockedReason: plan.blockedReason,
-    coveragePct: percentage(encounteredWordCount, totalWords),
+    coveragePct: percentage(encounteredWordCount, TOP_FAHAM_WORD_LIMIT),
     dueCount,
     encounteredWordCount,
     eligibleNewCount: plan.stats.eligibleNewCount,
-    focusWordLimit: TOP_FAHAM_WORD_LIMIT,
+    focusWordLimit: levelProgress.activeWordLimit,
+    levelProgress,
     masteredWordCount,
     reviewedWordCount,
     totalCandidateCount: plan.stats.totalCandidateCount,

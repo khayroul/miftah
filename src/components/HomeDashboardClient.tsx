@@ -19,6 +19,8 @@ interface HomeDashboardClientProps {
 }
 
 interface ModeCard {
+  badge?: string;
+  detail?: string;
   lines: Array<{
     label: string;
     value: string;
@@ -104,9 +106,16 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500 dark:text-stone-400">
               Mod
             </p>
-            <h2 className="mt-2 text-2xl font-medium tracking-tight text-stone-900 dark:text-stone-50">
-              {card.title}
-            </h2>
+            <div className="mt-2 flex items-center gap-2">
+              <h2 className="text-2xl font-medium tracking-tight text-stone-900 dark:text-stone-50">
+                {card.title}
+              </h2>
+              {card.badge ? (
+                <span className="rounded-full border border-amber-300/80 bg-amber-100/80 px-2 py-0.5 text-[11px] font-semibold text-amber-900 dark:border-amber-500/40 dark:bg-amber-900/30 dark:text-amber-200">
+                  {card.badge}
+                </span>
+              ) : null}
+            </div>
           </div>
           <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
             {card.percent}%
@@ -137,6 +146,11 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
             style={{ width: `${card.percent}%` }}
           />
         </div>
+        {card.detail ? (
+          <p className="mt-2 text-xs text-stone-600 dark:text-stone-300">
+            {card.detail}
+          </p>
+        ) : null}
 
       </div>
 
@@ -186,6 +200,7 @@ export function HomeDashboardClient({
     return findMarkerForPage(markers, continuePage);
   }, [continuePage, surahTargets]);
   const activeSurahId = activeSurah?.id ?? 1;
+  const fahamLevel = snapshot.faham?.levelProgress ?? null;
 
   const modeCards: ModeCard[] = [
     {
@@ -210,17 +225,23 @@ export function HomeDashboardClient({
         ? [
             {
               label: "Ditemui",
-              value: `${snapshot.faham.encounteredWordCount} / ${snapshot.faham.totalWords}`,
+              value: `${snapshot.faham.encounteredWordCount} / ${TOP_FAHAM_WORD_LIMIT}`,
             },
             {
               label: "Mahir",
-              value: `${snapshot.faham.masteredWordCount}`,
+              value: `${snapshot.faham.masteredWordCount} / ${snapshot.faham.encounteredWordCount}`,
             },
           ]
         : [
             { label: "Ditemui", value: `0 / ${TOP_FAHAM_WORD_LIMIT}` },
-            { label: "Mahir", value: "0" },
+            { label: "Mahir", value: "0 / 0" },
           ],
+      badge: fahamLevel ? `L${fahamLevel.activeLevel}/${fahamLevel.maxLevel}` : undefined,
+      detail: fahamLevel
+        ? fahamLevel.isMaxLevel
+          ? "Tahap maksimum dibuka."
+          : `Buka L${fahamLevel.nextLevel}: Ditemui ${fahamLevel.unlockFoundProgress}/${fahamLevel.unlockFoundRequired} · Mahir ${fahamLevel.unlockMasteredProgress}/${fahamLevel.unlockMasteredRequired}`
+        : undefined,
       percent: snapshot.faham?.coveragePct ?? 0,
       title: "Faham",
       tone: "amber",

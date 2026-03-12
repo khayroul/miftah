@@ -47,6 +47,7 @@ interface MushafPageViewProps {
   onAudioDiscovered?: () => void;
   activePlaybackAyahKey?: string | null;
   isAudioDockVisible?: boolean;
+  onPlayableAyahKeysChange?: (ayahKeys: string[] | null) => void;
 }
 
 interface AyahBoundingBox {
@@ -269,6 +270,7 @@ export function MushafPageView({
   onAudioDiscovered,
   activePlaybackAyahKey = null,
   isAudioDockVisible = false,
+  onPlayableAyahKeysChange,
 }: MushafPageViewProps) {
   const [selectedWord, setSelectedWord] = useState<MushafWordHitbox | null>(
     null,
@@ -540,6 +542,28 @@ export function MushafPageView({
     }
     return hifzRevealContext.thirdSegmentAyahKeys;
   }, [hifzRevealContext, mode, remainingAyahKeys]);
+  const hifzPlayableAyahKeys = useMemo(() => {
+    if (mode !== "hifz" || !hifzRevealByThirdsEnabled || !hifzRevealContext) {
+      return null;
+    }
+
+    if (hifzRevealContext.stage === 1) {
+      return hifzRevealContext.firstSegmentAyahKeys.length > 0
+        ? hifzRevealContext.firstSegmentAyahKeys
+        : null;
+    }
+
+    if (hifzRevealContext.stage === 2) {
+      const unlockedKeys = [
+        ...hifzRevealContext.firstSegmentAyahKeys,
+        ...hifzRevealContext.secondSegmentAyahKeys,
+      ];
+      return unlockedKeys.length > 0 ? Array.from(new Set(unlockedKeys)) : null;
+    }
+
+    const allPageKeys = ayahLayoutEntries.map((entry) => entry.key);
+    return allPageKeys.length > 0 ? allPageKeys : null;
+  }, [ayahLayoutEntries, hifzRevealByThirdsEnabled, hifzRevealContext, mode]);
   const canMarkHifz = mode === "hifz" && remainingAyahKeys.length > 0;
   const showHifzSessionControls =
     mode === "hifz" && canShowAnyImage && hifzRevealByThirdsEnabled;
@@ -590,6 +614,14 @@ export function MushafPageView({
       window.clearTimeout(timer);
     };
   }, [hifzFeedbackMessage]);
+  useEffect(() => {
+    onPlayableAyahKeysChange?.(hifzPlayableAyahKeys);
+  }, [hifzPlayableAyahKeys, onPlayableAyahKeysChange]);
+  useEffect(() => {
+    return () => {
+      onPlayableAyahKeysChange?.(null);
+    };
+  }, [onPlayableAyahKeysChange]);
 
   const handleMarkHifzMemorized = async () => {
     if (mode !== "hifz" || markingMemorized || allAyatMemorized || !canMarkHifz) {

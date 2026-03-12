@@ -2,8 +2,8 @@ export const dynamic = "force-dynamic";
 
 import { FahamWorkspace } from "@/components/FahamWorkspace";
 import { ModeNavigator } from "@/components/ModeNavigator";
-import { TOP_FAHAM_WORD_LIMIT } from "@/lib/faham/config";
 import type { FahamQueueSnapshot } from "@/lib/faham/queue";
+import type { FahamLevelProgress } from "@/lib/faham/levels";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthStatusButton } from "@/components/AuthStatusButton";
 import { buildFahamQueueSnapshot } from "@/lib/faham/queue";
@@ -26,16 +26,29 @@ export default async function FahamPage() {
   const userId = user?.id;
   const jumpTargets = await getReadJumpTargets();
   let setupMessage: string | null = null;
+  const defaultLevelProgress: FahamLevelProgress = {
+    activeLevel: 1,
+    activeWordLimit: 1000,
+    isMaxLevel: false,
+    maxLevel: 3,
+    nextLevel: 2,
+    unlockFoundProgress: 0,
+    unlockFoundRequired: 600,
+    unlockMasteredProgress: 0,
+    unlockMasteredRequired: 0,
+    unlockReady: false,
+  };
   let initialQueue: FahamQueueSnapshot = {
     blockedReason: null,
     due: [],
+    levelProgress: defaultLevelProgress,
     new: [],
     mastered: [],
     learning: [],
     stats: {
       dueCount: 0,
       eligibleNewCount: 0,
-      focusWordLimit: TOP_FAHAM_WORD_LIMIT,
+      focusWordLimit: defaultLevelProgress.activeWordLimit,
       totalCandidateCount: 0,
       masteredCount: 0,
       learningCount: 0,

@@ -189,25 +189,6 @@ export function FahamWorkspace({
     : 0;
   const progressPct = cards.length > 0 ? ((currentIndex + 1) / cards.length) * 100 : 0;
 
-  useEffect(() => {
-    void fetch("/api/faham/stats")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && !data.error) {
-          const newStats = data as FahamStats;
-          // Trigger celebration if mastered count increased
-          if (prevMastered !== null && newStats.mastered > prevMastered) {
-            setShowCelebration(true);
-            playFeedbackSound("mastered");
-            setTimeout(() => setShowCelebration(false), 4000);
-          }
-          setStats(newStats);
-          setPrevMastered(newStats.mastered);
-        }
-      })
-      .catch(console.error);
-  }, [sessionDoneCount]);
-
   const reloadQueue = (
     nextPreset: SourcePreset,
     nextDirectionMode: FahamMcqDirectionMode,
@@ -289,7 +270,7 @@ export function FahamWorkspace({
     });
   };
 
-  const playFeedbackSound = (kind: "correct" | "incorrect" | "mastered") => {
+  function playFeedbackSound(kind: "correct" | "incorrect" | "mastered") {
     if (!audioEnabled) return;
     
     const AudioCtx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -332,7 +313,25 @@ export function FahamWorkspace({
       osc.start(now);
       osc.stop(now + 0.3);
     }
-  };
+  }
+
+  useEffect(() => {
+    void fetch("/api/faham/stats")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && !data.error) {
+          const newStats = data as FahamStats;
+          if (prevMastered !== null && newStats.mastered > prevMastered) {
+            setShowCelebration(true);
+            playFeedbackSound("mastered");
+            setTimeout(() => setShowCelebration(false), 4000);
+          }
+          setStats(newStats);
+          setPrevMastered(newStats.mastered);
+        }
+      })
+      .catch(console.error);
+  }, [sessionDoneCount, prevMastered]);
 
   // Autoplay prompt when card changes
   useEffect(() => {

@@ -19,6 +19,7 @@ interface ReadAudioContextValue {
   feedbackOffsetPx: number;
   isAudioPanelOpen: boolean;
   isAudioVisible: boolean;
+  setPlayableAyahKeys: (ayahKeys: string[] | null) => void;
   setAudioVisible: (next: boolean) => void;
   syncAudioTracks: (pageNumber: number, tracks: ReadAudioTrack[]) => void;
   toggleAudioVisibility: () => void;
@@ -33,6 +34,17 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
   const [activePlaybackAyahKey, setActivePlaybackAyahKey] = useState<string | null>(
     null,
   );
+  const [playableAyahKeys, setPlayableAyahKeysState] = useState<string[] | null>(
+    null,
+  );
+
+  const setPlayableAyahKeys = useCallback((ayahKeys: string[] | null) => {
+    if (!ayahKeys || ayahKeys.length === 0) {
+      setPlayableAyahKeysState(null);
+      return;
+    }
+    setPlayableAyahKeysState(Array.from(new Set(ayahKeys)));
+  }, []);
 
   const syncAudioTracks = useCallback(
     (_pageNumber: number, nextTracks: ReadAudioTrack[]) => {
@@ -87,6 +99,7 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
       feedbackOffsetPx,
       isAudioPanelOpen,
       isAudioVisible,
+      setPlayableAyahKeys,
       setAudioVisible,
       syncAudioTracks,
       toggleAudioVisibility,
@@ -97,6 +110,7 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
       feedbackOffsetPx,
       isAudioPanelOpen,
       isAudioVisible,
+      setPlayableAyahKeys,
       setAudioVisible,
       syncAudioTracks,
       toggleAudioVisibility,
@@ -108,6 +122,7 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
       {children}
       <ReadAudioDock
         tracks={tracks}
+        playableAyahKeys={playableAyahKeys}
         visible={isAudioVisible && tracks.length > 0}
         onRequestClose={() => setAudioVisible(false)}
         onPlaybackAyahChange={setActivePlaybackAyahKey}
