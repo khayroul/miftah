@@ -86,7 +86,7 @@ interface SegmentedRepeatProps {
 function SegmentedRepeat({ title, value, onChange }: SegmentedRepeatProps) {
   return (
     <div>
-      <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
+      <p className="mb-2 text-[13px] font-medium uppercase tracking-wide text-stone-500 sm:text-sm dark:text-stone-400">
         {title}
       </p>
       <div className="grid grid-cols-4 rounded-xl border border-stone-200 bg-stone-100 p-1 dark:border-stone-700 dark:bg-stone-800">
@@ -97,7 +97,7 @@ function SegmentedRepeat({ title, value, onChange }: SegmentedRepeatProps) {
               key={`${title}-${option}`}
               type="button"
               onClick={() => onChange(option)}
-              className={`rounded-lg px-2 py-2 text-xs font-medium transition ${
+              className={`rounded-lg px-2 py-2 text-sm font-medium transition ${
                 selected
                   ? "bg-white text-stone-900 shadow-sm dark:bg-stone-200 dark:text-stone-900"
                   : "text-stone-600 hover:bg-white/60 dark:text-stone-300 dark:hover:bg-stone-700"
@@ -293,10 +293,10 @@ export function ReadAudioDock({
             </button>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-base font-medium text-stone-900 dark:text-stone-100">
+              <p className="truncate text-[15px] font-medium text-stone-900 sm:text-base dark:text-stone-100">
                 Mishary Al-Afasy
               </p>
-              <p className="truncate text-xs text-stone-500 dark:text-stone-400">
+              <p className="truncate text-sm text-stone-500 dark:text-stone-400">
                 {currentTrack ? `Ayat ${formatTrackLabel(currentTrack)}` : "Tiada audio untuk halaman ini"}
               </p>
             </div>
@@ -319,7 +319,7 @@ export function ReadAudioDock({
           {panelOpen ? (
             <div className="max-h-[68vh] overflow-y-auto border-t border-stone-200 px-4 pb-4 pt-3 dark:border-stone-700">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
+                <p className="text-base font-medium text-stone-900 dark:text-stone-100">
                   Tetapan Audio
                 </p>
                 <button
@@ -328,14 +328,14 @@ export function ReadAudioDock({
                     setPanelOpen(false);
                     onRequestClose();
                   }}
-                  className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+                  className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
                 >
                   Tutup
                 </button>
               </div>
 
               <div>
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                <p className="mb-2 text-[13px] font-medium uppercase tracking-wide text-stone-500 sm:text-sm dark:text-stone-400">
                   Laraskan julat hingga hujung
                 </p>
                 <div className="grid grid-cols-3 gap-2">
@@ -346,7 +346,7 @@ export function ReadAudioDock({
                         key={preset.value}
                         type="button"
                         onClick={() => applyRangePreset(preset.value, normalizedRangeStart)}
-                        className={`rounded-full px-3 py-2 text-sm font-medium transition ${
+                        className={`rounded-full px-3 py-2 text-[15px] font-medium transition sm:text-base ${
                           active
                             ? "bg-teal-700 text-white shadow-sm dark:bg-teal-500 dark:text-teal-950"
                             : "border border-stone-300 text-stone-600 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
@@ -360,7 +360,7 @@ export function ReadAudioDock({
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <label className="text-xs text-stone-600 dark:text-stone-300">
+                <label className="text-sm text-stone-600 dark:text-stone-300">
                   Dari
                   <select
                     value={String(normalizedRangeStart)}
@@ -368,7 +368,7 @@ export function ReadAudioDock({
                       const nextStart = Number.parseInt(event.target.value, 10);
                       applyRangePreset(rangePreset, nextStart);
                     }}
-                    className="mt-1 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
+                    className="mt-1.5 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
                   >
                     {tracks.map((track, index) => (
                       <option key={`from-${track.key}`} value={index}>
@@ -378,14 +378,14 @@ export function ReadAudioDock({
                   </select>
                 </label>
 
-                <label className="text-xs text-stone-600 dark:text-stone-300">
+                <label className="text-sm text-stone-600 dark:text-stone-300">
                   Hingga
                   <select
                     value={String(normalizedRangeEnd)}
                     onChange={(event) =>
                       setRangeEndIndex(Number.parseInt(event.target.value, 10))
                     }
-                    className="mt-1 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
+                    className="mt-1.5 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
                   >
                     {tracks.map((track, index) => (
                       <option key={`to-${track.key}`} value={index}>
@@ -397,7 +397,7 @@ export function ReadAudioDock({
               </div>
 
               {rangeSummary ? (
-                <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
+                <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
                   Sedang dimainkan: {rangeSummary}
                 </p>
               ) : null}
@@ -429,7 +429,7 @@ export function ReadAudioDock({
                   type="button"
                   onClick={() => goToTrack(safeIndex - 1)}
                   disabled={safeIndex <= normalizedRangeStart}
-                  className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
+                  className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
                 >
                   Ayat Sebelum
                 </button>
@@ -437,14 +437,14 @@ export function ReadAudioDock({
                   type="button"
                   onClick={() => goToTrack(safeIndex + 1)}
                   disabled={safeIndex >= normalizedRangeEnd}
-                  className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
+                  className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
                 >
                   Ayat Seterusnya
                 </button>
               </div>
 
               {currentRangeTracks.length === 0 ? (
-                <p className="mt-3 text-xs text-stone-500 dark:text-stone-400">
+                <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
                   Tiada ayat dalam julat sekarang.
                 </p>
               ) : null}

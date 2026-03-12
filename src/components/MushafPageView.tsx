@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import {
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -256,9 +257,12 @@ export function MushafPageView({
   const [memorizedAyahKeySet, setMemorizedAyahKeySet] = useState(
     () => new Set(memorizedAyahKeys),
   );
+  const [isHifzDockOpen, setIsHifzDockOpen] = useState(false);
+  const [isHifzDockHidden, setIsHifzDockHidden] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(
     null,
   );
+  const lastScrollYRef = useRef(0);
   const { mode } = useReadMode();
 
   const imageWidth = manifest?.image_width ?? 1200;
@@ -469,6 +473,8 @@ export function MushafPageView({
     return hifzRevealContext.thirdSegmentAyahKeys;
   }, [hifzRevealContext, mode, remainingAyahKeys]);
   const canMarkHifz = mode === "hifz" && remainingAyahKeys.length > 0;
+  const showHifzEdgeDock =
+    mode === "hifz" && canShowAnyImage && hifzRevealByThirdsEnabled;
   const hifzHafalButtonLabel = allAyatMemorized
     ? "Halaman Sudah Hafal"
     : markingMemorized
@@ -482,6 +488,41 @@ export function MushafPageView({
             : hifzRevealContext?.stage === 2
               ? "Hafal 1/3 Kedua"
               : "Hafal Baki Halaman";
+  useEffect(() => {
+    if (showHifzEdgeDock) {
+      return;
+    }
+    setIsHifzDockOpen(false);
+    setIsHifzDockHidden(false);
+  }, [showHifzEdgeDock]);
+
+  useEffect(() => {
+    if (!showHifzEdgeDock) {
+      return;
+    }
+
+    lastScrollYRef.current = window.scrollY;
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollYRef.current;
+      if (Math.abs(delta) < 6) {
+        return;
+      }
+      if (delta > 0) {
+        setIsHifzDockHidden(true);
+        setIsHifzDockOpen(false);
+      } else {
+        setIsHifzDockHidden(false);
+      }
+      lastScrollYRef.current = currentY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [showHifzEdgeDock]);
+
   const handleMarkHifzMemorized = async () => {
     if (mode !== "hifz" || markingMemorized || allAyatMemorized || !canMarkHifz) {
       return;
@@ -645,7 +686,7 @@ export function MushafPageView({
       {/* Discovery Hint */}
       {!audioDiscovered && mode === "read" && canShowFullImage && (
         <div className="flex justify-center">
-          <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-medium text-emerald-800 shadow-sm animate-bounce dark:bg-emerald-900/30 dark:text-emerald-100">
+          <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 shadow-sm animate-bounce sm:text-base dark:bg-emerald-900/30 dark:text-emerald-100">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
             </svg>
@@ -657,6 +698,12 @@ export function MushafPageView({
       <div
         className="relative overflow-visible cursor-pointer rounded-2xl border border-stone-300 bg-[#fffdfa] shadow-[0_18px_34px_-30px_rgba(28,25,23,0.7)] dark:border-[#162a44] dark:bg-[#0d1b2a] dark:shadow-[0_22px_38px_-30px_rgba(2,6,23,0.95)]"
         style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
+        onTouchStartCapture={() => {
+          setIsHifzDockHidden(false);
+        }}
+        onClickCapture={() => {
+          setIsHifzDockHidden(false);
+        }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={() => {
@@ -703,7 +750,7 @@ export function MushafPageView({
             {canSelectAyah ? ayahHitboxButtons : null}
             {!fullImageReady && canShowFullImage ? (
               <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-4">
-                <span className="rounded-full border border-stone-300 bg-white/90 px-3 py-1 text-xs text-stone-600 shadow-sm dark:border-stone-700 dark:bg-stone-900/90 dark:text-stone-300">
+                <span className="rounded-full border border-stone-300 bg-white/90 px-3 py-1 text-sm text-stone-600 shadow-sm dark:border-stone-700 dark:bg-stone-900/90 dark:text-stone-300">
                   Loading full page...
                 </span>
               </div>
@@ -738,7 +785,7 @@ export function MushafPageView({
                     <p className="text-sm text-stone-600 dark:text-stone-300">
                       {selectedTranslation?.en ?? "No translation"}
                     </p>
-                    <p className="mt-1 text-[11px] text-stone-500 dark:text-stone-400">
+                    <p className="mt-1 text-xs text-stone-500 sm:text-sm dark:text-stone-400">
                       {activeWord.location}
                     </p>
                   </article>
@@ -753,7 +800,7 @@ export function MushafPageView({
                 onTouchStart={(event) => event.stopPropagation()}
                 onTouchEnd={(event) => event.stopPropagation()}
               >
-                <div className="pointer-events-none absolute left-1/2 top-2 -translate-x-1/2 rounded-full border border-teal-500/40 bg-white/95 px-3 py-1 text-[10px] font-semibold tracking-wide text-teal-800 shadow-sm dark:border-teal-300/40 dark:bg-stone-900/95 dark:text-teal-200">
+                <div className="pointer-events-none absolute left-1/2 top-2 -translate-x-1/2 rounded-full border border-teal-500/40 bg-white/95 px-3 py-1 text-xs font-semibold tracking-wide text-teal-800 sm:text-sm dark:border-teal-300/40 dark:bg-stone-900/95 dark:text-teal-200">
                   HIFZ REVEAL · {revealStageLabel(hifzRevealContext.stage)}
                 </div>
               </div>
@@ -766,69 +813,98 @@ export function MushafPageView({
         )}
       </div>
 
-      {mode === "hifz" && canShowAnyImage && hifzRevealByThirdsEnabled ? (
-        <div className="fixed bottom-24 left-1/2 z-40 w-[min(92vw,420px)] -translate-x-1/2 animate-fade-in-up">
-          <div className="rounded-2xl border border-teal-200 bg-white/95 p-3 shadow-[0_10px_30px_rgba(13,148,136,0.22)] backdrop-blur-md dark:border-teal-900/60 dark:bg-stone-900/90">
+      {showHifzEdgeDock ? (
+        <div
+          className={`fixed right-0 top-1/2 z-40 -translate-y-1/2 transition-transform duration-200 ${
+            isHifzDockHidden ? "translate-x-[112%]" : "translate-x-0"
+          }`}
+        >
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              disabled={allAyatMemorized || markingMemorized || !canMarkHifz}
-              onClick={handleMarkHifzMemorized}
-              className="w-full rounded-xl bg-teal-900 px-4 py-2.5 text-sm font-semibold text-teal-50 transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-55 dark:bg-teal-700 dark:hover:bg-teal-600"
+              aria-expanded={isHifzDockOpen}
+              aria-label={isHifzDockOpen ? "Tutup panel Hafal" : "Buka panel Hafal"}
+              onClick={() => setIsHifzDockOpen((current) => !current)}
+              className="h-32 w-8 rounded-l-xl border border-r-0 border-teal-300 bg-white/96 text-[11px] font-semibold tracking-wide text-teal-900 shadow-[0_8px_24px_rgba(13,148,136,0.18)] backdrop-blur-sm transition hover:bg-teal-50 dark:border-teal-900/60 dark:bg-stone-900/96 dark:text-teal-200 dark:hover:bg-stone-800"
             >
-              {hifzHafalButtonLabel}
+              <span className="[writing-mode:vertical-rl]">Hafal</span>
             </button>
-            <p className="mt-2 text-xs text-teal-800 dark:text-teal-200">
-              {hifzRevealSessionActive
-                ? "Setiap kali ditekan, paparan akan buka bahagian seterusnya sehingga penuh."
-                : "Semua ayat pada halaman ini akan ditanda sebagai hafal."}
-            </p>
-            {markMemorizedError ? (
-              <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-                {markMemorizedError}
-              </p>
+            {isHifzDockOpen ? (
+              <div className="mr-2 w-[min(88vw,320px)] rounded-2xl border border-teal-200 bg-white/96 p-3 shadow-[0_10px_30px_rgba(13,148,136,0.22)] backdrop-blur-md dark:border-teal-900/60 dark:bg-stone-900/92">
+                <div className="mb-2 flex items-start justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-teal-900 dark:text-teal-200">
+                    Hafal
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsHifzDockOpen(false)}
+                    className="rounded-md border border-teal-200 px-2 py-1 text-[11px] text-teal-700 transition hover:bg-teal-50 dark:border-teal-800 dark:text-teal-200 dark:hover:bg-stone-800"
+                  >
+                    Tutup
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  disabled={allAyatMemorized || markingMemorized || !canMarkHifz}
+                  onClick={handleMarkHifzMemorized}
+                  className="w-full rounded-xl bg-teal-900 px-4 py-2.5 text-sm font-semibold text-teal-50 transition hover:bg-teal-800 sm:text-base disabled:cursor-not-allowed disabled:opacity-55 dark:bg-teal-700 dark:hover:bg-teal-600"
+                >
+                  {hifzHafalButtonLabel}
+                </button>
+                <p className="mt-2 text-sm text-teal-800 dark:text-teal-200">
+                  {hifzRevealSessionActive
+                    ? "Setiap kali ditekan, paparan akan buka bahagian seterusnya sehingga penuh."
+                    : "Semua ayat pada halaman ini akan ditanda sebagai hafal."}
+                </p>
+                {markMemorizedError ? (
+                  <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                    {markMemorizedError}
+                  </p>
+                ) : null}
+              </div>
             ) : null}
           </div>
         </div>
       ) : null}
 
       {!manifest ? (
-        <p className="text-sm text-stone-600 dark:text-stone-300">
+        <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
           Manifest tidak ditemui. Halaman dipaparkan tanpa hitbox.
         </p>
       ) : revealEnabled && hifzRevealContext ? (
-        <p className="text-sm text-teal-700 dark:text-teal-300">
+        <p className="text-[15px] text-teal-700 sm:text-base dark:text-teal-300">
           Hifz reveal aktif: paparan {revealStageLabel(hifzRevealContext.stage)} halaman (sempadan ikut hujung ayat).
         </p>
       ) : mode === "hifz" && !hifzRevealByThirdsEnabled ? (
-        <p className="text-sm text-teal-700 dark:text-teal-300">
+        <p className="text-[15px] text-teal-700 sm:text-base dark:text-teal-300">
           Paparan 1/3 sedang dimatikan. Aktifkan semula untuk memaparkan butang Hafal.
         </p>
       ) : mode === "read" ? (
-        <p className="text-sm text-stone-600 dark:text-stone-300">
+        <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
           Mod Baca: Leret untuk tukar halaman. <strong>Tekan mana-mana ayat untuk dengar audio.</strong>
         </p>
       ) : mode === "hifz" ? (
-        <p className="text-sm text-teal-700 dark:text-teal-300">
+        <p className="text-[15px] text-teal-700 sm:text-base dark:text-teal-300">
           Gunakan butang Hafal untuk membuka 1/3 → 2/3 → penuh. <strong>Tekan ayat untuk dengar murattal.</strong>
         </p>
       ) : words.length === 0 ? (
-        <p className="text-sm text-stone-600 dark:text-stone-300">
+        <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
           Manifest dijumpai, tetapi tiada hitbox sah untuk dipaparkan.
         </p>
       ) : !fullImageReady ? (
-        <p className="text-sm text-stone-600 dark:text-stone-300">
+        <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
           Thumbnail dipaparkan dahulu. Hitbox aktif selepas imej penuh siap.
         </p>
       ) : mode === "tema" ? (
-        <p className="text-sm text-indigo-700 dark:text-indigo-300">
+        <p className="text-[15px] text-indigo-700 sm:text-base dark:text-indigo-300">
           Mod Tema aktif. Anda akan dibawa terus ke halaman tema surah.
         </p>
       ) : !modeAllowsWordInteraction ? (
-        <p className="text-sm text-stone-600 dark:text-stone-300">
+        <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
           Mod Baca aktif. Tukar ke Faham untuk melihat makna perkataan.
         </p>
       ) : (
-        <p className="text-sm text-stone-600 dark:text-stone-300">
+        <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
           Ketik perkataan untuk melihat makna segera.
         </p>
       )}
@@ -853,7 +929,7 @@ export function MushafPageView({
                 onClick={() => {
                   setSelectedAyahKey(null);
                 }}
-                className="rounded-lg border border-stone-300 px-2 py-1 text-xs text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+                className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
               >
                 Tutup
               </button>
@@ -869,7 +945,7 @@ export function MushafPageView({
               {selectedAyahDetail.bm ?? "Terjemahan BM belum tersedia."}
             </p>
             {selectedAyahDetail.en ? (
-              <p className="mt-2 text-xs leading-relaxed text-stone-500 dark:text-stone-400">
+              <p className="mt-2 text-sm leading-relaxed text-stone-500 dark:text-stone-400">
                 EN: {selectedAyahDetail.en}
               </p>
             ) : null}

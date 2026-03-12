@@ -71,10 +71,10 @@ export function ModeNavigator({
 
   return (
     <div className="flex w-full justify-center">
-      <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-full border border-stone-200 bg-white/92 p-1.5 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
+      <div className="inline-flex flex-wrap items-center justify-center gap-1.5 rounded-full border border-stone-200 bg-white/92 p-1.5 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
         <Link
           href="/"
-          className="mr-2 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+          className="mr-1 flex items-center gap-1.5 rounded-full px-3 py-2 text-[15px] font-medium text-stone-600 transition hover:bg-stone-50 hover:text-stone-900 sm:text-base dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
           title="Utama"
         >
           <svg
@@ -103,7 +103,7 @@ export function ModeNavigator({
                   onModeClick(item.value, e);
                 }
               }}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+              className={`rounded-full px-4 py-2 text-[15px] font-medium transition sm:text-base ${
                 active
                   ? "bg-stone-900 text-stone-50 shadow-sm dark:bg-stone-100 dark:text-stone-900"
                   : "text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"

@@ -54,11 +54,11 @@ export function ReadJumpControls({
   }
 
   return (
-    <section className="rounded-2xl border border-stone-300 bg-white px-3 py-3 shadow-sm sm:px-4 dark:border-stone-600 dark:bg-stone-900">
-      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-stone-700 dark:text-stone-300">
+    <section className="rounded-2xl border border-stone-300 bg-white px-4 py-4 shadow-sm sm:px-5 dark:border-stone-600 dark:bg-stone-900">
+      <p className="mb-3 text-[13px] font-bold uppercase tracking-wide text-stone-700 sm:text-sm dark:text-stone-300">
         Lompat Ke
       </p>
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3">
         <form
           className="flex items-end gap-2"
           onSubmit={(event) => {
@@ -71,20 +71,20 @@ export function ReadJumpControls({
             jumpToPage(targetPage);
           }}
         >
-          <label className="min-w-0 flex-1 text-xs font-semibold text-stone-700 dark:text-stone-200">
+          <label className="min-w-0 flex-1 text-sm font-semibold text-stone-700 dark:text-stone-200">
             Halaman
             <input
               value={pageInput}
               onChange={(event) => setPageInput(event.target.value)}
               inputMode="numeric"
               pattern="[0-9]*"
-              className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 outline-none focus:border-teal-500 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-teal-400"
+              className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-teal-500 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-teal-400"
               placeholder="1-604"
             />
           </label>
           <button
             type="submit"
-            className="rounded-lg border border-teal-600 bg-teal-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-teal-700 hover:border-teal-700 dark:border-teal-500 dark:bg-teal-500 dark:hover:bg-teal-600 shadow-sm"
+            className="rounded-lg border border-teal-600 bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:border-teal-700 hover:bg-teal-700 sm:text-base dark:border-teal-500 dark:bg-teal-500 dark:hover:bg-teal-600"
           >
             Buka
           </button>
@@ -109,7 +109,7 @@ export function ReadJumpControls({
             jumpToPage(targetPage);
           }}
         >
-          <label className="min-w-0 flex-1 text-xs text-stone-600 dark:text-stone-300">
+          <label className="min-w-0 flex-1 text-sm font-medium text-stone-600 dark:text-stone-300">
             Surah
             <select
               value={surahInput}
@@ -122,7 +122,7 @@ export function ReadJumpControls({
                   if (targetPage) jumpToPage(targetPage);
                 }
               }}
-              className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 outline-none focus:border-stone-500 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
+              className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-stone-500 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
             >
               {surahOptions.map((option) => (
                 <option key={option.surah} value={option.surah}>
@@ -152,7 +152,7 @@ export function ReadJumpControls({
             jumpToPage(targetPage);
           }}
         >
-          <label className="min-w-0 flex-1 text-xs text-stone-600 dark:text-stone-300">
+          <label className="min-w-0 flex-1 text-sm font-medium text-stone-600 dark:text-stone-300">
             Juz
             <select
               value={juzInput}
@@ -165,7 +165,7 @@ export function ReadJumpControls({
                   if (targetPage) jumpToPage(targetPage);
                 }
               }}
-              className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 outline-none focus:border-stone-500 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
+              className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-stone-500 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
             >
               {juzOptions.map((option) => (
                 <option key={option.juz} value={option.juz}>
@@ -178,7 +178,7 @@ export function ReadJumpControls({
       </div>
 
       {errorMessage ? (
-        <p className="mt-2 text-xs text-rose-700 dark:text-rose-400">{errorMessage}</p>
+        <p className="mt-3 text-sm text-rose-700 dark:text-rose-400">{errorMessage}</p>
       ) : null}
     </section>
   );

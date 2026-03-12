@@ -52,11 +52,11 @@ export function ReadModeTools({
         />
       </div>
 
-      <div className="flex w-full items-center justify-center gap-3">
+      <div className="flex w-full flex-wrap items-center justify-center gap-3">
         <button
           type="button"
           onClick={onToggleAudio}
-          className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all shadow-sm ${
+          className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-all shadow-sm sm:text-base ${
             isAudioVisible
               ? "border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500 dark:text-emerald-950"
               : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
@@ -71,7 +71,7 @@ export function ReadModeTools({
         <button
           type="button"
           onClick={onToggleJumpControls}
-          className={`rounded-full border px-4 py-2 text-sm font-medium transition-all shadow-sm ${
+          className={`rounded-full border px-4 py-2.5 text-sm font-medium transition-all shadow-sm sm:text-base ${
             showJumpControls
               ? "border-stone-900 bg-stone-900 text-stone-50 dark:border-stone-100 dark:bg-stone-100 dark:text-stone-900"
               : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
@@ -86,7 +86,7 @@ export function ReadModeTools({
             onClick={() =>
               onHifzRevealByThirdsChange(!hifzRevealByThirdsEnabled)
             }
-            className={`rounded-full border px-4 py-2 text-sm font-medium transition-all shadow-sm ${
+            className={`rounded-full border px-4 py-2.5 text-sm font-medium transition-all shadow-sm sm:text-base ${
               hifzRevealByThirdsEnabled
                 ? "border-teal-900 bg-teal-900 text-teal-50 dark:border-teal-300 dark:bg-teal-300 dark:text-teal-950"
                 : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"

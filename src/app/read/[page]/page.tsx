@@ -115,7 +115,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
                 </span>
               )}
             </h1>
-            <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
+            <p className="text-[15px] font-medium text-stone-500 sm:text-base dark:text-stone-400">
               Surah {surahForThemeView} • Halaman {pageNumber} / 604
             </p>
           </div>
