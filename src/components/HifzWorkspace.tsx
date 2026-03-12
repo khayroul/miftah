@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Link from "next/link";
 import { JuzHeatmap } from "@/components/JuzHeatmap";
 import { HifzSessionCard } from "@/components/HifzSessionCard";
 import type { DailyPlanWithDetails, PlanItem } from "@/lib/hifz/scheduler";
@@ -181,18 +182,28 @@ export function HifzWorkspace({ plan, stats, juzProgress }: HifzWorkspaceProps) 
   if (sessionState === "in-session") {
     const entry = queue[currentIndex];
     if (!entry) return null;
+    const mushafHref = `/read/${entry.item.ayah.pageNumber}?mode=hifz&from=hifz&block=${entry.block}&ayah=${entry.item.ayah.surahId}:${entry.item.ayah.ayahNumber}`;
 
     return (
       <div className="flex flex-col gap-4">
         {/* Session header */}
         <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => setSessionState("overview")}
-            className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-          >
-            &larr; Ringkasan
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSessionState("overview")}
+              className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+            >
+              &larr; Ringkasan
+            </button>
+            <Link
+              href={mushafHref}
+              prefetch={false}
+              className="rounded-full border border-teal-300 bg-teal-50 px-4 py-1.5 text-sm font-medium text-teal-800 transition hover:bg-teal-100 dark:border-teal-700/50 dark:bg-teal-900/30 dark:text-teal-100 dark:hover:bg-teal-900/45"
+            >
+              Buka di Mushaf
+            </Link>
+          </div>
           <span className="text-xs text-stone-500 dark:text-stone-400">
             {reviewedCount} selesai
           </span>

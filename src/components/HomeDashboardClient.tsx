@@ -30,6 +30,9 @@ interface ModeCard {
   href: string;
   buttonLabel: string;
   onClick?: () => void;
+  secondaryHref?: string;
+  secondaryLabel?: string;
+  secondaryOnClick?: () => void;
 }
 
 function clampPercent(value: number): number {
@@ -94,6 +97,24 @@ function toneClasses(tone: CardTone) {
 
 function shouldPrefetch(href: string): boolean {
   return !href.startsWith("/read/");
+}
+
+function buildHifzMushafHref(input: {
+  page: number;
+  block: "sabqi" | "sabak" | "manzil" | null;
+  ayahKey: string | null;
+}): string {
+  const params = new URLSearchParams({
+    mode: "hifz",
+    from: "dashboard",
+  });
+  if (input.block) {
+    params.set("block", input.block);
+  }
+  if (input.ayahKey) {
+    params.set("ayah", input.ayahKey);
+  }
+  return `/read/${input.page}?${params.toString()}`;
 }
 
 function ModeProgressCard({ card }: { card: ModeCard }) {
@@ -174,6 +195,16 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
         >
           {card.buttonLabel}
         </Link>
+        {card.secondaryHref && card.secondaryLabel ? (
+          <Link
+            href={card.secondaryHref}
+            prefetch={shouldPrefetch(card.secondaryHref)}
+            onClick={card.secondaryOnClick}
+            className="mt-2 block w-full rounded-xl border border-stone-300/80 bg-white/65 py-2.5 text-center text-sm font-medium text-stone-800 transition hover:bg-white/90 dark:border-stone-600 dark:bg-stone-900/55 dark:text-stone-100 dark:hover:bg-stone-800"
+          >
+            {card.secondaryLabel}
+          </Link>
+        ) : null}
       </div>
     </article>
   );
@@ -209,6 +240,12 @@ export function HomeDashboardClient({
   const nextFahamCapLabel = fahamLevel?.nextWordLimit
     ? `${Math.round(fahamLevel.nextWordLimit / 1000)}k`
     : "seterusnya";
+  const hifzReadTargetPage = snapshot.hifz?.nextPage ?? continuePage;
+  const hifzReadHref = buildHifzMushafHref({
+    page: hifzReadTargetPage,
+    block: snapshot.hifz?.nextBlock ?? null,
+    ayahKey: snapshot.hifz?.nextAyahKey ?? null,
+  });
 
   const modeCards: ModeCard[] = [
     {
@@ -297,9 +334,15 @@ export function HomeDashboardClient({
       percent: snapshot.hifz?.manzilCoveragePct ?? 0,
       title: "Hafal",
       tone: "stone",
-      href: `/read/${continuePage}`,
-      buttonLabel: "Buka Hafal",
+      href: "/hifz",
+      buttonLabel: "Buka Hafal Plan",
+      detail: snapshot.hifz?.nextAyahLabel
+        ? `Ayat seterusnya: ${snapshot.hifz.nextAyahLabel}`
+        : "Belum ada ayat seterusnya untuk hari ini.",
       onClick: () => saveReadMode("hifz"),
+      secondaryHref: hifzReadHref,
+      secondaryLabel: "Teruskan di Mushaf",
+      secondaryOnClick: () => saveReadMode("hifz"),
     },
   ];
 

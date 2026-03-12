@@ -11,6 +11,7 @@ import { getHifzStats } from "@/lib/hifz/stats";
 import { supabaseServer } from "@/lib/supabase-server";
 import { getUserStreak, getUserDailyGoal, getDailyActivityCount } from "@/lib/activity";
 import type { ActivityType } from "@/lib/activity";
+import type { PlanItem } from "@/lib/hifz/scheduler";
 
 const TOTAL_QURAN_AYAT = 6236;
 
@@ -38,7 +39,10 @@ export interface HomeReadSnapshot {
 export interface HomeHifzSnapshot {
   dueTodayCount: number;
   manzilCoveragePct: number;
+  nextAyahKey: string | null;
   nextAyahLabel: string | null;
+  nextBlock: "sabqi" | "sabak" | "manzil" | null;
+  nextPage: number | null;
   streak: number;
   todayTotal: number;
   totalManzil: number;
@@ -73,15 +77,29 @@ function percentage(value: number, total: number): number {
   return Math.min(100, Math.round((value / total) * 100));
 }
 
-function nextAyahLabel(
+function resolveNextPlanEntry(
   plan: Awaited<ReturnType<typeof buildDailyPlanWithDetails>>,
+): { block: "sabqi" | "sabak" | "manzil"; item: PlanItem } | null {
+  if (plan.sabqi[0]) {
+    return { block: "sabqi", item: plan.sabqi[0] };
+  }
+  if (plan.sabak[0]) {
+    return { block: "sabak", item: plan.sabak[0] };
+  }
+  if (plan.manzil[0]) {
+    return { block: "manzil", item: plan.manzil[0] };
+  }
+  return null;
+}
+
+function nextAyahLabel(
+  nextEntry: { block: "sabqi" | "sabak" | "manzil"; item: PlanItem } | null,
 ): string | null {
-  const nextItem = plan.sabqi[0] ?? plan.sabak[0] ?? plan.manzil[0];
-  if (!nextItem) {
+  if (!nextEntry) {
     return null;
   }
 
-  return `${nextItem.ayah.surahId}:${nextItem.ayah.ayahNumber} ${nextItem.ayah.surahNameTranslit}`;
+  return `${nextEntry.item.ayah.surahId}:${nextEntry.item.ayah.ayahNumber} ${nextEntry.item.ayah.surahNameTranslit}`;
 }
 
 async function loadHifzSnapshot(userId: string): Promise<HomeHifzSnapshot> {
@@ -89,11 +107,17 @@ async function loadHifzSnapshot(userId: string): Promise<HomeHifzSnapshot> {
     buildDailyPlanWithDetails(userId),
     getHifzStats(userId),
   ]);
+  const nextEntry = resolveNextPlanEntry(plan);
 
   return {
     dueTodayCount: stats.dueTodayCount,
     manzilCoveragePct: percentage(stats.totalManzil, TOTAL_QURAN_AYAT),
-    nextAyahLabel: nextAyahLabel(plan),
+    nextAyahKey: nextEntry
+      ? `${nextEntry.item.ayah.surahId}:${nextEntry.item.ayah.ayahNumber}`
+      : null,
+    nextAyahLabel: nextAyahLabel(nextEntry),
+    nextBlock: nextEntry?.block ?? null,
+    nextPage: nextEntry?.item.ayah.pageNumber ?? null,
     streak: stats.streak,
     todayTotal: plan.sabqi.length + plan.sabak.length + plan.manzil.length,
     totalManzil: stats.totalManzil,

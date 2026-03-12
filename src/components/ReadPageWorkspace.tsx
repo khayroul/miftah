@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   MushafPageView,
   type MushafAyahDetail,
@@ -14,6 +14,7 @@ import { rememberLastReadPage } from "@/lib/readingProgressStorage";
 import { useReadMode } from "@/lib/useReadMode";
 import { useRouter } from "next/navigation";
 import type { JuzJumpTarget, SurahJumpTarget } from "@/lib/readNavigation";
+import type { ReadMode } from "@/lib/readMode";
 import type { MushafPageManifest, MushafWordTranslationMap } from "@/types/mushaf";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -34,6 +35,8 @@ interface ReadPageWorkspaceProps {
   memorizedAyahKeys: string[];
   readingAyahIds: number[];
   mushafHeader?: ReactNode;
+  initialReadMode?: ReadMode | null;
+  forceHifzRevealByThirds?: boolean;
 }
 
 const HIFZ_REVEAL_BY_THIRDS_STORAGE_KEY = "miftah:read:hifz-reveal-by-thirds";
@@ -54,6 +57,8 @@ export function ReadPageWorkspace({
   memorizedAyahKeys,
   readingAyahIds,
   mushafHeader,
+  initialReadMode = null,
+  forceHifzRevealByThirds = false,
 }: ReadPageWorkspaceProps) {
   const router = useRouter();
   const {
@@ -64,7 +69,8 @@ export function ReadPageWorkspace({
     syncAudioTracks,
     toggleAudioVisibility,
   } = useReadAudio();
-  const { mode } = useReadMode();
+  const { mode, setMode } = useReadMode();
+  const appliedInitialModeRef = useRef(false);
   const audioEnabledForMode = mode === "read" || mode === "hifz";
   const [audioDiscovered, setAudioDiscovered] = useState(() => {
     if (typeof window === "undefined") {
@@ -91,6 +97,9 @@ export function ReadPageWorkspace({
 
   const [hifzRevealByThirdsEnabled, setHifzRevealByThirdsEnabled] = useState(
     () => {
+      if (forceHifzRevealByThirds) {
+        return true;
+      }
       if (typeof window === "undefined") {
         return false;
       }
@@ -106,6 +115,17 @@ export function ReadPageWorkspace({
       hifzRevealByThirdsEnabled ? "1" : "0",
     );
   }, [hifzRevealByThirdsEnabled]);
+
+  useEffect(() => {
+    if (appliedInitialModeRef.current) {
+      return;
+    }
+    if (!initialReadMode) {
+      return;
+    }
+    setMode(initialReadMode);
+    appliedInitialModeRef.current = true;
+  }, [initialReadMode, setMode]);
 
   useEffect(() => {
     rememberLastReadPage(pageNumber);

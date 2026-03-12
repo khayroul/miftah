@@ -18,10 +18,15 @@ import type { Ayah } from "@/types/database";
 
 interface ReadPageProps {
   params: Promise<{ page: string }>;
+  searchParams: Promise<{
+    mode?: string;
+    from?: string;
+  }>;
 }
 
-export default async function ReadPage({ params }: ReadPageProps) {
+export default async function ReadPage({ params, searchParams }: ReadPageProps) {
   const { page } = await params;
+  const query = await searchParams;
   const pageNumber = parseReadPage(page);
 
   if (!pageNumber) {
@@ -91,6 +96,9 @@ export default async function ReadPage({ params }: ReadPageProps) {
   const juzByPage = findMarkerForPage(juzMarkers, pageNumber)?.id ?? 1;
   const surahForThemeView = ayatOnPage[0]?.surah_id ?? surahByPage;
   const audioTracks = mapAyatToPageAudioTracks(ayatOnPage);
+  const initialReadMode = query.mode === "hifz" ? "hifz" : null;
+  const forceHifzRevealByThirds =
+    query.mode === "hifz" && (query.from === "dashboard" || query.from === "hifz");
   
   const surahMeta = await getSurah(surahForThemeView);
 
@@ -133,6 +141,8 @@ export default async function ReadPage({ params }: ReadPageProps) {
         ayahDetails={ayahDetails}
         memorizedAyahKeys={memorizedAyahKeys}
         readingAyahIds={ayatOnPage.map((ayah) => ayah.id)}
+        initialReadMode={initialReadMode}
+        forceHifzRevealByThirds={forceHifzRevealByThirds}
       />
     </main>
   );

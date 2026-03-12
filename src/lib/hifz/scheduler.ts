@@ -6,6 +6,7 @@ export interface AyahDetail {
   id: number;
   surahId: number;
   ayahNumber: number;
+  pageNumber: number;
   textUthmani: string;
   displayBm: string | null;
   surahNameEn: string;
@@ -32,7 +33,7 @@ async function enrichWithAyahDetails(
 
   const { data, error } = await supabaseServer
     .from("ayat")
-    .select("id, surah_id, ayah_number, text_uthmani, display_bm, surahs!inner(name_en, name_transliteration)")
+    .select("id, surah_id, ayah_number, page_number, text_uthmani, display_bm, surahs!inner(name_en, name_transliteration)")
     .in("id", ayahIds);
   if (error) throw error;
 
@@ -40,6 +41,7 @@ async function enrichWithAyahDetails(
     id: number;
     surah_id: number;
     ayah_number: number;
+    page_number: number;
     text_uthmani: string;
     display_bm: string | null;
     surahs:
@@ -54,6 +56,7 @@ async function enrichWithAyahDetails(
       id: row.id,
       surahId: row.surah_id,
       ayahNumber: row.ayah_number,
+      pageNumber: row.page_number,
       textUthmani: row.text_uthmani,
       displayBm: row.display_bm,
       surahNameEn: surahRel?.name_en ?? "",
