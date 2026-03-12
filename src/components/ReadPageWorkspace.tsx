@@ -6,9 +6,9 @@ import {
   type MushafAyahDetail,
 } from "@/components/MushafPageView";
 import { FahamExposureTracker } from "@/components/FahamExposureTracker";
-import { ReadAudioDock } from "@/components/ReadAudioDock";
 import { ReadJumpControls } from "@/components/ReadJumpControls";
 import { ReadModeTools } from "@/components/ReadModeTools";
+import { useReadAudio } from "@/components/ReadAudioProvider";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
 import { rememberLastReadPage } from "@/lib/readingProgressStorage";
 import { useRouter } from "next/navigation";
@@ -55,10 +55,12 @@ export function ReadPageWorkspace({
   mushafHeader,
 }: ReadPageWorkspaceProps) {
   const router = useRouter();
-  const [audioDockVisible, setAudioDockVisible] = useState(false);
-  const [activePlaybackAyahKey, setActivePlaybackAyahKey] = useState<string | null>(
-    null,
-  );
+  const {
+    activePlaybackAyahKey,
+    isAudioVisible,
+    syncAudioTracks,
+    toggleAudioVisibility,
+  } = useReadAudio();
   const [audioDiscovered, setAudioDiscovered] = useState(() => {
     if (typeof window === "undefined") {
       return true;
@@ -75,9 +77,9 @@ export function ReadPageWorkspace({
   }, [audioDiscovered]);
 
   const handleToggleAudio = useCallback(() => {
-    setAudioDockVisible((prev) => !prev);
+    toggleAudioVisibility();
     markAudioDiscovered();
-  }, [markAudioDiscovered]);
+  }, [markAudioDiscovered, toggleAudioVisibility]);
 
   const [hifzRevealByThirdsEnabled, setHifzRevealByThirdsEnabled] = useState(
     () => {
@@ -101,26 +103,26 @@ export function ReadPageWorkspace({
     rememberLastReadPage(pageNumber);
   }, [pageNumber]);
 
-  // Scroll listener removed to allow audio dock to remain visible while scrolling
+  useEffect(() => {
+    syncAudioTracks(pageNumber, audioTracks);
+  }, [audioTracks, pageNumber, syncAudioTracks]);
 
   const handleNavigatePrevPage = useCallback(() => {
     if (pageNumber <= 1) {
       return;
     }
-    setAudioDockVisible(false);
     router.push(`/read/${pageNumber - 1}`);
   }, [pageNumber, router]);
   const handleNavigateNextPage = useCallback(() => {
     if (pageNumber >= 604) {
       return;
     }
-    setAudioDockVisible(false);
     router.push(`/read/${pageNumber + 1}`);
   }, [pageNumber, router]);
   const handleMushafTap = useCallback(() => {
-    setAudioDockVisible((current) => !current);
+    toggleAudioVisibility();
     markAudioDiscovered();
-  }, [markAudioDiscovered]);
+  }, [markAudioDiscovered, toggleAudioVisibility]);
 
   return (
     <>
@@ -141,7 +143,7 @@ export function ReadPageWorkspace({
         onToggleJumpControls={() =>
           setShowJumpControls((current) => !current)
         }
-        isAudioVisible={audioDockVisible}
+        isAudioVisible={isAudioVisible}
         onToggleAudio={handleToggleAudio}
       />
 
@@ -260,14 +262,6 @@ export function ReadPageWorkspace({
         audioDiscovered={audioDiscovered}
         onAudioDiscovered={markAudioDiscovered}
         activePlaybackAyahKey={activePlaybackAyahKey}
-      />
-
-      <ReadAudioDock
-        key={`audio-dock-${pageNumber}`}
-        tracks={audioTracks}
-        visible={audioDockVisible}
-        onRequestClose={() => setAudioDockVisible(false)}
-        onPlaybackAyahChange={setActivePlaybackAyahKey}
       />
     </>
   );

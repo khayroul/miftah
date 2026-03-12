@@ -8,6 +8,7 @@ interface ReadAudioDockProps {
   visible?: boolean;
   onRequestClose: () => void;
   onPlaybackAyahChange?: (ayahKey: string | null) => void;
+  onPanelOpenChange?: (isOpen: boolean) => void;
 }
 
 type RangePreset = "page" | "surah" | "juz";
@@ -118,6 +119,7 @@ export function ReadAudioDock({
   visible,
   onRequestClose,
   onPlaybackAyahChange,
+  onPanelOpenChange,
 }: ReadAudioDockProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const shouldAutoplayRef = useRef(false);
@@ -144,6 +146,7 @@ export function ReadAudioDock({
     : 0;
   const currentTrack = tracks[safeIndex] ?? null;
   const canPlay = currentTrack !== null;
+  const panelVisible = panelOpen && visible !== false && tracks.length > 0;
 
   useEffect(() => {
     if (!onPlaybackAyahChange) {
@@ -161,6 +164,10 @@ export function ReadAudioDock({
       onPlaybackAyahChange?.(null);
     };
   }, [onPlaybackAyahChange]);
+
+  useEffect(() => {
+    onPanelOpenChange?.(panelVisible);
+  }, [onPanelOpenChange, panelVisible]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -273,13 +280,158 @@ export function ReadAudioDock({
   };
 
   const currentRangeTracks = tracks.slice(normalizedRangeStart, normalizedRangeEnd + 1);
+  const panelContent = (
+    <div className="max-h-[68vh] overflow-y-auto border-t border-stone-200 px-4 pb-4 pt-3 dark:border-stone-700">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-base font-medium text-stone-900 dark:text-stone-100">
+          Tetapan Audio
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setPanelOpen(false);
+            onRequestClose();
+          }}
+          className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+        >
+          Tutup
+        </button>
+      </div>
+
+      <div>
+        <p className="mb-2 text-[13px] font-medium uppercase tracking-wide text-stone-500 sm:text-sm dark:text-stone-400">
+          Laraskan julat hingga hujung
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {RANGE_PRESETS.map((preset) => {
+            const active = rangePreset === preset.value;
+            return (
+              <button
+                key={preset.value}
+                type="button"
+                onClick={() => applyRangePreset(preset.value, normalizedRangeStart)}
+                className={`rounded-full px-3 py-2 text-[15px] font-medium transition sm:text-base ${
+                  active
+                    ? "bg-teal-700 text-white shadow-sm dark:bg-teal-500 dark:text-teal-950"
+                    : "border border-stone-300 text-stone-600 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
+                }`}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <label className="text-sm text-stone-600 dark:text-stone-300">
+          Dari
+          <select
+            value={String(normalizedRangeStart)}
+            onChange={(event) => {
+              const nextStart = Number.parseInt(event.target.value, 10);
+              applyRangePreset(rangePreset, nextStart);
+            }}
+            className="mt-1.5 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
+          >
+            {tracks.map((track, index) => (
+              <option key={`from-${track.key}`} value={index}>
+                {formatTrackLabel(track)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="text-sm text-stone-600 dark:text-stone-300">
+          Hingga
+          <select
+            value={String(normalizedRangeEnd)}
+            onChange={(event) =>
+              setRangeEndIndex(Number.parseInt(event.target.value, 10))
+            }
+            className="mt-1.5 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
+          >
+            {tracks.map((track, index) => (
+              <option key={`to-${track.key}`} value={index}>
+                {formatTrackLabel(track)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {rangeSummary ? (
+        <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
+          Sedang dimainkan: {rangeSummary}
+        </p>
+      ) : null}
+
+      <div className="mt-4">
+        <SegmentedRepeat
+          title="Ulang setiap ayat"
+          value={repeatEachVerse}
+          onChange={(next) => {
+            setRepeatEachVerse(next);
+            setRepeatEachStep(0);
+          }}
+        />
+      </div>
+
+      <div className="mt-4">
+        <SegmentedRepeat
+          title="Ulang set ayat"
+          value={repeatSet}
+          onChange={(next) => {
+            setRepeatSet(next);
+            setRepeatSetStep(0);
+          }}
+        />
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => goToTrack(safeIndex - 1)}
+          disabled={safeIndex <= normalizedRangeStart}
+          className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
+        >
+          Ayat Sebelum
+        </button>
+        <button
+          type="button"
+          onClick={() => goToTrack(safeIndex + 1)}
+          disabled={safeIndex >= normalizedRangeEnd}
+          className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
+        >
+          Ayat Seterusnya
+        </button>
+      </div>
+
+      {currentRangeTracks.length === 0 ? (
+        <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
+          Tiada ayat dalam julat sekarang.
+        </p>
+      ) : null}
+    </div>
+  );
 
   return (
-    <div
-      className={`fixed inset-x-0 bottom-0 z-50 transition-all duration-300 ${
-        visible === false ? "pointer-events-none translate-y-full opacity-0" : "translate-y-0 opacity-100"
-      }`}
-    >
+    <>
+      {panelVisible ? (
+        <div className="fixed inset-0 z-[65] bg-black/35" onClick={() => setPanelOpen(false)}>
+          <section
+            className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-4xl rounded-t-[24px] border border-b-0 border-stone-200 bg-white/97 shadow-[0_-16px_44px_rgba(0,0,0,0.24)] backdrop-blur dark:border-stone-700 dark:bg-stone-900/96"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {panelContent}
+          </section>
+        </div>
+      ) : null}
+      <div
+        className={`fixed inset-x-0 bottom-0 z-[70] transition-all duration-300 ${
+          visible === false ? "pointer-events-none translate-y-full opacity-0" : "translate-y-0 opacity-100"
+        }`}
+      >
       <audio
         ref={audioRef}
         preload="metadata"
@@ -289,8 +441,8 @@ export function ReadAudioDock({
         onEnded={handleAudioEnded}
       />
 
-      <div className="mx-auto w-full max-w-4xl px-2 pb-[calc(12px+env(safe-area-inset-bottom))] sm:px-4">
-        <section className="rounded-[24px] border border-stone-200 bg-white/96 shadow-[0_16px_44px_rgba(0,0,0,0.18)] backdrop-blur dark:border-stone-700 dark:bg-stone-900/94">
+        <div className="mx-auto w-full max-w-4xl px-2 pb-[calc(12px+env(safe-area-inset-bottom))] sm:px-4">
+          <section className="rounded-[24px] border border-stone-200 bg-white/96 shadow-[0_16px_44px_rgba(0,0,0,0.18)] backdrop-blur dark:border-stone-700 dark:bg-stone-900/94">
           <div className="flex items-center gap-3 px-4 py-3">
             <button
               type="button"
@@ -334,143 +486,9 @@ export function ReadAudioDock({
               </svg>
             </button>
           </div>
-
-          {panelOpen ? (
-            <div className="max-h-[68vh] overflow-y-auto border-t border-stone-200 px-4 pb-4 pt-3 dark:border-stone-700">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-base font-medium text-stone-900 dark:text-stone-100">
-                  Tetapan Audio
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPanelOpen(false);
-                    onRequestClose();
-                  }}
-                  className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
-                >
-                  Tutup
-                </button>
-              </div>
-
-              <div>
-                <p className="mb-2 text-[13px] font-medium uppercase tracking-wide text-stone-500 sm:text-sm dark:text-stone-400">
-                  Laraskan julat hingga hujung
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {RANGE_PRESETS.map((preset) => {
-                    const active = rangePreset === preset.value;
-                    return (
-                      <button
-                        key={preset.value}
-                        type="button"
-                        onClick={() => applyRangePreset(preset.value, normalizedRangeStart)}
-                        className={`rounded-full px-3 py-2 text-[15px] font-medium transition sm:text-base ${
-                          active
-                            ? "bg-teal-700 text-white shadow-sm dark:bg-teal-500 dark:text-teal-950"
-                            : "border border-stone-300 text-stone-600 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-                        }`}
-                      >
-                        {preset.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <label className="text-sm text-stone-600 dark:text-stone-300">
-                  Dari
-                  <select
-                    value={String(normalizedRangeStart)}
-                    onChange={(event) => {
-                      const nextStart = Number.parseInt(event.target.value, 10);
-                      applyRangePreset(rangePreset, nextStart);
-                    }}
-                    className="mt-1.5 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
-                  >
-                    {tracks.map((track, index) => (
-                      <option key={`from-${track.key}`} value={index}>
-                        {formatTrackLabel(track)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="text-sm text-stone-600 dark:text-stone-300">
-                  Hingga
-                  <select
-                    value={String(normalizedRangeEnd)}
-                    onChange={(event) =>
-                      setRangeEndIndex(Number.parseInt(event.target.value, 10))
-                    }
-                    className="mt-1.5 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
-                  >
-                    {tracks.map((track, index) => (
-                      <option key={`to-${track.key}`} value={index}>
-                        {formatTrackLabel(track)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              {rangeSummary ? (
-                <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
-                  Sedang dimainkan: {rangeSummary}
-                </p>
-              ) : null}
-
-              <div className="mt-4">
-                <SegmentedRepeat
-                  title="Ulang setiap ayat"
-                  value={repeatEachVerse}
-                  onChange={(next) => {
-                    setRepeatEachVerse(next);
-                    setRepeatEachStep(0);
-                  }}
-                />
-              </div>
-
-              <div className="mt-4">
-                <SegmentedRepeat
-                  title="Ulang set ayat"
-                  value={repeatSet}
-                  onChange={(next) => {
-                    setRepeatSet(next);
-                    setRepeatSetStep(0);
-                  }}
-                />
-              </div>
-
-              <div className="mt-4 flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => goToTrack(safeIndex - 1)}
-                  disabled={safeIndex <= normalizedRangeStart}
-                  className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
-                >
-                  Ayat Sebelum
-                </button>
-                <button
-                  type="button"
-                  onClick={() => goToTrack(safeIndex + 1)}
-                  disabled={safeIndex >= normalizedRangeEnd}
-                  className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
-                >
-                  Ayat Seterusnya
-                </button>
-              </div>
-
-              {currentRangeTracks.length === 0 ? (
-                <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
-                  Tiada ayat dalam julat sekarang.
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-        </section>
+          </section>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

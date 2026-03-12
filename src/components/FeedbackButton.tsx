@@ -1,12 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useReadAudio } from "@/components/ReadAudioProvider";
 
 export function FeedbackButton() {
+  const { feedbackHidden, feedbackOffsetPx } = useReadAudio();
   const [isOpen, setIsOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    if (feedbackHidden) {
+      setIsOpen(false);
+    }
+  }, [feedbackHidden]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +51,12 @@ export function FeedbackButton() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div
+      className={`fixed right-6 z-50 transition-all duration-300 ${
+        feedbackHidden ? "pointer-events-none translate-y-6 opacity-0" : "translate-y-0 opacity-100"
+      }`}
+      style={{ bottom: `calc(env(safe-area-inset-bottom) + ${feedbackOffsetPx}px)` }}
+    >
       {isOpen ? (
         <div className="mb-4 w-72 rounded-2xl border border-stone-200 bg-white p-4 shadow-2xl animate-in slide-in-from-bottom-4 dark:border-stone-800 dark:bg-stone-900">
           <h3 className="mb-3 text-sm font-semibold text-stone-900 dark:text-stone-100">

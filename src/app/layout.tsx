@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 };
 
 import { FeedbackButton } from "@/components/FeedbackButton";
+import { ReadAudioProvider } from "@/components/ReadAudioProvider";
 
 export default function RootLayout({
   children,
@@ -52,10 +53,11 @@ export default function RootLayout({
         />
       </head>
       <body className={`${geist.variable} ${arabicText.variable} antialiased`}>
-        {children}
-        <FeedbackButton />
+        <ReadAudioProvider>
+          {children}
+          <FeedbackButton />
+        </ReadAudioProvider>
       </body>
     </html>
   );
 }
-
