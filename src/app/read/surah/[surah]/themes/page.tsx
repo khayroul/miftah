@@ -6,8 +6,6 @@ import { ThemeActionPanel } from "@/components/ThemeActionPanel";
 import { ThemeChunkProgressTracker } from "@/components/ThemeChunkProgressTracker";
 import { ThemeChunkSelect } from "@/components/ThemeChunkSelect";
 import { ThemeJumpControls } from "@/components/ThemeJumpControls";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { AuthStatusButton } from "@/components/AuthStatusButton";
 import {
   getSurahs,
   getWordByWordForAyahIds,
@@ -158,15 +156,11 @@ export default async function SurahThemeAppearancePage({
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 sm:px-6 md:py-12">
       {/* Refined Header */}
       <header className="flex flex-col gap-6">
-        <nav className="flex w-full items-center justify-end gap-2">
-          <AuthStatusButton />
-          <ThemeToggle />
-        </nav>
-
         <ModeNavigator
           activeMode="tema"
           fallbackReadPage={surahMeta.page_start ?? 1}
           fallbackThemeSurahId={surahNumber}
+          showUtilities
         />
 
         <div className="flex flex-col items-center text-center gap-2 mt-2">

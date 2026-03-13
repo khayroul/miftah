@@ -5,6 +5,8 @@ import { useEffect, useMemo } from "react";
 import { saveReadMode, type ReadMode } from "@/lib/readMode";
 import { findMarkerForPage } from "@/lib/readNavigationUtils";
 import { useReadingProgressState } from "@/lib/useReadingProgressState";
+import { AuthStatusButton } from "./AuthStatusButton";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface ModeNavigatorProps {
   activeMode: ReadMode;
@@ -15,6 +17,7 @@ interface ModeNavigatorProps {
     surah: number;
   }>;
   onModeClick?: (mode: ReadMode, e: React.MouseEvent) => void;
+  showUtilities?: boolean;
 }
 
 const MODE_ITEMS: Array<{
@@ -54,6 +57,7 @@ export function ModeNavigator({
   fallbackThemeSurahId = 1,
   surahTargets = [],
   onModeClick,
+  showUtilities = false,
 }: ModeNavigatorProps) {
   const readingState = useReadingProgressState();
 
@@ -73,52 +77,66 @@ export function ModeNavigator({
     return marker?.id ?? fallbackThemeSurahId;
   }, [fallbackThemeSurahId, readPage, surahTargets]);
 
-  return (
-    <div className="flex w-full justify-start sm:justify-center">
-      <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-[26px] border border-stone-200 bg-white/92 p-1 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
-        <Link
-          href="/"
-          className="mr-0.5 flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50 hover:text-stone-900 sm:mr-1 sm:px-3 sm:py-2 sm:text-base dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
-          title="Utama"
+  const navigator = (
+    <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-[26px] border border-stone-200 bg-white/92 p-1 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
+      <Link
+        href="/"
+        className="mr-0.5 flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50 hover:text-stone-900 sm:mr-1 sm:px-3 sm:py-2 sm:text-base dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+        title="Utama"
+      >
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
         >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+      </Link>
+      {MODE_ITEMS.map((item) => {
+        const active = item.value === activeMode;
+        const href = modeHref({
+          mode: item.value,
+          readPage,
+          themeSurahId: derivedThemeSurahId,
+        });
+
+        return (
+          <Link
+            key={item.value}
+            href={href}
+            prefetch={!isReadRoute(href)}
+            onClick={(e) => {
+              saveReadMode(item.value);
+              if (onModeClick) {
+                onModeClick(item.value, e);
+              }
+            }}
+            className={`flex min-h-11 shrink-0 items-center rounded-full px-3 py-1.5 text-sm font-medium transition sm:px-4 sm:py-2 sm:text-base ${
+              active
+                ? "bg-stone-900 text-stone-50 shadow-sm dark:bg-stone-100 dark:text-stone-900"
+                : "text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+            }`}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-        </Link>
-        {MODE_ITEMS.map((item) => {
-          const active = item.value === activeMode;
-          const href = modeHref({
-            mode: item.value,
-            readPage,
-            themeSurahId: derivedThemeSurahId,
-          });
-          return (
-            <Link
-              key={item.value}
-              href={href}
-              prefetch={!isReadRoute(href)}
-              onClick={(e) => {
-                saveReadMode(item.value);
-                if (onModeClick) {
-                  onModeClick(item.value, e);
-                }
-              }}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition sm:px-4 sm:py-2 sm:text-base ${
-                active
-                  ? "bg-stone-900 text-stone-50 shadow-sm dark:bg-stone-100 dark:text-stone-900"
-                  : "text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
-              }`}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
+            {item.label}
+          </Link>
+        );
+      })}
+    </div>
+  );
+
+  if (!showUtilities) {
+    return <div className="flex w-full justify-start sm:justify-center">{navigator}</div>;
+  }
+
+  return (
+    <div className="grid w-full gap-3 xl:grid-cols-[1fr_auto] xl:items-center">
+      <div className="flex w-full justify-start xl:justify-center">{navigator}</div>
+
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <ThemeToggle iconOnly />
+        <AuthStatusButton />
       </div>
     </div>
   );

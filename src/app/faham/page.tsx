@@ -4,8 +4,6 @@ import { FahamWorkspace } from "@/components/FahamWorkspace";
 import { ModeNavigator } from "@/components/ModeNavigator";
 import type { FahamQueueSnapshot } from "@/lib/faham/queue";
 import type { FahamLevelProgress } from "@/lib/faham/levels";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { AuthStatusButton } from "@/components/AuthStatusButton";
 import { buildFahamQueueSnapshot } from "@/lib/faham/queue";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
@@ -206,14 +204,10 @@ export default async function FahamPage({ searchParams }: FahamPageProps) {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(180,83,9,0.16),transparent_30%),radial-gradient(circle_at_84%_0%,rgba(20,94,89,0.18),transparent_34%)] dark:bg-[radial-gradient(circle_at_12%_8%,rgba(217,119,6,0.16),transparent_30%),radial-gradient(circle_at_84%_0%,rgba(15,118,110,0.24),transparent_34%)]" />
 
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 lg:py-12">
-        <header className="flex w-full items-center justify-end gap-2">
-          <AuthStatusButton />
-          <ThemeToggle />
-        </header>
-
         <ModeNavigator
           activeMode="faham"
           surahTargets={jumpTargets.surahs}
+          showUtilities
         />
 
         <FahamWorkspace
