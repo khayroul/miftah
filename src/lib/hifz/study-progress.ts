@@ -6,6 +6,15 @@ const SABQI_WINDOW_DAYS = 7;
 const SABAK_SIZE = 10;
 const MANZIL_DAILY_LIMIT = 30; // 2 pages × 15 ayat
 
+export async function hasAnyHifzProgress(userId: string): Promise<boolean> {
+  const { count, error } = await supabaseServer
+    .from("study_progress")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+  if (error) throw error;
+  return (count ?? 0) > 0;
+}
+
 export async function getOrCreateProgress(
   userId: string,
   ayahId: number,

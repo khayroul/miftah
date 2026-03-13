@@ -7,6 +7,7 @@ import {
   getTopFahamWordIds,
 } from "@/lib/faham/repository";
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
+import { hasAnyHifzProgress } from "@/lib/hifz/study-progress";
 import { getHifzStats } from "@/lib/hifz/stats";
 import { supabaseServer } from "@/lib/supabase-server";
 import { getUserStreak, getUserDailyGoal, getDailyActivityCount } from "@/lib/activity";
@@ -103,6 +104,21 @@ function nextAyahLabel(
 }
 
 async function loadHifzSnapshot(userId: string): Promise<HomeHifzSnapshot> {
+  const hasStarted = await hasAnyHifzProgress(userId);
+  if (!hasStarted) {
+    return {
+      dueTodayCount: 0,
+      manzilCoveragePct: 0,
+      nextAyahKey: null,
+      nextAyahLabel: null,
+      nextBlock: null,
+      nextPage: null,
+      streak: 0,
+      todayTotal: 0,
+      totalManzil: 0,
+    };
+  }
+
   const [plan, stats] = await Promise.all([
     buildDailyPlanWithDetails(userId),
     getHifzStats(userId),

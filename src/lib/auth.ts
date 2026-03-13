@@ -12,3 +12,7 @@ export function sanitizeNextPath(
 export function buildSignInPath(nextPath: string): string {
   return `/auth/sign-in?next=${encodeURIComponent(nextPath)}`;
 }
+
+export function buildMagicLinkPath(nextPath: string): string {
+  return `/auth/magic?next=${encodeURIComponent(nextPath)}`;
+}

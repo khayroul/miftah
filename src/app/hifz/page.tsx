@@ -6,6 +6,7 @@ import { AuthStatusButton } from "@/components/AuthStatusButton";
 import { HifzOverview } from "@/components/HifzOverview";
 import { LightweightBreadcrumb } from "@/components/LightweightBreadcrumb";
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
+import { hasAnyHifzProgress } from "@/lib/hifz/study-progress";
 import { getHifzStats, getJuzProgress } from "@/lib/hifz/stats";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
@@ -19,14 +20,32 @@ export default async function HifzPage() {
   let plan: DailyPlanWithDetails;
   let stats: HifzStats;
   let juzProgress: JuzStat[];
+  let canStartFresh = false;
   const jumpTargets = await getReadJumpTargets();
 
   if (userId) {
-    [plan, stats, juzProgress] = await Promise.all([
-      buildDailyPlanWithDetails(userId),
-      getHifzStats(userId),
-      getJuzProgress(userId),
-    ]);
+    const hasStarted = await hasAnyHifzProgress(userId);
+    canStartFresh = !hasStarted;
+
+    if (hasStarted) {
+      [plan, stats, juzProgress] = await Promise.all([
+        buildDailyPlanWithDetails(userId),
+        getHifzStats(userId),
+        getJuzProgress(userId),
+      ]);
+    } else {
+      plan = { sabqi: [], sabak: [], manzil: [] } as DailyPlanWithDetails;
+      stats = { totalManzil: 0, dueTodayCount: 0, streak: 0 };
+      juzProgress = Array.from({ length: 30 }, (_, i) => ({
+        juz: i + 1,
+        totalAyat: 100,
+        manzilCount: 0,
+        sabqiCount: 0,
+        sabakCount: 0,
+        notStartedCount: 100,
+        manzilPct: 0,
+      }));
+    }
   } else {
     // Guest preview data — simplified counts only
     plan = { sabqi: [], sabak: [], manzil: [] } as unknown as DailyPlanWithDetails;
@@ -83,6 +102,7 @@ export default async function HifzPage() {
           juzProgress={juzProgress}
           isGuest={!userId}
           hasProgress={hasProgress}
+          canStartFresh={canStartFresh}
         />
       </main>
     </div>

@@ -2,10 +2,41 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { buildMagicLinkPath } from "@/lib/auth";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
 
 type AuthTab = "sign-in" | "sign-up";
 type SignInMode = "password" | "magic-link";
+
+interface AuthErrorLike {
+  code?: string;
+  message?: string;
+  status?: number;
+}
+
+function buildEmailAuthRedirectUrl(nextPath: string): string {
+  return `${window.location.origin}${buildMagicLinkPath(nextPath)}`;
+}
+
+function formatMagicLinkError(error: AuthErrorLike | null): string {
+  if (!error) {
+    return "Tak dapat hantar magic link sekarang.";
+  }
+
+  if (error.code === "email_address_invalid") {
+    return "Alamat email nampak tidak sah. Semak semula dan cuba lagi.";
+  }
+
+  if (error.code === "over_email_send_rate_limit" || error.status === 429) {
+    return "Terlalu banyak email dihantar sebentar tadi. Tunggu sekitar seminit sebelum cuba lagi, atau guna password jika akaun anda sudah ada.";
+  }
+
+  if (error.message) {
+    return `Tak dapat hantar magic link: ${error.message}`;
+  }
+
+  return "Tak dapat hantar magic link sekarang.";
+}
 
 export function AuthSignInForm({
   nextPath,
@@ -14,7 +45,7 @@ export function AuthSignInForm({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<AuthTab>("sign-in");
-  const [signInMode, setSignInMode] = useState<SignInMode>("password");
+  const [signInMode, setSignInMode] = useState<SignInMode>("magic-link");
 
   // Shared fields
   const [email, setEmail] = useState("");
@@ -37,6 +68,12 @@ export function AuthSignInForm({
     reset();
     setPassword("");
     setConfirmPassword("");
+  }
+
+  function switchSignInMode(next: SignInMode) {
+    setSignInMode(next);
+    reset();
+    setPassword("");
   }
 
   // ── Sign In ──────────────────────────────────────────────────────────────
@@ -74,7 +111,7 @@ export function AuthSignInForm({
             router.refresh();
           });
       } else {
-        const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+        const redirectTo = buildEmailAuthRedirectUrl(nextPath);
         void supabase.auth
           .signInWithOtp({
             email: email.trim(),
@@ -82,12 +119,14 @@ export function AuthSignInForm({
           })
           .then(({ error }) => {
             if (error) {
-              setErrorMessage("Gagal hantar pautan sign in.");
+              setErrorMessage(formatMagicLinkError(error));
               setFeedback(null);
               return;
             }
             setErrorMessage(null);
-            setFeedback("Pautan sign in sudah dihantar ke email anda.");
+            setFeedback(
+              "Magic link sudah dihantar. Buka email itu dan tekan pautan untuk masuk ke Miftah.",
+            );
           });
       }
     });
@@ -116,7 +155,7 @@ export function AuthSignInForm({
 
     startTransition(() => {
       const supabase = createSupabaseBrowserClient();
-      const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      const emailRedirectTo = buildEmailAuthRedirectUrl(nextPath);
       void supabase.auth
         .signUp({
           email: email.trim(),
@@ -179,6 +218,33 @@ export function AuthSignInForm({
       {/* ── Sign In form ── */}
       {tab === "sign-in" ? (
         <form className="space-y-4" onSubmit={handleSignIn}>
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-stone-200 bg-stone-100 p-1 dark:border-stone-700 dark:bg-stone-800">
+            {([
+              ["magic-link", "Magic Link"],
+              ["password", "Password"],
+            ] as const).map(([mode, label]) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => switchSignInMode(mode)}
+                className={[
+                  "rounded-xl px-3 py-2 text-sm font-medium transition",
+                  signInMode === mode
+                    ? "bg-white text-stone-900 shadow-sm dark:bg-stone-700 dark:text-stone-50"
+                    : "text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200",
+                ].join(" ")}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <p className="rounded-2xl border border-stone-200/80 bg-stone-50 px-4 py-3 text-sm leading-relaxed text-stone-600 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-300">
+            {signInMode === "magic-link"
+              ? "Pilihan paling mudah untuk pengguna baru. Kami akan hantar pautan sekali tekan, dan jika email itu belum pernah digunakan, akaun baru akan dicipta automatik."
+              : "Guna password jika anda sudah pernah tetapkan password untuk akaun ini."}
+          </p>
+
           <label className={labelCls}>
             Email
             <input
@@ -214,20 +280,7 @@ export function AuthSignInForm({
               ? "Menghantar..."
               : signInMode === "password"
                 ? "Sign In"
-                : "Hantar Pautan Sign In"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setSignInMode(signInMode === "password" ? "magic-link" : "password");
-              reset();
-            }}
-            className="w-full text-center text-xs text-stone-500 transition hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
-          >
-            {signInMode === "password"
-              ? "Guna magic link (tanpa password)"
-              : "Guna email & password"}
+                : "Hantar Magic Link"}
           </button>
 
           {renderMessages()}

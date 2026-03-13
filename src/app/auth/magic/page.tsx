@@ -15,17 +15,34 @@ export default function MagicLinkPage() {
 
     async function completeMagicLinkSignIn() {
       const nextPath = sanitizeNextPath(searchParams.get("next"), "/");
+      const code = searchParams.get("code");
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
       const accessToken = hashParams.get("access_token");
       const refreshToken = hashParams.get("refresh_token");
 
-      if (!accessToken || !refreshToken) {
-        router.replace(`${buildSignInPath(nextPath)}&error=callback`);
-        return;
-      }
-
       try {
         const supabase = createSupabaseBrowserClient();
+
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+          if (error) {
+            throw error;
+          }
+
+          if (!cancelled) {
+            setMessage("Log masuk berjaya. Membuka Miftah...");
+          }
+          router.replace(nextPath);
+          router.refresh();
+          return;
+        }
+
+        if (!accessToken || !refreshToken) {
+          router.replace(`${buildSignInPath(nextPath)}&error=callback`);
+          return;
+        }
+
         const { error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
@@ -44,6 +61,7 @@ export default function MagicLinkPage() {
           setMessage("Log masuk berjaya. Membuka Miftah...");
         }
         router.replace(nextPath);
+        router.refresh();
       } catch (error) {
         console.error("[auth/magic] Unexpected error:", error);
         if (!cancelled) {
