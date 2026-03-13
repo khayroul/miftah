@@ -37,6 +37,23 @@ export function cardToDbRow(card: Card): FsrsFields {
   };
 }
 
+/** FSRS columns for an already-memorized (mature) card */
+export function matureCardDbRow(): FsrsFields {
+  const now = new Date();
+  const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  return {
+    stability: 30,
+    difficulty: 0.3,
+    elapsed_days: 7,
+    scheduled_days: 7,
+    reps: 5,
+    lapses: 0,
+    state: 2, // Review
+    due: sevenDaysLater.toISOString(),
+    last_review: now.toISOString(),
+  };
+}
+
 /** Default FSRS columns for a brand-new card */
 export function newCardDbRow(): FsrsFields {
   return {

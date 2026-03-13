@@ -44,6 +44,10 @@ export default async function HifzPage() {
 
   const newCount = userId ? plan.sabak.length : 4;
   const reviewCount = userId ? plan.sabqi.length + plan.manzil.length : 8;
+  const hasProgress = userId
+    ? plan.sabak.length + plan.sabqi.length + plan.manzil.length > 0 ||
+      stats.totalManzil > 0
+    : false;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -78,6 +82,7 @@ export default async function HifzPage() {
           stats={stats}
           juzProgress={juzProgress}
           isGuest={!userId}
+          hasProgress={hasProgress}
         />
       </main>
     </div>

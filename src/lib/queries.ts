@@ -56,6 +56,19 @@ export async function getAyatByPage(pageNumber: number): Promise<Ayah[]> {
 }
 
 /**
+ * Fetch all ayat up to (and including) a given page number.
+ */
+export async function getAyatUpToPage(upToPage: number): Promise<{ id: number }[]> {
+  const { data, error } = await supabase
+    .from("ayat")
+    .select("id")
+    .lte("page_number", upToPage)
+    .order("id");
+  if (error) throw error;
+  return data;
+}
+
+/**
  * Fetch a single ayah by surah and ayah number.
  */
 export async function getAyah(
