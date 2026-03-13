@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import {
   buildMagicLinkPath,
   formatCooldownDuration,
@@ -54,7 +53,6 @@ export function AuthSignInForm({
 }: {
   nextPath: string;
 }) {
-  const router = useRouter();
   const [tab, setTab] = useState<AuthTab>("sign-in");
   const [signInMode, setSignInMode] = useState<SignInMode>("magic-link");
 
@@ -137,6 +135,10 @@ export function AuthSignInForm({
     );
   }
 
+  function redirectToNextPath() {
+    window.location.assign(nextPath);
+  }
+
   function switchTab(next: AuthTab) {
     setTab(next);
     reset();
@@ -185,8 +187,7 @@ export function AuthSignInForm({
               return;
             }
             setErrorMessage(null);
-            router.push(nextPath);
-            router.refresh();
+            redirectToNextPath();
           });
       } else {
         const redirectTo = buildEmailAuthRedirectUrl(nextPath);
@@ -272,8 +273,7 @@ export function AuthSignInForm({
 
           // Auto signed-in
           setErrorMessage(null);
-          router.push(nextPath);
-          router.refresh();
+          redirectToNextPath();
         });
     });
   }
@@ -282,6 +282,8 @@ export function AuthSignInForm({
   const inputCls =
     "mt-2 w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-amber-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100 dark:focus:border-amber-500";
   const labelCls = "block text-sm font-medium text-stone-700 dark:text-stone-200";
+  const segmentedButtonCls =
+    "flex min-h-11 touch-manipulation items-center justify-center rounded-xl px-3 py-2 text-sm font-medium transition";
 
   return (
     <div className="space-y-5">
@@ -293,11 +295,13 @@ export function AuthSignInForm({
             type="button"
             onClick={() => switchTab(t)}
             className={[
-              "flex-1 rounded-xl py-2 text-sm font-medium transition",
+              segmentedButtonCls,
+              "flex-1",
               tab === t
                 ? "bg-white shadow-sm dark:bg-stone-700 text-stone-900 dark:text-stone-50"
                 : "text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200",
             ].join(" ")}
+            aria-pressed={tab === t}
           >
             {t === "sign-in" ? "Masuk" : "Daftar"}
           </button>
@@ -317,11 +321,12 @@ export function AuthSignInForm({
                 type="button"
                 onClick={() => switchSignInMode(mode)}
                 className={[
-                  "rounded-xl px-3 py-2 text-sm font-medium transition",
+                  segmentedButtonCls,
                   signInMode === mode
                     ? "bg-white text-stone-900 shadow-sm dark:bg-stone-700 dark:text-stone-50"
                     : "text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200",
                 ].join(" ")}
+                aria-pressed={signInMode === mode}
               >
                 {label}
               </button>
