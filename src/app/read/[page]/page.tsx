@@ -1,28 +1,12 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import type { MushafAyahDetail } from "@/components/MushafPageView";
 import { ReadPageWorkspace } from "@/components/ReadPageWorkspace";
+import { ReadPageVocabSectionAsync } from "@/components/ReadPageVocabSectionAsync";
 import { LightweightBreadcrumb } from "@/components/LightweightBreadcrumb";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthStatusButton } from "@/components/AuthStatusButton";
-import { ReadPageVocabSection } from "@/components/ReadPageVocabSection";
-import { getProgressByAyahIds } from "@/lib/hifz/study-progress";
-import {
-  buildFahamLevelProgress,
-  getFahamLevelState,
-  type FahamLevelProgress,
-} from "@/lib/faham/levels";
-import { getReadPageVocabPreview } from "@/lib/faham/repository";
-import { loadPageManifest, pageImageExists } from "@/lib/mushafAssets";
-import { mapAyatToPageAudioTracks } from "@/lib/pageAudioTracks";
-import { getAyatByPage, getSurah } from "@/lib/queries";
-import {
-  getReadJumpTargets,
-  parseReadPage,
-} from "@/lib/readNavigation";
-import { findMarkerForPage } from "@/lib/readNavigationUtils";
-import { getOptionalAuthUser } from "@/lib/auth-server";
-import { getWordTranslationsByHitboxes } from "@/lib/wbwTranslations";
-import type { Ayah } from "@/types/database";
+import { getReadPageStaticData } from "@/lib/readPageData";
+import { parseReadPage } from "@/lib/readNavigation";
 
 interface ReadPageProps {
   params: Promise<{ page: string }>;
@@ -36,6 +20,27 @@ interface ReadPageProps {
   }>;
 }
 
+function ReadPageVocabSectionFallback({
+  pageNumber,
+}: {
+  pageNumber: number;
+}) {
+  return (
+    <section className="rounded-[28px] border border-stone-200/80 bg-white/70 p-4 shadow-[0_18px_42px_-34px_rgba(28,25,23,0.3)] dark:border-stone-700/70 dark:bg-stone-900/65 sm:p-5">
+      <div className="space-y-3">
+        <div className="h-3 w-28 rounded-full bg-stone-200/80 dark:bg-stone-800" />
+        <div className="h-6 w-56 rounded-full bg-stone-300/80 dark:bg-stone-700" />
+        <div className="h-4 w-64 rounded-full bg-stone-200/80 dark:bg-stone-800" />
+        <div className="rounded-2xl border border-stone-200/80 bg-stone-50/80 px-4 py-3 dark:border-stone-700/70 dark:bg-stone-950/45">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
+            Menyusun perkataan fokus untuk halaman {pageNumber}.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default async function ReadPage({ params, searchParams }: ReadPageProps) {
   const { page } = await params;
   const query = await searchParams;
@@ -45,103 +50,7 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
     notFound();
   }
 
-  const [manifest, imageAvailable, thumbnailAvailable, jumpTargets] = await Promise.all([
-    loadPageManifest(pageNumber),
-    pageImageExists(pageNumber),
-    pageImageExists(pageNumber, "thumb"),
-    getReadJumpTargets(),
-  ]);
-
-  let ayatOnPage: Ayah[] = [];
-  let ayahDetails: MushafAyahDetail[] = [];
-  let memorizedAyahKeys: string[] = [];
-  let fahamLevelProgress: FahamLevelProgress = {
-    activeLevel: 1,
-    activeWordLimit: 1000,
-    isMaxLevel: false,
-    lemmaUnlocked: false,
-    maxLevel: 4,
-    nextLevel: 2,
-    nextWordLimit: 2000,
-    unlockFoundProgress: 0,
-    unlockFoundRequired: 600,
-    unlockMasteredProgress: 0,
-    unlockMasteredRequired: 0,
-    unlockReady: false,
-  };
-  let pageVocabItems: Awaited<ReturnType<typeof getReadPageVocabPreview>> = [];
-  let pageVocabLoadError: string | null = null;
-  const user = await getOptionalAuthUser();
-  const userId = user?.id;
-  try {
-    ayatOnPage = await getAyatByPage(pageNumber);
-    ayahDetails = ayatOnPage.map((ayah) => ({
-      id: ayah.id,
-      key: `${ayah.surah_id}:${ayah.ayah_number}`,
-      label: `${ayah.surah_id}:${ayah.ayah_number}`,
-      textUthmani: ayah.text_uthmani,
-      bm: ayah.display_bm,
-      en: ayah.translation_en,
-    }));
-
-    if (userId && ayatOnPage.length > 0) {
-      try {
-        const progressByAyahId = await getProgressByAyahIds(
-          userId,
-          ayatOnPage.map((ayah) => ayah.id),
-        );
-        memorizedAyahKeys = ayatOnPage.flatMap((ayah) => {
-          const status = progressByAyahId.get(ayah.id)?.hifz_status;
-          if (status === "sabqi" || status === "manzil") {
-            return [`${ayah.surah_id}:${ayah.ayah_number}`];
-          }
-          return [];
-        });
-      } catch {
-        memorizedAyahKeys = [];
-      }
-    }
-  } catch {
-    ayatOnPage = [];
-    ayahDetails = [];
-    memorizedAyahKeys = [];
-  }
-
-  try {
-    if (userId) {
-      const levelState = await getFahamLevelState(userId);
-      fahamLevelProgress = buildFahamLevelProgress(levelState);
-    }
-
-    pageVocabItems = await getReadPageVocabPreview({
-      ayahIds: ayatOnPage.map((ayah) => ayah.id),
-      limit: 6,
-      userId,
-      wordLimit: fahamLevelProgress.activeWordLimit,
-    });
-  } catch (error) {
-    console.error("[read/page] Failed to load page vocab preview", error);
-    pageVocabItems = [];
-    pageVocabLoadError = "Perkataan fokus tak dapat dimuatkan sekarang.";
-  }
-
-  const wordTranslations = manifest
-    ? await getWordTranslationsByHitboxes(manifest.words)
-    : {};
-
-  const surahMarkers = jumpTargets.surahs.map((target) => ({
-    id: target.surah,
-    page: target.page,
-  }));
-  const juzMarkers = jumpTargets.juzs.map((target) => ({
-    id: target.juz,
-    page: target.page,
-  }));
-
-  const surahByPage = findMarkerForPage(surahMarkers, pageNumber)?.id ?? 1;
-  const juzByPage = findMarkerForPage(juzMarkers, pageNumber)?.id ?? 1;
-  const surahForThemeView = ayatOnPage[0]?.surah_id ?? surahByPage;
-  const audioTracks = mapAyatToPageAudioTracks(ayatOnPage);
+  const pageData = await getReadPageStaticData(pageNumber);
   const initialReadMode = query.mode === "hifz" ? "hifz" : null;
   const forceHifzRevealByThirds =
     query.mode === "hifz" && (query.from === "dashboard" || query.from === "hifz");
@@ -156,10 +65,13 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
           : null
       : null;
   const hifzFlow =
-    query.flow === "memorize" ? "memorize" as const
-    : query.flow === "review" ? "review" as const
-    : null;
-  const fromHifzFlow = hifzFlow !== null || query.from === "dashboard" || query.from === "hifz";
+    query.flow === "memorize"
+      ? ("memorize" as const)
+      : query.flow === "review"
+        ? ("review" as const)
+        : null;
+  const fromHifzFlow =
+    hifzFlow !== null || query.from === "dashboard" || query.from === "hifz";
   const breadcrumbItems = fromHifzFlow
     ? [
         { href: "/", label: "Utama" },
@@ -170,8 +82,6 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
         { href: "/", label: "Utama" },
         { label: `Baca p.${pageNumber}` },
       ];
-  
-  const surahMeta = await getSurah(surahForThemeView);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-8">
@@ -224,44 +134,45 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
               </div>
             ) : null}
             <h1 className="flex flex-wrap items-center justify-center gap-2 text-[1.75rem] font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:gap-3 sm:text-3xl">
-              Surah {surahMeta?.name_en ?? "Al-Fatihah"}
-              {surahMeta?.name_arabic && (
+              Surah {pageData.surahMeta?.name_en ?? "Al-Fatihah"}
+              {pageData.surahMeta?.name_arabic && (
                 <span className="font-arabic mt-0.5 text-[1.65rem] font-normal opacity-80 sm:mt-1 sm:text-2xl" lang="ar">
-                  {surahMeta.name_arabic}
+                  {pageData.surahMeta.name_arabic}
                 </span>
               )}
             </h1>
             <p className="text-sm font-medium text-stone-500 sm:text-base dark:text-stone-400">
-              Surah {surahForThemeView} • Halaman {pageNumber} / 604
+              Surah {pageData.themeSurahId} • Halaman {pageNumber} / 604
             </p>
           </div>
         }
-        imageAvailable={imageAvailable}
-        thumbnailAvailable={thumbnailAvailable}
-        manifest={manifest}
-        wordTranslations={wordTranslations}
-        currentSurahId={surahByPage}
-        currentJuzNumber={juzByPage}
-        themeSurahId={surahForThemeView}
-        jumpSurahOptions={jumpTargets.surahs}
-        jumpJuzOptions={jumpTargets.juzs}
-        audioTracks={audioTracks}
-        ayahDetails={ayahDetails}
-        memorizedAyahKeys={memorizedAyahKeys}
-        readingAyahIds={ayatOnPage.map((ayah) => ayah.id)}
+        imageAvailable={pageData.imageAvailable}
+        thumbnailAvailable={pageData.thumbnailAvailable}
+        manifest={pageData.manifest}
+        wordTranslations={pageData.wordTranslations}
+        currentSurahId={pageData.currentSurahId}
+        currentJuzNumber={pageData.currentJuzNumber}
+        themeSurahId={pageData.themeSurahId}
+        jumpSurahOptions={pageData.jumpTargets.surahs}
+        jumpJuzOptions={pageData.jumpTargets.juzs}
+        audioTracks={pageData.audioTracks}
+        ayahDetails={pageData.ayahDetails}
+        memorizedAyahKeys={[]}
+        readingAyahIds={pageData.ayatOnPage.map((ayah) => ayah.id)}
         initialReadMode={hifzFlow ? "hifz" : initialReadMode}
         forceHifzRevealByThirds={!hifzFlow && forceHifzRevealByThirds}
         hifzFirstWordCueEnabled={!hifzFlow && hifzFirstWordCueEnabled}
         hifzFlow={hifzFlow}
+        personalizationPageNumber={pageNumber}
       />
 
       {!hifzFlow ? (
-        <ReadPageVocabSection
-          items={pageVocabItems}
-          levelProgress={fahamLevelProgress}
-          loadError={pageVocabLoadError}
-          pageNumber={pageNumber}
-        />
+        <Suspense fallback={<ReadPageVocabSectionFallback pageNumber={pageNumber} />}>
+          <ReadPageVocabSectionAsync
+            ayahIds={pageData.ayatOnPage.map((ayah) => ayah.id)}
+            pageNumber={pageNumber}
+          />
+        </Suspense>
       ) : null}
     </main>
   );

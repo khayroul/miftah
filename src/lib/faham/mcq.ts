@@ -2,7 +2,7 @@ import type { Word } from "@/types/database";
 import type { WordWithOccurrences } from "./types";
 import { getQuranWordAudioUrl } from "../mushafAssets";
 
-function getAudioKey(word: WordWithOccurrences): string | null {
+function getDirectAudioKey(word: WordWithOccurrences): string | null {
   const occs = word.word_occurrences;
   const occ = Array.isArray(occs) ? occs[0] : occs;
   if (!occ) return null;
@@ -15,6 +15,56 @@ function getAudioKey(word: WordWithOccurrences): string | null {
   return `${normalizedAyah.surah_id}:${normalizedAyah.ayah_number}:${occ.position}`;
 }
 
+function normalizeArabicAudioLookup(value: string | null | undefined): string {
+  if (!value) {
+    return "";
+  }
+
+  return value
+    .normalize("NFKD")
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
+    .replace(/ٱ/g, "ا")
+    .replace(/ـ/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getFallbackAudioKey(
+  word: WordWithOccurrences,
+  pool: FahamMcqPoolWord[],
+): string | null {
+  const normalizedSimple = word.text_simple.trim();
+  if (normalizedSimple.length > 0) {
+    const bySimple = pool.find(
+      (candidate) =>
+        candidate.audioKey &&
+        candidate.textSimple.trim() === normalizedSimple,
+    );
+    if (bySimple?.audioKey) {
+      return bySimple.audioKey;
+    }
+  }
+
+  const normalizedArabic = normalizeArabicAudioLookup(word.text_uthmani);
+  if (!normalizedArabic) {
+    return null;
+  }
+
+  const byUthmani = pool.find(
+    (candidate) =>
+      candidate.audioKey &&
+      normalizeArabicAudioLookup(candidate.textUthmani) === normalizedArabic,
+  );
+  return byUthmani?.audioKey ?? null;
+}
+
+function getAudioKey(
+  word: WordWithOccurrences,
+  pool: FahamMcqPoolWord[],
+): string | null {
+  return getDirectAudioKey(word) ?? getFallbackAudioKey(word, pool);
+}
+
 function getAudioUrlForKey(key: string | null): string | null {
   if (!key) return null;
   const parts = key.split(":").map(Number);
@@ -23,7 +73,7 @@ function getAudioUrlForKey(key: string | null): string | null {
 }
 
 function getMalayAudioUrl(text: string): string {
-  // Use our proxy with a voice hint for male
+  // Faham uses a male Malay guide voice to keep prompts sounding consistent.
   return `/api/audio/tts?text=${encodeURIComponent(text)}&lang=ms&voice=male`;
 }
 
@@ -318,7 +368,7 @@ function buildArabicToMalayMcq(
       lang: "ms",
       value,
     })),
-    promptAudioUrl: getAudioUrlForKey(getAudioKey(word)),
+    promptAudioUrl: getAudioUrlForKey(getAudioKey(word, pool)),
     promptDir: "rtl",
     promptHint: "Pilih makna BM paling tepat untuk perkataan Arab ini.",
     promptLabel: "Perkataan Arab",
@@ -382,7 +432,7 @@ function buildMalayToArabicMcq(
     promptLang: "ms",
     promptPrimary: correctMeaning,
     promptSecondary: word.translation_en?.trim() || null,
-    answerAudioUrl: getAudioUrlForKey(getAudioKey(word)),
+    answerAudioUrl: getAudioUrlForKey(getAudioKey(word, pool)),
     whyThisSet: buildWhyThisSetNotes(word, "bm_to_arab"),
   };
 }

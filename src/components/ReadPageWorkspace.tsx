@@ -1,13 +1,11 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   MushafPageView,
   type MushafAyahDetail,
 } from "@/components/MushafPageView";
-import { FahamExposureTracker } from "@/components/FahamExposureTracker";
-import { ReadJumpControls } from "@/components/ReadJumpControls";
-import { ReadModeTools } from "@/components/ReadModeTools";
 import { HifzTasmiOverlay } from "@/components/HifzTasmiOverlay";
 import { HifzInlineRating } from "@/components/HifzInlineRating";
 import { HifzMemorizeStepper } from "@/components/HifzMemorizeStepper";
@@ -22,6 +20,45 @@ import type { HifzFlowType } from "@/lib/hifz/sessionQueue";
 import type { MushafPageManifest, MushafWordTranslationMap } from "@/types/mushaf";
 import type { ReactNode } from "react";
 import Link from "next/link";
+
+const FahamExposureTracker = dynamic(
+  () =>
+    import("@/components/FahamExposureTracker").then(
+      (module) => module.FahamExposureTracker,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
+const ReadJumpControls = dynamic(
+  () =>
+    import("@/components/ReadJumpControls").then(
+      (module) => module.ReadJumpControls,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
+const ReadModeTools = dynamic(
+  () =>
+    import("@/components/ReadModeTools").then(
+      (module) => module.ReadModeTools,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-3 sm:space-y-4" aria-hidden>
+        <div className="flex w-full flex-col items-stretch justify-center gap-3 sm:items-center sm:gap-4">
+          <div className="h-12 w-full rounded-full bg-stone-200/75 dark:bg-stone-800 sm:max-w-md" />
+        </div>
+      </div>
+    ),
+  },
+);
 
 interface ReadPageWorkspaceProps {
   pageNumber: number;
@@ -43,6 +80,7 @@ interface ReadPageWorkspaceProps {
   forceHifzRevealByThirds?: boolean;
   hifzFirstWordCueEnabled?: boolean;
   hifzFlow?: HifzFlowType | null;
+  personalizationPageNumber?: number | null;
 }
 
 const HIFZ_REVEAL_BY_THIRDS_STORAGE_KEY = "miftah:read:hifz-reveal-by-thirds";
@@ -82,6 +120,7 @@ export function ReadPageWorkspace({
   forceHifzRevealByThirds = false,
   hifzFirstWordCueEnabled = false,
   hifzFlow = null,
+  personalizationPageNumber = null,
 }: ReadPageWorkspaceProps) {
   const router = useRouter();
   const {
@@ -114,6 +153,9 @@ export function ReadPageWorkspace({
     setTasmiRevealedLines((prev) => Math.min(prev + 1, totalLineCount));
   }, [totalLineCount]);
   const [memorizeHideMushaf, setMemorizeHideMushaf] = useState(false);
+  const [resolvedMemorizedAyahKeys, setResolvedMemorizedAyahKeys] = useState(
+    memorizedAyahKeys,
+  );
   const [memorizeChunkAyahKeys, setMemorizeChunkAyahKeys] = useState<string[] | null>(
     null,
   );
@@ -172,6 +214,10 @@ export function ReadPageWorkspace({
   }, [pageNumber]);
 
   useEffect(() => {
+    setResolvedMemorizedAyahKeys(memorizedAyahKeys);
+  }, [memorizedAyahKeys]);
+
+  useEffect(() => {
     if (!audioEnabledForMode) {
       setAudioVisible(false);
       setPlayableAyahKeys(null);
@@ -201,6 +247,44 @@ export function ReadPageWorkspace({
     memorizeChunkAyahKeys,
     setPlayableAyahKeys,
   ]);
+
+  useEffect(() => {
+    if (!personalizationPageNumber) {
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    void fetch(`/api/read/personalization?page=${personalizationPageNumber}`, {
+      cache: "no-store",
+      signal: abortController.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Read personalization request failed");
+        }
+        return (await response.json()) as { memorizedAyahKeys?: string[] };
+      })
+      .then((payload) => {
+        if (!Array.isArray(payload.memorizedAyahKeys)) {
+          return;
+        }
+        setResolvedMemorizedAyahKeys(payload.memorizedAyahKeys);
+      })
+      .catch((error: unknown) => {
+        if (
+          error instanceof DOMException &&
+          error.name === "AbortError"
+        ) {
+          return;
+        }
+        console.error("[read/page] Failed to hydrate memorized ayah keys", error);
+      });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [personalizationPageNumber]);
 
   const handleNavigatePrevPage = useCallback(() => {
     if (pageNumber <= 1) {
@@ -424,7 +508,7 @@ export function ReadPageWorkspace({
           manifest={manifest}
           wordTranslations={wordTranslations}
           ayahDetails={ayahDetails}
-          memorizedAyahKeys={memorizedAyahKeys}
+          memorizedAyahKeys={resolvedMemorizedAyahKeys}
           hifzRevealByThirdsEnabled={!hifzFlow && hifzRevealByThirdsEnabled}
           onNavigatePrevPage={handleNavigatePrevPage}
           onNavigateNextPage={handleNavigateNextPage}

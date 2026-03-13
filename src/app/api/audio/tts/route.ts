@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const text = searchParams.get("text");
   const lang = searchParams.get("lang") || "ar";
-  const voiceType = searchParams.get("voice");
+  const voiceType = searchParams.get("voice") || (lang === "ms" ? "male" : null);
 
   if (!text) {
     return NextResponse.json({ error: "Text is required" }, { status: 400 });
