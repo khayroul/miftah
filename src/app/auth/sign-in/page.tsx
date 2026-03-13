@@ -36,7 +36,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
           <ThemeToggle />
         </header>
 
-        <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <section className="mx-auto w-full max-w-2xl">
           <div className="rounded-[32px] border border-stone-200/90 bg-white/82 p-6 shadow-[0_28px_90px_-48px_rgba(28,25,23,0.55)] backdrop-blur-sm sm:p-8 dark:border-stone-700 dark:bg-stone-900/78">
             <div className="inline-flex items-center rounded-full border border-amber-900/15 bg-amber-100/75 px-3 py-1 text-xs font-medium tracking-wide text-amber-900 dark:border-amber-300/20 dark:bg-amber-900/35 dark:text-amber-100">
               Akaun Miftah
@@ -46,9 +46,10 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
               Masuk ke akaun anda.
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-stone-600 dark:text-stone-300">
-              Masuk atau cipta akaun untuk simpan progres Faham, Hafal, Tema,
-              dan dashboard anda. Baca masih boleh digunakan tanpa akaun,
-              tetapi progresnya hanya tersimpan pada browser semasa.
+              Masuk atau cipta akaun untuk simpan kemajuan Faham, Hafal, dan
+              Tema, serta tetapan dashboard anda. Baca masih boleh digunakan
+              tanpa akaun, tetapi kemajuannya hanya tersimpan pada browser
+              semasa.
             </p>
 
             {params.error ? (
@@ -63,46 +64,6 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
               <AuthSignInForm nextPath={nextPath} />
             </div>
           </div>
-
-          <aside className="rounded-[28px] border border-stone-200/80 bg-stone-50/88 p-6 dark:border-stone-700 dark:bg-stone-950/60">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
-              Apa yang disimpan
-            </p>
-            <div className="mt-4 space-y-3 text-sm text-stone-600 dark:text-stone-300">
-              <p>
-                <span className="font-medium text-stone-800 dark:text-stone-100">
-                  Baca
-                </span>
-                : halaman terakhir dan aktiviti membaca.
-              </p>
-              <p>
-                <span className="font-medium text-stone-800 dark:text-stone-100">
-                  Faham
-                </span>
-                : queue WBW, review log, dan exposure.
-              </p>
-              <p>
-                <span className="font-medium text-stone-800 dark:text-stone-100">
-                  Tema
-                </span>
-                : chunk yang sudah dibuka dan progres penerokaan.
-              </p>
-              <p>
-                <span className="font-medium text-stone-800 dark:text-stone-100">
-                  Hafal
-                </span>
-                : Sabak, Sabqi, Manzil, dan FSRS ayat.
-              </p>
-              <p>
-                Belum mahu masuk? Anda masih boleh lihat rupa pengalaman Miftah
-                melalui{" "}
-                <span className="font-medium text-stone-800 dark:text-stone-100">
-                  Pratonton
-                </span>
-                .
-              </p>
-            </div>
-          </aside>
         </section>
       </main>
     </div>
