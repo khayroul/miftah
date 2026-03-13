@@ -259,8 +259,6 @@ export async function ThemePageContentAsync({
                 </header>
 
                 <ThemeActionPanel
-                  firstPageHref={`/read/${selectedChunk.ayat[0]?.page_number ?? surahMeta.page_start ?? 1}`}
-                  firstPageNumber={selectedChunk.ayat[0]?.page_number ?? surahMeta.page_start ?? 1}
                   rangeLabel={rangeLabel(
                     surahNumber,
                     selectedChunk.start_ayah,

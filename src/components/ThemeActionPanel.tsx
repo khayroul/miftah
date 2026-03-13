@@ -1,8 +1,4 @@
-import Link from "next/link";
-
 interface ThemeActionPanelProps {
-  firstPageHref: string;
-  firstPageNumber: number;
   rangeLabel: string;
   sourceLabel: string;
   synopsis: string;
@@ -10,8 +6,6 @@ interface ThemeActionPanelProps {
 }
 
 export function ThemeActionPanel({
-  firstPageHref,
-  firstPageNumber,
   rangeLabel,
   sourceLabel,
   synopsis,
@@ -38,23 +32,6 @@ export function ThemeActionPanel({
           </span>
           <span className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
             Sumber: {sourceLabel}
-          </span>
-        </div>
-      </div>
-
-      <div className="mt-5 rounded-[1.4rem] border border-stone-200/80 bg-white/70 p-4 dark:border-stone-700/80 dark:bg-stone-950/35">
-        <p className="text-sm leading-relaxed text-stone-700 dark:text-stone-200">
-          Gunakan sinopsis ini sebagai orientasi sebelum membaca terperinci ayat-ayat di bawah.
-        </p>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <Link
-            href={firstPageHref}
-            className="inline-flex items-center rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-stone-50 transition hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
-          >
-            Baca semula dari halaman {firstPageNumber}
-          </Link>
-          <span className="text-sm text-stone-500 dark:text-stone-400">
-            Lihat bagaimana tema ini bergerak dalam susunan ayat.
           </span>
         </div>
       </div>
