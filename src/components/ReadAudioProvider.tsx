@@ -30,6 +30,9 @@ interface ReadAudioContextValue {
   feedbackOffsetPx: number;
   isAudioPanelOpen: boolean;
   isAudioVisible: boolean;
+  pauseAudioPlayback: () => void;
+  requestAudioAutoplay: () => void;
+  restartAudioPlayback: () => void;
   setPlayableAyahKeys: (ayahKeys: string[] | null) => void;
   setAudioVisible: (next: boolean) => void;
   syncAudioTracks: (pageNumber: number, tracks: ReadAudioTrack[]) => void;
@@ -45,6 +48,9 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
   const [activePlaybackAyahKey, setActivePlaybackAyahKey] = useState<string | null>(
     null,
   );
+  const [autoplayRequestKey, setAutoplayRequestKey] = useState(0);
+  const [pauseRequestKey, setPauseRequestKey] = useState(0);
+  const [restartRequestKey, setRestartRequestKey] = useState(0);
   const [playableAyahKeys, setPlayableAyahKeysState] = useState<string[] | null>(
     null,
   );
@@ -91,6 +97,18 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
     });
   }, [isAudioPanelOpen]);
 
+  const requestAudioAutoplay = useCallback(() => {
+    setAutoplayRequestKey((current) => current + 1);
+  }, []);
+
+  const pauseAudioPlayback = useCallback(() => {
+    setPauseRequestKey((current) => current + 1);
+  }, []);
+
+  const restartAudioPlayback = useCallback(() => {
+    setRestartRequestKey((current) => current + 1);
+  }, []);
+
   useEffect(() => {
     if (!isAudioVisible || tracks.length === 0) {
       return;
@@ -111,6 +129,9 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
       feedbackOffsetPx,
       isAudioPanelOpen,
       isAudioVisible,
+      pauseAudioPlayback,
+      requestAudioAutoplay,
+      restartAudioPlayback,
       setPlayableAyahKeys,
       setAudioVisible,
       syncAudioTracks,
@@ -122,6 +143,9 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
       feedbackOffsetPx,
       isAudioPanelOpen,
       isAudioVisible,
+      pauseAudioPlayback,
+      requestAudioAutoplay,
+      restartAudioPlayback,
       setPlayableAyahKeys,
       setAudioVisible,
       syncAudioTracks,
@@ -134,6 +158,9 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
       {children}
       {shouldRenderAudioDock ? (
         <ReadAudioDock
+          autoplayRequestKey={autoplayRequestKey}
+          pauseRequestKey={pauseRequestKey}
+          restartRequestKey={restartRequestKey}
           tracks={tracks}
           playableAyahKeys={playableAyahKeys}
           visible

@@ -72,6 +72,9 @@ export function ReadPageWorkspace({
   const {
     activePlaybackAyahKey,
     isAudioVisible,
+    pauseAudioPlayback,
+    requestAudioAutoplay,
+    restartAudioPlayback,
     setPlayableAyahKeys,
     setAudioVisible,
     syncAudioTracks,
@@ -97,6 +100,9 @@ export function ReadPageWorkspace({
     setTasmiRevealedLines((prev) => Math.min(prev + 1, totalLineCount));
   }, [totalLineCount]);
   const [memorizeHideMushaf, setMemorizeHideMushaf] = useState(false);
+  const [memorizeChunkAyahKeys, setMemorizeChunkAyahKeys] = useState<string[] | null>(
+    null,
+  );
 
   const markAudioDiscovered = useCallback(() => {
     if (!audioDiscovered) {
@@ -164,6 +170,19 @@ export function ReadPageWorkspace({
     syncAudioTracks,
   ]);
 
+  useEffect(() => {
+    if (hifzFlow !== "memorize") {
+      setPlayableAyahKeys(null);
+      return;
+    }
+
+    setPlayableAyahKeys(memorizeChunkAyahKeys);
+  }, [
+    hifzFlow,
+    memorizeChunkAyahKeys,
+    setPlayableAyahKeys,
+  ]);
+
   const handleNavigatePrevPage = useCallback(() => {
     if (pageNumber <= 1) {
       return;
@@ -183,6 +202,20 @@ export function ReadPageWorkspace({
     toggleAudioVisibility();
     markAudioDiscovered();
   }, [audioEnabledForMode, markAudioDiscovered, toggleAudioVisibility]);
+  const handleMemorizeChunkListen = useCallback(() => {
+    setAudioVisible(true);
+    restartAudioPlayback();
+    requestAudioAutoplay();
+    markAudioDiscovered();
+  }, [
+    markAudioDiscovered,
+    requestAudioAutoplay,
+    restartAudioPlayback,
+    setAudioVisible,
+  ]);
+  const handleMemorizeChunkPause = useCallback(() => {
+    pauseAudioPlayback();
+  }, [pauseAudioPlayback]);
 
   return (
     <>
@@ -341,7 +374,7 @@ export function ReadPageWorkspace({
           onAudioDiscovered={markAudioDiscovered}
           activePlaybackAyahKey={activePlaybackAyahKey}
           isAudioDockVisible={isAudioVisible}
-          onPlayableAyahKeysChange={setPlayableAyahKeys}
+          onPlayableAyahKeysChange={hifzFlow === "memorize" ? undefined : setPlayableAyahKeys}
           hifzFirstWordCueEnabled={!hifzFlow && hifzFirstWordCueEnabled}
         />
       </div>
@@ -356,7 +389,11 @@ export function ReadPageWorkspace({
 
       {hifzFlow === "memorize" && (
         <HifzMemorizeStepper
+          bottomOffsetPx={isAudioVisible ? 112 : 0}
           pageNumber={pageNumber}
+          onChunkAyahKeysChange={setMemorizeChunkAyahKeys}
+          onChunkListen={handleMemorizeChunkListen}
+          onChunkPause={handleMemorizeChunkPause}
           onMushafHide={setMemorizeHideMushaf}
         />
       )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   loadQueue,
@@ -10,39 +10,140 @@ import {
   isQueueComplete,
   clearQueue,
 } from "@/lib/hifz/sessionQueue";
+import {
+  buildMemorizeChunks,
+  resolveMemorizeChunkLength,
+  type MemorizeChunk,
+  type MemorizeChunkSizeOption,
+} from "@/lib/hifz/memorizeChunks";
 
 interface HifzMemorizeStepperProps {
+  bottomOffsetPx?: number;
   pageNumber: number;
-  /** Callback to control mushaf visibility: true = hidden */
+  onChunkAyahKeysChange: (ayahKeys: string[] | null) => void;
+  onChunkListen: () => void;
+  onChunkPause: () => void;
   onMushafHide: (hidden: boolean) => void;
 }
 
 type Step = 1 | 2 | 3 | 4;
 
 const STEPS: Array<{ step: Step; label: string; description: string }> = [
-  { step: 1, label: "Dengar & Baca", description: "Dengar bacaan sambil ikut mushaf." },
-  { step: 2, label: "Cuba Sendiri", description: "Baca kuat bersama audio. Ulang jika perlu." },
-  { step: 3, label: "Tutup & Uji", description: "Cuba baca tanpa melihat. Ketuk untuk intip." },
-  { step: 4, label: "Tandakan", description: "Adakah anda yakin dengan hafalan ini?" },
+  { step: 1, label: "Dengar & Baca", description: "Dengar chunk ini sambil ikut mushaf." },
+  { step: 2, label: "Cuba Sendiri", description: "Baca kuat bersama audio. Ulang chunk jika perlu." },
+  { step: 3, label: "Tutup & Uji", description: "Jeda audio dan cuba baca tanpa melihat." },
+  { step: 4, label: "Tandakan", description: "Nilai chunk ini sebelum bergerak ke chunk seterusnya." },
 ];
 
+const CHUNK_SIZE_OPTIONS: Array<{
+  label: string;
+  value: MemorizeChunkSizeOption;
+}> = [
+  { label: "Auto", value: "auto" },
+  { label: "1", value: 1 },
+  { label: "2", value: 2 },
+  { label: "3", value: 3 },
+];
+
+function describeChunk(chunk: MemorizeChunk | null): string {
+  if (!chunk || chunk.items.length === 0) {
+    return "Tiada ayat dalam chunk ini";
+  }
+
+  const first = chunk.items[0];
+  const last = chunk.items[chunk.items.length - 1] ?? first;
+  if (!first || !last) {
+    return "Tiada ayat dalam chunk ini";
+  }
+
+  if (first.ayahKey === last.ayahKey) {
+    return `Ayat ${first.ayahKey}`;
+  }
+
+  return `Ayat ${first.ayahKey} - ${last.ayahKey}`;
+}
+
 export function HifzMemorizeStepper({
+  bottomOffsetPx = 0,
   pageNumber,
+  onChunkAyahKeysChange,
+  onChunkListen,
+  onChunkPause,
   onMushafHide,
 }: HifzMemorizeStepperProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>(1);
+  const [chunkSize, setChunkSize] = useState<MemorizeChunkSizeOption>("auto");
+  const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [complete, setComplete] = useState(false);
+
+  const pageItems = useMemo(() => {
+    const queue = loadQueue("memorize");
+    if (!queue) {
+      return [];
+    }
+    return getItemsForPage(queue, pageNumber);
+  }, [pageNumber]);
+
+  const pageChunks = useMemo(
+    () => buildMemorizeChunks(pageItems, chunkSize),
+    [chunkSize, pageItems],
+  );
+  const currentChunk = pageChunks[currentChunkIndex] ?? null;
+  const chunkCount = pageChunks.length;
+  const chunkAyahCount = currentChunk?.items.length ?? 0;
+  const effectiveChunkLength = useMemo(
+    () => resolveMemorizeChunkLength(pageItems.length, chunkSize),
+    [chunkSize, pageItems.length],
+  );
 
   const goToStep = useCallback(
     (step: Step) => {
       setCurrentStep(step);
-      // Steps 1-2: mushaf visible, Step 3: hidden, Step 4: visible again
       onMushafHide(step === 3);
     },
     [onMushafHide],
   );
+
+  const jumpToChunk = useCallback(
+    (nextChunkIndex: number) => {
+      if (nextChunkIndex < 0 || nextChunkIndex >= pageChunks.length) {
+        return;
+      }
+      setCurrentChunkIndex(nextChunkIndex);
+      goToStep(1);
+    },
+    [goToStep, pageChunks.length],
+  );
+
+  useEffect(() => {
+    onChunkAyahKeysChange(currentChunk?.ayahKeys ?? null);
+
+    return () => {
+      onChunkAyahKeysChange(null);
+    };
+  }, [currentChunk?.ayahKeys, onChunkAyahKeysChange]);
+
+  useEffect(() => {
+    if (currentStep === 1 && currentChunk && currentChunk.items.length > 0) {
+      onChunkListen();
+      return;
+    }
+
+    if (currentStep === 3) {
+      onChunkPause();
+    }
+  }, [currentChunk, currentStep, onChunkListen, onChunkPause]);
+
+  useEffect(() => {
+    onMushafHide(false);
+    return () => {
+      onMushafHide(false);
+      onChunkPause();
+      onChunkAyahKeysChange(null);
+    };
+  }, [onChunkAyahKeysChange, onChunkPause, onMushafHide]);
 
   const handleNext = useCallback(() => {
     if (currentStep < 4) {
@@ -56,21 +157,35 @@ export function HifzMemorizeStepper({
     }
   }, [currentStep, goToStep]);
 
+  const handleChunkSizeChange = useCallback(
+    (nextChunkSize: MemorizeChunkSizeOption) => {
+      const currentItemOffset = currentChunkIndex * effectiveChunkLength;
+      const nextChunkLength = resolveMemorizeChunkLength(
+        pageItems.length,
+        nextChunkSize,
+      );
+      const nextChunkIndex = Math.floor(currentItemOffset / nextChunkLength);
+      setChunkSize(nextChunkSize);
+      setCurrentChunkIndex(Math.max(0, nextChunkIndex));
+      goToStep(1);
+    },
+    [currentChunkIndex, effectiveChunkLength, goToStep, pageItems.length],
+  );
+
   const handleRate = useCallback(
     async (confident: boolean) => {
+      const chunkItems = currentChunk?.items ?? [];
+
       setSubmitting(true);
       try {
-        const queue = loadQueue("memorize");
-        if (!queue) {
+        if (!confident) {
+          goToStep(1);
           setSubmitting(false);
           return;
         }
 
-        const pageItems = getItemsForPage(queue, pageNumber);
-
-        if (confident && pageItems.length > 0) {
-          // Mark memorized + rate Good
-          const ratings = pageItems.map((item) => ({
+        if (confident && chunkItems.length > 0) {
+          const ratings = chunkItems.map((item) => ({
             progressId: item.progressId,
             rating: 3 as const,
             block: item.block,
@@ -82,27 +197,34 @@ export function HifzMemorizeStepper({
             body: JSON.stringify({ ratings }),
           });
 
-          // Also mark as memorized (promotes sabak → sabqi)
           await fetch("/api/hifz/mark-memorized", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              ayahIds: pageItems.map((item) => item.ayahId),
+              ayahIds: chunkItems.map((item) => item.ayahId),
             }),
           });
 
           markRated(
             "memorize",
-            pageItems.map((item) => item.progressId),
+            chunkItems.map((item) => item.progressId),
           );
         }
 
-        // Advance to next page regardless of confidence
+        const nextChunkIndex = currentChunkIndex + 1;
+        if (nextChunkIndex < pageChunks.length) {
+          setCurrentChunkIndex(nextChunkIndex);
+          goToStep(1);
+          setSubmitting(false);
+          return;
+        }
+
         const updated = advanceQueue("memorize");
         if (!updated || isQueueComplete(updated)) {
           clearQueue("memorize");
           setComplete(true);
           setSubmitting(false);
+          onChunkAyahKeysChange(null);
           onMushafHide(false);
           return;
         }
@@ -113,12 +235,23 @@ export function HifzMemorizeStepper({
         setSubmitting(false);
       }
     },
-    [pageNumber, router, onMushafHide],
+    [
+      currentChunk,
+      currentChunkIndex,
+      goToStep,
+      onChunkAyahKeysChange,
+      onMushafHide,
+      pageChunks.length,
+      router,
+    ],
   );
 
   if (complete) {
     return (
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-6 text-center shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95">
+      <div
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-6 text-center shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95"
+        style={{ bottom: bottomOffsetPx }}
+      >
         <p className="mb-1 text-xl font-bold text-stone-900 dark:text-stone-100">
           Alhamdulillah
         </p>
@@ -136,34 +269,73 @@ export function HifzMemorizeStepper({
   }
 
   const stepInfo = STEPS[currentStep - 1];
+  const restartLabel = currentStep === 3 ? "Semak Audio" : "Main Semula";
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95">
-      {/* Step indicator */}
+    <div
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95"
+      style={{ bottom: bottomOffsetPx }}
+    >
       <div className="mb-3 flex items-center justify-center gap-2">
-        {STEPS.map((s) => (
+        {STEPS.map((step) => (
           <div
-            key={s.step}
+            key={step.step}
             className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-              s.step < currentStep
+              step.step < currentStep
                 ? "bg-amber-500 text-white"
-                : s.step === currentStep
+                : step.step === currentStep
                   ? "bg-amber-100 text-amber-800 ring-2 ring-amber-400 dark:bg-amber-900/50 dark:text-amber-200 dark:ring-amber-500"
                   : "bg-stone-100 text-stone-400 dark:bg-stone-800 dark:text-stone-500"
             }`}
           >
-            {s.step < currentStep ? (
+            {step.step < currentStep ? (
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             ) : (
-              s.step
+              step.step
             )}
           </div>
         ))}
       </div>
 
-      {/* Step content */}
+      <div className="mb-3 rounded-2xl border border-amber-200/80 bg-amber-50/75 px-4 py-3 text-center dark:border-amber-700/45 dark:bg-amber-900/20">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-900/80 dark:text-amber-100/80">
+          Chunk {chunkCount > 0 ? currentChunkIndex + 1 : 0} / {chunkCount}
+        </p>
+        <p className="mt-1 text-sm font-semibold text-stone-800 dark:text-stone-100">
+          {describeChunk(currentChunk)}
+        </p>
+        <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+          {chunkAyahCount} ayat dalam chunk ini
+        </p>
+      </div>
+
+      <div className="mb-3">
+        <p className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
+          Saiz Chunk
+        </p>
+        <div className="mx-auto grid max-w-md grid-cols-4 gap-2">
+          {CHUNK_SIZE_OPTIONS.map((option) => {
+            const selected = chunkSize === option.value;
+            return (
+              <button
+                key={String(option.value)}
+                type="button"
+                onClick={() => handleChunkSizeChange(option.value)}
+                className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
+                  selected
+                    ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+                    : "border border-stone-300 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="mb-3 text-center">
         <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">
           {stepInfo.label}
@@ -173,7 +345,39 @@ export function HifzMemorizeStepper({
         </p>
       </div>
 
-      {/* Actions */}
+      <div className="mb-3 flex flex-wrap items-center justify-center gap-2">
+        <button
+          type="button"
+          disabled={currentChunkIndex === 0}
+          onClick={() => jumpToChunk(currentChunkIndex - 1)}
+          className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+        >
+          Chunk Sebelum
+        </button>
+        <button
+          type="button"
+          onClick={onChunkListen}
+          className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
+        >
+          {restartLabel}
+        </button>
+        <button
+          type="button"
+          onClick={onChunkPause}
+          className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+        >
+          Jeda
+        </button>
+        <button
+          type="button"
+          disabled={currentChunkIndex >= chunkCount - 1}
+          onClick={() => jumpToChunk(currentChunkIndex + 1)}
+          className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+        >
+          Chunk Seterusnya
+        </button>
+      </div>
+
       {currentStep < 4 ? (
         <div className="flex justify-center gap-3">
           {currentStep > 1 && (

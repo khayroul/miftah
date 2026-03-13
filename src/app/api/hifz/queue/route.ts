@@ -6,6 +6,7 @@ import type { PlanItem } from "@/lib/hifz/scheduler";
 interface QueueItem {
   progressId: number;
   ayahId: number;
+  ayahKey: string;
   pageNumber: number;
   block: "sabak" | "sabqi" | "manzil";
 }
@@ -17,6 +18,7 @@ function planItemsToQueue(
   return items.map((item) => ({
     progressId: item.progress.id,
     ayahId: item.ayah.id,
+    ayahKey: `${item.ayah.surahId}:${item.ayah.ayahNumber}`,
     pageNumber: item.ayah.pageNumber,
     block,
   }));

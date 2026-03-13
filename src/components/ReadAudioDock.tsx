@@ -5,6 +5,9 @@ import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
 import { trackReadAudioTelemetry } from "@/lib/readAudioTelemetry";
 
 interface ReadAudioDockProps {
+  autoplayRequestKey?: number;
+  pauseRequestKey?: number;
+  restartRequestKey?: number;
   tracks: ReadAudioTrack[];
   playableAyahKeys?: string[] | null;
   visible?: boolean;
@@ -122,6 +125,9 @@ function SegmentedRepeat({ title, value, onChange }: SegmentedRepeatProps) {
 }
 
 export function ReadAudioDock({
+  autoplayRequestKey = 0,
+  pauseRequestKey = 0,
+  restartRequestKey = 0,
   tracks: sourceTracks,
   playableAyahKeys = null,
   visible,
@@ -227,6 +233,54 @@ export function ReadAudioDock({
       audio.pause();
     });
   }, [currentTrack?.audioUrl, safeIndex]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !canPlay || autoplayRequestKey === 0) {
+      return;
+    }
+
+    shouldAutoplayRef.current = false;
+    audio.play().then(() => {
+      setIsPlaying(true);
+    }).catch(() => {
+      setIsPlaying(false);
+    });
+  }, [autoplayRequestKey, canPlay, currentTrack?.audioUrl]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || pauseRequestKey === 0) {
+      return;
+    }
+
+    audio.pause();
+  }, [pauseRequestKey]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !canPlay || restartRequestKey === 0) {
+      return;
+    }
+
+    const restartIndex = normalizedRangeStart;
+    if (safeIndex !== restartIndex) {
+      const frame = window.requestAnimationFrame(() => {
+        shouldAutoplayRef.current = true;
+        setCurrentIndex(restartIndex);
+      });
+      return () => {
+        window.cancelAnimationFrame(frame);
+      };
+    }
+
+    audio.currentTime = 0;
+    audio.play().then(() => {
+      setIsPlaying(true);
+    }).catch(() => {
+      setIsPlaying(false);
+    });
+  }, [canPlay, normalizedRangeStart, restartRequestKey, safeIndex]);
 
   const rangeSummary = useMemo(() => {
     const startTrack = tracks[normalizedRangeStart];

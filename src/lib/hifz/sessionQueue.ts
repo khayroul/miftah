@@ -10,6 +10,7 @@ export type HifzBlock = "sabak" | "sabqi" | "manzil";
 export interface HifzQueueItem {
   progressId: number;
   ayahId: number;
+  ayahKey: string;
   pageNumber: number;
   block: HifzBlock;
 }
