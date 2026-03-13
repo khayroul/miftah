@@ -286,11 +286,11 @@ export async function ThemePageContentAsync({
                 href={`/read/surah/${surahNumber - 1}/themes`}
                 className="flex h-10 items-center justify-center whitespace-nowrap rounded-full px-3 text-xs font-medium text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100 sm:px-4 sm:text-sm"
               >
-                &laquo; Surah
+                &laquo;
               </Link>
             ) : (
               <span className="flex h-10 items-center justify-center whitespace-nowrap px-3 text-xs font-medium opacity-0 sm:px-4 sm:text-sm">
-                &laquo; Surah
+                &laquo;
               </span>
             )}
 
@@ -338,11 +338,11 @@ export async function ThemePageContentAsync({
                 href={`/read/surah/${surahNumber + 1}/themes`}
                 className="flex h-10 items-center justify-center whitespace-nowrap rounded-full px-3 text-xs font-medium text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100 sm:px-4 sm:text-sm"
               >
-                Surah &raquo;
+                &raquo;
               </Link>
             ) : (
               <span className="flex h-10 items-center justify-center whitespace-nowrap px-3 text-xs font-medium opacity-0 sm:px-4 sm:text-sm">
-                Surah &raquo;
+                &raquo;
               </span>
             )}
           </nav>
