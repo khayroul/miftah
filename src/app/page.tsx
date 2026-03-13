@@ -24,6 +24,7 @@ export default async function Home() {
           surahTargets={jumpTargets.surahs}
           showUtilities
           showAuthStatus
+          highlightHome
         />
 
         <HomeDashboardClient

@@ -19,6 +19,7 @@ interface ModeNavigatorProps {
   onModeClick?: (mode: ReadMode, e: React.MouseEvent) => void;
   showUtilities?: boolean;
   showAuthStatus?: boolean;
+  highlightHome?: boolean;
 }
 
 const MODE_ITEMS: Array<{
@@ -60,6 +61,7 @@ export function ModeNavigator({
   onModeClick,
   showUtilities = false,
   showAuthStatus = false,
+  highlightHome = false,
 }: ModeNavigatorProps) {
   const readingState = useReadingProgressState();
 
@@ -93,7 +95,12 @@ export function ModeNavigator({
     <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-[26px] border border-stone-200 bg-white/92 p-1 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
       <Link
         href="/"
-        className="mr-0.5 flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50 hover:text-stone-900 sm:mr-1 sm:px-3 sm:py-2 sm:text-base dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+        aria-current={highlightHome ? "page" : undefined}
+        className={`mr-0.5 flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-medium transition sm:mr-1 sm:px-3 sm:py-2 sm:text-base ${
+          highlightHome
+            ? "bg-stone-900 text-stone-50 shadow-sm dark:bg-stone-100 dark:text-stone-900"
+            : "text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+        }`}
         title="Utama"
       >
         <svg
@@ -107,7 +114,7 @@ export function ModeNavigator({
         </svg>
       </Link>
       {MODE_ITEMS.map((item) => {
-        const active = item.value === activeMode;
+        const active = !highlightHome && item.value === activeMode;
         const href = modeHref({
           mode: item.value,
           readPage,
