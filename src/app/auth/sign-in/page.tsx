@@ -69,13 +69,37 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
               Apa yang disimpan
             </p>
             <div className="mt-4 space-y-3 text-sm text-stone-600 dark:text-stone-300">
-              <p>`Baca`: halaman terakhir dan aktiviti membaca.</p>
-              <p>`Faham`: queue WBW, review log, dan exposure.</p>
-              <p>`Tema`: chunk yang sudah dibuka dan progres penerokaan.</p>
-              <p>`Hafal`: Sabak, Sabqi, Manzil, dan FSRS ayat.</p>
+              <p>
+                <span className="font-medium text-stone-800 dark:text-stone-100">
+                  Baca
+                </span>
+                : halaman terakhir dan aktiviti membaca.
+              </p>
+              <p>
+                <span className="font-medium text-stone-800 dark:text-stone-100">
+                  Faham
+                </span>
+                : queue WBW, review log, dan exposure.
+              </p>
+              <p>
+                <span className="font-medium text-stone-800 dark:text-stone-100">
+                  Tema
+                </span>
+                : chunk yang sudah dibuka dan progres penerokaan.
+              </p>
+              <p>
+                <span className="font-medium text-stone-800 dark:text-stone-100">
+                  Hafal
+                </span>
+                : Sabak, Sabqi, Manzil, dan FSRS ayat.
+              </p>
               <p>
                 Belum mahu masuk? Anda masih boleh lihat rupa pengalaman Miftah
-                melalui `Pratonton`.
+                melalui{" "}
+                <span className="font-medium text-stone-800 dark:text-stone-100">
+                  Pratonton
+                </span>
+                .
               </p>
             </div>
           </aside>
