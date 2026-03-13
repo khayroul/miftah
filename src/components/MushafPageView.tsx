@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type TouchEvent,
+  type ReactNode,
 } from "react";
 import {
   type AyahEndByLine,
@@ -330,6 +331,8 @@ export function MushafPageView({
   const modeAllowsWordInteraction = mode === "faham";
   const canInteract = modeAllowsWordInteraction && canInteractWhenReady;
   const canSelectAyah = false; // Disabled by user request to prevent WBW conflict
+  const needsAyahLayout = mode === "hifz" || canSelectAyah;
+  const needsLineCenters = mode === "hifz" && hifzRevealByThirdsEnabled;
   const wordTapPaddingX = Math.max(8, imageWidth * 0.004);
   const wordTapPaddingY = Math.max(8, imageHeight * 0.003);
   const ayahDetailsMap = useMemo(() => {
@@ -340,6 +343,10 @@ export function MushafPageView({
     return map;
   }, [ayahDetails]);
   const ayahBoxes = useMemo(() => {
+    if (!needsAyahLayout) {
+      return new Map<string, AyahBoundingBox>();
+    }
+
     const map = new Map<string, AyahBoundingBox>();
 
     for (const word of words) {
@@ -373,7 +380,7 @@ export function MushafPageView({
     }
 
     return map;
-  }, [words]);
+  }, [needsAyahLayout, words]);
   const ayahLayoutEntries = useMemo<AyahLayoutEntry[]>(() => {
     return Array.from(ayahBoxes.entries())
       .map(([key, box]) => ({
@@ -389,8 +396,8 @@ export function MushafPageView({
       });
   }, [ayahBoxes]);
   const lineCenters = useMemo(
-    () => deriveLineCenters(words, imageHeight),
-    [imageHeight, words],
+    () => (needsLineCenters ? deriveLineCenters(words, imageHeight) : []),
+    [imageHeight, needsLineCenters, words],
   );
   const ayahEndsByLine = useMemo<AyahEndByLine[]>(
     () =>
@@ -488,7 +495,7 @@ export function MushafPageView({
     : null;
   const selectableAyahTargets = ayahOverlayTargets;
   const activePlaybackAyahSegments = useMemo(() => {
-    if (!activePlaybackAyahKey) {
+    if (!activePlaybackAyahKey || !fullImageReady) {
       return [] as AyahBoundingBox[];
     }
 
@@ -572,6 +579,7 @@ export function MushafPageView({
       });
   }, [
     activePlaybackAyahKey,
+    fullImageReady,
     imageHeight,
     imageWidth,
     revealVisibleBoundaryY,
@@ -869,32 +877,11 @@ export function MushafPageView({
     onNavigateNextPage?.();
   };
 
-  const ayahHitboxButtons = useMemo(() => {
-    return selectableAyahTargets.map(({ key, box, detail }) => (
-      <button
-        key={`ayah-${key}`}
-        type="button"
-        aria-label={`Ayat ${key}`}
-        title={detail?.label ?? key}
-        onClick={(event) => {
-          event.stopPropagation();
-          setShowDiscoveryHint(false);
-          setMarkMemorizedError(null);
-          setSelectedWord(null);
-          setSelectedAyahKey((current) => (current === key ? null : key));
-        }}
-        className="absolute cursor-pointer bg-transparent hover:bg-sky-300/15 focus-visible:bg-sky-300/20 focus-visible:outline-none"
-        style={{
-          left: percent(box.x, imageWidth),
-          top: percent(box.y, imageHeight),
-          width: percent(box.width, imageWidth),
-          height: percent(box.height, imageHeight),
-        }}
-      />
-    ));
-  }, [selectableAyahTargets, imageWidth, imageHeight]);
-
   const wordHitboxButtons = useMemo(() => {
+    if (!canInteract) {
+      return [] as ReactNode[];
+    }
+
     return words.map((word, index) => {
       const tapBox = expandHitbox(
         {
@@ -942,6 +929,7 @@ export function MushafPageView({
       );
     });
   }, [
+    canInteract,
     imageHeight,
     imageWidth,
     wordTapPaddingX,
@@ -1125,7 +1113,30 @@ export function MushafPageView({
                 }}
               />
             ) : null}
-            {canSelectAyah ? ayahHitboxButtons : null}
+            {canSelectAyah
+              ? selectableAyahTargets.map(({ key, box, detail }) => (
+                  <button
+                    key={`ayah-${key}`}
+                    type="button"
+                    aria-label={`Ayat ${key}`}
+                    title={detail?.label ?? key}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setShowDiscoveryHint(false);
+                      setMarkMemorizedError(null);
+                      setSelectedWord(null);
+                      setSelectedAyahKey((current) => (current === key ? null : key));
+                    }}
+                    className="absolute cursor-pointer bg-transparent hover:bg-sky-300/15 focus-visible:bg-sky-300/20 focus-visible:outline-none"
+                    style={{
+                      left: percent(box.x, imageWidth),
+                      top: percent(box.y, imageHeight),
+                      width: percent(box.width, imageWidth),
+                      height: percent(box.height, imageHeight),
+                    }}
+                  />
+                ))
+              : null}
             {!fullImageReady && canShowFullImage ? (
               <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-4">
                 <span className="rounded-full border border-stone-300 bg-white/90 px-3 py-1 text-sm text-stone-600 shadow-sm dark:border-stone-700 dark:bg-stone-900/90 dark:text-stone-300">

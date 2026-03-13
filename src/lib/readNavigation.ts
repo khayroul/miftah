@@ -225,9 +225,9 @@ async function buildTargetsFromLocalSeed(): Promise<ReadJumpTargets> {
 export const getReadJumpTargets = unstable_cache(
   async (): Promise<ReadJumpTargets> => {
     try {
-      return await buildTargetsFromSupabase();
+      return await buildTargetsFromLocalSeed();
     } catch {
-      return buildTargetsFromLocalSeed();
+      return buildTargetsFromSupabase();
     }
   },
   ["read-jump-targets"],

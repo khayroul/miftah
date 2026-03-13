@@ -1,7 +1,6 @@
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ReadPageWorkspace } from "@/components/ReadPageWorkspace";
-import { ReadPageVocabSectionAsync } from "@/components/ReadPageVocabSectionAsync";
+import { ReadPageVocabPreviewLazy } from "@/components/ReadPageVocabPreviewLazy";
 import { LightweightBreadcrumb } from "@/components/LightweightBreadcrumb";
 import { getReadPageStaticData } from "@/lib/readPageData";
 import { parseReadPage } from "@/lib/readNavigation";
@@ -16,27 +15,6 @@ interface ReadPageProps {
     flow?: string;
     qi?: string;
   }>;
-}
-
-function ReadPageVocabSectionFallback({
-  pageNumber,
-}: {
-  pageNumber: number;
-}) {
-  return (
-    <section className="rounded-[28px] border border-stone-200/80 bg-white/70 p-4 shadow-[0_18px_42px_-34px_rgba(28,25,23,0.3)] dark:border-stone-700/70 dark:bg-stone-900/65 sm:p-5">
-      <div className="space-y-3">
-        <div className="h-3 w-28 rounded-full bg-stone-200/80 dark:bg-stone-800" />
-        <div className="h-6 w-56 rounded-full bg-stone-300/80 dark:bg-stone-700" />
-        <div className="h-4 w-64 rounded-full bg-stone-200/80 dark:bg-stone-800" />
-        <div className="rounded-2xl border border-stone-200/80 bg-stone-50/80 px-4 py-3 dark:border-stone-700/70 dark:bg-stone-950/45">
-          <p className="text-sm text-stone-500 dark:text-stone-400">
-            Menyusun perkataan fokus untuk halaman {pageNumber}.
-          </p>
-        </div>
-      </div>
-    </section>
-  );
 }
 
 export default async function ReadPage({ params, searchParams }: ReadPageProps) {
@@ -158,12 +136,11 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
       />
 
       {!hifzFlow ? (
-        <Suspense fallback={<ReadPageVocabSectionFallback pageNumber={pageNumber} />}>
-          <ReadPageVocabSectionAsync
-            ayahIds={pageData.ayatOnPage.map((ayah) => ayah.id)}
-            pageNumber={pageNumber}
-          />
-        </Suspense>
+        <ReadPageVocabPreviewLazy
+          key={pageNumber}
+          ayahIds={pageData.ayatOnPage.map((ayah) => ayah.id)}
+          pageNumber={pageNumber}
+        />
       ) : null}
     </main>
   );

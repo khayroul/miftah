@@ -1,21 +1,22 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import { ModeNavigator } from "@/components/ModeNavigator";
 import { ThemeActionPanel } from "@/components/ThemeActionPanel";
+import { ThemeChunkAyahListAsync } from "@/components/ThemeChunkAyahListAsync";
 import { ThemeChunkProgressTracker } from "@/components/ThemeChunkProgressTracker";
 import { ThemeChunkSelect } from "@/components/ThemeChunkSelect";
 import { ThemeJumpControls } from "@/components/ThemeJumpControls";
 import {
   getSurahs,
-  getWordByWordForAyahIds,
   getSurah,
   getThemeAppearanceChunksBySurah,
 } from "@/lib/queries";
 import { buildSignInPath } from "@/lib/auth";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { resolveThemeChunkLabelBm } from "@/lib/themeLabels";
-import type { AyahWordByWordEntry, ThemeAppearanceChunk } from "@/lib/queries";
+import type { ThemeAppearanceAyah, ThemeAppearanceChunk } from "@/lib/queries";
 import type { Surah } from "@/types/database";
 
 interface SurahThemeAppearancePageProps {
@@ -52,44 +53,76 @@ function chunkTitleBm(chunk: ThemeAppearanceChunk): string {
   });
 }
 
+function ThemeChunkAyahListFallback({ ayat }: { ayat: ThemeAppearanceAyah[] }) {
+  return (
+    <div className="space-y-10 pb-8">
+      {ayat.map((ayah) => (
+        <div key={ayah.id} className="relative flex flex-col gap-4">
+          <div className="absolute -left-4 top-0 flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 bg-stone-50 text-xs font-semibold text-stone-500 shadow-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400 sm:-left-12">
+            {ayah.ayah_number}
+          </div>
+          <div className="rounded-2xl border border-stone-200/80 bg-stone-50/80 p-4 dark:border-stone-700/70 dark:bg-stone-900/40">
+            <div className="h-20 rounded-xl bg-stone-200/80 dark:bg-stone-800/80" />
+            <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
+              Memuatkan paparan kata demi kata.
+            </p>
+          </div>
+          <div className="pl-6 sm:pl-0">
+            <div className="rounded-xl border border-stone-100 bg-stone-50/50 p-4 dark:border-stone-800/80 dark:bg-stone-800/20 sm:p-5">
+              <p className="text-[15px] leading-relaxed text-stone-700 dark:text-stone-300">
+                {ayah.display_bm ?? "Terjemahan BM belum tersedia."}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default async function SurahThemeAppearancePage({
   params,
   searchParams,
 }: SurahThemeAppearancePageProps) {
   const { surah } = await params;
   const query = await searchParams;
-  const user = await getOptionalAuthUser();
   const surahNumber = parseSurahNumber(surah);
 
   if (!surahNumber) {
     notFound();
   }
 
-  let surahMeta: Surah;
-  try {
-    surahMeta = await getSurah(surahNumber);
-  } catch {
+  const [userResult, surahMetaResult, chunksResult, surahsResult] =
+    await Promise.allSettled([
+      getOptionalAuthUser(),
+      getSurah(surahNumber),
+      getThemeAppearanceChunksBySurah(surahNumber),
+      getSurahs(),
+    ]);
+
+  const user = userResult.status === "fulfilled" ? userResult.value : null;
+  if (surahMetaResult.status !== "fulfilled") {
     notFound();
   }
-
+  const surahMeta: Surah = surahMetaResult.value;
   let chunks: ThemeAppearanceChunk[] = [];
   let loadError: string | null = null;
-  try {
-    chunks = await getThemeAppearanceChunksBySurah(surahNumber);
-  } catch {
+  if (chunksResult.status === "fulfilled") {
+    chunks = chunksResult.value;
+  } else {
     loadError =
       "Data tema belum dapat dimuat sekarang. Sila semak sambungan Supabase dan cuba semula.";
   }
+
   let surahOptions: Array<{ surah: number; nameBm: string; nameEn: string }> =
     [];
-  try {
-    const allSurahs = await getSurahs();
-    surahOptions = allSurahs.map((item) => ({
+  if (surahsResult.status === "fulfilled") {
+    surahOptions = surahsResult.value.map((item) => ({
       surah: item.id,
       nameBm: item.name_bm,
       nameEn: item.name_en,
     }));
-  } catch {
+  } else {
     surahOptions = [
       {
         surah: surahMeta.id,
@@ -122,17 +155,6 @@ export default async function SurahThemeAppearancePage({
   if (chunks.length > 0) {
     if (selectedChunkIndex > 1) {
       previousThemeHref = `/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex - 1}`;
-    } else if (surahNumber > 1) {
-      try {
-        const previousSurahChunks = await getThemeAppearanceChunksBySurah(
-          surahNumber - 1,
-        );
-        if (previousSurahChunks.length > 0) {
-          previousThemeHref = `/read/surah/${surahNumber - 1}/themes?chunk=${previousSurahChunks.length}`;
-        }
-      } catch {
-        previousThemeHref = null;
-      }
     }
   }
   const nextThemeHref = hasNextThemeInSurah
@@ -140,17 +162,7 @@ export default async function SurahThemeAppearancePage({
     : canJumpToNextSurahTheme
       ? `/read/surah/${surahNumber + 1}/themes?chunk=1`
       : null;
-  let wbwByAyahId: Record<number, AyahWordByWordEntry[]> = {};
   const signInHref = buildSignInPath(currentThemeHref);
-  if (selectedChunk) {
-    try {
-      wbwByAyahId = await getWordByWordForAyahIds(
-        selectedChunk.ayat.map((ayah) => ayah.id),
-      );
-    } catch {
-      wbwByAyahId = {};
-    }
-  }
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 sm:px-6 md:py-12">
@@ -260,67 +272,11 @@ export default async function SurahThemeAppearancePage({
                   signInHref={signInHref}
                 />
 
-                {/* Ayat List */}
-                <div className="space-y-16 pb-8">
-                  {selectedChunk.ayat.map((ayah) => (
-                    <div
-                      key={ayah.id}
-                      className="relative group/ayah flex flex-col gap-6"
-                    >
-                      {/* Ayat Indicator */}
-                      <div className="absolute -left-4 sm:-left-12 top-0 flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 bg-stone-50 text-xs font-semibold text-stone-500 shadow-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
-                        {ayah.ayah_number}
-                      </div>
-
-                      {/* Word by Word */}
-                      {wbwByAyahId[ayah.id] &&
-                      wbwByAyahId[ayah.id].length > 0 ? (
-                        <div
-                          className="flex flex-wrap justify-start gap-x-1.5 gap-y-6"
-                          dir="rtl"
-                        >
-                          {wbwByAyahId[ayah.id].map((word) => (
-                            <div
-                              key={`${ayah.id}-${word.position}`}
-                              className="group/word flex min-w-fit max-w-max flex-1 flex-col items-center justify-start rounded-lg p-2 transition-colors hover:bg-stone-50 cursor-pointer dark:hover:bg-stone-800/50"
-                            >
-                              <span
-                                className="font-arabic mb-2 block text-center text-4xl leading-[1.6] text-stone-900 sm:text-5xl dark:text-stone-100"
-                                lang="ar"
-                              >
-                                {word.text_uthmani}
-                              </span>
-                              <span
-                                dir="ltr"
-                                className="block text-center text-xs sm:text-sm leading-snug text-stone-500 line-clamp-2 group-hover/word:text-stone-800 dark:text-stone-400 dark:group-hover/word:text-stone-200 transition-colors"
-                              >
-                                {word.translation_bm ??
-                                  word.translation_en ??
-                                  "—"}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p
-                          className="text-right text-sm text-stone-400"
-                          dir="rtl"
-                        >
-                          [Data kata demi kata belum tersedia]
-                        </p>
-                      )}
-
-                      {/* Full Translation */}
-                      <div className="mt-2 pl-6 sm:pl-0">
-                        <div className="rounded-xl border border-stone-100 bg-stone-50/50 p-4 sm:p-5 dark:border-stone-800/80 dark:bg-stone-800/20">
-                          <p className="text-[15px] leading-relaxed text-stone-700 dark:text-stone-300">
-                            {ayah.display_bm ?? "Terjemahan BM belum tersedia."}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <Suspense
+                  fallback={<ThemeChunkAyahListFallback ayat={selectedChunk.ayat} />}
+                >
+                  <ThemeChunkAyahListAsync ayat={selectedChunk.ayat} />
+                </Suspense>
               </article>
             ) : null}
           </section>

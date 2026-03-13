@@ -1,12 +1,13 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { unstable_cache } from "next/cache";
 import { supabase } from "./supabase";
 import type { Surah, Ayah, Theme } from "@/types/database";
 
 /**
  * Fetch all 114 surahs ordered by id.
  */
-export async function getSurahs(): Promise<Surah[]> {
+async function fetchSurahs(): Promise<Surah[]> {
   const { data, error } = await supabase
     .from("surahs")
     .select("*")
@@ -15,10 +16,19 @@ export async function getSurahs(): Promise<Surah[]> {
   return data;
 }
 
+const getCachedSurahs = unstable_cache(fetchSurahs, ["surahs"], {
+  revalidate: 3600,
+  tags: ["surahs"],
+});
+
+export async function getSurahs(): Promise<Surah[]> {
+  return getCachedSurahs();
+}
+
 /**
  * Fetch a single surah by id.
  */
-export async function getSurah(id: number): Promise<Surah> {
+async function fetchSurah(id: number): Promise<Surah> {
   const { data, error } = await supabase
     .from("surahs")
     .select("*")
@@ -26,6 +36,19 @@ export async function getSurah(id: number): Promise<Surah> {
     .single();
   if (error) throw error;
   return data;
+}
+
+const getCachedSurah = unstable_cache(
+  async (id: number) => fetchSurah(id),
+  ["surah-by-id"],
+  {
+    revalidate: 3600,
+    tags: ["surah-by-id"],
+  },
+);
+
+export async function getSurah(id: number): Promise<Surah> {
+  return getCachedSurah(id);
 }
 
 /**
@@ -152,25 +175,25 @@ function normalizeWordOccurrenceWbwRows(rows: WordOccurrenceWbwRow[]): AyahWordB
   return result;
 }
 
+function normalizeAyahIds(values: number[]): number[] {
+  return Array.from(
+    new Set(values.filter((ayahId) => Number.isInteger(ayahId) && ayahId > 0)),
+  );
+}
+
 /**
  * Fetch WBW tokens for multiple ayat. Result is grouped by ayah_id and
  * ordered by word position within each ayah.
  */
-export async function getWordByWordForAyahIds(
+async function fetchWordByWordForAyahIds(
   ayahIds: number[],
 ): Promise<Record<number, AyahWordByWordEntry[]>> {
-  const uniqueAyahIds = Array.from(
-    new Set(
-      ayahIds.filter((ayahId) => Number.isInteger(ayahId) && ayahId > 0),
-    ),
-  );
-
-  if (uniqueAyahIds.length === 0) {
+  if (ayahIds.length === 0) {
     return {};
   }
 
   const grouped: Record<number, AyahWordByWordEntry[]> = {};
-  const batches = chunkValues(uniqueAyahIds, 40);
+  const batches = chunkValues(ayahIds, 40);
 
   const batchResults = await Promise.all(
     batches.map(async (ayahIdBatch) => {
@@ -209,6 +232,32 @@ export async function getWordByWordForAyahIds(
   }
 
   return grouped;
+}
+
+const getCachedWordByWordForAyahIds = unstable_cache(
+  async (ayahIdsKey: string) => {
+    const ayahIds = ayahIdsKey
+      .split(",")
+      .map((value) => Number.parseInt(value, 10))
+      .filter((value) => Number.isInteger(value) && value > 0);
+    return fetchWordByWordForAyahIds(ayahIds);
+  },
+  ["word-by-word-by-ayah-ids"],
+  {
+    revalidate: 3600,
+    tags: ["word-by-word-by-ayah-ids"],
+  },
+);
+
+export async function getWordByWordForAyahIds(
+  ayahIds: number[],
+): Promise<Record<number, AyahWordByWordEntry[]>> {
+  const normalizedAyahIds = normalizeAyahIds(ayahIds);
+  if (normalizedAyahIds.length === 0) {
+    return {};
+  }
+
+  return getCachedWordByWordForAyahIds(normalizedAyahIds.join(","));
 }
 
 export interface ThemeAppearanceAyah {
@@ -675,7 +724,7 @@ function withChunkIndex(
  * Group ayat in a surah into contiguous "theme appearance" chunks.
  * Chunk boundary changes whenever the selected dominant theme changes.
  */
-export async function getThemeAppearanceChunksBySurah(
+async function fetchThemeAppearanceChunksBySurah(
   surahId: number,
 ): Promise<ThemeAppearanceChunk[]> {
   const { data, error: ayatError } = await supabase
@@ -794,4 +843,19 @@ export async function getThemeAppearanceChunksBySurah(
   }
 
   return withChunkIndex(chunks);
+}
+
+const getCachedThemeAppearanceChunksBySurah = unstable_cache(
+  async (surahId: number) => fetchThemeAppearanceChunksBySurah(surahId),
+  ["theme-appearance-chunks-by-surah"],
+  {
+    revalidate: 3600,
+    tags: ["theme-appearance-chunks-by-surah"],
+  },
+);
+
+export async function getThemeAppearanceChunksBySurah(
+  surahId: number,
+): Promise<ThemeAppearanceChunk[]> {
+  return getCachedThemeAppearanceChunksBySurah(surahId);
 }

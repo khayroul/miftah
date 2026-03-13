@@ -100,6 +100,26 @@ function getAudioDiscoverySnapshot(): boolean {
   return window.localStorage.getItem(AUDIO_DISCOVERY_STORAGE_KEY) === "1";
 }
 
+function scheduleIdleTask(callback: () => void, timeoutMs = 1200): () => void {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  if ("requestIdleCallback" in window) {
+    const idleId = window.requestIdleCallback(callback, {
+      timeout: timeoutMs,
+    });
+    return () => {
+      window.cancelIdleCallback(idleId);
+    };
+  }
+
+  const timerId = globalThis.setTimeout(callback, timeoutMs);
+  return () => {
+    globalThis.clearTimeout(timerId);
+  };
+}
+
 export function ReadPageWorkspace({
   pageNumber,
   imageAvailable,
@@ -143,10 +163,12 @@ export function ReadPageWorkspace({
     () => true,
   );
   const [showJumpControls, setShowJumpControls] = useState(false);
+  const [showReadTools, setShowReadTools] = useState(hifzFlow !== null);
   const [tasmiRevealedLines, setTasmiRevealedLines] = useState(0);
-  const totalLineCount = manifest?.words
-    ? Math.max(new Set(manifest.words.map((w) => Math.round(w.y))).size, 1)
-    : 15;
+  const totalLineCount =
+    hifzFlow === "review" && manifest?.words
+      ? Math.max(new Set(manifest.words.map((w) => Math.round(w.y))).size, 1)
+      : 15;
   const tasmiAllRevealed = hifzFlow === "review" && tasmiRevealedLines >= totalLineCount;
   const showTasmiOverlay = hifzFlow === "review" && !tasmiAllRevealed;
   const handleTasmiTap = useCallback(() => {
@@ -156,6 +178,7 @@ export function ReadPageWorkspace({
   const [resolvedMemorizedAyahKeys, setResolvedMemorizedAyahKeys] = useState(
     memorizedAyahKeys,
   );
+  const [shouldTrackExposure, setShouldTrackExposure] = useState(false);
   const [memorizeChunkAyahKeys, setMemorizeChunkAyahKeys] = useState<string[] | null>(
     null,
   );
@@ -218,6 +241,24 @@ export function ReadPageWorkspace({
   }, [memorizedAyahKeys]);
 
   useEffect(() => {
+    if (hifzFlow !== null) {
+      setShowReadTools(false);
+      return;
+    }
+
+    setShowReadTools(false);
+    return scheduleIdleTask(() => {
+      setShowReadTools(true);
+    }, 700);
+  }, [hifzFlow, pageNumber]);
+
+  useEffect(() => {
+    return scheduleIdleTask(() => {
+      setShouldTrackExposure(true);
+    }, 1500);
+  }, [pageNumber]);
+
+  useEffect(() => {
     if (!audioEnabledForMode) {
       setAudioVisible(false);
       setPlayableAyahKeys(null);
@@ -249,42 +290,46 @@ export function ReadPageWorkspace({
   ]);
 
   useEffect(() => {
-    if (!personalizationPageNumber) {
+    if (!personalizationPageNumber || hifzFlow === null) {
       return;
     }
 
     const abortController = new AbortController();
+    let cancelIdleTask = () => {};
 
-    void fetch(`/api/read/personalization?page=${personalizationPageNumber}`, {
-      cache: "no-store",
-      signal: abortController.signal,
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error("Read personalization request failed");
-        }
-        return (await response.json()) as { memorizedAyahKeys?: string[] };
+    cancelIdleTask = scheduleIdleTask(() => {
+      void fetch(`/api/read/personalization?page=${personalizationPageNumber}`, {
+        cache: "no-store",
+        signal: abortController.signal,
       })
-      .then((payload) => {
-        if (!Array.isArray(payload.memorizedAyahKeys)) {
-          return;
-        }
-        setResolvedMemorizedAyahKeys(payload.memorizedAyahKeys);
-      })
-      .catch((error: unknown) => {
-        if (
-          error instanceof DOMException &&
-          error.name === "AbortError"
-        ) {
-          return;
-        }
-        console.error("[read/page] Failed to hydrate memorized ayah keys", error);
-      });
+        .then(async (response) => {
+          if (!response.ok) {
+            throw new Error("Read personalization request failed");
+          }
+          return (await response.json()) as { memorizedAyahKeys?: string[] };
+        })
+        .then((payload) => {
+          if (!Array.isArray(payload.memorizedAyahKeys)) {
+            return;
+          }
+          setResolvedMemorizedAyahKeys(payload.memorizedAyahKeys);
+        })
+        .catch((error: unknown) => {
+          if (
+            error instanceof DOMException &&
+            error.name === "AbortError"
+          ) {
+            return;
+          }
+          console.error("[read/page] Failed to hydrate memorized ayah keys", error);
+        });
+    }, 1800);
 
     return () => {
+      cancelIdleTask();
       abortController.abort();
     };
-  }, [personalizationPageNumber]);
+  }, [hifzFlow, personalizationPageNumber]);
 
   const handleNavigatePrevPage = useCallback(() => {
     if (pageNumber <= 1) {
@@ -322,16 +367,18 @@ export function ReadPageWorkspace({
 
   return (
     <div style={{ paddingBottom: contentBottomPadding }}>
-      <FahamExposureTracker
-        payload={{
-          ayahIds: readingAyahIds,
-          pageNumber,
-          sourceType: "reading_page",
-          surahId: currentSurahId,
-        }}
-      />
+      {shouldTrackExposure ? (
+        <FahamExposureTracker
+          payload={{
+            ayahIds: readingAyahIds,
+            pageNumber,
+            sourceType: "reading_page",
+            surahId: currentSurahId,
+          }}
+        />
+      ) : null}
 
-      {!hifzFlow && (
+      {!hifzFlow && showReadTools ? (
         <ReadModeTools
           themeSurahId={themeSurahId}
           hifzRevealByThirdsEnabled={hifzRevealByThirdsEnabled}
@@ -344,24 +391,34 @@ export function ReadPageWorkspace({
           isAudioVisible={isAudioVisible}
           onToggleAudio={handleToggleAudio}
         />
-      )}
+      ) : !hifzFlow ? (
+        <section className="space-y-3 sm:space-y-4" aria-hidden>
+          <div className="flex w-full flex-col items-stretch justify-center gap-3 sm:items-center sm:gap-4">
+            <div className="h-12 w-full rounded-full bg-stone-200/75 dark:bg-stone-800 sm:max-w-md" />
+          </div>
+        </section>
+      ) : null}
 
-      <div
-        className={`hidden overflow-hidden transition-[max-height,opacity,transform] duration-300 sm:block ${
-          showJumpControls
-            ? "max-h-[420px] translate-y-0 opacity-100"
-            : "pointer-events-none max-h-0 -translate-y-1 opacity-0"
-        }`}
-        aria-hidden={!showJumpControls}
-      >
-        <div className="pt-1">
-          <ReadJumpControls
-            currentPage={pageNumber}
-            currentSurahId={currentSurahId}
-            currentJuzNumber={currentJuzNumber}
-            surahOptions={jumpSurahOptions}
-            juzOptions={jumpJuzOptions}
-          />
+      <div className="hidden sm:block">
+        <div
+          className={`overflow-hidden transition-[max-height,opacity,transform] duration-300 ${
+            showJumpControls
+              ? "max-h-[420px] translate-y-0 opacity-100"
+              : "pointer-events-none max-h-0 -translate-y-1 opacity-0"
+          }`}
+          aria-hidden={!showJumpControls}
+        >
+          <div className="pt-1">
+            {showJumpControls ? (
+              <ReadJumpControls
+                currentPage={pageNumber}
+                currentSurahId={currentSurahId}
+                currentJuzNumber={currentJuzNumber}
+                surahOptions={jumpSurahOptions}
+                juzOptions={jumpJuzOptions}
+              />
+            ) : null}
+          </div>
         </div>
       </div>
 
