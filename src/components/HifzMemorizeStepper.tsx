@@ -24,6 +24,7 @@ interface HifzMemorizeStepperProps {
   onChunkListen: () => void;
   onChunkPause: () => void;
   onMushafHide: (hidden: boolean) => void;
+  onViewportInsetChange?: (insetPx: number) => void;
 }
 
 type Step = 1 | 2 | 3 | 4;
@@ -70,6 +71,7 @@ export function HifzMemorizeStepper({
   onChunkListen,
   onChunkPause,
   onMushafHide,
+  onViewportInsetChange,
 }: HifzMemorizeStepperProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>(1);
@@ -77,6 +79,7 @@ export function HifzMemorizeStepper({
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [complete, setComplete] = useState(false);
+  const [panelElement, setPanelElement] = useState<HTMLDivElement | null>(null);
 
   const pageItems = useMemo(() => {
     const queue = loadQueue("memorize");
@@ -144,6 +147,40 @@ export function HifzMemorizeStepper({
       onChunkAyahKeysChange(null);
     };
   }, [onChunkAyahKeysChange, onChunkPause, onMushafHide]);
+
+  useEffect(() => {
+    if (!onViewportInsetChange) {
+      return;
+    }
+    if (!panelElement) {
+      onViewportInsetChange(0);
+      return;
+    }
+
+    const reportInset = () => {
+      const nextInset = Math.ceil(
+        panelElement.getBoundingClientRect().height + bottomOffsetPx,
+      );
+      onViewportInsetChange(nextInset);
+    };
+
+    reportInset();
+
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(() => {
+            reportInset();
+          });
+    observer?.observe(panelElement);
+    window.addEventListener("resize", reportInset);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", reportInset);
+      onViewportInsetChange(0);
+    };
+  }, [bottomOffsetPx, onViewportInsetChange, panelElement]);
 
   const handleNext = useCallback(() => {
     if (currentStep < 4) {
@@ -249,6 +286,7 @@ export function HifzMemorizeStepper({
   if (complete) {
     return (
       <div
+        ref={setPanelElement}
         className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-6 text-center shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95"
         style={{ bottom: bottomOffsetPx }}
       >
@@ -273,6 +311,7 @@ export function HifzMemorizeStepper({
 
   return (
     <div
+      ref={setPanelElement}
       className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95"
       style={{ bottom: bottomOffsetPx }}
     >

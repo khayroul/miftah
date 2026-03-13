@@ -117,6 +117,11 @@ export function ReadPageWorkspace({
   const [memorizeChunkAyahKeys, setMemorizeChunkAyahKeys] = useState<string[] | null>(
     null,
   );
+  const [memorizeViewportInset, setMemorizeViewportInset] = useState(0);
+  const contentBottomPadding =
+    hifzFlow === "memorize" && memorizeViewportInset > 0
+      ? memorizeViewportInset + 16
+      : undefined;
 
   const markAudioDiscovered = useCallback(() => {
     if (!audioDiscovered) {
@@ -232,7 +237,7 @@ export function ReadPageWorkspace({
   }, [pauseAudioPlayback]);
 
   return (
-    <>
+    <div style={{ paddingBottom: contentBottomPadding }}>
       <FahamExposureTracker
         payload={{
           ayahIds: readingAyahIds,
@@ -409,8 +414,9 @@ export function ReadPageWorkspace({
           onChunkListen={handleMemorizeChunkListen}
           onChunkPause={handleMemorizeChunkPause}
           onMushafHide={setMemorizeHideMushaf}
+          onViewportInsetChange={setMemorizeViewportInset}
         />
       )}
-    </>
+    </div>
   );
 }
