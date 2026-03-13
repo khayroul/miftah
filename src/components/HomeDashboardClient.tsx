@@ -6,6 +6,7 @@ import type { SurahJumpTarget } from "@/lib/readNavigation";
 import { saveReadMode } from "@/lib/readMode";
 import { findMarkerForPage } from "@/lib/readNavigationUtils";
 import type { HomeDashboardSnapshot } from "@/lib/homeDashboard";
+import { buildHomeHero } from "@/lib/homeDashboardHero";
 import { useReadingProgressState } from "@/lib/useReadingProgressState";
 
 const TOTAL_QURAN_PAGES = 604;
@@ -60,6 +61,8 @@ function toneClasses(tone: CardTone) {
     return {
       bar: "bg-teal-700 dark:bg-teal-300",
       border: "border-teal-900/18 dark:border-teal-300/18",
+      chip: "border-teal-900/15 bg-teal-950/6 text-teal-900 dark:border-teal-300/20 dark:bg-teal-900/35 dark:text-teal-100",
+      primaryButton: "bg-teal-900 text-teal-50 hover:bg-teal-800 dark:bg-teal-700 dark:text-white dark:hover:bg-teal-600",
       surface:
         "bg-[linear-gradient(145deg,rgba(240,253,250,0.96),rgba(255,255,255,0.92))] dark:bg-[linear-gradient(145deg,rgba(15,118,110,0.2),rgba(10,10,10,0.72))]",
       value: "text-teal-900 dark:text-teal-100",
@@ -70,6 +73,8 @@ function toneClasses(tone: CardTone) {
     return {
       bar: "bg-amber-600 dark:bg-amber-300",
       border: "border-amber-900/15 dark:border-amber-300/18",
+      chip: "border-amber-900/15 bg-amber-100/70 text-amber-900 dark:border-amber-300/18 dark:bg-amber-900/30 dark:text-amber-100",
+      primaryButton: "bg-amber-600 text-amber-50 hover:bg-amber-500 dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400",
       surface:
         "bg-[linear-gradient(145deg,rgba(255,251,235,0.96),rgba(255,255,255,0.92))] dark:bg-[linear-gradient(145deg,rgba(217,119,6,0.18),rgba(10,10,10,0.72))]",
       value: "text-amber-900 dark:text-amber-100",
@@ -80,6 +85,8 @@ function toneClasses(tone: CardTone) {
     return {
       bar: "bg-indigo-700 dark:bg-indigo-300",
       border: "border-indigo-900/15 dark:border-indigo-300/18",
+      chip: "border-indigo-900/15 bg-indigo-100/70 text-indigo-900 dark:border-indigo-300/18 dark:bg-indigo-900/30 dark:text-indigo-100",
+      primaryButton: "bg-indigo-700 text-indigo-50 hover:bg-indigo-600 dark:bg-indigo-600 dark:text-white dark:hover:bg-indigo-500",
       surface:
         "bg-[linear-gradient(145deg,rgba(238,242,255,0.96),rgba(255,255,255,0.92))] dark:bg-[linear-gradient(145deg,rgba(79,70,229,0.18),rgba(10,10,10,0.72))]",
       value: "text-indigo-900 dark:text-indigo-100",
@@ -89,6 +96,8 @@ function toneClasses(tone: CardTone) {
   return {
     bar: "bg-stone-700 dark:bg-stone-300",
     border: "border-stone-900/10 dark:border-stone-300/14",
+    chip: "border-stone-300/80 bg-stone-100/90 text-stone-700 dark:border-stone-700 dark:bg-stone-800/80 dark:text-stone-200",
+    primaryButton: "bg-stone-900 text-stone-50 hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white",
     surface:
       "bg-[linear-gradient(145deg,rgba(250,250,249,0.96),rgba(255,255,255,0.92))] dark:bg-[linear-gradient(145deg,rgba(41,37,36,0.8),rgba(10,10,10,0.72))]",
     value: "text-stone-900 dark:text-stone-100",
@@ -246,6 +255,15 @@ export function HomeDashboardClient({
     block: snapshot.hifz?.nextBlock ?? null,
     ayahKey: snapshot.hifz?.nextAyahKey ?? null,
   });
+  const homeHero = buildHomeHero({
+    activeSurahId,
+    activeSurahName: activeSurah?.name ?? null,
+    continuePage,
+    formattedLastRead,
+    hifzReadHref,
+    snapshot,
+  });
+  const heroClasses = toneClasses(homeHero.tone);
 
   const modeCards: ModeCard[] = [
     {
@@ -457,40 +475,97 @@ export function HomeDashboardClient({
           </span>
         </div>
       </section>
-      {/* Beta Welcome Banner */}
-      <section className="animate-fade-in-up relative overflow-hidden rounded-[40px] border border-stone-200/60 bg-white/50 p-8 shadow-sm backdrop-blur-md dark:border-stone-800/60 dark:bg-stone-900/50 sm:p-12">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-          <div className="max-w-2xl">
-            <h1 className="text-4xl font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:text-5xl">
-              Selamat Datang ke Miftah Beta 🌙
+      <section
+        className={`animate-fade-in-up relative overflow-hidden rounded-[36px] border p-6 shadow-[0_30px_100px_-50px_rgba(28,25,23,0.52)] backdrop-blur-md sm:p-8 ${heroClasses.border} ${heroClasses.surface}`}
+      >
+        <div className="relative z-10 grid gap-6 xl:grid-cols-[1.18fr_0.82fr] xl:items-end">
+          <div className="max-w-3xl">
+            <span
+              className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium tracking-wide ${heroClasses.chip}`}
+            >
+              {homeHero.badge}
+            </span>
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-stone-900 dark:text-stone-50 sm:text-5xl">
+              {homeHero.title}
             </h1>
-            <p className="mt-5 text-lg leading-relaxed text-stone-600 dark:text-stone-400">
-              Hafal Al-Quran dengan kefahaman. Sebagai pengguna beta awal, 
-              setiap maklum balas anda (klik butang di penjuru bawah) amat kami hargai.
+            <p className="mt-4 max-w-2xl text-base leading-relaxed text-stone-600 sm:text-lg dark:text-stone-300">
+              {homeHero.description}
+            </p>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href={homeHero.primaryHref}
+                prefetch={shouldPrefetch(homeHero.primaryHref)}
+                onClick={() => {
+                  saveReadMode(homeHero.primaryMode);
+                }}
+                className={`inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold transition ${heroClasses.primaryButton}`}
+              >
+                {homeHero.primaryLabel}
+              </Link>
+              {homeHero.secondaryHref && homeHero.secondaryLabel ? (
+                <Link
+                  href={homeHero.secondaryHref}
+                  prefetch={shouldPrefetch(homeHero.secondaryHref)}
+                  onClick={() => {
+                    if (homeHero.secondaryMode) {
+                      saveReadMode(homeHero.secondaryMode);
+                    }
+                  }}
+                  className="inline-flex items-center justify-center rounded-2xl border border-stone-300/80 bg-white/75 px-6 py-3 text-sm font-medium text-stone-800 transition hover:bg-white dark:border-stone-600 dark:bg-stone-900/60 dark:text-stone-100 dark:hover:bg-stone-800"
+                >
+                  {homeHero.secondaryLabel}
+                </Link>
+              ) : null}
+            </div>
+
+            <p className="mt-4 text-xs text-stone-500 dark:text-stone-400">
+              {homeHero.isZeroState
+                ? "Mulakan dengan satu sesi ringkas. Selepas itu Miftah akan mula menyesuaikan cadangan harian berdasarkan progres anda."
+                : "Butang utama sentiasa cuba membawa anda ke tindakan seterusnya yang paling berguna, sementara mod lain kekal tersedia di bawah."}
             </p>
           </div>
-          <div className="flex shrink-0 gap-3">
-            <Link
-              href={`/read/${continuePage}`}
-              prefetch={false}
-              onClick={() => {
-                saveReadMode("read");
-              }}
-              className="flex items-center justify-center rounded-2xl bg-teal-900 px-8 py-4 text-sm font-semibold text-white transition hover:bg-teal-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
-            >
-              {readingState.lastPage ? `Sambung Hal. ${continuePage}` : "Mula Membaca"}
-            </Link>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {homeHero.stats.map((item) => (
+              <div
+                key={`${item.label}-${item.value}`}
+                className="rounded-[24px] border border-white/60 bg-white/72 p-4 shadow-[0_20px_60px_-45px_rgba(28,25,23,0.45)] backdrop-blur-sm dark:border-white/8 dark:bg-stone-950/42"
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
+                  {item.label}
+                </p>
+                <p className={`mt-2 text-base font-semibold ${heroClasses.value}`}>
+                  {item.value}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
-        {/* Subtle decoration */}
-        <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-teal-200/20 blur-3xl dark:bg-teal-900/10" />
+
+        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/20 blur-3xl dark:bg-white/5" />
       </section>
 
+      <section className="space-y-4">
+        <div className="flex flex-col gap-2 px-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500 dark:text-stone-400">
+              Mod lain
+            </p>
+            <h2 className="mt-1 text-2xl font-medium tracking-tight text-stone-900 dark:text-stone-50">
+              Semua laluan masih tersedia
+            </h2>
+          </div>
+          <p className="max-w-2xl text-sm text-stone-600 dark:text-stone-300">
+            Kad di bawah kekal sebagai navigasi sekunder untuk Baca, Faham, Tema, dan Hafal bila anda mahu tukar fokus sendiri.
+          </p>
+        </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {modeCards.map((card) => (
-          <ModeProgressCard key={card.title} card={card} />
-        ))}
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {modeCards.map((card) => (
+            <ModeProgressCard key={card.title} card={card} />
+          ))}
+        </div>
       </section>
     </div>
   );
