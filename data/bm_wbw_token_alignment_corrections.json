@@ -1,0 +1,10 @@
+[
+  {
+    "key": "22:17:3",
+    "token": "ءَامَنُواْ",
+    "before": "(mereka) mukmin",
+    "after": "beriman",
+    "rule": "amanu verb/noun cleanup",
+    "reason": "Token ini ialah fi'il `beriman`, bukan kata nama `mukmin`."
+  }
+]

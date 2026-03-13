@@ -1,0 +1,365 @@
+category,severity,key,token,current_bm,suggested_bm,english,note
+connotation_review,high,7:126:2,تَنقِمُ,kamu membalas dendam,review: engkau membalas / menuntut balas,you take revenge,`membalas dendam` is emotionally stronger than the likely Quranic intent here and should be reviewed in context.
+double_meaning_policy,high,17:46:5,أَن,mereka (tidak) dapat,bahawa,lest,Gunakan `bahawa` sebagai lalai. Bentuk infinitif/tujuan sahaja patut menggeser kepada `untuk/supaya/agar`.
+double_meaning_policy,medium,104:7:3,عَلَى,ke atas/sampai,atas,to,Sama seperti `عَلَىٰ`; kekalkan preposisi dasar.
+double_meaning_policy,medium,10:18:5,مَا,apa/sesuatu,apa,that (which),Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,10:53:7,إِنَّهُۥ,sesungguhnya ia (azab),sesungguhnya Dia,"Indeed, it","Pilih rujukan pronomina mengikut antecedent, tetapi kekalkan penegas `sesungguhnya`."
+double_meaning_policy,medium,10:66:4,مَن,orang/apa,siapa,whoever,Pilih `siapa` untuk fungsi soal/syarat; `orang/ orang yang` untuk fungsi relatif.
+double_meaning_policy,medium,10:66:7,وَمَن,dan orang/apa,dan barang siapa,and whoever,Defaultkan kepada bentuk syarat yang stabil bila konteks memberi maksud umum.
+double_meaning_policy,medium,10:67:11,فِي,di dalam/pada,dalam,in,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,10:72:10,عَلَى,atas/dari,atas,on,Sama seperti `عَلَىٰ`; kekalkan preposisi dasar.
+double_meaning_policy,medium,10:83:18,فِي,di(muka),dalam,in,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,11:12:8,بِهِۦ,dengannya/kerananya,dengannya,by it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,11:15:10,فِيهَا,di dalamnya/di dunia,di dalamnya,therein,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,11:16:12,فِيهَا,di dalamnya/di akhirat,di dalamnya,therein,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,11:31:26,فِيٓ,di dalam/pada,dalam,(is) in,Variasi hamzah/waqaf. Kekalkan gloss dasar `dalam` kecuali konteks memaksa bacaan topikal.
+double_meaning_policy,medium,11:78:21,فِي,pada/terhadap,dalam,concerning,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,11:87:11,أَن,agar/bahawa,bahawa,that,Gunakan `bahawa` sebagai lalai. Bentuk infinitif/tujuan sahaja patut menggeser kepada `untuk/supaya/agar`.
+double_meaning_policy,medium,11:87:13,فِيٓ,pada/tentang,dalam,concerning,Variasi hamzah/waqaf. Kekalkan gloss dasar `dalam` kecuali konteks memaksa bacaan topikal.
+double_meaning_policy,medium,12:102:7,وَمَا,dan/padahal tidak,dan apa,And not,Pisahkan antara sambungan `dan apa` dan bentuk nafi `dan tidak` mengikut binaan.
+double_meaning_policy,medium,12:13:6,بِهِۦ,dengannya (Yusuf),dengannya,you should take him,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,12:23:3,هُوَ,dia (Yusuf),Dia,he (was),Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,12:25:12,مَا,apa(kah),apa,What,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,12:31:30,إِلَّا,melainkan/hanyalah,kecuali,but,Kekalkan pengecualian sebagai sense utama.
+double_meaning_policy,medium,12:34:2,لَهُۥ,kepadanya (Yusuf),baginya,to him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,12:41:18,فِيهِ,di dalamnya/padanya,di dalamnya,about which,Defaultkan kepada lokasi `di dalamnya`; gunakan `padanya` atau `tentang itu` hanya dalam binaan yang jelas.
+double_meaning_policy,medium,12:50:13,مَا,apa/bagaimana,apa,what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,12:76:18,فِي,di dalam/menurut,dalam,by,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,12:82:5,فِيهَا,di dalamnya/disana,di dalamnya,[in it],Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,13:11:1,لَهُۥ,baginya(seseorang),baginya,For him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,13:11:16,مَا,apa/keadaan,apa,(the condition),Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,13:14:19,وَمَا,dan/padahal tidaklah,dan apa,but not,Pisahkan antara sambungan `dan apa` dan bentuk nafi `dan tidak` mengikut binaan.
+double_meaning_policy,medium,13:15:3,مَن,siap/apa,siapa,whoever,Pilih `siapa` untuk fungsi soal/syarat; `orang/ orang yang` untuk fungsi relatif.
+double_meaning_policy,medium,13:26:10,وَمَا,dan/padahal,dan apa,and nothing,Pisahkan antara sambungan `dan apa` dan bentuk nafi `dan tidak` mengikut binaan.
+double_meaning_policy,medium,14:18:20,هُوَ,dia/adalah,Dia,[it],Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,14:34:10,لَا,tidak (dapat),tidak,not,Bezakan nafi dan larangan dari binaan fi'il; `tidak` kekal default.
+double_meaning_policy,medium,14:39:6,عَلَى,atas/di,atas,in,Sama seperti `عَلَىٰ`; kekalkan preposisi dasar.
+double_meaning_policy,medium,14:42:12,فِيهِ,padanya/pada waktu itu,di dalamnya,in it,Defaultkan kepada lokasi `di dalamnya`; gunakan `padanya` atau `tentang itu` hanya dalam binaan yang jelas.
+double_meaning_policy,medium,14:45:2,فِي,di/dalam,dalam,in,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,15:19:4,فِيهَا,di dalamnya/padanya,di dalamnya,therein,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,15:20:5,وَمَن,dan orang (makhluk),dan barang siapa,and whom,Defaultkan kepada bentuk syarat yang stabil bila konteks memberi maksud umum.
+double_meaning_policy,medium,15:50:3,هُوَ,ia/adalah,Dia,it,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,15:94:2,بِمَا,dengan/segala apa,dengan apa,of what,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,16:99:1,إِنَّهُۥ,sesungguhnya ia (syaitan),sesungguhnya Dia,Indeed he,"Pilih rujukan pronomina mengikut antecedent, tetapi kekalkan penegas `sesungguhnya`."
+double_meaning_policy,medium,17:10:3,لَا,(mereka) tidak,tidak,(do) not,Bezakan nafi dan larangan dari binaan fi'il; `tidak` kekal default.
+double_meaning_policy,medium,17:110:8,مَّا,apa (nama),apa,By whatever (name),Sama seperti `مَا`; pilih gloss nafi hanya jika konteks sintaks memaksa.
+double_meaning_policy,medium,17:16:9,فِيهَا,di dalamnya (negeri itu),di dalamnya,therein,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,17:18:7,فِيهَا,padanya (di dunia),di dalamnya,in it,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,17:32:4,إِنَّهُۥ,sesungguhnya ia/zina,sesungguhnya Dia,"Indeed, it","Pilih rujukan pronomina mengikut antecedent, tetapi kekalkan penegas `sesungguhnya`."
+double_meaning_policy,medium,17:36:6,بِهِۦ,dengannya/tentangnya,dengannya,of it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,17:44:6,وَمَن,dan apa/siapa,dan barang siapa,and whatever,Defaultkan kepada bentuk syarat yang stabil bila konteks memberi maksud umum.
+double_meaning_policy,medium,17:52:8,إِلَّا,melainkan/hanya,kecuali,except,Kekalkan pengecualian sebagai sense utama.
+double_meaning_policy,medium,17:69:21,بِهِۦ,dengannya (hal ini),dengannya,therein,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,17:69:5,فِيهِ,di dalamnya (dalam laut),di dalamnya,into it,Defaultkan kepada lokasi `di dalamnya`; gunakan `padanya` atau `tentang itu` hanya dalam binaan yang jelas.
+double_meaning_policy,medium,17:77:2,مَن,orang (Rasul),siapa,(for) whom,Pilih `siapa` untuk fungsi soal/syarat; `orang/ orang yang` untuk fungsi relatif.
+double_meaning_policy,medium,17:82:5,هُوَ,dia/sesuatu,Dia,it,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,17:86:11,بِهِۦ,dengan/tentang itu,dengannya,concerning it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,18:104:4,فِي,dalam/demi,dalam,in,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,18:26:4,بِمَا,dengan apa/berapa lama,dengan apa,about what (period),Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,18:41:7,لَهُۥ,baginya(air),baginya,to find it,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,18:56:16,وَمَآ,dan apa(peringatan),dan apa,and what,Defaultkan kepada token-faithful gloss; jangan serap makna frasa jiran.
+double_meaning_policy,medium,18:63:5,إِلَى,di/atas,kepada,to,Defaultkan kepada `kepada`.
+double_meaning_policy,medium,18:91:4,بِمَا,dengan apa/segala apa,dengan apa,of what,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,19:21:5,هُوَ,ia/hal itu,Dia,'It,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,19:29:6,مَن,orang (anak),siapa,(to one) who,Pilih `siapa` untuk fungsi soal/syarat; `orang/ orang yang` untuk fungsi relatif.
+double_meaning_policy,medium,19:62:3,فِيهَا,di dalamnya (syurga),di dalamnya,therein,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,19:65:11,لَهُۥ,bagi-Nya/dengan-Nya,baginya,for Him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,20:115:10,لَهُۥ,baginya/padanya,baginya,in him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,20:18:2,هِيَ,ia/ini,ia,It,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,20:20:3,هِيَ,ia/tongkat,ia,It,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,20:40:27,فِيٓ,dalam/di antara,dalam,with,Variasi hamzah/waqaf. Kekalkan gloss dasar `dalam` kecuali konteks memaksa bacaan topikal.
+double_meaning_policy,medium,20:53:8,فِيهَا,di dalamnya (di bumi),di dalamnya,therein,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,20:99:6,مَا,apa/ummat,apa,(of) what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,21:18:8,هُوَ,dia (yang batil),Dia,it (is),Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,21:23:1,لَا,tidak/tidaklah,tidak,Not,Bezakan nafi dan larangan dari binaan fi'il; `tidak` kekal default.
+double_meaning_policy,medium,21:41:10,مَّا,apa (azab),apa,what,Sama seperti `مَا`; pilih gloss nafi hanya jika konteks sintaks memaksa.
+double_meaning_policy,medium,21:61:3,بِهِۦ,dengannya/dia,dengannya,him,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,21:71:3,إِلَى,ke/ke sebuah,kepada,to,Defaultkan kepada `kepada`.
+double_meaning_policy,medium,21:76:7,لَهُۥ,kepadanya (do'anya),baginya,to him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,21:91:5,فِيهَا,di dalamnya/ke dalamnya,di dalamnya,into her,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,21:94:11,لَهُۥ,baginya/untuknya,baginya,of it,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,22:12:12,هُوَ,ia/itu,Dia,[it],Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,22:12:8,وَمَا,dan apa/sesuatu,dan apa,and what,Pisahkan antara sambungan `dan apa` dan bentuk nafi `dan tidak` mengikut binaan.
+double_meaning_policy,medium,22:20:2,بِهِۦ,dengannya (air mendidih),dengannya,with it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,22:22:3,أَن,(bahawa),bahawa,to,Gunakan `bahawa` sebagai lalai. Bentuk infinitif/tujuan sahaja patut menggeser kepada `untuk/supaya/agar`.
+double_meaning_policy,medium,22:28:11,مَا,apa (rezeki),apa,what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,22:33:9,إِلَى,sampai (sekitar),kepada,(is) at,Defaultkan kepada `kepada`.
+double_meaning_policy,medium,22:58:3,فِي,dalam/di,dalam,in,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,22:71:13,بِهِۦ,dengannya/terhadapnya,dengannya,of it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,22:8:9,وَلَا,dan tidak/tanpa,dan tidak,and not,Gunakan bentuk larangan hanya apabila fi'il selepasnya jelas larangan.
+double_meaning_policy,medium,23:24:21,مَّا,tidak/belum,apa,Not,Sama seperti `مَا`; pilih gloss nafi hanya jika konteks sintaks memaksa.
+double_meaning_policy,medium,23:26:4,بِمَا,dengan apa/kerana,dengan apa,because,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,23:27:14,فِيهَا,di dalamnya (perahu ini),di dalamnya,into it,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,23:37:1,إِنۡ,jika/tidaklah,jika,Not,"Bezakan bentuk syarat dan nafi berdasarkan konteks, tetapi kekalkan gloss stabil apabila ragu."
+double_meaning_policy,medium,23:6:5,مَا,apa (hamba),apa,what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,23:71:8,وَمَن,dan orang/apa-apa,dan barang siapa,and whoever,Defaultkan kepada bentuk syarat yang stabil bila konteks memberi maksud umum.
+double_meaning_policy,medium,23:94:4,فِي,dalam/di antara,dalam,among,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,24:14:10,فِي,di dalam/kerana,dalam,in,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,24:14:13,فِيهِ,padanya/tentang itu,di dalamnya,concerning it,Defaultkan kepada lokasi `di dalamnya`; gunakan `padanya` atau `tentang itu` hanya dalam binaan yang jelas.
+double_meaning_policy,medium,24:37:17,فِيهِ,padanya/hari itu,di dalamnya,therein,Defaultkan kepada lokasi `di dalamnya`; gunakan `padanya` atau `tentang itu` hanya dalam binaan yang jelas.
+double_meaning_policy,medium,24:41:20,بِمَا,dengan/terhadap/apa,dengan apa,of what,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,24:61:45,مَا,apa (rumah),apa,what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,26:139:7,وَمَا,dan/tetapi tidak,dan apa,but not,Pisahkan antara sambungan `dan apa` dan bentuk nafi `dan tidak` mengikut binaan.
+double_meaning_policy,medium,26:146:3,مَا,apa (disini),apa,what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,26:23:3,وَمَا,apa/siapa,dan apa,And what,Pisahkan antara sambungan `dan apa` dan bentuk nafi `dan tidak` mengikut binaan.
+double_meaning_policy,medium,26:32:4,هِيَ,ia/tongkat itu,ia,It,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,26:33:4,هِيَ,ia/tangan itu,ia,It,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,26:45:5,هِيَ,ia (tongkat itu),ia,It,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,26:49:3,لَهُۥ,kepadanya/Musa,baginya,in him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,26:7:7,فِيهَا,di dalamnya/di atasnya,di dalamnya,in it,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,26:84:5,فِي,dalam/bagi,dalam,among,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,26:94:2,فِيهَا,ke dalamnya (dalam neraka),di dalamnya,into it,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,26:96:3,فِيهَا,di dalamnya (neraka),di dalamnya,in it,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,27:87:3,فِي,pada/dengan,dalam,[in],Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,27:87:9,وَمَن,dan orang/segala apa,dan barang siapa,and whoever,Defaultkan kepada bentuk syarat yang stabil bila konteks memberi maksud umum.
+double_meaning_policy,medium,27:88:17,بِمَا,dengan apa/tentang apa,dengan apa,of what,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,28:11:5,بِهِۦ,dengannya (Musa),dengannya,him,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,28:15:9,فِيهَا,di dalamnya (kota),di dalamnya,therein,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,28:24:5,إِلَى,kepada/ke,kepada,to,Defaultkan kepada `kepada`.
+double_meaning_policy,medium,28:25:4,عَلَى,atas/dengan,atas,with,Sama seperti `عَلَىٰ`; kekalkan preposisi dasar.
+double_meaning_policy,medium,28:37:12,لَهُۥ,baginya/mendapat,baginya,for him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,28:39:2,هُوَ,dia (Fir'aun),Dia,And he was arrogant,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,28:45:10,فِيٓ,dalam/bersama,dalam,among,Variasi hamzah/waqaf. Kekalkan gloss dasar `dalam` kecuali konteks memaksa bacaan topikal.
+double_meaning_policy,medium,28:47:2,أَن,bahawa/ketika,bahawa,[that],Gunakan `bahawa` sebagai lalai. Bentuk infinitif/tujuan sahaja patut menggeser kepada `untuk/supaya/agar`.
+double_meaning_policy,medium,28:4:16,إِنَّهُۥ,sesungguhnya dia/Fir'aun,sesungguhnya Dia,"Indeed, he","Pilih rujukan pronomina mengikut antecedent, tetapi kekalkan penegas `sesungguhnya`."
+double_meaning_policy,medium,28:60:1,وَمَآ,dan apa (saja),dan apa,And whatever,Defaultkan kepada token-faithful gloss; jangan serap makna frasa jiran.
+double_meaning_policy,medium,28:76:12,مَآ,apa (harta),apa,which,"Defaultkan kepada makna leksikal yang stabil, bukan perluasan frasa."
+double_meaning_policy,medium,29:10:28,بِمَا,dengan/terhadap,dengan apa,of what,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,29:14:10,إِلَّا,kecuali (kurang),kecuali,save,Kekalkan pengecualian sebagai sense utama.
+double_meaning_policy,medium,29:49:2,هُوَ,ia (Al-Qur'an),Dia,it,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,29:51:10,فِي,dalam/demikian,dalam,in,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,29:65:3,فِي,di dalam/di atas,dalam,[in],Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,2:130:6,إِلَّا,kecuali/hanyalah,kecuali,except,Kekalkan pengecualian sebagai sense utama.
+double_meaning_policy,medium,2:137:6,بِهِۦ,dengannya/kepadanya,dengannya,in [it],Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,2:143:19,إِلَّا,kecuali/melainkan,kecuali,except,Kekalkan pengecualian sebagai sense utama.
+double_meaning_policy,medium,2:144:16,مَا,apa/saja,apa,that,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,2:144:5,فِي,di/ke,dalam,towards,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,2:164:2,فِي,dalam/pada,dalam,in,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,2:171:10,إِلَّا,kecuali/selain,kecuali,except,Kekalkan pengecualian sebagai sense utama.
+double_meaning_policy,medium,2:171:7,بِمَا,dengan/kepada apa,dengan apa,at what,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,2:176:10,فِي,di dalam/tentang,dalam,in,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,2:189:5,هِيَ,ia (bulan sabit),ia,They,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,2:195:2,فِي,di/pada,dalam,in,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,2:195:8,إِلَى,kepada/ke dalam,kepada,into,Defaultkan kepada `kepada`.
+double_meaning_policy,medium,2:196:39,إِلَى,kepada (sebelum),kepada,followed,Defaultkan kepada `kepada`.
+double_meaning_policy,medium,2:222:5,هُوَ,ia (haid),Dia,It,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,2:233:13,لَهُۥ,baginya (ayah),baginya,(on) him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,2:237:15,أَن,bahawa/jika,bahawa,[that],Gunakan `bahawa` sebagai lalai. Bentuk infinitif/tujuan sahaja patut menggeser kepada `untuk/supaya/agar`.
+double_meaning_policy,medium,2:240:9,إِلَى,sampai/hingga,kepada,for,Defaultkan kepada `kepada`.
+double_meaning_policy,medium,2:241:5,عَلَى,atas/bagi,atas,upon,Sama seperti `عَلَىٰ`; kekalkan preposisi dasar.
+double_meaning_policy,medium,2:256:3,فِي,dalam/untuk,dalam,in,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,2:258:7,فِي,dalam/tentang,dalam,concerning,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,2:266:5,لَهُۥ,baginya/ mempunyai,baginya,for him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,2:271:18,بِمَا,dengan/tentang apa,dengan apa,with what,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,2:273:29,بِهِۦ,dengannya/padanya,dengannya,of it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,2:27:13,أَن,bahawa/untuk,bahawa,to,Gunakan `bahawa` sebagai lalai. Bentuk infinitif/tujuan sahaja patut menggeser kepada `untuk/supaya/agar`.
+double_meaning_policy,medium,2:281:4,فِيهِ,padanya (hari itu),di dalamnya,[in it],Defaultkan kepada lokasi `di dalamnya`; gunakan `padanya` atau `tentang itu` hanya dalam binaan yang jelas.
+double_meaning_policy,medium,2:284:22,مَن,siapa/orang,siapa,whom,Pilih `siapa` untuk fungsi soal/syarat; `orang/ orang yang` untuk fungsi relatif.
+double_meaning_policy,medium,2:31:7,عَلَى,atas/kepada,atas,to,Sama seperti `عَلَىٰ`; kekalkan preposisi dasar.
+double_meaning_policy,medium,2:61:26,هُوَ,ia (sesuatu),Dia,[it],Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,2:90:17,مَن,orang/siapa,siapa,whom,Pilih `siapa` untuk fungsi soal/syarat; `orang/ orang yang` untuk fungsi relatif.
+double_meaning_policy,medium,30:28:9,مَّا,apa (hamba sahaya),apa,what,Sama seperti `مَا`; pilih gloss nafi hanya jika konteks sintaks memaksa.
+double_meaning_policy,medium,30:56:8,فِي,dalam/menurut,dalam,by,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,32:3:5,هُوَ,ia/itu(Al Qur'an),Dia,it,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,34:12:13,مَن,orang/jin,siapa,who,Pilih `siapa` untuk fungsi soal/syarat; `orang/ orang yang` untuk fungsi relatif.
+double_meaning_policy,medium,34:13:2,لَهُۥ,untuknya (Sulaiman),baginya,for him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,34:17:3,بِمَا,dengan apa/dengan sebab,dengan apa,because,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,34:1:4,لَهُۥ,bagi-Nya-lah/memiliki,baginya,the One to Whom belongs,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,34:21:3,لَهُۥ,baginya (iblis),baginya,for him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,34:33:25,فِيٓ,di/pada,dalam,on,Variasi hamzah/waqaf. Kekalkan gloss dasar `dalam` kecuali konteks memaksa bacaan topikal.
+double_meaning_policy,medium,34:34:13,بِهِۦ,dengannya (menyampaikannya),dengannya,with,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,34:52:3,بِهِۦ,kepada-Nya (Allah),dengannya,in it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,35:5:11,وَلَا,dan tidak/janganlah,dan tidak,and (let) not,Gunakan bentuk larangan hanya apabila fi'il selepasnya jelas larangan.
+double_meaning_policy,medium,36:57:2,فِيهَا,di dalamnya (sorga),di dalamnya,therein,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,36:68:4,فِي,dalam/kepada,dalam,in,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,37:19:2,هِيَ,ia/kebangkitan,ia,it,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,37:95:3,مَا,apa (patung),apa,what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,37:97:3,لَهُۥ,untuknya (Ibrahim),baginya,for him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,38:23:4,لَهُۥ,baginya (mempunyai),baginya,he has,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,38:25:5,لَهُۥ,baginya (dia mempunyai),baginya,for him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,38:86:7,وَمَآ,dan tidaklah/bukanlah,dan apa,and not,Defaultkan kepada token-faithful gloss; jangan serap makna frasa jiran.
+double_meaning_policy,medium,39:11:4,أَنۡ,untuk/bahawa,bahawa,that,Jangan terlalu cepat tukar kepada gloss tujuan; kekalkan bentuk dasar kecuali konteks jelas.
+double_meaning_policy,medium,39:15:17,هُوَ,dia/hal itu,Dia,it,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,39:47:12,بِهِۦ,dengannya/itu,dengannya,with it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,39:49:17,هِيَ,ia/itu,ia,it,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,39:68:17,فِيهِ,padanya (sangkakala),di dalamnya,[in it],Defaultkan kepada lokasi `di dalamnya`; gunakan `padanya` atau `tentang itu` hanya dalam binaan yang jelas.
+double_meaning_policy,medium,39:68:5,مَن,siapa/apa-apa,siapa,whoever,Pilih `siapa` untuk fungsi soal/syarat; `orang/ orang yang` untuk fungsi relatif.
+double_meaning_policy,medium,39:68:8,وَمَن,dan siapa/apa-apa,dan barang siapa,and whoever,Defaultkan kepada bentuk syarat yang stabil bila konteks memberi maksud umum.
+double_meaning_policy,medium,3:109:2,مَا,apa/segala,apa,whatever,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,3:109:5,وَمَا,dan apa/segala,dan apa,and whatever,Pisahkan antara sambungan `dan apa` dan bentuk nafi `dan tidak` mengikut binaan.
+double_meaning_policy,medium,3:112:32,بِمَا,dengan apa/disebabkan,dengan apa,(is) because,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,3:117:2,مَا,apa (harta),apa,(of) what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,3:120:19,بِمَا,dengan/terhadap (segala apa),dengan apa,of what,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,3:144:3,إِلَّا,selain/hanyalah,kecuali,except,Kekalkan pengecualian sebagai sense utama.
+double_meaning_policy,medium,3:151:13,بِهِۦ,dengannya (tentang itu),dengannya,about it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,3:161:2,كَانَ,ada/mungkin,adalah,is,"Untuk WBW, `adalah` lebih stabil daripada variasi gaya bebas."
+double_meaning_policy,medium,3:180:10,هُوَ,ia (kekikiran),Dia,(that) it,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,3:180:14,هُوَ,ia(kekikiran),Dia,it,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,3:186:2,فِيٓ,dalam/terhadap,dalam,in,Variasi hamzah/waqaf. Kekalkan gloss dasar `dalam` kecuali konteks memaksa bacaan topikal.
+double_meaning_policy,medium,3:187:16,بِهِۦ,dengannya (janji),dengannya,[with] it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,3:187:20,مَا,apa/barang,apa,(is) what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,3:24:13,مَّا,apa apa (segala)?,apa,what,Sama seperti `مَا`; pilih gloss nafi hanya jika konteks sintaks memaksa.
+double_meaning_policy,medium,3:37:24,هُوَ,ia (makanan),Dia,This,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,3:52:9,إِلَى,kepada/untuk,kepada,to,Defaultkan kepada `kepada`.
+double_meaning_policy,medium,3:61:3,فِيهِ,tentang (kebenaran) itu,di dalamnya,concerning it,Defaultkan kepada lokasi `di dalamnya`; gunakan `padanya` atau `tentang itu` hanya dalam binaan yang jelas.
+double_meaning_policy,medium,3:75:28,فِي,dalam/terhadap,dalam,concerning,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,3:78:10,وَمَا,dan tidak/bukan,dan apa,and not,Pisahkan antara sambungan `dan apa` dan bentuk nafi `dan tidak` mengikut binaan.
+double_meaning_policy,medium,3:79:2,كَانَ,ada/mungkin terjadi,adalah,is,"Untuk WBW, `adalah` lebih stabil daripada variasi gaya bebas."
+double_meaning_policy,medium,3:7:20,مَا,apa (ayat-ayat),apa,what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,3:83:7,مَن,orang/segala apa,siapa,whatever,Pilih `siapa` untuk fungsi soal/syarat; `orang/ orang yang` untuk fungsi relatif.
+double_meaning_policy,medium,40:73:5,مَا,apa (berhala),apa,(is) that which,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,41:34:8,هِيَ,ia (cara),ia,[it],Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,41:44:12,هُوَ,ia/Al Qur'an,Dia,It (is),Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,42:13:27,مَا,apa (agama) yang,apa,what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,42:16:7,مَا,apa(agama),apa,[what],Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,43:48:6,هِيَ,ia/ayat,ia,it,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,44:50:3,مَا,apa (azab),apa,(is) what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,46:20:5,عَلَى,atas/pada,atas,to,Sama seperti `عَلَىٰ`; kekalkan preposisi dasar.
+double_meaning_policy,medium,46:24:11,هُوَ,itu(azab),Dia,it,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,46:5:8,مَن,orang/sesembahan,siapa,who,Pilih `siapa` untuk fungsi soal/syarat; `orang/ orang yang` untuk fungsi relatif.
+double_meaning_policy,medium,47:13:4,هِيَ,ia/negeri itu,ia,which,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,4:116:7,بِهِۦ,dengan-Nya/Dia,dengannya,with Him,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,4:11:3,فِيٓ,dalam/untuk,dalam,concerning,Variasi hamzah/waqaf. Kekalkan gloss dasar `dalam` kecuali konteks memaksa bacaan topikal.
+double_meaning_policy,medium,4:123:11,بِهِۦ,dengannya (kejahatan itu),dengannya,for it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,4:12:3,مَا,apa/harta,apa,(of) what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,4:147:1,مَّا,apa/mengapa,apa,What,Sama seperti `مَا`; pilih gloss nafi hanya jika konteks sintaks memaksa.
+double_meaning_policy,medium,4:157:20,فِيهِ,padanya (Isa),di dalamnya,in it,Defaultkan kepada lokasi `di dalamnya`; gunakan `padanya` atau `tentang itu` hanya dalam binaan yang jelas.
+double_meaning_policy,medium,4:157:26,بِهِۦ,dengannya (tentang yang dibunuh itu),dengannya,about it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,4:175:6,بِهِۦ,dengan/kepada-Nya,dengannya,to Him,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,4:17:3,عَلَى,atas/di sisi,atas,by,Sama seperti `عَلَىٰ`; kekalkan preposisi dasar.
+double_meaning_policy,medium,4:1:22,بِهِۦ,dengan/pada-Nya,dengannya,[with it],Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,4:22:9,مَا,apa/masa,apa,what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,4:24:24,بِهِۦ,dengannya (wanita itu),dengannya,of it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,4:2:13,إِنَّهُۥ,sesungguhnya ia/hal itu,sesungguhnya Dia,"Indeed, it","Pilih rujukan pronomina mengikut antecedent, tetapi kekalkan penegas `sesungguhnya`."
+double_meaning_policy,medium,4:37:7,مَآ,apa (kurnia),apa,what,"Defaultkan kepada makna leksikal yang stabil, bukan perluasan frasa."
+double_meaning_policy,medium,4:55:4,بِهِۦ,dengan-Nya (Allah),dengannya,in him,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,4:5:11,فِيهَا,darinya (hasil harta itu),di dalamnya,with it,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,4:61:6,مَآ,apa (hukum),apa,what,"Defaultkan kepada makna leksikal yang stabil, bukan perluasan frasa."
+double_meaning_policy,medium,4:66:20,مَا,apa/pelajaran,apa,what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,4:88:11,أَن,bahawa/akan,bahawa,that,Gunakan `bahawa` sebagai lalai. Bentuk infinitif/tujuan sahaja patut menggeser kepada `untuk/supaya/agar`.
+double_meaning_policy,medium,4:88:21,لَهُۥ,baginya/kepadanya,baginya,for him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,4:91:9,مَا,apa/kali,apa,that,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,53:54:2,مَا,apa(azab),apa,what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,54:4:5,مَا,yang/apa-apa,apa,wherein,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,55:29:2,مَن,orang/makhluk,siapa,whoever,Pilih `siapa` untuk fungsi soal/syarat; `orang/ orang yang` untuk fungsi relatif.
+double_meaning_policy,medium,56:8:3,مَآ,apa/siapa,apa,what,"Defaultkan kepada makna leksikal yang stabil, bukan perluasan frasa."
+double_meaning_policy,medium,57:20:11,فِي,pada/tentang,dalam,of,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,57:9:11,إِلَى,atas/kepada,kepada,into,Defaultkan kepada `kepada`.
+double_meaning_policy,medium,58:13:23,بِمَا,dengan/terhadap apa-apa,dengan apa,of what,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,59:17:4,فِي,pada/dalam,dalam,(will be) in,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,5:17:25,وَمَن,dan siapa/orang,dan barang siapa,and whoever,Defaultkan kepada bentuk syarat yang stabil bila konteks memberi maksud umum.
+double_meaning_policy,medium,5:24:7,مَّا,selama/selagi,apa,for,Sama seperti `مَا`; pilih gloss nafi hanya jika konteks sintaks memaksa.
+double_meaning_policy,medium,5:2:39,عَلَى,atas/dalam,atas,in,Sama seperti `عَلَىٰ`; kekalkan preposisi dasar.
+double_meaning_policy,medium,5:30:2,لَهُۥ,baginya (Qabil),baginya,to him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,5:38:6,بِمَا,dengan/bagi apa,dengan apa,for what,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,5:3:22,وَمَا,dan apa (binatang),dan apa,and what,Pisahkan antara sambungan `dan apa` dan bentuk nafi `dan tidak` mengikut binaan.
+double_meaning_policy,medium,5:3:24,عَلَى,atas/untuk,atas,on,Sama seperti `عَلَىٰ`; kekalkan preposisi dasar.
+double_meaning_policy,medium,5:3:7,وَمَآ,dan apa (binatang),dan apa,and what,Defaultkan kepada token-faithful gloss; jangan serap makna frasa jiran.
+double_meaning_policy,medium,5:40:5,لَهُۥ,bagi-Nya (mempunyai),baginya,to Him (belongs),Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,5:45:19,بِهِۦ,dengannya (qisas),dengannya,with it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,5:49:11,أَن,bahawa/supaya,bahawa,lest,Gunakan `bahawa` sebagai lalai. Bentuk infinitif/tujuan sahaja patut menggeser kepada `untuk/supaya/agar`.
+double_meaning_policy,medium,5:64:9,بِمَا,dengan/disebabkan apa,dengan apa,for what,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,61:7:5,عَلَى,atas/terhadap Allah,atas,upon,Sama seperti `عَلَىٰ`; kekalkan preposisi dasar.
+double_meaning_policy,medium,63:9:4,لَا,tidak/jangan,tidak,(Let) not,Bezakan nafi dan larangan dari binaan fi'il; `tidak` kekal default.
+double_meaning_policy,medium,65:2:18,بِهِۦ,dengannya/dengan itu,dengannya,with it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,66:3:10,بِهِۦ,dengannya/pembicaraan,dengannya,about it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,66:3:21,بِهِۦ,dengannya/hal itu,dengannya,about it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,67:16:10,هِيَ,ia/bumi,ia,it,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,69:40:1,إِنَّهُۥ,sesungguhnya ia (Al Qur'an),sesungguhnya Dia,"Indeed, it (is)","Pilih rujukan pronomina mengikut antecedent, tetapi kekalkan penegas `sesungguhnya`."
+double_meaning_policy,medium,69:41:2,هُوَ,ia (Al Qur'an),Dia,it,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,69:7:10,فِيهَا,padanya/pada waktu itu,di dalamnya,therein,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,6:100:7,لَهُۥ,bagi-Nya (Allah),baginya,to Him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,6:107:10,وَمَآ,dan tidak/bukan,dan apa,and not,Defaultkan kepada token-faithful gloss; jangan serap makna frasa jiran.
+double_meaning_policy,medium,6:122:10,فِي,di (tengah-tengah),dalam,among,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,6:122:9,بِهِۦ,dengannya (cahaya itu),dengannya,whereby,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,6:123:14,وَمَا,dan/sedang tidak,dan apa,and not,Pisahkan antara sambungan `dan apa` dan bentuk nafi `dan tidak` mengikut binaan.
+double_meaning_policy,medium,6:128:29,مَا,apa (jika),apa,(for) what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,6:133:11,مَّا,apa/siapa,apa,(to) whom,Sama seperti `مَا`; pilih gloss nafi hanya jika konteks sintaks memaksa.
+double_meaning_policy,medium,6:13:4,فِي,pada/di,dalam,in,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,6:141:28,إِنَّهُۥ,sesungguhnya Dia/Allah,sesungguhnya Dia,"Indeed, He","Pilih rujukan pronomina mengikut antecedent, tetapi kekalkan penegas `sesungguhnya`."
+double_meaning_policy,medium,6:142:13,إِنَّهُۥ,sesungguhnya ia/syaitan,sesungguhnya Dia,"Indeed, he","Pilih rujukan pronomina mengikut antecedent, tetapi kekalkan penegas `sesungguhnya`."
+double_meaning_policy,medium,6:14:21,وَلَا,dan tidak/jangan,dan tidak,and not,Gunakan bentuk larangan hanya apabila fi'il selepasnya jelas larangan.
+double_meaning_policy,medium,6:151:10,بِهِۦ,dengan-Nya/Tuhan,dengannya,with Him,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,6:158:31,فِيٓ,dalam/pada,dalam,through,Variasi hamzah/waqaf. Kekalkan gloss dasar `dalam` kecuali konteks memaksa bacaan topikal.
+double_meaning_policy,medium,6:26:10,وَمَا,dan/sedangkan tidak,dan apa,and not,Pisahkan antara sambungan `dan apa` dan bentuk nafi `dan tidak` mengikut binaan.
+double_meaning_policy,medium,6:27:5,عَلَى,atas/ke,atas,by,Sama seperti `عَلَىٰ`; kekalkan preposisi dasar.
+double_meaning_policy,medium,6:29:3,هِيَ,ia/kehidupan,ia,it (is),Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,6:31:17,فِيهَا,padanya(kiamat),di dalamnya,concerning it,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,6:35:2,كَانَ,ada/menjadi,adalah,is,"Untuk WBW, `adalah` lebih stabil daripada variasi gaya bebas."
+double_meaning_policy,medium,6:41:5,مَا,apa(bahaya),apa,what,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,6:58:7,بِهِۦ,dengannya (kedatangannya),dengannya,of it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,6:59:17,إِلَّا,melainkan/kecuali,kecuali,but,Kekalkan pengecualian sebagai sense utama.
+double_meaning_policy,medium,6:60:11,فِيهِ,padanya(siang hari),di dalamnya,therein,Defaultkan kepada lokasi `di dalamnya`; gunakan `padanya` atau `tentang itu` hanya dalam binaan yang jelas.
+double_meaning_policy,medium,6:71:34,هُوَ,itulah/Dialah,Dia,it,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,6:7:12,إِنۡ,jika/tidak lain,jika,Not,"Bezakan bentuk syarat dan nafi berdasarkan konteks, tetapi kekalkan gloss stabil apabila ragu."
+double_meaning_policy,medium,6:81:13,بِهِۦ,dengannya/tentang itu,dengannya,for it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,6:88:14,مَّا,apa (amalan),apa,what,Sama seperti `مَا`; pilih gloss nafi hanya jika konteks sintaks memaksa.
+double_meaning_policy,medium,6:99:8,بِهِۦ,dengannya (air itu),dengannya,with it,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,73:6:4,هِيَ,ia/adalah,ia,it,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,74:15:3,أَنۡ,bahawa/supaya,bahawa,that,Jangan terlalu cepat tukar kepada gloss tujuan; kekalkan bentuk dasar kecuali konteks jelas.
+double_meaning_policy,medium,76:18:2,فِيهَا,di dalamnya (di dalam sorga),di dalamnya,therein,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,77:43:4,بِمَا,dengan apa/kerana apa,dengan apa,for what,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,78:15:2,بِهِۦ,dengannya/dengan air,dengannya,thereby,Defaultkan kepada `dengannya`; jangan serap keseluruhan klausa ke dalam token ini.
+double_meaning_policy,medium,78:3:3,فِيهِ,di dalamnya/tentang itu,di dalamnya,(are) concerning it,Defaultkan kepada lokasi `di dalamnya`; gunakan `padanya` atau `tentang itu` hanya dalam binaan yang jelas.
+double_meaning_policy,medium,79:13:2,هِيَ,ia/pengembalian,ia,it,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,79:39:3,هِيَ,ia/neraka,ia,it,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,7:107:4,هِيَ,ia (tongkat),ia,it,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,7:145:2,لَهُۥ,untuknya (Musa),baginya,for him,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,7:158:10,لَهُۥ,bagi-Nya/mempunyai,baginya,for Whom,Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,7:25:2,فِيهَا,di dalamnya (bumi),di dalamnya,In it,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,7:32:13,هِيَ,ia/semuanya,ia,They,Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,7:53:3,إِلَّا,kecuali/hanya,kecuali,except,Kekalkan pengecualian sebagai sense utama.
+double_meaning_policy,medium,7:71:10,فِيٓ,dalam/tentang,dalam,concerning,Variasi hamzah/waqaf. Kekalkan gloss dasar `dalam` kecuali konteks memaksa bacaan topikal.
+double_meaning_policy,medium,7:80:7,مَا,tidak/belum pernah,apa,not,Defaultkan kepada `apa`. Tukar hanya bila sintaks jelas menunjukkan partikel nafi atau kata hubung relatif.
+double_meaning_policy,medium,81:22:1,وَمَا,dan tidak/bukanlah,dan apa,And not,Pisahkan antara sambungan `dan apa` dan bentuk nafi `dan tidak` mengikut binaan.
+double_meaning_policy,medium,8:35:11,بِمَا,dengan apa/sebab,dengan apa,because,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,8:35:2,كَانَ,ada/lain,adalah,was,"Untuk WBW, `adalah` lebih stabil daripada variasi gaya bebas."
+double_meaning_policy,medium,8:38:8,مَّا,apa/dosa-dosa,apa,what,Sama seperti `مَا`; pilih gloss nafi hanya jika konteks sintaks memaksa.
+double_meaning_policy,medium,8:39:14,بِمَا,dengan /terhadap apa,dengan apa,of what,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,97:4:4,فِيهَا,padanya/pada malam,di dalamnya,therein,Kekalkan gloss lokatif sebagai default.
+double_meaning_policy,medium,97:5:2,هِيَ,ia/malam itu,ia,it (is),Pronomina feminin; jangan tambah frasa penjelas kecuali perlu.
+double_meaning_policy,medium,9:108:7,عَلَى,atas (dasar),atas,on,Sama seperti `عَلَىٰ`; kekalkan preposisi dasar.
+double_meaning_policy,medium,9:10:3,فِي,di/terhadap,dalam,towards,Gunakan `dalam` sebagai default. Tukar kepada `pada` atau `tentang` hanya jika binaan jelas menuntut bacaan tempat atau topik.
+double_meaning_policy,medium,9:116:3,لَهُۥ,bagi/kepunyaan-Nya,baginya,to Him (belongs),Pilih `baginya` sebagai default; guna `kepadanya` hanya jika struktur menuntut arah/penerima.
+double_meaning_policy,medium,9:118:10,بِمَا,dengan apa/padahal,dengan apa,though,Pilih makna instrumental `dengan apa` sebagai default; sebab/kausal hanya bila konteks jelas.
+double_meaning_policy,medium,9:129:8,إِلَّا,selain/kecuali,kecuali,except,Kekalkan pengecualian sebagai sense utama.
+double_meaning_policy,medium,9:17:2,كَانَ,ada/patut,adalah,(It) is not,"Untuk WBW, `adalah` lebih stabil daripada variasi gaya bebas."
+double_meaning_policy,medium,9:61:6,هُوَ,ia (Nabi),Dia,He is,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,9:72:22,هُوَ,ia/itulah,Dia,it,Pilih `Dia` bila rujukan kepada Allah jelas; selain itu `dia/ia` mengikut antecedent.
+double_meaning_policy,medium,9:92:11,مَآ,apa/sesuatu,apa,what,"Defaultkan kepada makna leksikal yang stabil, bukan perluasan frasa."
+interpretive_connector,medium,10:13:8,وَجَآءَتۡهُمۡ,dan/padahal telah datang kepada mereka,review against token-faithful gloss,and came to them,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,10:51:8,وَقَدۡ,dan sungguh/padahal,review against token-faithful gloss,And certainly,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,10:91:2,وَقَدۡ,dan/padahal sesungguhnya,review against token-faithful gloss,And verily,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,11:72:4,وَأَنَا۠,dan/padahal aku,review against token-faithful gloss,while I am,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,12:102:7,وَمَا,dan/padahal tidak,review against token-faithful gloss,And not,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,12:8:9,وَنَحۡنُ,dan /padahal kita,review against token-faithful gloss,while we,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,13:14:19,وَمَا,dan/padahal tidaklah,review against token-faithful gloss,but not,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,13:26:10,وَمَا,dan/padahal,review against token-faithful gloss,and nothing,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,13:30:15,وَهُمۡ,dan/padahal mereka,review against token-faithful gloss,while they,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,13:6:5,وَقَدۡ,dan/padahal sungguh,review against token-faithful gloss,and verily,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,14:12:7,وَقَدۡ,dan/padahal sesungguhnya,review against token-faithful gloss,while certainly,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,20:125:6,وَقَدۡ,dan/padahal sesungguhnya,review against token-faithful gloss,while [verily],"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,22:2:16,وَمَا,dan/padahal,review against token-faithful gloss,while not,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,27:84:7,وَلَمۡ,dan/padahal kamu tidak,review against token-faithful gloss,while not,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,27:88:5,وَهِيَ,dan/padahal dia,review against token-faithful gloss,while they,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,2:204:15,وَهُوَ,dan/padahal ia,review against token-faithful gloss,and he,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,2:214:6,وَلَمَّا,padahal belum,review against token-faithful gloss,while not,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,2:216:11,وَهُوَ,dan/padahal ia,review against token-faithful gloss,and it,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,2:267:19,وَلَسۡتُم,padahal kamu tidak,review against token-faithful gloss,while you (would) not,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,33:13:20,هِيَ,padahal ia,review against token-faithful gloss,they,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,36:78:10,وَهِيَ,padahal ia,review against token-faithful gloss,while they,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,37:96:1,وَٱللَّهُ,dan/padahal Allah,review against token-faithful gloss,While Allah,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,3:165:4,قَدۡ,sungguh/padahal,review against token-faithful gloss,surely,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,40:42:11,وَأَنَا۠,dan/padahal aku,review against token-faithful gloss,and I,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,4:19:30,وَيَجۡعَلَ,dan/padahal menjadikan,review against token-faithful gloss,and has placed,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,5:41:14,وَلَمۡ,dan/padahal belum,review against token-faithful gloss,and not,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,6:100:5,وَخَلَقَهُمۡۖ,dan/padahal Dia menciptakan mereka,review against token-faithful gloss,though He has created them,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,6:119:10,وَقَدۡ,dan/padahal sungguh,review against token-faithful gloss,when indeed,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,6:164:6,وَهُوَ,dan/padahal Dia,review against token-faithful gloss,while He,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,6:66:4,وَهُوَ,dan/padahal ia/azab,review against token-faithful gloss,while it,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,6:93:12,وَلَمۡ,dan/padahal tidak,review against token-faithful gloss,while not,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,8:34:6,وَهُمۡ,dan/padahal mereka,review against token-faithful gloss,while they,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,9:118:10,بِمَا,dengan apa/padahal,review against token-faithful gloss,though,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,9:13:14,فَٱللَّهُ,maka/padahal Allah,review against token-faithful gloss,But Allah,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,9:74:5,وَلَقَدۡ,dan/padahal sesungguhnya,review against token-faithful gloss,while certainly,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."
+interpretive_connector,medium,9:93:6,وَهُمۡ,dan/padahal mereka,review against token-faithful gloss,while they,"`padahal` is readable BM prose, but it is often too interpretive for WBW and may import discourse meaning from the wider phrase."

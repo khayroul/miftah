@@ -148,6 +148,21 @@ def main():
         for word in words:
             desired_word_id_by_text[word["text_uthmani"]] = existing_word_id_by_text[word["text_uthmani"]]
 
+        desired_word_rows = []
+        for word in words:
+            desired_word_rows.append(
+                (
+                    word["text_uthmani"],
+                    word["text_simple"],
+                    word.get("translation_bm"),
+                    word.get("translation_en"),
+                    word.get("transliteration") or None,
+                    word.get("root") or None,
+                    word.get("pos") or None,
+                    int(word.get("frequency") or 0),
+                )
+            )
+
         # Map ayat IDs once so occurrence inserts are direct and fast.
         cur.execute("SELECT id, surah_id, ayah_number FROM ayat")
         ayah_id_by_key = {f"{surah}:{ayah}": ayah_id for ayah_id, surah, ayah in cur.fetchall()}
@@ -173,6 +188,56 @@ def main():
             f"replace_occurrences={len(occurrence_rows)}",
             flush=True,
         )
+
+        cur.execute(
+            """
+            CREATE TEMP TABLE desired_word_updates (
+              text_uthmani TEXT PRIMARY KEY,
+              text_simple TEXT,
+              translation_bm TEXT,
+              translation_en TEXT,
+              transliteration TEXT,
+              root TEXT,
+              pos TEXT,
+              frequency INTEGER
+            ) ON COMMIT DROP
+            """
+        )
+        execute_values(
+            cur,
+            """
+            INSERT INTO desired_word_updates
+              (text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, pos, frequency)
+            VALUES %s
+            """,
+            desired_word_rows,
+            page_size=1000,
+        )
+        cur.execute(
+            """
+            UPDATE words
+            SET
+              text_simple = desired.text_simple,
+              translation_bm = desired.translation_bm,
+              translation_en = desired.translation_en,
+              transliteration = desired.transliteration,
+              root = desired.root,
+              pos = desired.pos,
+              frequency = desired.frequency
+            FROM desired_word_updates desired
+            WHERE words.text_uthmani = desired.text_uthmani
+              AND (
+                words.text_simple IS DISTINCT FROM desired.text_simple
+                OR words.translation_bm IS DISTINCT FROM desired.translation_bm
+                OR words.translation_en IS DISTINCT FROM desired.translation_en
+                OR words.transliteration IS DISTINCT FROM desired.transliteration
+                OR words.root IS DISTINCT FROM desired.root
+                OR words.pos IS DISTINCT FROM desired.pos
+                OR words.frequency IS DISTINCT FROM desired.frequency
+              )
+            """
+        )
+        updated_words = cur.rowcount
 
         cur.execute("TRUNCATE word_occurrences")
         execute_values(
@@ -211,7 +276,7 @@ def main():
         cur.execute("SELECT COUNT(*), COUNT(DISTINCT ayah_id) FROM word_occurrences")
         total_occ, covered_ayat = cur.fetchone()
         print(
-            f"Sync complete: total_words={total_words}, occurrences={total_occ}, "
+            f"Sync complete: total_words={total_words}, updated_words={updated_words}, occurrences={total_occ}, "
             f"ayat_covered={covered_ayat}"
         , flush=True)
     except Exception:

@@ -1,0 +1,722 @@
+[
+  {
+    "key": "49:1:6",
+    "token": "بَيۡنَ",
+    "before": "before Allah",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "35:2:15",
+    "token": "مِنۢ",
+    "before": "thereafter",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "10:3:21",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "3:4:17",
+    "token": "ذُو",
+    "before": "All-Able",
+    "after": "Owner (of)",
+    "rule": "dhu lexical correction",
+    "reason": "`ذُو` means `owner/possessor of`, not `All-Able`."
+  },
+  {
+    "key": "40:5:6",
+    "token": "مِنۢ",
+    "before": "after them",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "22:5:52",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "24:5:4",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "11:7:21",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "15:7:4",
+    "token": "إِن",
+    "before": "the Angels",
+    "after": "if",
+    "rule": "in conditional particle",
+    "reason": "`إِن` is the conditional particle `if`; `the angels` is a different token."
+  },
+  {
+    "key": "66:8:31",
+    "token": "بَيۡنَ",
+    "before": "before",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "12:9:11",
+    "token": "مِنۢ",
+    "before": "after that",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "14:9:12",
+    "token": "مِنۢ",
+    "before": "(were) after them",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "34:9:5",
+    "token": "بَيۡنَ",
+    "before": "(is) before them",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "57:10:27",
+    "token": "مِنۢ",
+    "before": "afterwards",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "34:12:15",
+    "token": "بَيۡنَ",
+    "before": "before him",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "57:12:7",
+    "token": "بَيۡنَ",
+    "before": "before them",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "58:12:8",
+    "token": "بَيۡنَ",
+    "before": "before",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "42:14:4",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "42:14:25",
+    "token": "مِنۢ",
+    "before": "after them",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "58:13:4",
+    "token": "بَيۡنَ",
+    "before": "before",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "10:14:6",
+    "token": "مِنۢ",
+    "before": "after them",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "14:14:3",
+    "token": "مِنۢ",
+    "before": "after them",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "42:16:5",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "17:17:5",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "45:17:8",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "29:17:20",
+    "token": "عِندَ",
+    "before": "from",
+    "after": "with",
+    "rule": "inda contextual overreach",
+    "reason": "`عِندَ` means `with/near/in the presence of`, not `from`."
+  },
+  {
+    "key": "42:21:11",
+    "token": "بِهِ",
+    "before": "Allah has given permission of it",
+    "after": "for it",
+    "rule": "bihi clause compression",
+    "reason": "The current gloss is an entire clause, not a token gloss."
+  },
+  {
+    "key": "45:23:20",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "48:24:10",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "41:25:7",
+    "token": "بَيۡنَ",
+    "before": "(was) before them",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "9:27:4",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "53:26:11",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "21:28:3",
+    "token": "بَيۡنَ",
+    "before": "(is) before them",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "31:27:10",
+    "token": "مِنۢ",
+    "before": "after it",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "42:28:5",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "36:28:5",
+    "token": "مِنۢ",
+    "before": "after him",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "46:30:7",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "46:30:12",
+    "token": "بَيۡنَ",
+    "before": "(was) before it",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "23:31:3",
+    "token": "مِنۢ",
+    "before": "after them",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "34:31:10",
+    "token": "بَيۡنَ",
+    "before": "(was) before it",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "35:31:10",
+    "token": "بَيۡنَ",
+    "before": "before it",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "40:31:8",
+    "token": "مِنۢ",
+    "before": "after them",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "47:32:10",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "24:33:44",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "40:34:21",
+    "token": "مِنۢ",
+    "before": "after him",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "10:37:13",
+    "token": "بَيۡنَ",
+    "before": "(was) before it",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "16:41:5",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "23:42:3",
+    "token": "مِنۢ",
+    "before": "after them",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "28:43:5",
+    "token": "مِنۢ",
+    "before": "after [what]",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "34:46:21",
+    "token": "بَيۡنَ",
+    "before": "before",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "36:45:6",
+    "token": "بَيۡنَ",
+    "before": "(is) before you",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "5:48:7",
+    "token": "بَيۡنَ",
+    "before": "(was) before",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "12:48:3",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "25:48:6",
+    "token": "بَيۡنَ",
+    "before": "before",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "12:49:3",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "41:50:5",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "30:51:7",
+    "token": "مِنۢ",
+    "before": "after it",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "33:52:5",
+    "token": "مِنۢ",
+    "before": "after (this)",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "30:54:8",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "30:54:14",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "33:53:61",
+    "token": "مِنۢ",
+    "before": "after him",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "5:60:8",
+    "token": "عِندَ",
+    "before": "from",
+    "after": "with",
+    "rule": "inda contextual overreach",
+    "reason": "`عِندَ` means `with/near/in the presence of`, not `from`."
+  },
+  {
+    "key": "19:59:2",
+    "token": "مِنۢ",
+    "before": "after them",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "29:63:11",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "19:64:8",
+    "token": "بَيۡنَ",
+    "before": "(is) before us",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "27:63:11",
+    "token": "بَيۡنَ",
+    "before": "before",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "10:74:3",
+    "token": "مِنۢ",
+    "before": "after him",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "10:75:3",
+    "token": "مِنۢ",
+    "before": "after them",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "22:76:3",
+    "token": "بَيۡنَ",
+    "before": "(is) before them",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "19:78:5",
+    "token": "عِندَ",
+    "before": "from",
+    "after": "with",
+    "rule": "inda contextual overreach",
+    "reason": "`عِندَ` means `with/near/in the presence of`, not `from`."
+  },
+  {
+    "key": "2:80:10",
+    "token": "عِندَ",
+    "before": "from",
+    "after": "with",
+    "rule": "inda contextual overreach",
+    "reason": "`عِندَ` means `with/near/in the presence of`, not `from`."
+  },
+  {
+    "key": "11:83:2",
+    "token": "عِندَ",
+    "before": "from",
+    "after": "with",
+    "rule": "inda contextual overreach",
+    "reason": "`عِندَ` means `with/near/in the presence of`, not `from`."
+  },
+  {
+    "key": "19:87:7",
+    "token": "عِندَ",
+    "before": "from",
+    "after": "with",
+    "rule": "inda contextual overreach",
+    "reason": "`عِندَ` means `with/near/in the presence of`, not `from`."
+  },
+  {
+    "key": "20:85:6",
+    "token": "مِنۢ",
+    "before": "after you",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "6:92:7",
+    "token": "بَيۡنَ",
+    "before": "(came) before",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "16:92:6",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "12:100:30",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "17:104:2",
+    "token": "مِنۢ",
+    "before": "after him",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "21:105:5",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "16:106:4",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "16:110:6",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "16:110:15",
+    "token": "مِنۢ",
+    "before": "after it",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "20:110:3",
+    "token": "بَيۡنَ",
+    "before": "(is) before them",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "9:113:13",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "12:111:15",
+    "token": "بَيۡنَ",
+    "before": "(was) before it",
+    "after": "between",
+    "rule": "bayna-yaday phrase compression",
+    "reason": "`بَيۡنَ` means `between/among`; `before` is the idiomatic phrase meaning."
+  },
+  {
+    "key": "9:117:13",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "16:119:10",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "16:119:16",
+    "token": "مِنۢ",
+    "before": "after that",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  },
+  {
+    "key": "6:124:23",
+    "token": "عِندَ",
+    "before": "from",
+    "after": "with",
+    "rule": "inda contextual overreach",
+    "reason": "`عِندَ` means `with/near/in the presence of`, not `from`."
+  },
+  {
+    "key": "26:227:10",
+    "token": "مِنۢ",
+    "before": "after",
+    "after": "from",
+    "rule": "min-baad phrase compression",
+    "reason": "`مِنۢ` should keep its own prepositional sense; `after` belongs to `بَعۡدِ`."
+  }
+]
