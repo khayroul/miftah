@@ -4,9 +4,11 @@ import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import { ModeNavigator } from "@/components/ModeNavigator";
 import { ThemeChunkProgressTracker } from "@/components/ThemeChunkProgressTracker";
 import { ThemeChunkSelect } from "@/components/ThemeChunkSelect";
+import { ThemeJumpControls } from "@/components/ThemeJumpControls";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthStatusButton } from "@/components/AuthStatusButton";
 import {
+  getSurahs,
   getWordByWordForAyahIds,
   getSurah,
   getThemeAppearanceChunksBySurah,
@@ -75,6 +77,24 @@ export default async function SurahThemeAppearancePage({
   } catch {
     loadError =
       "Data tema belum dapat dimuat sekarang. Sila semak sambungan Supabase dan cuba semula.";
+  }
+  let surahOptions: Array<{ surah: number; nameBm: string; nameEn: string }> =
+    [];
+  try {
+    const allSurahs = await getSurahs();
+    surahOptions = allSurahs.map((item) => ({
+      surah: item.id,
+      nameBm: item.name_bm,
+      nameEn: item.name_en,
+    }));
+  } catch {
+    surahOptions = [
+      {
+        surah: surahMeta.id,
+        nameBm: surahMeta.name_bm,
+        nameEn: surahMeta.name_en,
+      },
+    ];
   }
 
   const rawChunkParam = Array.isArray(query.chunk)
@@ -170,6 +190,15 @@ export default async function SurahThemeAppearancePage({
         <section className="rounded-2xl border border-amber-100 bg-amber-50 p-6 text-center text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-400">
           Tema untuk surah ini belum tersedia lagi.
         </section>
+      ) : null}
+
+      {!loadError ? (
+        <ThemeJumpControls
+          currentSurahNumber={surahNumber}
+          currentChunkIndex={selectedChunkIndex}
+          currentChunkCount={chunks.length}
+          surahOptions={surahOptions}
+        />
       ) : null}
 
       {!loadError && chunks.length > 0 ? (

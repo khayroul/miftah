@@ -39,7 +39,7 @@ function modeHref(params: {
     return `/read/surah/${params.themeSurahId}/themes`;
   }
   if (params.mode === "hifz") {
-    return `/read/${params.readPage}`;
+    return "/hifz";
   }
   return "/faham";
 }

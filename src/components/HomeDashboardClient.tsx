@@ -320,7 +320,7 @@ export function HomeDashboardClient({
         ? [
             {
               label: "Manzil",
-              value: `${snapshot.hifz.totalManzil} ayat`,
+              value: `~${Math.ceil(snapshot.hifz.totalManzil / 15)} halaman`,
             },
             {
               label: "Ulangan Hari Ini",
@@ -328,7 +328,7 @@ export function HomeDashboardClient({
             },
           ]
         : [
-            { label: "Manzil", value: "0 ayat" },
+            { label: "Manzil", value: "0 halaman" },
             { label: "Ulangan Hari Ini", value: "0" },
           ],
       percent: snapshot.hifz?.manzilCoveragePct ?? 0,
@@ -337,8 +337,8 @@ export function HomeDashboardClient({
       href: "/hifz",
       buttonLabel: "Buka Hafal Plan",
       detail: snapshot.hifz?.nextAyahLabel
-        ? `Ayat seterusnya: ${snapshot.hifz.nextAyahLabel}`
-        : "Belum ada ayat seterusnya untuk hari ini.",
+        ? `Rujukan seterusnya: ${snapshot.hifz.nextAyahLabel}`
+        : "Belum ada rujukan seterusnya untuk hari ini.",
       onClick: () => saveReadMode("hifz"),
       secondaryHref: hifzReadHref,
       secondaryLabel: "Teruskan di Mushaf",
@@ -351,7 +351,7 @@ export function HomeDashboardClient({
       ? "perkataan"
       : snapshot.activity?.dailyGoalType === "read_pages"
         ? "halaman"
-        : "ayat";
+        : "halaman";
 
   const goalProgressPct = clampPercent(
     snapshot.activity

@@ -8,6 +8,9 @@ import {
 import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import { ReadJumpControls } from "@/components/ReadJumpControls";
 import { ReadModeTools } from "@/components/ReadModeTools";
+import { HifzTasmiOverlay } from "@/components/HifzTasmiOverlay";
+import { HifzInlineRating } from "@/components/HifzInlineRating";
+import { HifzMemorizeStepper } from "@/components/HifzMemorizeStepper";
 import { useReadAudio } from "@/components/ReadAudioProvider";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
 import { rememberLastReadPage } from "@/lib/readingProgressStorage";
@@ -15,6 +18,7 @@ import { useReadMode } from "@/lib/useReadMode";
 import { useRouter } from "next/navigation";
 import type { JuzJumpTarget, SurahJumpTarget } from "@/lib/readNavigation";
 import type { ReadMode } from "@/lib/readMode";
+import type { HifzFlowType } from "@/lib/hifz/sessionQueue";
 import type { MushafPageManifest, MushafWordTranslationMap } from "@/types/mushaf";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -37,6 +41,8 @@ interface ReadPageWorkspaceProps {
   mushafHeader?: ReactNode;
   initialReadMode?: ReadMode | null;
   forceHifzRevealByThirds?: boolean;
+  hifzFirstWordCueEnabled?: boolean;
+  hifzFlow?: HifzFlowType | null;
 }
 
 const HIFZ_REVEAL_BY_THIRDS_STORAGE_KEY = "miftah:read:hifz-reveal-by-thirds";
@@ -59,6 +65,8 @@ export function ReadPageWorkspace({
   mushafHeader,
   initialReadMode = null,
   forceHifzRevealByThirds = false,
+  hifzFirstWordCueEnabled = false,
+  hifzFlow = null,
 }: ReadPageWorkspaceProps) {
   const router = useRouter();
   const {
@@ -79,6 +87,16 @@ export function ReadPageWorkspace({
     return window.localStorage.getItem("miftah:audio:discovered") === "1";
   });
   const [showJumpControls, setShowJumpControls] = useState(false);
+  const [tasmiRevealedLines, setTasmiRevealedLines] = useState(0);
+  const totalLineCount = manifest?.words
+    ? Math.max(new Set(manifest.words.map((w) => Math.round(w.y))).size, 1)
+    : 15;
+  const tasmiAllRevealed = hifzFlow === "review" && tasmiRevealedLines >= totalLineCount;
+  const showTasmiOverlay = hifzFlow === "review" && !tasmiAllRevealed;
+  const handleTasmiTap = useCallback(() => {
+    setTasmiRevealedLines((prev) => Math.min(prev + 1, totalLineCount));
+  }, [totalLineCount]);
+  const [memorizeHideMushaf, setMemorizeHideMushaf] = useState(false);
 
   const markAudioDiscovered = useCallback(() => {
     if (!audioDiscovered) {
@@ -120,10 +138,7 @@ export function ReadPageWorkspace({
     if (appliedInitialModeRef.current) {
       return;
     }
-    if (!initialReadMode) {
-      return;
-    }
-    setMode(initialReadMode);
+    setMode(initialReadMode ?? "read");
     appliedInitialModeRef.current = true;
   }, [initialReadMode, setMode]);
 
@@ -180,18 +195,20 @@ export function ReadPageWorkspace({
         }}
       />
 
-      <ReadModeTools
-        themeSurahId={themeSurahId}
-        hifzRevealByThirdsEnabled={hifzRevealByThirdsEnabled}
-        onHifzRevealByThirdsChange={setHifzRevealByThirdsEnabled}
-        showJumpControls={showJumpControls}
-        onToggleJumpControls={() =>
-          setShowJumpControls((current) => !current)
-        }
-        audioEnabled={audioEnabledForMode}
-        isAudioVisible={isAudioVisible}
-        onToggleAudio={handleToggleAudio}
-      />
+      {!hifzFlow && (
+        <ReadModeTools
+          themeSurahId={themeSurahId}
+          hifzRevealByThirdsEnabled={hifzRevealByThirdsEnabled}
+          onHifzRevealByThirdsChange={setHifzRevealByThirdsEnabled}
+          showJumpControls={showJumpControls}
+          onToggleJumpControls={() =>
+            setShowJumpControls((current) => !current)
+          }
+          audioEnabled={audioEnabledForMode}
+          isAudioVisible={isAudioVisible}
+          onToggleAudio={handleToggleAudio}
+        />
+      )}
 
       <div
         className={`overflow-hidden transition-[max-height,opacity,transform] duration-300 ${
@@ -292,25 +309,57 @@ export function ReadPageWorkspace({
         </div>
       </div>
 
-      <MushafPageView
-        key={pageNumber}
-        pageNumber={pageNumber}
-        imageAvailable={imageAvailable}
-        thumbnailAvailable={thumbnailAvailable}
-        manifest={manifest}
-        wordTranslations={wordTranslations}
-        ayahDetails={ayahDetails}
-        memorizedAyahKeys={memorizedAyahKeys}
-        hifzRevealByThirdsEnabled={hifzRevealByThirdsEnabled}
-        onNavigatePrevPage={handleNavigatePrevPage}
-        onNavigateNextPage={handleNavigateNextPage}
-        onCanvasTap={handleMushafTap}
-        audioDiscovered={audioDiscovered}
-        onAudioDiscovered={markAudioDiscovered}
-        activePlaybackAyahKey={activePlaybackAyahKey}
-        isAudioDockVisible={isAudioVisible}
-        onPlayableAyahKeysChange={setPlayableAyahKeys}
-      />
+      <div className="relative">
+        {showTasmiOverlay && (
+          <HifzTasmiOverlay
+            totalLines={totalLineCount}
+            revealedLines={tasmiRevealedLines}
+            onTap={handleTasmiTap}
+          />
+        )}
+        {memorizeHideMushaf && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center rounded-2xl bg-stone-900/80 backdrop-blur-md">
+            <p className="text-center text-lg font-semibold text-white/90">
+              Cuba baca tanpa melihat
+            </p>
+          </div>
+        )}
+        <MushafPageView
+          key={pageNumber}
+          pageNumber={pageNumber}
+          imageAvailable={imageAvailable}
+          thumbnailAvailable={thumbnailAvailable}
+          manifest={manifest}
+          wordTranslations={wordTranslations}
+          ayahDetails={ayahDetails}
+          memorizedAyahKeys={memorizedAyahKeys}
+          hifzRevealByThirdsEnabled={!hifzFlow && hifzRevealByThirdsEnabled}
+          onNavigatePrevPage={handleNavigatePrevPage}
+          onNavigateNextPage={handleNavigateNextPage}
+          onCanvasTap={handleMushafTap}
+          audioDiscovered={audioDiscovered}
+          onAudioDiscovered={markAudioDiscovered}
+          activePlaybackAyahKey={activePlaybackAyahKey}
+          isAudioDockVisible={isAudioVisible}
+          onPlayableAyahKeysChange={setPlayableAyahKeys}
+          hifzFirstWordCueEnabled={!hifzFlow && hifzFirstWordCueEnabled}
+        />
+      </div>
+
+      {hifzFlow === "review" && (
+        <HifzInlineRating
+          flowType={hifzFlow}
+          pageNumber={pageNumber}
+          visible={tasmiAllRevealed}
+        />
+      )}
+
+      {hifzFlow === "memorize" && (
+        <HifzMemorizeStepper
+          pageNumber={pageNumber}
+          onMushafHide={setMemorizeHideMushaf}
+        />
+      )}
     </>
   );
 }

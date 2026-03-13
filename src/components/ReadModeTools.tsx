@@ -30,18 +30,28 @@ export function ReadModeTools({
   const { mode, setMode } = useReadMode();
 
   const handleModeChange = (nextMode: ReadMode, e: React.MouseEvent) => {
-    e.preventDefault();
+    if (nextMode === "read") {
+      e.preventDefault();
+      setMode(nextMode);
+      return;
+    }
+
     if (nextMode === "faham") {
+      e.preventDefault();
       router.push("/faham");
       return;
     }
 
     if (nextMode === "tema") {
+      e.preventDefault();
       router.push(`/read/surah/${themeSurahId}/themes`);
       return;
     }
 
-    setMode(nextMode);
+    if (nextMode === "hifz") {
+      e.preventDefault();
+      router.push("/hifz");
+    }
   };
 
   return (

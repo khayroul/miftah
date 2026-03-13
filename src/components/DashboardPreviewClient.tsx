@@ -239,13 +239,13 @@ export function DashboardPreviewClient({
       ctaLabel: "Masuk papan hafal",
       helper:
         hifzSnapshot && hifzTodayTotal > 0
-          ? `${hifzTodayTotal} ayat aktif hari ini merentas Sabak, Sabqi, dan Manzil. ${hifzDueTodayCount} daripadanya sudah due sekarang.`
+          ? `~${Math.ceil(hifzTodayTotal / 15)} halaman aktif hari ini merentas Sabak, Sabqi, dan Manzil. ${hifzDueTodayCount} item daripadanya sudah due sekarang.`
           : "Hafal patut kekal sebagai workspace tersendiri dengan fokus Sabak, Sabqi, dan Manzil.",
       href: "/hifz",
       inside: ["Sabak", "Sabqi", "Manzil"],
       metricLabel:
         hifzSnapshot && hifzSnapshot.totalManzil > 0
-          ? `${hifzSnapshot.totalManzil} ayat sudah stabil di Manzil`
+          ? `~${Math.ceil(hifzSnapshot.totalManzil / 15)} halaman sudah stabil di Manzil`
           : "Belum ada data hafalan stabil",
       metricValue: `${hifzCoveragePct}%`,
       percent: hifzCoveragePct,
@@ -380,7 +380,7 @@ export function DashboardPreviewClient({
                   </p>
                   <p className="mt-1 text-lg font-medium text-stone-900 dark:text-stone-100">
                     {hifzTodayTotal > 0
-                      ? `${hifzTodayTotal} ayat dalam sesi hari ini`
+                      ? `~${Math.ceil(hifzTodayTotal / 15)} halaman dalam sesi hari ini`
                       : "Buka sesi Sabak, Sabqi, Manzil"}
                   </p>
                   <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">

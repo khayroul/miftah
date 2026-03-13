@@ -39,14 +39,14 @@ export function JuzHeatmap({ juzProgress }: JuzHeatmapProps) {
           />
         </div>
         <p className="mt-1 text-[10px] text-stone-500 dark:text-stone-400">
-          {Math.round(overallPct)}% manzil ({totalManzil} / {TOTAL_QURAN_AYAT} ayat)
+          {Math.round(overallPct)}% liputan manzil
         </p>
       </div>
       <div className="grid grid-cols-6 gap-1.5">
         {juzProgress.map((stat) => (
           <div
             key={stat.juz}
-            title={`Juz ${stat.juz}: ${stat.manzilCount} / ${stat.totalAyat} ayat hafal (${stat.manzilPct}%)`}
+            title={`Juz ${stat.juz}: ${stat.manzilPct}% liputan manzil`}
             className={`flex flex-col items-center justify-center rounded-lg p-1.5 transition-opacity hover:opacity-80 ${juzColor(stat)}`}
           >
             <span className="text-[10px] font-bold leading-none">{stat.juz}</span>

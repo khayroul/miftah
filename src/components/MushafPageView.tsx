@@ -48,6 +48,7 @@ interface MushafPageViewProps {
   activePlaybackAyahKey?: string | null;
   isAudioDockVisible?: boolean;
   onPlayableAyahKeysChange?: (ayahKeys: string[] | null) => void;
+  hifzFirstWordCueEnabled?: boolean;
 }
 
 interface AyahBoundingBox {
@@ -151,6 +152,19 @@ function getAyahKeyFromWord(word: MushafWordHitbox): string | null {
       ? `${surah}:${ayah}`
       : word.location.split(":").slice(0, 2).join(":");
   return explicitAyahKey.includes(":") ? explicitAyahKey : null;
+}
+
+function isFirstWordOfAyah(word: MushafWordHitbox): boolean {
+  if (typeof word.wordPosition === "number") {
+    return word.wordPosition === 1;
+  }
+
+  const locationParts = word.location.split(":");
+  const maybeWordPosition = Number.parseInt(
+    locationParts[locationParts.length - 1] ?? "",
+    10,
+  );
+  return Number.isInteger(maybeWordPosition) && maybeWordPosition === 1;
 }
 
 function revealStageLabel(stage: HifzRevealStage): string {
@@ -271,6 +285,7 @@ export function MushafPageView({
   activePlaybackAyahKey = null,
   isAudioDockVisible = false,
   onPlayableAyahKeysChange,
+  hifzFirstWordCueEnabled = false,
 }: MushafPageViewProps) {
   const [selectedWord, setSelectedWord] = useState<MushafWordHitbox | null>(
     null,
@@ -457,6 +472,7 @@ export function MushafPageView({
     hifzRevealContext.visibleBoundaryY < imageHeight;
   const hifzRevealSessionActive = mode === "hifz" && hifzRevealContext !== null;
   const revealVisibleBoundaryY = hifzRevealContext?.visibleBoundaryY ?? imageHeight;
+  const firstWordCueActive = mode === "hifz" && hifzFirstWordCueEnabled;
   const activeWord =
     canInteract &&
     selectedWord !== null &&
@@ -555,6 +571,49 @@ export function MushafPageView({
       });
   }, [
     activePlaybackAyahKey,
+    imageHeight,
+    imageWidth,
+    revealVisibleBoundaryY,
+    words,
+  ]);
+  const firstWordCueMasks = useMemo(() => {
+    if (!firstWordCueActive) {
+      return [] as AyahBoundingBox[];
+    }
+
+    const paddingX = Math.max(2, imageWidth * 0.0012);
+    const paddingY = Math.max(2, imageHeight * 0.0012);
+    return words
+      .filter((word) => !isFirstWordOfAyah(word))
+      .map((word) =>
+        expandHitbox(
+          {
+            x: word.x,
+            y: word.y,
+            width: word.width,
+            height: word.height,
+          },
+          paddingX,
+          paddingY,
+          imageWidth,
+          imageHeight,
+        ),
+      )
+      .flatMap((box) => {
+        if (box.y >= revealVisibleBoundaryY) {
+          return [];
+        }
+        const clippedHeight = Math.min(
+          box.height,
+          revealVisibleBoundaryY - box.y,
+        );
+        if (clippedHeight <= 1) {
+          return [];
+        }
+        return [{ ...box, height: clippedHeight }];
+      });
+  }, [
+    firstWordCueActive,
     imageHeight,
     imageWidth,
     revealVisibleBoundaryY,
@@ -1059,6 +1118,18 @@ export function MushafPageView({
                 }}
               />
             ))}
+            {firstWordCueMasks.map((box, index) => (
+              <div
+                key={`first-word-cue-mask-${index}`}
+                className="pointer-events-none absolute rounded-sm bg-[#fffdfa] dark:bg-[#0d1b2a]"
+                style={{
+                  left: percent(box.x, imageWidth),
+                  top: percent(box.y, imageHeight),
+                  width: percent(box.width, imageWidth),
+                  height: percent(box.height, imageHeight),
+                }}
+              />
+            ))}
             {canInteract ? (
               <>
                 {wordHitboxButtons}
@@ -1135,7 +1206,10 @@ export function MushafPageView({
         </p>
       ) : mode === "hifz" ? (
         <p className="text-[15px] text-teal-700 sm:text-base dark:text-teal-300">
-          Gunakan butang Hafal untuk membuka 1/3 → 2/3 → penuh. <strong>Tekan ayat untuk dengar murattal.</strong>
+          {firstWordCueActive
+            ? "Mod Uji Hafazan aktif: hanya kata pertama setiap ayat dipaparkan."
+            : "Gunakan butang Hafal untuk membuka 1/3 → 2/3 → penuh. "}
+          <strong>Tekan ayat untuk dengar murattal.</strong>
         </p>
       ) : words.length === 0 ? (
         <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">

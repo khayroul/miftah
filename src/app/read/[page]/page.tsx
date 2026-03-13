@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { MushafAyahDetail } from "@/components/MushafPageView";
 import { ReadPageWorkspace } from "@/components/ReadPageWorkspace";
+import { LightweightBreadcrumb } from "@/components/LightweightBreadcrumb";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthStatusButton } from "@/components/AuthStatusButton";
 import { getProgressByAyahIds } from "@/lib/hifz/study-progress";
@@ -21,6 +22,10 @@ interface ReadPageProps {
   searchParams: Promise<{
     mode?: string;
     from?: string;
+    cue?: string;
+    intent?: string;
+    flow?: string;
+    qi?: string;
   }>;
 }
 
@@ -99,6 +104,31 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
   const initialReadMode = query.mode === "hifz" ? "hifz" : null;
   const forceHifzRevealByThirds =
     query.mode === "hifz" && (query.from === "dashboard" || query.from === "hifz");
+  const hifzFirstWordCueEnabled =
+    query.mode === "hifz" && query.cue === "first-word";
+  const hifzIntent =
+    query.from === "hifz" || query.from === "dashboard"
+      ? query.intent === "new"
+        ? "new"
+        : query.intent === "test"
+          ? "test"
+          : null
+      : null;
+  const hifzFlow =
+    query.flow === "memorize" ? "memorize" as const
+    : query.flow === "review" ? "review" as const
+    : null;
+  const fromHifzFlow = hifzFlow !== null || query.from === "dashboard" || query.from === "hifz";
+  const breadcrumbItems = fromHifzFlow
+    ? [
+        { href: "/", label: "Utama" },
+        { href: "/hifz", label: "Hafal" },
+        { label: `Mushaf p.${pageNumber}` },
+      ]
+    : [
+        { href: "/", label: "Utama" },
+        { label: `Baca p.${pageNumber}` },
+      ];
   
   const surahMeta = await getSurah(surahForThemeView);
 
@@ -115,6 +145,43 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
         pageNumber={pageNumber}
         mushafHeader={
           <div className="flex flex-col items-center justify-center gap-2 text-center mt-2">
+            <LightweightBreadcrumb items={breadcrumbItems} />
+            {hifzFlow === "memorize" ? (
+              <div className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold tracking-wide text-amber-900 dark:border-amber-700/50 dark:bg-amber-900/30 dark:text-amber-100">
+                Hafal Baru
+              </div>
+            ) : hifzFlow === "review" ? (
+              <div className="inline-flex items-center rounded-full border border-teal-300 bg-teal-50 px-3 py-1 text-xs font-semibold tracking-wide text-teal-900 dark:border-teal-700/50 dark:bg-teal-900/30 dark:text-teal-100">
+                Uji Hafalan
+              </div>
+            ) : hifzIntent === "new" ? (
+              <div className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold tracking-wide text-amber-900 dark:border-amber-700/50 dark:bg-amber-900/30 dark:text-amber-100">
+                BARU · SABAK · Mushaf terbuka
+              </div>
+            ) : hifzIntent === "test" ? (
+              <div className="inline-flex items-center rounded-full border border-indigo-300 bg-indigo-50 px-3 py-1 text-xs font-semibold tracking-wide text-indigo-900 dark:border-indigo-700/50 dark:bg-indigo-900/30 dark:text-indigo-100">
+                UJI HAFALAN · Tasmi&apos; + petunjuk kata pertama
+              </div>
+            ) : null}
+            {!hifzFlow && hifzIntent === "new" ? (
+              <div className="w-full max-w-2xl rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-left text-sm text-amber-900 dark:border-amber-700/45 dark:bg-amber-900/20 dark:text-amber-100">
+                <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
+                  Aliran Baru
+                </p>
+                <p className="mt-1">
+                  Lihat mushaf penuh, dengar bacaan, ulang beberapa kali, kemudian semak tanpa melihat.
+                </p>
+              </div>
+            ) : !hifzFlow && hifzIntent === "test" ? (
+              <div className="w-full max-w-2xl rounded-2xl border border-indigo-200 bg-indigo-50/90 px-4 py-3 text-left text-sm text-indigo-900 dark:border-indigo-700/45 dark:bg-indigo-900/20 dark:text-indigo-100">
+                <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
+                  Aliran Uji Hafalan
+                </p>
+                <p className="mt-1">
+                  Mulakan tanpa melihat, guna kata pembuka bila perlu, dan buka reveal 1/3 hanya jika tersangkut.
+                </p>
+              </div>
+            ) : null}
             <h1 className="flex flex-wrap items-center justify-center gap-3 text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:text-3xl">
               Surah {surahMeta?.name_en ?? "Al-Fatihah"}
               {surahMeta?.name_arabic && (
@@ -141,8 +208,10 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
         ayahDetails={ayahDetails}
         memorizedAyahKeys={memorizedAyahKeys}
         readingAyahIds={ayatOnPage.map((ayah) => ayah.id)}
-        initialReadMode={initialReadMode}
-        forceHifzRevealByThirds={forceHifzRevealByThirds}
+        initialReadMode={hifzFlow ? "hifz" : initialReadMode}
+        forceHifzRevealByThirds={!hifzFlow && forceHifzRevealByThirds}
+        hifzFirstWordCueEnabled={!hifzFlow && hifzFirstWordCueEnabled}
+        hifzFlow={hifzFlow}
       />
     </main>
   );
