@@ -43,17 +43,19 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             </div>
 
             <h1 className="mt-6 text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-50">
-              Akaun anda, progres anda.
+              Masuk ke akaun anda.
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-stone-600 dark:text-stone-300">
-              Sign in atau buat akaun baru. Faham, Hafal, Tema, dan dashboard
-              akan diikat pada akaun anda. Baca masih boleh digunakan tanpa sign
-              in, tetapi progresnya hanya tersimpan pada browser semasa.
+              Masuk atau cipta akaun untuk simpan progres Faham, Hafal, Tema,
+              dan dashboard anda. Baca masih boleh digunakan tanpa akaun,
+              tetapi progresnya hanya tersimpan pada browser semasa.
             </p>
 
             {params.error ? (
               <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
-                Pautan sign in tidak sah atau sudah tamat tempoh. Minta pautan baru.
+                Pautan masuk itu tidak sah atau sudah tamat tempoh. Minta pautan
+                baru di bawah, atau guna password jika anda sudah pernah
+                menetapkannya.
               </p>
             ) : null}
 
@@ -71,6 +73,10 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
               <p>`Faham`: queue WBW, review log, dan exposure.</p>
               <p>`Tema`: chunk yang sudah dibuka dan progres penerokaan.</p>
               <p>`Hafal`: Sabak, Sabqi, Manzil, dan FSRS ayat.</p>
+              <p>
+                Belum mahu masuk? Anda masih boleh lihat rupa pengalaman Miftah
+                melalui `Pratonton`.
+              </p>
             </div>
           </aside>
         </section>

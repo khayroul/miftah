@@ -153,6 +153,7 @@ export function HifzOverview({
   const hasReview = reviewCount > 0;
   const showStartFresh = !isGuest && canStartFresh && !effectiveHasProgress;
   const canOpenMemorizeFlow = hasNew || showStartFresh;
+  const importedQueue = importSummary?.queue;
 
   return (
     <div className="flex flex-col gap-8">
@@ -221,10 +222,10 @@ export function HifzOverview({
           </p>
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-            {importSummary.queue?.pageOrder.length ? (
+            {importedQueue && importedQueue.pageOrder.length > 0 ? (
               <button
                 type="button"
-                onClick={() => openQueue("memorize", importSummary.queue)}
+                onClick={() => openQueue("memorize", importedQueue)}
                 className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
               >
                 Teruskan Hafal di Halaman {importSummary.nextPage}

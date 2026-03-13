@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { buildSignInPath, sanitizeNextPath } from "@/lib/auth";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
 
-export default function MagicLinkPage() {
+function MagicLinkPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [message, setMessage] = useState("Sedang log masuk dengan magic link...");
@@ -89,5 +89,24 @@ export default function MagicLinkPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function MagicLinkPage() {
+  return (
+    <Suspense fallback={
+      <main className="relative mx-auto flex min-h-screen w-full max-w-xl items-center justify-center px-4 py-12">
+        <div className="w-full rounded-3xl border border-stone-200/80 bg-white/85 p-8 text-center shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/80">
+          <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
+            Magic Link
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-stone-600 dark:text-stone-300">
+            Sedang menyediakan pautan masuk anda...
+          </p>
+        </div>
+      </main>
+    }>
+      <MagicLinkPageContent />
+    </Suspense>
   );
 }

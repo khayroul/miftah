@@ -1,3 +1,11 @@
+export interface AuthErrorLike {
+  code?: string;
+  message?: string;
+  status?: number;
+}
+
+export const MAGIC_LINK_DEFAULT_COOLDOWN_SECONDS = 60;
+
 export function sanitizeNextPath(
   value: string | null | undefined,
   fallback = "/",
@@ -15,4 +23,59 @@ export function buildSignInPath(nextPath: string): string {
 
 export function buildMagicLinkPath(nextPath: string): string {
   return `/auth/magic?next=${encodeURIComponent(nextPath)}`;
+}
+
+export function getMagicLinkCooldownSeconds(
+  error: AuthErrorLike | null,
+): number | null {
+  if (!error) {
+    return null;
+  }
+
+  const isRateLimited =
+    error.code === "over_email_send_rate_limit" ||
+    error.status === 429 ||
+    error.message?.toLowerCase().includes("rate limit") === true;
+
+  if (!isRateLimited) {
+    return null;
+  }
+
+  const parsedSeconds = parseCooldownSeconds(error.message);
+  return parsedSeconds ?? MAGIC_LINK_DEFAULT_COOLDOWN_SECONDS;
+}
+
+export function formatCooldownDuration(seconds: number): string {
+  const normalizedSeconds = Math.max(0, Math.ceil(seconds));
+  const minutes = Math.floor(normalizedSeconds / 60);
+  const remainingSeconds = normalizedSeconds % 60;
+
+  if (minutes === 0) {
+    return `${remainingSeconds}s`;
+  }
+
+  if (remainingSeconds === 0) {
+    return `${minutes} min`;
+  }
+
+  return `${minutes} min ${remainingSeconds}s`;
+}
+
+function parseCooldownSeconds(message: string | undefined): number | null {
+  if (!message) {
+    return null;
+  }
+
+  const normalizedMessage = message.toLowerCase();
+  const minuteMatch = normalizedMessage.match(/(\d+)\s*(minute|minutes|minit|min)/);
+  if (minuteMatch) {
+    return Number(minuteMatch[1]) * 60;
+  }
+
+  const secondMatch = normalizedMessage.match(/(\d+)\s*(second|seconds|sec|secs|saat|s)/);
+  if (secondMatch) {
+    return Number(secondMatch[1]);
+  }
+
+  return null;
 }
