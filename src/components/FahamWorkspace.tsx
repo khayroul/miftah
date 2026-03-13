@@ -2,57 +2,33 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import type { FahamSourceType } from "@/types/database";
 import type { FahamQueueSnapshot, SerializedFahamCard } from "@/lib/faham/queue";
 import type { FahamLevelProgress } from "@/lib/faham/levels";
 import type { FahamMcqDirectionMode } from "@/lib/faham/mcq";
-
-type SourcePreset = "mixed" | "reading" | "theme" | "hifz";
+import {
+  FAHAM_PRESET_CONFIGS,
+  type FahamSourcePreset,
+} from "@/lib/faham/presets";
 
 interface FahamWorkspaceProps {
   initialQueue: FahamQueueSnapshot;
+  initialPreset?: FahamSourcePreset;
+  entryContext?: FahamWorkspaceEntryContext | null;
   setupMessage?: string | null;
+}
+
+interface FahamWorkspaceEntryContext {
+  badge: string;
+  description: string;
+  href: string;
+  hrefLabel: string;
+  title: string;
 }
 
 interface AnswerState {
   isCorrect: boolean;
   selectedIndex: number;
 }
-
-const PRESET_CONFIGS: Record<
-  SourcePreset,
-  {
-    helper: string;
-    label: string;
-    preferredSources: FahamSourceType[];
-    shortLabel: string;
-  }
-> = {
-  hifz: {
-    helper: "Susun kad baru supaya yang paling rapat dengan ayat hafalan aktif datang dahulu.",
-    label: "Hafal dahulu",
-    preferredSources: ["hifz_ayah", "reading_page", "theme_chunk"],
-    shortLabel: "Hafal",
-  },
-  mixed: {
-    helper: "Campur semua feeder supaya deck kekal seimbang antara baca, tema, dan hafal.",
-    label: "Campuran seimbang",
-    preferredSources: ["reading_page", "theme_chunk", "hifz_ayah"],
-    shortLabel: "Campur",
-  },
-  reading: {
-    helper: "Tolak ke depan perkataan yang baru anda jumpa ketika membaca halaman.",
-    label: "Baca dahulu",
-    preferredSources: ["reading_page", "theme_chunk", "hifz_ayah"],
-    shortLabel: "Baca",
-  },
-  theme: {
-    helper: "Utamakan perkataan yang kuat berulang dalam tema yang sedang diteroka.",
-    label: "Tema dahulu",
-    preferredSources: ["theme_chunk", "reading_page", "hifz_ayah"],
-    shortLabel: "Tema",
-  },
-};
 
 const DIRECTION_CONFIGS: Record<
   FahamMcqDirectionMode,
@@ -100,14 +76,14 @@ function masteredLabel(count: number): string {
 }
 
 async function requestQueue(
-  preset: SourcePreset,
+  preset: FahamSourcePreset,
   directionMode: FahamMcqDirectionMode,
   isRevision: boolean = false,
 ): Promise<FahamQueueSnapshot> {
   const response = await fetch("/api/faham/queue", {
     body: JSON.stringify({
       directionMode,
-      preferredSources: PRESET_CONFIGS[preset].preferredSources,
+      preferredSources: FAHAM_PRESET_CONFIGS[preset].preferredSources,
       isRevision,
     }),
     headers: {
@@ -162,10 +138,12 @@ interface FahamStats {
 
 export function FahamWorkspace({
   initialQueue,
+  initialPreset = "mixed",
+  entryContext = null,
   setupMessage = null,
 }: FahamWorkspaceProps) {
   const [isConfigExpanded, setIsConfigExpanded] = useState(false);
-  const [preset, setPreset] = useState<SourcePreset>("mixed");
+  const [preset, setPreset] = useState<FahamSourcePreset>(initialPreset);
   const [directionMode, setDirectionMode] = useState<FahamMcqDirectionMode>("arab_to_bm");
   const [isRevision, setIsRevision] = useState(false);
   const [snapshot, setSnapshot] = useState<FahamQueueSnapshot>(initialQueue);
@@ -200,7 +178,7 @@ export function FahamWorkspace({
   const progressPct = cards.length > 0 ? ((currentIndex + 1) / cards.length) * 100 : 0;
 
   const reloadQueue = (
-    nextPreset: SourcePreset,
+    nextPreset: FahamSourcePreset,
     nextDirectionMode: FahamMcqDirectionMode,
     nextIsRevision: boolean = false,
   ) => {
@@ -430,6 +408,31 @@ export function FahamWorkspace({
         </section>
       ) : null}
 
+      {entryContext ? (
+        <section className="rounded-[1.75rem] border border-indigo-200/80 bg-[linear-gradient(135deg,rgba(238,242,255,0.9),rgba(255,255,255,0.94))] p-5 shadow-[0_22px_60px_-42px_rgba(79,70,229,0.45)] dark:border-indigo-500/25 dark:bg-[linear-gradient(135deg,rgba(49,46,129,0.3),rgba(12,10,9,0.9))]">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-3xl">
+              <span className="inline-flex rounded-full border border-indigo-300/80 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-indigo-700 dark:border-indigo-400/30 dark:bg-indigo-950/40 dark:text-indigo-200">
+                {entryContext.badge}
+              </span>
+              <h2 className="mt-3 text-2xl font-medium tracking-tight text-stone-900 dark:text-stone-50">
+                {entryContext.title}
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600 dark:text-stone-300">
+                {entryContext.description}
+              </p>
+            </div>
+
+            <Link
+              href={entryContext.href}
+              className="inline-flex items-center justify-center rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-800 transition hover:bg-stone-100 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:hover:bg-stone-800"
+            >
+              {entryContext.hrefLabel}
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       {snapshot.blockedReason === "due_backlog" ? (
         <section className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
           Kad baharu dijeda sementara kerana baki ulang kaji masih tinggi.
@@ -491,7 +494,7 @@ export function FahamWorkspace({
                   : newLabel(snapshot.new.length)}
               </span>
               <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
-                Susunan: {PRESET_CONFIGS[preset].shortLabel}
+                Susunan: {FAHAM_PRESET_CONFIGS[preset].shortLabel}
               </span>
               <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
                 Arah: {DIRECTION_CONFIGS[directionMode].shortLabel}
@@ -962,11 +965,11 @@ export function FahamWorkspace({
                         Susun deck sesi ini
                       </p>
                       <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm font-bold text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
-                        {PRESET_CONFIGS[preset].shortLabel}
+                        {FAHAM_PRESET_CONFIGS[preset].shortLabel}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      {(Object.keys(PRESET_CONFIGS) as SourcePreset[]).map((key) => {
+                      {(Object.keys(FAHAM_PRESET_CONFIGS) as FahamSourcePreset[]).map((key) => {
                         const active = preset === key;
                         return (
                           <button
@@ -980,13 +983,13 @@ export function FahamWorkspace({
                                 : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
                             }`}
                           >
-                            {PRESET_CONFIGS[key].label}
+                            {FAHAM_PRESET_CONFIGS[key].label}
                           </button>
                         );
                       })}
                     </div>
                     <div className="rounded-xl border border-stone-200/80 bg-white/60 p-3 text-sm leading-relaxed text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900/50 dark:text-stone-400">
-                      {PRESET_CONFIGS[preset].helper}
+                      {FAHAM_PRESET_CONFIGS[preset].helper}
                     </div>
                   </div>
 

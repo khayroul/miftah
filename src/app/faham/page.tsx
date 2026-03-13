@@ -9,6 +9,37 @@ import { AuthStatusButton } from "@/components/AuthStatusButton";
 import { buildFahamQueueSnapshot } from "@/lib/faham/queue";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
+import {
+  FAHAM_PRESET_CONFIGS,
+  parseFahamSourcePreset,
+} from "@/lib/faham/presets";
+
+interface FahamPageProps {
+  searchParams: Promise<{
+    chunk?: string | string[];
+    preset?: string | string[];
+    surah?: string | string[];
+  }>;
+}
+
+function pickQueryValue(
+  value: string | string[] | undefined,
+): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parsePositiveInt(value: string | undefined): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+}
 
 function buildQuranWordAudioUrl(
   surah: number,
@@ -21,11 +52,26 @@ function buildQuranWordAudioUrl(
   return `https://audio.qurancdn.com/wbw/${s}_${a}_${w}.mp3`;
 }
 
-export default async function FahamPage() {
+export default async function FahamPage({ searchParams }: FahamPageProps) {
   const user = await getOptionalAuthUser();
   const userId = user?.id;
+  const params = await searchParams;
   const jumpTargets = await getReadJumpTargets();
+  const initialPreset = parseFahamSourcePreset(pickQueryValue(params.preset));
+  const sourceSurah = parsePositiveInt(pickQueryValue(params.surah));
+  const sourceChunk = parsePositiveInt(pickQueryValue(params.chunk));
   let setupMessage: string | null = null;
+  const entryContext =
+    initialPreset === "theme" && sourceSurah && sourceChunk
+      ? {
+          badge: "Masuk dari Tema",
+          description:
+            "Deck ini diutamakan untuk perkataan yang paling kuat muncul dalam tema yang baru anda teroka, supaya faham bergerak terus daripada konteks ayat tadi.",
+          href: `/read/surah/${sourceSurah}/themes?chunk=${sourceChunk}`,
+          hrefLabel: "Kembali ke Tema",
+          title: `Tema Surah ${sourceSurah}, Bahagian ${sourceChunk}`,
+        }
+      : null;
   const defaultLevelProgress: FahamLevelProgress = {
     activeLevel: 1,
     activeWordLimit: 1000,
@@ -59,7 +105,9 @@ export default async function FahamPage() {
 
   if (userId) {
     try {
-      initialQueue = await buildFahamQueueSnapshot(userId, {});
+      initialQueue = await buildFahamQueueSnapshot(userId, {
+        preferredSources: FAHAM_PRESET_CONFIGS[initialPreset].preferredSources,
+      });
     } catch (error: unknown) {
       const debugMessage = error instanceof Error ? error.message : String(error);
       console.error("[faham/page] Failed to build initial queue:", error);
@@ -168,7 +216,12 @@ export default async function FahamPage() {
           surahTargets={jumpTargets.surahs}
         />
 
-        <FahamWorkspace initialQueue={initialQueue} setupMessage={setupMessage} />
+        <FahamWorkspace
+          initialQueue={initialQueue}
+          initialPreset={initialPreset}
+          entryContext={entryContext}
+          setupMessage={setupMessage}
+        />
       </main>
     </div>
   );

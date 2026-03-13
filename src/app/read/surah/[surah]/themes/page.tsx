@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import { ModeNavigator } from "@/components/ModeNavigator";
+import { ThemeActionPanel } from "@/components/ThemeActionPanel";
 import { ThemeChunkProgressTracker } from "@/components/ThemeChunkProgressTracker";
 import { ThemeChunkSelect } from "@/components/ThemeChunkSelect";
 import { ThemeJumpControls } from "@/components/ThemeJumpControls";
@@ -13,6 +14,8 @@ import {
   getSurah,
   getThemeAppearanceChunksBySurah,
 } from "@/lib/queries";
+import { buildSignInPath } from "@/lib/auth";
+import { getOptionalAuthUser } from "@/lib/auth-server";
 import { resolveThemeChunkLabelBm } from "@/lib/themeLabels";
 import type { AyahWordByWordEntry, ThemeAppearanceChunk } from "@/lib/queries";
 import type { Surah } from "@/types/database";
@@ -57,6 +60,7 @@ export default async function SurahThemeAppearancePage({
 }: SurahThemeAppearancePageProps) {
   const { surah } = await params;
   const query = await searchParams;
+  const user = await getOptionalAuthUser();
   const surahNumber = parseSurahNumber(surah);
 
   if (!surahNumber) {
@@ -110,6 +114,7 @@ export default async function SurahThemeAppearancePage({
         : 1
       : 1;
   const selectedChunk = chunks[selectedChunkIndex - 1] ?? null;
+  const currentThemeHref = `/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex}`;
   const hasNextThemeInSurah = selectedChunkIndex < chunks.length;
   const canJumpToNextSurahTheme =
     chunks.length > 0 &&
@@ -138,6 +143,7 @@ export default async function SurahThemeAppearancePage({
       ? `/read/surah/${surahNumber + 1}/themes?chunk=1`
       : null;
   let wbwByAyahId: Record<number, AyahWordByWordEntry[]> = {};
+  const signInHref = buildSignInPath(currentThemeHref);
   if (selectedChunk) {
     try {
       wbwByAyahId = await getWordByWordForAyahIds(
@@ -245,6 +251,20 @@ export default async function SurahThemeAppearancePage({
                     )}
                   </p>
                 </header>
+
+                <ThemeActionPanel
+                  ayahIds={selectedChunk.ayat.map((ayah) => ayah.id)}
+                  fahamHref={`/faham?preset=theme&surah=${surahNumber}&chunk=${selectedChunk.chunk_index}`}
+                  firstPageHref={`/read/${selectedChunk.ayat[0]?.page_number ?? surahMeta.page_start ?? 1}`}
+                  firstPageNumber={selectedChunk.ayat[0]?.page_number ?? surahMeta.page_start ?? 1}
+                  isAuthenticated={Boolean(user)}
+                  rangeLabel={rangeLabel(
+                    surahNumber,
+                    selectedChunk.start_ayah,
+                    selectedChunk.end_ayah,
+                  )}
+                  signInHref={signInHref}
+                />
 
                 {/* Ayat List */}
                 <div className="space-y-16 pb-8">
