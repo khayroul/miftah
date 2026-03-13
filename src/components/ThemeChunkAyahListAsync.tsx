@@ -3,6 +3,7 @@ import type {
   AyahWordByWordEntry,
   ThemeAppearanceAyah,
 } from "@/lib/queries";
+import { ThemeAyahMarker } from "./ThemeAyahMarker";
 
 interface ThemeChunkAyahListAsyncProps {
   ayat: ThemeAppearanceAyah[];
@@ -22,14 +23,7 @@ export async function ThemeChunkAyahListAsync({
   return (
     <div className="space-y-16 pb-8">
       {ayat.map((ayah) => (
-        <div
-          key={ayah.id}
-          className="relative group/ayah flex flex-col gap-6"
-        >
-          <div className="absolute -left-4 top-0 flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 bg-stone-50 text-xs font-semibold text-stone-500 shadow-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400 sm:-left-12">
-            {ayah.ayah_number}
-          </div>
-
+        <div key={ayah.id} className="group/ayah flex flex-col gap-6">
           {wbwByAyahId[ayah.id] && wbwByAyahId[ayah.id].length > 0 ? (
             <div
               className="flex flex-wrap justify-start gap-x-1.5 gap-y-6"
@@ -54,14 +48,18 @@ export async function ThemeChunkAyahListAsync({
                   </span>
                 </div>
               ))}
+              <ThemeAyahMarker ayahNumber={ayah.ayah_number} className="mb-2 self-center" />
             </div>
           ) : (
-            <p className="text-right text-sm text-stone-400" dir="rtl">
-              [Data kata demi kata belum tersedia]
-            </p>
+            <div className="flex items-center justify-start gap-2" dir="rtl">
+              <ThemeAyahMarker ayahNumber={ayah.ayah_number} className="shrink-0" />
+              <p className="text-right text-sm text-stone-400">
+                [Data kata demi kata belum tersedia]
+              </p>
+            </div>
           )}
 
-          <div className="mt-2 pl-6 sm:pl-0">
+          <div className="mt-2">
             <div className="rounded-xl border border-stone-100 bg-stone-50/50 p-4 dark:border-stone-800/80 dark:bg-stone-800/20 sm:p-5">
               <p className="text-[15px] leading-relaxed text-stone-700 dark:text-stone-300">
                 {ayah.display_bm ?? "Terjemahan BM belum tersedia."}

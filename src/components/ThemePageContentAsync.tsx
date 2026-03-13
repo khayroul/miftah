@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import { ThemeActionPanel } from "@/components/ThemeActionPanel";
+import { ThemeAyahMarker } from "@/components/ThemeAyahMarker";
 import { ThemeChunkAyahListAsync } from "@/components/ThemeChunkAyahListAsync";
 import { ThemeChunkProgressTracker } from "@/components/ThemeChunkProgressTracker";
 import { ThemeChunkSelect } from "@/components/ThemeChunkSelect";
@@ -42,17 +43,17 @@ function ThemeChunkAyahListFallback({ ayat }: { ayat: ThemeAppearanceAyah[] }) {
   return (
     <div className="space-y-10 pb-8">
       {ayat.map((ayah) => (
-        <div key={ayah.id} className="relative flex flex-col gap-4">
-          <div className="absolute -left-4 top-0 flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 bg-stone-50 text-xs font-semibold text-stone-500 shadow-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400 sm:-left-12">
-            {ayah.ayah_number}
-          </div>
+        <div key={ayah.id} className="flex flex-col gap-4">
           <div className="rounded-2xl border border-stone-200/80 bg-stone-50/80 p-4 dark:border-stone-700/70 dark:bg-stone-900/40">
-            <div className="h-20 rounded-xl bg-stone-200/80 dark:bg-stone-800/80" />
+            <div className="flex items-center justify-start gap-3" dir="rtl">
+              <ThemeAyahMarker ayahNumber={ayah.ayah_number} className="shrink-0" />
+              <div className="h-20 flex-1 rounded-xl bg-stone-200/80 dark:bg-stone-800/80" />
+            </div>
             <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
               Memuatkan paparan kata demi kata.
             </p>
           </div>
-          <div className="pl-6 sm:pl-0">
+          <div>
             <div className="rounded-xl border border-stone-100 bg-stone-50/50 p-4 dark:border-stone-800/80 dark:bg-stone-800/20 sm:p-5">
               <p className="text-[15px] leading-relaxed text-stone-700 dark:text-stone-300">
                 {ayah.display_bm ?? "Terjemahan BM belum tersedia."}
