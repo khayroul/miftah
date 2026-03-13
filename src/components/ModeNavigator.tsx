@@ -18,6 +18,7 @@ interface ModeNavigatorProps {
   }>;
   onModeClick?: (mode: ReadMode, e: React.MouseEvent) => void;
   showUtilities?: boolean;
+  showAuthStatus?: boolean;
 }
 
 const MODE_ITEMS: Array<{
@@ -58,6 +59,7 @@ export function ModeNavigator({
   surahTargets = [],
   onModeClick,
   showUtilities = false,
+  showAuthStatus = false,
 }: ModeNavigatorProps) {
   const readingState = useReadingProgressState();
 
@@ -138,6 +140,10 @@ export function ModeNavigator({
   );
 
   if (!showUtilities) {
+    return <div className="flex w-full justify-start sm:justify-center">{navigator}</div>;
+  }
+
+  if (!showAuthStatus) {
     return <div className="flex w-full justify-start sm:justify-center">{navigator}</div>;
   }
 

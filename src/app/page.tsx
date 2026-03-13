@@ -23,6 +23,7 @@ export default async function Home() {
           activeMode="read"
           surahTargets={jumpTargets.surahs}
           showUtilities
+          showAuthStatus
         />
 
         <HomeDashboardClient

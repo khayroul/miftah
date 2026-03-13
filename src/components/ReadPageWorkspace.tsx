@@ -464,15 +464,15 @@ export function ReadPageWorkspace({
 
       {mushafHeader}
 
-      <div className="mb-1 flex w-full justify-between gap-2 sm:hidden">
+      <div className="mb-1 flex w-full justify-center gap-2 sm:hidden">
         {pageNumber > 1 ? (
           <Link
             href={`/read/${pageNumber - 1}`}
             title="Halaman Sebelum"
-            className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-stone-300 bg-white px-4 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+            className="inline-flex min-h-10 min-w-[5.5rem] items-center justify-center gap-1 rounded-full border border-stone-300 bg-white px-3 text-xs font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
           >
             <svg
-              className="h-4 w-4"
+              className="h-3.5 w-3.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -487,10 +487,10 @@ export function ReadPageWorkspace({
             type="button"
             disabled
             aria-label="Halaman Sebelum"
-            className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-stone-200 bg-stone-100 px-4 text-sm font-medium text-stone-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-600"
+            className="inline-flex min-h-10 min-w-[5.5rem] items-center justify-center gap-1 rounded-full border border-stone-200 bg-stone-100 px-3 text-xs font-medium text-stone-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-600"
           >
             <svg
-              className="h-4 w-4"
+              className="h-3.5 w-3.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -506,11 +506,11 @@ export function ReadPageWorkspace({
           <Link
             href={`/read/${pageNumber + 1}`}
             title="Halaman Seterusnya"
-            className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-stone-300 bg-white px-4 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+            className="inline-flex min-h-10 min-w-[5.5rem] items-center justify-center gap-1 rounded-full border border-stone-300 bg-white px-3 text-xs font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
           >
             Next
             <svg
-              className="h-4 w-4"
+              className="h-3.5 w-3.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -524,11 +524,11 @@ export function ReadPageWorkspace({
             type="button"
             disabled
             aria-label="Halaman Seterusnya"
-            className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-stone-200 bg-stone-100 px-4 text-sm font-medium text-stone-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-600"
+            className="inline-flex min-h-10 min-w-[5.5rem] items-center justify-center gap-1 rounded-full border border-stone-200 bg-stone-100 px-3 text-xs font-medium text-stone-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-600"
           >
             Next
             <svg
-              className="h-4 w-4"
+              className="h-3.5 w-3.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -546,10 +546,10 @@ export function ReadPageWorkspace({
             <Link
               href={`/read/${pageNumber - 1}`}
               title="Halaman Sebelum"
-              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-stone-300 bg-white px-4 text-[15px] font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 sm:h-11 sm:text-base dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+              className="inline-flex h-9 items-center gap-1 rounded-full border border-stone-300 bg-white px-3 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
             >
               <svg
-                className="h-4 w-4"
+                className="h-3.5 w-3.5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -564,10 +564,10 @@ export function ReadPageWorkspace({
               type="button"
               disabled
               aria-label="Halaman Sebelum"
-              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-stone-200 bg-stone-100 px-4 text-[15px] font-medium text-stone-400 sm:h-11 sm:text-base dark:border-stone-700 dark:bg-stone-800 dark:text-stone-600"
+              className="inline-flex h-9 items-center gap-1 rounded-full border border-stone-200 bg-stone-100 px-3 text-sm font-medium text-stone-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-600"
             >
               <svg
-                className="h-4 w-4"
+                className="h-3.5 w-3.5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -583,11 +583,11 @@ export function ReadPageWorkspace({
             <Link
               href={`/read/${pageNumber + 1}`}
               title="Halaman Seterusnya"
-              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-stone-300 bg-white px-4 text-[15px] font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 sm:h-11 sm:text-base dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+              className="inline-flex h-9 items-center gap-1 rounded-full border border-stone-300 bg-white px-3 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
             >
               Next
               <svg
-                className="h-4 w-4"
+                className="h-3.5 w-3.5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -601,11 +601,11 @@ export function ReadPageWorkspace({
               type="button"
               disabled
               aria-label="Halaman Seterusnya"
-              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-stone-200 bg-stone-100 px-4 text-[15px] font-medium text-stone-400 sm:h-11 sm:text-base dark:border-stone-700 dark:bg-stone-800 dark:text-stone-600"
+              className="inline-flex h-9 items-center gap-1 rounded-full border border-stone-200 bg-stone-100 px-3 text-sm font-medium text-stone-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-600"
             >
               Next
               <svg
-                className="h-4 w-4"
+                className="h-3.5 w-3.5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
