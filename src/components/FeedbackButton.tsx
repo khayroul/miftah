@@ -2,19 +2,48 @@
 
 import { useEffect, useState } from "react";
 import { useReadAudio } from "@/components/ReadAudioProvider";
+import { usePathname } from "next/navigation";
 
 export function FeedbackButton() {
   const { feedbackHidden, feedbackOffsetPx } = useReadAudio();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 639px)");
+    const syncViewport = () => {
+      setIsMobileViewport(media.matches);
+    };
+
+    syncViewport();
+    media.addEventListener("change", syncViewport);
+    return () => {
+      media.removeEventListener("change", syncViewport);
+    };
+  }, []);
 
   useEffect(() => {
     if (feedbackHidden) {
       setIsOpen(false);
     }
   }, [feedbackHidden]);
+
+  const isMobileReadSurface =
+    isMobileViewport && pathname.startsWith("/read/");
+
+  useEffect(() => {
+    if (isMobileReadSurface) {
+      setIsOpen(false);
+    }
+  }, [isMobileReadSurface]);
+
+  if (isMobileReadSurface) {
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

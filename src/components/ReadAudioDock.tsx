@@ -568,23 +568,23 @@ export function ReadAudioDock({
             : "translate-y-0 opacity-100"
         }`}
       >
-      <audio
-        ref={audioRef}
-        preload="metadata"
-        src={currentTrack?.audioUrl}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onEnded={handleAudioEnded}
-      />
+        <audio
+          ref={audioRef}
+          preload="metadata"
+          src={currentTrack?.audioUrl}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={handleAudioEnded}
+        />
 
-        <div className="mx-auto w-full max-w-4xl px-2 pb-[calc(12px+env(safe-area-inset-bottom))] sm:px-4">
-          <section className="rounded-[24px] border border-stone-200 bg-white/96 shadow-[0_16px_44px_rgba(0,0,0,0.18)] backdrop-blur dark:border-stone-700 dark:bg-stone-900/94">
-            <div className="flex items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4">
+        <div className="mx-auto w-full max-w-[30rem] px-2 pb-[calc(12px+env(safe-area-inset-bottom))] sm:max-w-4xl sm:px-4">
+          <section className="rounded-[22px] border border-stone-200 bg-white/96 shadow-[0_14px_36px_rgba(0,0,0,0.16)] backdrop-blur dark:border-stone-700 dark:bg-stone-900/94 sm:rounded-[24px] sm:shadow-[0_16px_44px_rgba(0,0,0,0.18)]">
+            <div className="flex items-center gap-2 px-2.5 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
               <button
                 type="button"
                 onClick={togglePlayback}
                 disabled={!canPlay}
-                className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-teal-300 bg-teal-50 text-teal-800 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-teal-700/60 dark:bg-teal-900/35 dark:text-teal-100 dark:hover:bg-teal-900/55"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-teal-300 bg-teal-50 text-teal-800 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-teal-700/60 dark:bg-teal-900/35 dark:text-teal-100 dark:hover:bg-teal-900/55 sm:h-12 sm:w-12"
                 aria-label={isPlaying ? "Jeda audio" : "Mainkan audio"}
               >
                 {isPlaying ? (
@@ -603,7 +603,7 @@ export function ReadAudioDock({
                 type="button"
                 onClick={handleNextTrack}
                 disabled={!canPlay || safeIndex >= normalizedRangeEnd}
-                className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-stone-300 text-stone-700 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-stone-300 text-stone-700 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800 sm:h-12 sm:w-12"
                 aria-label="Ayat seterusnya"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4}>
@@ -615,28 +615,28 @@ export function ReadAudioDock({
                 type="button"
                 onClick={cycleRangePreset}
                 disabled={!canPlay}
-                className="inline-flex h-12 shrink-0 items-center rounded-full border border-stone-300 px-3 text-sm font-medium text-stone-700 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+                className="inline-flex h-11 shrink-0 items-center rounded-full border border-stone-300 px-2.5 text-xs font-medium text-stone-700 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800 sm:h-12 sm:px-3 sm:text-sm"
                 aria-label="Tukar tetapan julat"
               >
                 Julat {RANGE_PRESET_SHORT_LABEL[rangePreset]}
               </button>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[15px] font-medium text-stone-900 sm:text-base dark:text-stone-100">
+                <p className="truncate text-sm font-medium text-stone-900 sm:text-base dark:text-stone-100">
                   Mishary Al-Afasy
                 </p>
-              <p className="truncate text-sm text-stone-500 dark:text-stone-400">
-                {currentTrack
-                  ? `Ayat ${formatTrackLabel(currentTrack)}${hasPlaybackCap ? " · ikut bahagian Hafal" : ""}`
-                  : "Tiada audio untuk ayat terbuka"}
-              </p>
-            </div>
+                <p className="truncate text-xs text-stone-500 sm:text-sm dark:text-stone-400">
+                  {currentTrack
+                    ? `Ayat ${formatTrackLabel(currentTrack)}${hasPlaybackCap ? " · ikut bahagian Hafal" : ""}`
+                    : "Tiada audio untuk ayat terbuka"}
+                </p>
+              </div>
 
               <button
                 type="button"
                 onClick={() => setPanelOpen((open) => !open)}
                 disabled={!canPlay}
-                className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-teal-300 text-teal-800 transition hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-45 dark:border-teal-700/60 dark:text-teal-100 dark:hover:bg-teal-900/35"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-teal-300 text-teal-800 transition hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-45 dark:border-teal-700/60 dark:text-teal-100 dark:hover:bg-teal-900/35 sm:h-12 sm:w-12"
                 aria-label="Buka kawalan lanjut audio"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">

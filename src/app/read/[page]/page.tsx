@@ -4,7 +4,14 @@ import { ReadPageWorkspace } from "@/components/ReadPageWorkspace";
 import { LightweightBreadcrumb } from "@/components/LightweightBreadcrumb";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthStatusButton } from "@/components/AuthStatusButton";
+import { ReadPageVocabSection } from "@/components/ReadPageVocabSection";
 import { getProgressByAyahIds } from "@/lib/hifz/study-progress";
+import {
+  buildFahamLevelProgress,
+  getFahamLevelState,
+  type FahamLevelProgress,
+} from "@/lib/faham/levels";
+import { getReadPageVocabPreview } from "@/lib/faham/repository";
 import { loadPageManifest, pageImageExists } from "@/lib/mushafAssets";
 import { mapAyatToPageAudioTracks } from "@/lib/pageAudioTracks";
 import { getAyatByPage, getSurah } from "@/lib/queries";
@@ -48,6 +55,24 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
   let ayatOnPage: Ayah[] = [];
   let ayahDetails: MushafAyahDetail[] = [];
   let memorizedAyahKeys: string[] = [];
+  let fahamLevelProgress: FahamLevelProgress = {
+    activeLevel: 1,
+    activeWordLimit: 1000,
+    isMaxLevel: false,
+    lemmaUnlocked: false,
+    maxLevel: 4,
+    nextLevel: 2,
+    nextWordLimit: 2000,
+    unlockFoundProgress: 0,
+    unlockFoundRequired: 600,
+    unlockMasteredProgress: 0,
+    unlockMasteredRequired: 0,
+    unlockReady: false,
+  };
+  let pageVocabItems: Awaited<ReturnType<typeof getReadPageVocabPreview>> = [];
+  let pageVocabLoadError: string | null = null;
+  const user = await getOptionalAuthUser();
+  const userId = user?.id;
   try {
     ayatOnPage = await getAyatByPage(pageNumber);
     ayahDetails = ayatOnPage.map((ayah) => ({
@@ -59,8 +84,6 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
       en: ayah.translation_en,
     }));
 
-    const user = await getOptionalAuthUser();
-    const userId = user?.id;
     if (userId && ayatOnPage.length > 0) {
       try {
         const progressByAyahId = await getProgressByAyahIds(
@@ -82,6 +105,24 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
     ayatOnPage = [];
     ayahDetails = [];
     memorizedAyahKeys = [];
+  }
+
+  try {
+    if (userId) {
+      const levelState = await getFahamLevelState(userId);
+      fahamLevelProgress = buildFahamLevelProgress(levelState);
+    }
+
+    pageVocabItems = await getReadPageVocabPreview({
+      ayahIds: ayatOnPage.map((ayah) => ayah.id),
+      limit: 6,
+      userId,
+      wordLimit: fahamLevelProgress.activeWordLimit,
+    });
+  } catch (error) {
+    console.error("[read/page] Failed to load page vocab preview", error);
+    pageVocabItems = [];
+    pageVocabLoadError = "Perkataan fokus tak dapat dimuatkan sekarang.";
   }
 
   const wordTranslations = manifest
@@ -133,8 +174,8 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
   const surahMeta = await getSurah(surahForThemeView);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <header className="flex flex-col gap-4 pt-2 sm:pt-4">
+    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-8">
+      <header className="flex flex-col gap-3 pt-1 sm:gap-4 sm:pt-4">
         <nav className="flex w-full items-center justify-end gap-2">
           <AuthStatusButton />
           <ThemeToggle />
@@ -144,7 +185,7 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
       <ReadPageWorkspace
         pageNumber={pageNumber}
         mushafHeader={
-          <div className="flex flex-col items-center justify-center gap-2 text-center mt-2">
+          <div className="mt-1 flex flex-col items-center justify-center gap-1.5 text-center sm:mt-2 sm:gap-2">
             <LightweightBreadcrumb items={breadcrumbItems} />
             {hifzFlow === "memorize" ? (
               <div className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold tracking-wide text-amber-900 dark:border-amber-700/50 dark:bg-amber-900/30 dark:text-amber-100">
@@ -182,15 +223,15 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
                 </p>
               </div>
             ) : null}
-            <h1 className="flex flex-wrap items-center justify-center gap-3 text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:text-3xl">
+            <h1 className="flex flex-wrap items-center justify-center gap-2 text-[1.75rem] font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:gap-3 sm:text-3xl">
               Surah {surahMeta?.name_en ?? "Al-Fatihah"}
               {surahMeta?.name_arabic && (
-                <span className="font-arabic mt-1 text-2xl font-normal opacity-80" lang="ar">
+                <span className="font-arabic mt-0.5 text-[1.65rem] font-normal opacity-80 sm:mt-1 sm:text-2xl" lang="ar">
                   {surahMeta.name_arabic}
                 </span>
               )}
             </h1>
-            <p className="text-[15px] font-medium text-stone-500 sm:text-base dark:text-stone-400">
+            <p className="text-sm font-medium text-stone-500 sm:text-base dark:text-stone-400">
               Surah {surahForThemeView} • Halaman {pageNumber} / 604
             </p>
           </div>
@@ -213,6 +254,15 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
         hifzFirstWordCueEnabled={!hifzFlow && hifzFirstWordCueEnabled}
         hifzFlow={hifzFlow}
       />
+
+      {!hifzFlow ? (
+        <ReadPageVocabSection
+          items={pageVocabItems}
+          levelProgress={fahamLevelProgress}
+          loadError={pageVocabLoadError}
+          pageNumber={pageNumber}
+        />
+      ) : null}
     </main>
   );
 }

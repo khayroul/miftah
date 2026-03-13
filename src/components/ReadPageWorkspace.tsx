@@ -263,7 +263,7 @@ export function ReadPageWorkspace({
       )}
 
       <div
-        className={`overflow-hidden transition-[max-height,opacity,transform] duration-300 ${
+        className={`hidden overflow-hidden transition-[max-height,opacity,transform] duration-300 sm:block ${
           showJumpControls
             ? "max-h-[420px] translate-y-0 opacity-100"
             : "pointer-events-none max-h-0 -translate-y-1 opacity-0"
@@ -281,9 +281,49 @@ export function ReadPageWorkspace({
         </div>
       </div>
 
+      <div className="sm:hidden">
+        {showJumpControls ? (
+          <div
+            className="fixed inset-0 z-[55] bg-black/30"
+            onClick={() => setShowJumpControls(false)}
+          >
+            <section
+              className="absolute inset-x-0 bottom-0 max-h-[78vh] overflow-y-auto rounded-t-[28px] border border-b-0 border-stone-200 bg-white/98 px-4 pb-[calc(env(safe-area-inset-bottom)+18px)] pt-4 shadow-[0_-18px_48px_rgba(0,0,0,0.18)] backdrop-blur dark:border-stone-700 dark:bg-stone-900/97"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+                    Lompat di luar mushaf
+                  </p>
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
+                    Pilih halaman, surah, atau juz tanpa menyesakkan bacaan.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowJumpControls(false)}
+                  className="inline-flex min-h-10 items-center rounded-full border border-stone-300 px-3 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+                >
+                  Tutup
+                </button>
+              </div>
+
+              <ReadJumpControls
+                currentPage={pageNumber}
+                currentSurahId={currentSurahId}
+                currentJuzNumber={currentJuzNumber}
+                surahOptions={jumpSurahOptions}
+                juzOptions={jumpJuzOptions}
+              />
+            </section>
+          </div>
+        ) : null}
+      </div>
+
       {mushafHeader}
 
-      <div className="mb-2 flex w-full justify-end">
+      <div className="mb-1 hidden w-full justify-end sm:flex">
         <div className="flex items-center gap-2">
           {pageNumber > 1 ? (
             <Link

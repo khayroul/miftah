@@ -74,11 +74,11 @@ export function ModeNavigator({
   }, [fallbackThemeSurahId, readPage, surahTargets]);
 
   return (
-    <div className="flex w-full justify-center">
-      <div className="inline-flex flex-wrap items-center justify-center gap-1.5 rounded-full border border-stone-200 bg-white/92 p-1.5 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
+    <div className="flex w-full justify-start sm:justify-center">
+      <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-[26px] border border-stone-200 bg-white/92 p-1 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
         <Link
           href="/"
-          className="mr-1 flex items-center gap-1.5 rounded-full px-3 py-2 text-[15px] font-medium text-stone-600 transition hover:bg-stone-50 hover:text-stone-900 sm:text-base dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+          className="mr-0.5 flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50 hover:text-stone-900 sm:mr-1 sm:px-3 sm:py-2 sm:text-base dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
           title="Utama"
         >
           <svg
@@ -109,7 +109,7 @@ export function ModeNavigator({
                   onModeClick(item.value, e);
                 }
               }}
-              className={`rounded-full px-4 py-2 text-[15px] font-medium transition sm:text-base ${
+              className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition sm:px-4 sm:py-2 sm:text-base ${
                 active
                   ? "bg-stone-900 text-stone-50 shadow-sm dark:bg-stone-100 dark:text-stone-900"
                   : "text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"

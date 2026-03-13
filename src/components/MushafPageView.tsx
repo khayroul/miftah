@@ -294,6 +294,7 @@ export function MushafPageView({
   const [fullImageReady, setFullImageReady] = useState(false);
   const [fullImageFailed, setFullImageFailed] = useState(false);
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  const [showDiscoveryHint, setShowDiscoveryHint] = useState(!audioDiscovered);
   const [markingMemorized, setMarkingMemorized] = useState(false);
   const [markMemorizedError, setMarkMemorizedError] = useState<string | null>(
     null,
@@ -326,7 +327,7 @@ export function MushafPageView({
       fullImageReady,
       wordsCount: words.length,
     });
-  const modeAllowsWordInteraction = mode === "faham" || mode === "read";
+  const modeAllowsWordInteraction = mode === "faham";
   const canInteract = modeAllowsWordInteraction && canInteractWhenReady;
   const canSelectAyah = false; // Disabled by user request to prevent WBW conflict
   const wordTapPaddingX = Math.max(8, imageWidth * 0.004);
@@ -718,6 +719,20 @@ export function MushafPageView({
               ? "Sahkan Hafal 1/3 Kedua"
               : "Sahkan Hafal Baki Halaman";
   useEffect(() => {
+    setShowDiscoveryHint(!audioDiscovered);
+  }, [audioDiscovered]);
+  useEffect(() => {
+    if (!showDiscoveryHint || mode !== "read") {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setShowDiscoveryHint(false);
+    }, 2600);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [mode, showDiscoveryHint]);
+  useEffect(() => {
     if (!hifzFeedbackMessage) {
       return;
     }
@@ -863,6 +878,7 @@ export function MushafPageView({
         title={detail?.label ?? key}
         onClick={(event) => {
           event.stopPropagation();
+          setShowDiscoveryHint(false);
           setMarkMemorizedError(null);
           setSelectedWord(null);
           setSelectedAyahKey((current) => (current === key ? null : key));
@@ -902,11 +918,13 @@ export function MushafPageView({
           title={word.location}
           onClick={(event) => {
             event.stopPropagation();
+            setShowDiscoveryHint(false);
             setSelectedAyahKey(null);
             setSelectedWord(word);
           }}
           onTouchStart={(event) => {
             event.stopPropagation();
+            setShowDiscoveryHint(false);
             setSelectedAyahKey(null);
             setSelectedWord(word);
           }}
@@ -923,7 +941,13 @@ export function MushafPageView({
         />
       );
     });
-  }, [words, wordTapPaddingX, wordTapPaddingY, imageWidth, imageHeight]);
+  }, [
+    imageHeight,
+    imageWidth,
+    wordTapPaddingX,
+    wordTapPaddingY,
+    words,
+  ]);
 
   return (
     <section
@@ -936,13 +960,13 @@ export function MushafPageView({
       }`}
     >
       {/* Discovery Hint */}
-      {!audioDiscovered && mode === "read" && canShowFullImage && (
+      {showDiscoveryHint && mode === "read" && canShowFullImage && (
         <div className="flex justify-center">
-          <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 shadow-sm animate-bounce sm:text-base dark:bg-emerald-900/30 dark:text-emerald-100">
+          <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800 shadow-sm animate-in fade-in duration-300 sm:px-4 sm:py-2 sm:text-base dark:bg-emerald-900/30 dark:text-emerald-100">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
             </svg>
-            Tip: Tekan mana-mana ayat untuk dengar audio
+            Tip: Ketik halaman atau buka Audio untuk dengar bacaan
           </div>
         </div>
       )}
@@ -1059,6 +1083,7 @@ export function MushafPageView({
         onTouchEnd={handleTouchEnd}
         onClick={() => {
           onAudioDiscovered?.();
+          setShowDiscoveryHint(false);
           setSelectedAyahKey(null);
           setSelectedWord(null);
           setMarkMemorizedError(null);
@@ -1204,7 +1229,7 @@ export function MushafPageView({
         </p>
       ) : mode === "read" ? (
         <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
-          Mod Baca: Leret untuk tukar halaman. <strong>Tekan mana-mana ayat untuk dengar audio.</strong>
+          Mod Baca: Leret untuk tukar halaman. <strong>Ketik halaman atau gunakan butang Audio untuk dengar bacaan.</strong>
         </p>
       ) : mode === "hifz" ? (
         <p className="text-[15px] text-teal-700 sm:text-base dark:text-teal-300">
