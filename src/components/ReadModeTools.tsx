@@ -61,6 +61,7 @@ export function ReadModeTools({
           activeMode={mode}
           fallbackThemeSurahId={themeSurahId}
           onModeClick={handleModeChange}
+          showUtilities
         />
       </div>
 

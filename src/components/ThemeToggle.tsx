@@ -4,13 +4,23 @@ import { useTheme } from "@/lib/useTheme";
 
 interface ThemeToggleProps {
   iconOnly?: boolean;
+  embedded?: boolean;
 }
 
-export function ThemeToggle({ iconOnly = false }: ThemeToggleProps) {
+export function ThemeToggle({
+  iconOnly = false,
+  embedded = false,
+}: ThemeToggleProps) {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-stone-200/80 bg-white/95 p-1 shadow-sm backdrop-blur-md dark:border-stone-700/60 dark:bg-stone-900/90 transition-all duration-300">
+    <div
+      className={
+        embedded
+          ? "inline-flex items-center gap-1"
+          : "inline-flex items-center gap-1 rounded-full border border-stone-200/80 bg-white/95 p-1 shadow-sm backdrop-blur-md dark:border-stone-700/60 dark:bg-stone-900/90 transition-all duration-300"
+      }
+    >
       <button
         type="button"
         onClick={() => setTheme("light")}

@@ -77,6 +77,16 @@ export function ModeNavigator({
     return marker?.id ?? fallbackThemeSurahId;
   }, [fallbackThemeSurahId, readPage, surahTargets]);
 
+  const utilityThemeToggle = showUtilities ? (
+    <>
+      <span
+        className="mx-1 h-6 w-px shrink-0 bg-stone-200 dark:bg-stone-700"
+        aria-hidden="true"
+      />
+      <ThemeToggle iconOnly embedded />
+    </>
+  ) : null;
+
   const navigator = (
     <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-[26px] border border-stone-200 bg-white/92 p-1 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
       <Link
@@ -123,6 +133,7 @@ export function ModeNavigator({
           </Link>
         );
       })}
+      {utilityThemeToggle}
     </div>
   );
 
@@ -131,11 +142,9 @@ export function ModeNavigator({
   }
 
   return (
-    <div className="grid w-full gap-3 xl:grid-cols-[1fr_auto] xl:items-center">
-      <div className="flex w-full justify-start xl:justify-center">{navigator}</div>
-
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <ThemeToggle iconOnly />
+    <div className="flex w-full flex-col items-center gap-3">
+      <div className="flex w-full justify-start sm:justify-center">{navigator}</div>
+      <div className="flex w-full justify-center">
         <AuthStatusButton />
       </div>
     </div>

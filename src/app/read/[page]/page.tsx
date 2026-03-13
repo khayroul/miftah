@@ -3,8 +3,6 @@ import { notFound } from "next/navigation";
 import { ReadPageWorkspace } from "@/components/ReadPageWorkspace";
 import { ReadPageVocabSectionAsync } from "@/components/ReadPageVocabSectionAsync";
 import { LightweightBreadcrumb } from "@/components/LightweightBreadcrumb";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { AuthStatusButton } from "@/components/AuthStatusButton";
 import { getReadPageStaticData } from "@/lib/readPageData";
 import { parseReadPage } from "@/lib/readNavigation";
 
@@ -85,13 +83,6 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-8">
-      <header className="flex flex-col gap-3 pt-1 sm:gap-4 sm:pt-4">
-        <nav className="flex w-full items-center justify-end gap-2">
-          <AuthStatusButton />
-          <ThemeToggle />
-        </nav>
-      </header>
-
       <ReadPageWorkspace
         pageNumber={pageNumber}
         mushafHeader={
