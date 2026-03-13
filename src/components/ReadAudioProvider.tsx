@@ -164,7 +164,6 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
           tracks={tracks}
           playableAyahKeys={playableAyahKeys}
           visible
-          onRequestClose={() => setAudioVisible(false)}
           onPlaybackAyahChange={setActivePlaybackAyahKey}
           onPanelOpenChange={setIsAudioPanelOpen}
         />

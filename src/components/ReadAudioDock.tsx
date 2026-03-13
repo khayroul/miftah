@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
 import { trackReadAudioTelemetry } from "@/lib/readAudioTelemetry";
+import { resolveReadAudioLoopAction } from "@/lib/readAudioLoop";
 
 interface ReadAudioDockProps {
   autoplayRequestKey?: number;
@@ -11,7 +12,6 @@ interface ReadAudioDockProps {
   tracks: ReadAudioTrack[];
   playableAyahKeys?: string[] | null;
   visible?: boolean;
-  onRequestClose: () => void;
   onPlaybackAyahChange?: (ayahKey: string | null) => void;
   onPanelOpenChange?: (isOpen: boolean) => void;
 }
@@ -131,7 +131,6 @@ export function ReadAudioDock({
   tracks: sourceTracks,
   playableAyahKeys = null,
   visible,
-  onRequestClose,
   onPlaybackAyahChange,
   onPanelOpenChange,
 }: ReadAudioDockProps) {
@@ -367,40 +366,31 @@ export function ReadAudioDock({
       return;
     }
 
-    if (repeatEachVerse === -1) {
+    const nextAction = resolveReadAudioLoopAction({
+      currentIndex: safeIndex,
+      rangeStartIndex: normalizedRangeStart,
+      rangeEndIndex: normalizedRangeEnd,
+      repeatEachVerse,
+      repeatSet,
+      repeatEachStep,
+      repeatSetStep,
+    });
+
+    setRepeatEachStep(nextAction.nextRepeatEachStep);
+    setRepeatSetStep(nextAction.nextRepeatSetStep);
+
+    if (nextAction.type === "replay-current") {
       audio.currentTime = 0;
       audio.play().catch(() => setIsPlaying(false));
       return;
     }
 
-    if (repeatEachStep < repeatEachVerse - 1) {
-      setRepeatEachStep((current) => current + 1);
-      audio.currentTime = 0;
-      audio.play().catch(() => setIsPlaying(false));
-      return;
-    }
-
-    setRepeatEachStep(0);
-    if (safeIndex < normalizedRangeEnd) {
+    if (nextAction.type === "play-index") {
       shouldAutoplayRef.current = true;
-      setCurrentIndex(safeIndex + 1);
+      setCurrentIndex(nextAction.nextIndex);
       return;
     }
 
-    if (repeatSet === -1) {
-      shouldAutoplayRef.current = true;
-      setCurrentIndex(normalizedRangeStart);
-      return;
-    }
-
-    if (repeatSetStep < repeatSet - 1) {
-      setRepeatSetStep((current) => current + 1);
-      shouldAutoplayRef.current = true;
-      setCurrentIndex(normalizedRangeStart);
-      return;
-    }
-
-    setRepeatSetStep(0);
     setIsPlaying(false);
   };
 
@@ -415,7 +405,6 @@ export function ReadAudioDock({
           type="button"
           onClick={() => {
             setPanelOpen(false);
-            onRequestClose();
           }}
           className="inline-flex min-h-11 items-center rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
         >
