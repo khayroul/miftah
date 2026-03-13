@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { matureCardDbRow } from "@/lib/hifz/fsrs-bridge";
+import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
+import { buildHifzPlanSnapshot } from "@/lib/hifz/queue";
+import { getHifzStats, getJuzProgress } from "@/lib/hifz/stats";
 import { getAyatUpToPage } from "@/lib/queries";
 
 interface ImportBody {
@@ -113,8 +116,27 @@ export async function POST(request: Request): Promise<NextResponse> {
       }
     }
 
+    const [plan, stats, juzProgress] = await Promise.all([
+      buildDailyPlanWithDetails(userId),
+      getHifzStats(userId),
+      getJuzProgress(userId),
+    ]);
+    const snapshot = buildHifzPlanSnapshot(plan);
     const count = toInsert.length + toUpdate.length;
-    return NextResponse.json({ ok: true, count });
+
+    return NextResponse.json({
+      ok: true,
+      count,
+      newCount: snapshot.newCount,
+      nextPage: snapshot.nextPage,
+      queue: snapshot.memorizeQueue.pageOrder.length > 0
+        ? snapshot.memorizeQueue
+        : null,
+      reviewCount: snapshot.reviewCount,
+      stats,
+      upToPage,
+      juzProgress,
+    });
   } catch (error) {
     console.error("[hifz/import-memorized] Error:", error);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
