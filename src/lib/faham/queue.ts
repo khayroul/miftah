@@ -12,12 +12,14 @@ import {
   normalizeFahamEngineConfig,
 } from "./engine";
 import {
+  type FahamRecentExposureSource,
   getBootstrapFahamCards,
   getDueFahamCards,
   getFahamExposureCandidates,
   getFahamMcqWordPool,
   getLearningFahamCards,
   getMasteredFahamCards,
+  getRecentFahamExposureSources,
   materializeNewFahamCards,
 } from "./repository";
 
@@ -52,6 +54,7 @@ export interface SerializedFahamCard {
   needsReinforcement: boolean;
   progressId: number;
   reps: number;
+  sourceContext?: SerializedFahamSourceContext;
   state: number;
   word: {
     frequency: number;
@@ -62,6 +65,27 @@ export interface SerializedFahamCard {
     translationEn: string | null;
     transliteration: string | null;
   };
+}
+
+export interface SerializedFahamPrimaryReference {
+  ayahNumber: number;
+  href: string | null;
+  label: string;
+  pageNumber: number | null;
+  position: number;
+  surahId: number;
+}
+
+export interface SerializedFahamSourceLink {
+  detail: string;
+  href: string;
+  label: string;
+  type: FahamSourceType;
+}
+
+export interface SerializedFahamSourceContext {
+  primaryReference: SerializedFahamPrimaryReference | null;
+  sources: SerializedFahamSourceLink[];
 }
 
 export interface FahamQueueSnapshot {
@@ -83,6 +107,133 @@ export interface FahamQueueSnapshot {
 
 type FahamDueCard = Awaited<ReturnType<typeof getDueFahamCards>>[number];
 
+function firstRelation<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+  return value ?? null;
+}
+
+function toPositiveInt(value: number | null | undefined): number | null {
+  if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) {
+    return null;
+  }
+  return value;
+}
+
+function buildPrimaryReference(card: FahamDueCard): SerializedFahamPrimaryReference | null {
+  const occurrence = firstRelation(card.word.word_occurrences);
+  const ayah = occurrence ? firstRelation(occurrence.ayat) : null;
+  const surahId = toPositiveInt(ayah?.surah_id);
+  const ayahNumber = toPositiveInt(ayah?.ayah_number);
+  const position = toPositiveInt(occurrence?.position);
+  if (!surahId || !ayahNumber || !position) {
+    return null;
+  }
+
+  const pageNumber = toPositiveInt(occurrence?.page_number);
+
+  return {
+    ayahNumber,
+    href: pageNumber ? `/read/${pageNumber}` : null,
+    label: `${surahId}:${ayahNumber}`,
+    pageNumber,
+    position,
+    surahId,
+  };
+}
+
+function buildSourceLinks(
+  rows: FahamRecentExposureSource[],
+  primaryReference: SerializedFahamPrimaryReference | null,
+): SerializedFahamSourceLink[] {
+  const deduped = new Set<string>();
+  const links: SerializedFahamSourceLink[] = [];
+
+  for (const row of rows) {
+    if (row.sourceType === "reading_page") {
+      const pageNumber = toPositiveInt(row.pageNumber) ?? primaryReference?.pageNumber ?? null;
+      if (!pageNumber) {
+        continue;
+      }
+
+      const key = row.sourceKey ?? `reading-page:${pageNumber}`;
+      if (deduped.has(key)) {
+        continue;
+      }
+      deduped.add(key);
+      links.push({
+        detail:
+          primaryReference && primaryReference.label
+            ? `Kembali ke ayat ${primaryReference.label} dalam mushaf.`
+            : `Kembali ke halaman ${pageNumber} dalam mushaf.`,
+        href: `/read/${pageNumber}`,
+        label: `Baca · Halaman ${pageNumber}`,
+        type: "reading_page",
+      });
+      continue;
+    }
+
+    if (row.sourceType === "theme_chunk") {
+      const surahId = toPositiveInt(row.surahId);
+      const chunkIndex = toPositiveInt(row.themeChunkIndex);
+      if (!surahId || !chunkIndex) {
+        continue;
+      }
+
+      const key = row.sourceKey ?? `theme-chunk:${surahId}:${chunkIndex}`;
+      if (deduped.has(key)) {
+        continue;
+      }
+      deduped.add(key);
+      links.push({
+        detail: `Buka semula bacaan bertema surah ${surahId}, bahagian ${chunkIndex}.`,
+        href: `/read/surah/${surahId}/themes?chunk=${chunkIndex}`,
+        label: `Tema · Surah ${surahId}, Bahagian ${chunkIndex}`,
+        type: "theme_chunk",
+      });
+      continue;
+    }
+
+    if (!primaryReference?.pageNumber) {
+      continue;
+    }
+
+    const key = row.sourceKey ?? `hifz-ayah:${primaryReference.label}`;
+    if (deduped.has(key)) {
+      continue;
+    }
+    deduped.add(key);
+    links.push({
+      detail: `Buka semula halaman hafalan yang mengandungi ayat ${primaryReference.label}.`,
+      href: `/read/${primaryReference.pageNumber}?mode=hifz&from=dashboard`,
+      label: `Hafal · ${primaryReference.label}`,
+      type: "hifz_ayah",
+    });
+  }
+
+  return links.slice(0, 3);
+}
+
+function attachSourceContext(
+  cards: SerializedFahamCard[],
+  sourcesByWordId: Map<number, FahamRecentExposureSource[]>,
+): SerializedFahamCard[] {
+  return cards.map((card) => ({
+    ...card,
+    sourceContext:
+      card.sourceContext?.primaryReference || (sourcesByWordId.get(card.word.id)?.length ?? 0) > 0
+        ? {
+            primaryReference: card.sourceContext?.primaryReference ?? null,
+            sources: buildSourceLinks(
+              sourcesByWordId.get(card.word.id) ?? [],
+              card.sourceContext?.primaryReference ?? null,
+            ),
+          }
+        : undefined,
+  }));
+}
+
 function serializeCard(
   card: FahamDueCard,
   kind: "due" | "new" | "mastered",
@@ -103,6 +254,10 @@ function serializeCard(
     needsReinforcement: card.progress.needs_reinforcement,
     progressId: card.progress.id,
     reps: card.progress.reps,
+    sourceContext: {
+      primaryReference: buildPrimaryReference(card),
+      sources: [],
+    },
     state: card.progress.state,
     word: {
       frequency: card.word.frequency,
@@ -189,11 +344,40 @@ export async function buildFahamQueueSnapshot(
     });
   }
 
+  const sourceWordIds = Array.from(
+    new Set(
+      [
+        ...surfacedDueCards,
+        ...surfacedLearningCards,
+        ...surfacedMasteredCards,
+        ...surfacedNewCards,
+      ].map((card) => card.word.id),
+    ),
+  );
+  const recentSources = await getRecentFahamExposureSources(userId, sourceWordIds);
+  const sourcesByWordId = new Map<number, FahamRecentExposureSource[]>();
+  for (const source of recentSources) {
+    const current = sourcesByWordId.get(source.wordId) ?? [];
+    current.push(source);
+    sourcesByWordId.set(source.wordId, current);
+  }
+
+  const dueCardsWithContext = attachSourceContext(surfacedDueCards, sourcesByWordId);
+  const masteredCardsWithContext = attachSourceContext(
+    surfacedMasteredCards,
+    sourcesByWordId,
+  );
+  const learningCardsWithContext = attachSourceContext(
+    surfacedLearningCards,
+    sourcesByWordId,
+  );
+  const newCardsWithContext = attachSourceContext(surfacedNewCards, sourcesByWordId);
+
   const surfaceCount =
-    surfacedDueCards.length +
-    surfacedLearningCards.length +
-    surfacedMasteredCards.length +
-    surfacedNewCards.length;
+    dueCardsWithContext.length +
+    learningCardsWithContext.length +
+    masteredCardsWithContext.length +
+    newCardsWithContext.length;
   if (surfaceCount === 0) {
     const fallbackQueue: SerializedFahamCard[] = [];
     const seenProgressIds = new Set<number>();
@@ -250,11 +434,11 @@ export async function buildFahamQueueSnapshot(
 
   return {
     blockedReason: plan.blockedReason,
-    due: surfacedDueCards,
+    due: dueCardsWithContext,
     levelProgress,
-    new: surfacedNewCards,
-    mastered: surfacedMasteredCards,
-    learning: surfacedLearningCards,
+    new: newCardsWithContext,
+    mastered: masteredCardsWithContext,
+    learning: learningCardsWithContext,
     stats: {
       ...plan.stats,
       focusWordLimit: Math.min(TOP_FAHAM_WORD_LIMIT, focusWordLimit),

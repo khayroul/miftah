@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import type { FahamSourceType } from "@/types/database";
 import type { FahamQueueSnapshot, SerializedFahamCard } from "@/lib/faham/queue";
@@ -88,6 +89,10 @@ function dueLabel(count: number): string {
 
 function newLabel(count: number): string {
   return count === 1 ? "1 kad baharu" : `${count} kad baharu`;
+}
+
+function learningLabel(count: number): string {
+  return count === 1 ? "1 kad menunggu giliran" : `${count} kad menunggu giliran`;
 }
 
 function masteredLabel(count: number): string {
@@ -397,7 +402,6 @@ export function FahamWorkspace({
 
   return (
     <div className="relative flex flex-col gap-6">
-      {/* Celebration Notification */}
       {showCelebration && (
         <div className="pointer-events-none fixed inset-x-0 top-24 z-[100] flex justify-center px-4 sm:top-32">
           <div className="animate-bounce-in flex items-center gap-3 rounded-full border border-emerald-200 bg-emerald-50/95 px-6 py-3 shadow-[0_20px_40px_-15px_rgba(16,185,129,0.4)] backdrop-blur dark:border-emerald-500/30 dark:bg-emerald-950/90">
@@ -413,229 +417,6 @@ export function FahamWorkspace({
           </div>
         </div>
       )}
-
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="inline-flex items-center rounded-full border border-stone-200 bg-stone-100/50 px-3 py-1 text-sm font-bold tracking-widest text-stone-500 uppercase sm:text-base dark:border-stone-700/50 dark:bg-stone-800/30 dark:text-stone-400">
-            Faham Engine · Dashboard Metrics
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsConfigExpanded(!isConfigExpanded)}
-              className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition shadow-sm sm:text-base ${
-                isConfigExpanded
-                  ? "border-amber-300 bg-amber-100 text-amber-950 dark:border-amber-500/30 dark:bg-amber-900/50"
-                  : "border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
-              }`}
-            >
-              <svg
-                className={`h-3.5 w-3.5 transition-transform duration-300 ${isConfigExpanded ? "rotate-180" : ""}`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <path d="M12 5v14M5 12l7 7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              {isConfigExpanded ? "Tutup Tetapan" : "Tetapan Enjin"}
-            </button>
-
-            <button
-              onClick={() => reloadQueue(preset, directionMode, !isRevision)}
-              disabled={isPending}
-              className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition shadow-sm sm:text-base ${
-                isRevision
-                  ? "border-emerald-300 bg-emerald-100 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-900/50"
-                  : "border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
-              }`}
-            >
-              <svg
-                className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : isRevision ? "animate-pulse" : ""}`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              {isRevision ? "Ulang Kaji Aktif" : "Mula Ulang Kaji"}
-            </button>
-          </div>
-        </div>
-
-        {isConfigExpanded && (
-          <aside className="animate-in fade-in slide-in-from-top-2 duration-300 rounded-[1.75rem] border border-stone-200/80 bg-white/80 p-5 dark:border-stone-700 dark:bg-stone-950/60 shadow-xl backdrop-blur-md">
-            <div className="grid gap-8 lg:grid-cols-2">
-              {/* Keutamaan Deck */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold uppercase tracking-[0.22em] text-stone-500 sm:text-base dark:text-stone-400">
-                    Susun deck sesi ini
-                  </p>
-                  <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm font-bold text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
-                    {PRESET_CONFIGS[preset].shortLabel}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {(Object.keys(PRESET_CONFIGS) as SourcePreset[]).map((key) => {
-                    const active = preset === key;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => reloadQueue(key, directionMode)}
-                        disabled={isPending}
-                        className={`rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition sm:text-base ${
-                          active
-                            ? "border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-500/50 dark:bg-amber-900/30 dark:text-amber-100"
-                            : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
-                        }`}
-                      >
-                        {PRESET_CONFIGS[key].label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="rounded-xl border border-stone-200/80 bg-white/60 p-3 text-sm leading-relaxed text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900/50 dark:text-stone-400">
-                  {PRESET_CONFIGS[preset].helper}
-                </div>
-              </div>
-
-              {/* Arah Soalan */}
-              <div className="space-y-4 border-t border-stone-200/80 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0 dark:border-stone-700">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold uppercase tracking-[0.22em] text-stone-500 sm:text-base dark:text-stone-400">
-                    Arah soalan
-                  </p>
-                  <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm font-bold text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
-                    {DIRECTION_CONFIGS[directionMode].shortLabel}
-                  </span>
-                </div>
-                <div className="grid gap-2">
-                  {(Object.keys(DIRECTION_CONFIGS) as FahamMcqDirectionMode[]).map((key) => {
-                    const active = directionMode === key;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => reloadQueue(preset, key)}
-                        disabled={isPending}
-                        className={`rounded-xl border px-4 py-2.5 text-left transition ${
-                          active
-                            ? "border-teal-300 bg-teal-50 text-teal-900 dark:border-teal-500/50 dark:bg-teal-950/30 dark:text-teal-100"
-                            : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
-                        }`}
-                      >
-                        <div className="text-sm font-bold sm:text-base">{DIRECTION_CONFIGS[key].label}</div>
-                        <div className="mt-0.5 text-sm leading-tight text-stone-500 sm:text-base dark:text-stone-400">
-                          {DIRECTION_CONFIGS[key].helper}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </aside>
-        )}
-      </div>
-
-      <section className="animate-fade-in-up rounded-[2rem] border border-stone-200/85 bg-white/85 p-5 shadow-[0_30px_80px_-52px_rgba(41,37,36,0.65)] backdrop-blur-sm sm:p-7 dark:border-stone-700 dark:bg-stone-900/78 dark:shadow-[0_30px_80px_-52px_rgba(2,6,23,0.95)]">
-        <div className="flex flex-col gap-6 transition-all duration-300">
-          <div className="space-y-5">
-            <div className={isConfigExpanded ? "" : "max-w-4xl"}>
-              <h1 className="text-4xl font-medium tracking-tight text-stone-900 sm:text-5xl dark:text-stone-50">
-                Fahami makna tanpa membuka jawapan terlebih dahulu.
-              </h1>
-              <p className="mt-2 text-[15px] leading-relaxed text-stone-600 sm:text-base dark:text-stone-300">
-                Faham kini menggunakan algoritma FSRS untuk penjadualan kad yang tepat.
-                Sesi akan utamakan kad due, mengekalkan momentum learning, dan sentiasa
-                tambah pengukuhan mastery supaya queue tidak kosong.
-              </p>
-              <div className="mt-4 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4 dark:border-amber-500/30 dark:bg-amber-950/20">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 dark:border-amber-500/50 dark:bg-amber-900/40 dark:text-amber-100">
-                    L{levelProgress.activeLevel}
-                  </span>
-                  <span className="text-sm text-stone-700 dark:text-stone-200">
-                    Scope aktif: Top {levelProgress.activeWordLimit}
-                  </span>
-                  <span className="text-sm text-stone-700 dark:text-stone-200">
-                    Lemma: {levelProgress.lemmaUnlocked ? "Dibuka" : "Belum dibuka (L4)"}
-                  </span>
-                </div>
-
-                {levelProgress.isMaxLevel ? (
-                  <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">
-                    Tahap maksimum telah dibuka. Teruskan naikkan Mahir.
-                  </p>
-                ) : (
-                  <div className="mt-3 space-y-2">
-                    <p className="text-sm text-stone-700 dark:text-stone-200">
-                      L{levelProgress.nextLevel} akan buka cap ke {nextCapLabel} perkataan.
-                    </p>
-                    <div>
-                      <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-300">
-                        <span>Ditemui</span>
-                        <span>{Math.round(foundUnlockPct)}%</span>
-                      </div>
-                      <div className="mt-1 h-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30">
-                        <div className="h-full rounded-full bg-amber-500" style={{ width: `${foundUnlockPct}%` }} />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-300">
-                        <span>Mahir</span>
-                        <span>{Math.round(masteredUnlockPct)}%</span>
-                      </div>
-                      <div className="mt-1 h-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-                        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${masteredUnlockPct}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className={`grid gap-3 sm:grid-cols-3 ${isConfigExpanded ? "grid-cols-2 lg:grid-cols-3 xl:grid-cols-5" : "grid-cols-2 md:grid-cols-5"}`}>
-              <StatCard
-                label="Found"
-                value={`${foundCount} / ${foundCap}`}
-                highlight
-                helper="Perkataan ditemui"
-                progress={foundCap > 0 ? foundCount / foundCap : 0}
-                progressLabel={`${Math.floor((foundCap > 0 ? (foundCount / foundCap) * 100 : 0))}% sasaran`}
-              />
-              <StatCard
-                label="Mahir"
-                value={`${stats?.mastered ?? 0} / ${foundCount}`}
-                helper="Mastered / Found"
-              />
-              <StatCard
-                label="Learning"
-                value={String(stats?.learning ?? 0)}
-                helper="Sedang Belajar"
-              />
-              <StatCard
-                label="Due Today"
-                value={String(stats?.dueToday ?? 0)}
-                helper="Ulang kaji"
-              />
-              <StatCard
-                label="7-Day Retention"
-                value={
-                  stats && Number.isFinite(stats.retentionRate7d)
-                    ? `${(stats.retentionRate7d * 100).toFixed(0)}%`
-                    : "0%"
-                }
-                helper="Kadar Ingatan"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
 
       {errorMessage ? (
         <section className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
@@ -882,6 +663,52 @@ export function FahamWorkspace({
                       dengan betul.
                     </p>
                   ) : null}
+
+                  {currentCard.sourceContext?.primaryReference ||
+                  (currentCard.sourceContext?.sources.length ?? 0) > 0 ? (
+                    <div className="mt-4 rounded-2xl border border-stone-200/70 bg-white/70 p-4 dark:border-stone-700/60 dark:bg-stone-950/40">
+                      <p className="text-sm font-bold uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
+                        Jejak semula dalam Quran
+                      </p>
+
+                      {currentCard.sourceContext?.primaryReference ? (
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          {currentCard.sourceContext.primaryReference.href ? (
+                            <Link
+                              href={currentCard.sourceContext.primaryReference.href}
+                              className="rounded-full border border-stone-300 bg-stone-100 px-3 py-1 text-sm font-medium text-stone-800 transition hover:bg-stone-200 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:hover:bg-stone-800"
+                            >
+                              Ayat {currentCard.sourceContext.primaryReference.label}
+                            </Link>
+                          ) : (
+                            <span className="rounded-full border border-stone-300 bg-stone-100 px-3 py-1 text-sm font-medium text-stone-800 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100">
+                              Ayat {currentCard.sourceContext.primaryReference.label}
+                            </span>
+                          )}
+                          {currentCard.sourceContext.primaryReference.pageNumber ? (
+                            <span className="text-sm text-stone-600 dark:text-stone-300">
+                              Halaman {currentCard.sourceContext.primaryReference.pageNumber}
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {(currentCard.sourceContext?.sources.length ?? 0) > 0 ? (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {currentCard.sourceContext?.sources.map((source) => (
+                            <Link
+                              key={`${currentCard.progressId}-${source.type}-${source.href}`}
+                              href={source.href}
+                              className="rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1 text-sm font-medium text-amber-900 transition hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-100 dark:hover:bg-amber-900/45"
+                              title={source.detail}
+                            >
+                              {source.label}
+                            </Link>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
 
                 <button
@@ -933,6 +760,275 @@ export function FahamWorkspace({
           </p>
         </section>
       )}
+
+      <section className="rounded-[2rem] border border-stone-200/85 bg-white/85 p-5 shadow-[0_30px_80px_-52px_rgba(41,37,36,0.4)] backdrop-blur-sm sm:p-7 dark:border-stone-700 dark:bg-stone-900/78">
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center rounded-full border border-stone-200 bg-stone-100/70 px-3 py-1 text-sm font-bold tracking-[0.18em] text-stone-500 uppercase dark:border-stone-700 dark:bg-stone-800/40 dark:text-stone-400">
+                Sesi ini
+              </div>
+              <h1 className="mt-3 text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-50">
+                Jawab dahulu, ubah tetapan hanya bila perlu.
+              </h1>
+              <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-stone-600 sm:text-base dark:text-stone-300">
+                Kad ulang kaji datang daripada jawapan lepas yang sudah due. Kad menunggu giliran ialah kad yang masih dalam fasa belajar tetapi belum sampai masanya. Kad baharu pula dibuka daripada perkataan yang anda sudah jumpa semasa Baca, Tema, atau Hafal. Found menunjukkan berapa banyak perkataan dalam cap aktif yang anda telah temui setakat ini.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setIsConfigExpanded(!isConfigExpanded)}
+                className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition shadow-sm sm:text-base ${
+                  isConfigExpanded
+                    ? "border-amber-300 bg-amber-100 text-amber-950 dark:border-amber-500/30 dark:bg-amber-900/50"
+                    : "border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
+                }`}
+              >
+                <svg
+                  className={`h-3.5 w-3.5 transition-transform duration-300 ${isConfigExpanded ? "rotate-180" : ""}`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <path d="M12 5v14M5 12l7 7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {isConfigExpanded ? "Tutup Pilihan Lanjutan" : "Buka Pilihan Lanjutan"}
+              </button>
+
+              <button
+                onClick={() => reloadQueue(preset, directionMode, !isRevision)}
+                disabled={isPending}
+                className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition shadow-sm sm:text-base ${
+                  isRevision
+                    ? "border-emerald-300 bg-emerald-100 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-900/50"
+                    : "border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
+                }`}
+              >
+                <svg
+                  className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : isRevision ? "animate-pulse" : ""}`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {isRevision ? "Ulang Kaji Aktif" : "Mula Ulang Kaji"}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-2xl border border-teal-200/70 bg-teal-50/70 p-4 dark:border-teal-700/40 dark:bg-teal-950/20">
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-teal-800 dark:text-teal-300">
+                Ulang kaji
+              </p>
+              <p className="mt-2 text-3xl font-semibold tracking-tight text-teal-950 dark:text-teal-50">
+                {snapshot.due.length}
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-teal-900/80 dark:text-teal-100/80">
+                Kad yang pernah dijawab dan sudah sampai masa untuk disemak semula.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-sky-200/70 bg-sky-50/70 p-4 dark:border-sky-700/40 dark:bg-sky-950/20">
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-sky-800 dark:text-sky-300">
+                Menunggu giliran
+              </p>
+              <p className="mt-2 text-3xl font-semibold tracking-tight text-sky-950 dark:text-sky-50">
+                {snapshot.learning.length}
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-sky-900/80 dark:text-sky-100/80">
+                Kad yang masih belajar, tetapi belum due untuk sesi ini.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-amber-200/70 bg-amber-50/70 p-4 dark:border-amber-700/40 dark:bg-amber-950/20">
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-800 dark:text-amber-300">
+                Kad baharu
+              </p>
+              <p className="mt-2 text-3xl font-semibold tracking-tight text-amber-950 dark:text-amber-50">
+                {snapshot.new.length}
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-amber-900/80 dark:text-amber-100/80">
+                Perkataan yang baru terbuka hasil pendedahan daripada baca, tema, atau hafal.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-indigo-200/70 bg-indigo-50/70 p-4 dark:border-indigo-700/40 dark:bg-indigo-950/20">
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-indigo-800 dark:text-indigo-300">
+                Pengukuhan
+              </p>
+              <p className="mt-2 text-3xl font-semibold tracking-tight text-indigo-950 dark:text-indigo-50">
+                {snapshot.mastered.length}
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-indigo-900/80 dark:text-indigo-100/80">
+                Kad mahir yang diselitkan sekali-sekala supaya sambungan dengan ayat asal kekal segar.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4 dark:border-amber-500/30 dark:bg-amber-950/20">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 dark:border-amber-500/50 dark:bg-amber-900/40 dark:text-amber-100">
+                L{levelProgress.activeLevel}
+              </span>
+              <span className="text-sm text-stone-700 dark:text-stone-200">
+                Found {foundCount} / {foundCap}
+              </span>
+              <span className="text-sm text-stone-700 dark:text-stone-200">
+                {learningLabel(snapshot.learning.length)}
+              </span>
+              <span className="text-sm text-stone-700 dark:text-stone-200">
+                {stats?.dueToday ?? snapshot.due.length} due hari ini
+              </span>
+            </div>
+
+            {levelProgress.isMaxLevel ? (
+              <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">
+                Tahap maksimum telah dibuka. Teruskan naikkan Mahir.
+              </p>
+            ) : (
+              <div className="mt-3 space-y-2">
+                <p className="text-sm text-stone-700 dark:text-stone-200">
+                  L{levelProgress.nextLevel} akan buka cap ke {nextCapLabel} perkataan.
+                </p>
+                <div>
+                  <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-300">
+                    <span>Ditemui</span>
+                    <span>{Math.round(foundUnlockPct)}%</span>
+                  </div>
+                  <div className="mt-1 h-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30">
+                    <div className="h-full rounded-full bg-amber-500" style={{ width: `${foundUnlockPct}%` }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-300">
+                    <span>Mahir</span>
+                    <span>{Math.round(masteredUnlockPct)}%</span>
+                  </div>
+                  <div className="mt-1 h-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                    <div className="h-full rounded-full bg-emerald-500" style={{ width: `${masteredUnlockPct}%` }} />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {isConfigExpanded ? (
+            <div className="space-y-5">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                <StatCard
+                  label="Found"
+                  value={`${foundCount} / ${foundCap}`}
+                  highlight
+                  helper="Perkataan ditemui"
+                  progress={foundCap > 0 ? foundCount / foundCap : 0}
+                  progressLabel={`${Math.floor(foundCap > 0 ? (foundCount / foundCap) * 100 : 0)}% sasaran`}
+                />
+                <StatCard
+                  label="Mahir"
+                  value={`${stats?.mastered ?? 0} / ${foundCount}`}
+                  helper="Mastered / Found"
+                />
+                <StatCard
+                  label="Learning"
+                  value={String(stats?.learning ?? 0)}
+                  helper="Sedang Belajar"
+                />
+                <StatCard
+                  label="Due Today"
+                  value={String(stats?.dueToday ?? 0)}
+                  helper="Ulang kaji"
+                />
+                <StatCard
+                  label="7-Day Retention"
+                  value={
+                    stats && Number.isFinite(stats.retentionRate7d)
+                      ? `${(stats.retentionRate7d * 100).toFixed(0)}%`
+                      : "0%"
+                  }
+                  helper="Kadar Ingatan"
+                />
+              </div>
+
+              <aside className="animate-in fade-in slide-in-from-top-2 duration-300 rounded-[1.75rem] border border-stone-200/80 bg-white/80 p-5 shadow-xl backdrop-blur-md dark:border-stone-700 dark:bg-stone-950/60">
+                <div className="grid gap-8 lg:grid-cols-2">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold uppercase tracking-[0.22em] text-stone-500 sm:text-base dark:text-stone-400">
+                        Susun deck sesi ini
+                      </p>
+                      <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm font-bold text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
+                        {PRESET_CONFIGS[preset].shortLabel}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(Object.keys(PRESET_CONFIGS) as SourcePreset[]).map((key) => {
+                        const active = preset === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => reloadQueue(key, directionMode)}
+                            disabled={isPending}
+                            className={`rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition sm:text-base ${
+                              active
+                                ? "border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-500/50 dark:bg-amber-900/30 dark:text-amber-100"
+                                : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
+                            }`}
+                          >
+                            {PRESET_CONFIGS[key].label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="rounded-xl border border-stone-200/80 bg-white/60 p-3 text-sm leading-relaxed text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900/50 dark:text-stone-400">
+                      {PRESET_CONFIGS[preset].helper}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 border-t border-stone-200/80 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0 dark:border-stone-700">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold uppercase tracking-[0.22em] text-stone-500 sm:text-base dark:text-stone-400">
+                        Arah soalan
+                      </p>
+                      <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm font-bold text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
+                        {DIRECTION_CONFIGS[directionMode].shortLabel}
+                      </span>
+                    </div>
+                    <div className="grid gap-2">
+                      {(Object.keys(DIRECTION_CONFIGS) as FahamMcqDirectionMode[]).map((key) => {
+                        const active = directionMode === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => reloadQueue(preset, key)}
+                            disabled={isPending}
+                            className={`rounded-xl border px-4 py-2.5 text-left transition ${
+                              active
+                                ? "border-teal-300 bg-teal-50 text-teal-900 dark:border-teal-500/50 dark:bg-teal-950/30 dark:text-teal-100"
+                                : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
+                            }`}
+                          >
+                            <div className="text-sm font-bold sm:text-base">{DIRECTION_CONFIGS[key].label}</div>
+                            <div className="mt-0.5 text-sm leading-tight text-stone-500 sm:text-base dark:text-stone-400">
+                              {DIRECTION_CONFIGS[key].helper}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          ) : null}
+        </div>
+      </section>
     </div>
   );
 }

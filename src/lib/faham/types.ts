@@ -7,6 +7,7 @@ import type {
 
 interface WordOccurrenceLite {
   ayah_id: number;
+  page_number?: number | null;
   position: number;
   ayat: { surah_id: number; ayah_number: number } | { surah_id: number; ayah_number: number }[] | null;
 }

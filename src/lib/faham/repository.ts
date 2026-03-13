@@ -23,6 +23,7 @@ interface AyahLite {
 
 interface WordOccurrenceLite {
   ayah_id: number;
+  page_number: number | null;
   position: number;
   ayat: AyahLite | AyahLite[] | null;
 }
@@ -37,9 +38,20 @@ interface VocabProgressWordJoinRow extends VocabProgress {
 
 interface WordOccurrenceJoinRow {
   ayah_id: number;
+  page_number: number | null;
   position: number;
   word_id: number;
   words: RepoWordWithOccurrences | RepoWordWithOccurrences[] | null;
+}
+
+export interface FahamRecentExposureSource {
+  exposedAt: string;
+  pageNumber: number | null;
+  sourceKey: string | null;
+  sourceType: "reading_page" | "theme_chunk" | "hifz_ayah";
+  surahId: number | null;
+  themeChunkIndex: number | null;
+  wordId: number;
 }
 
 function firstRelation<T>(value: T | T[] | null): T | null {
@@ -85,7 +97,7 @@ async function getUniqueWordOccurrencesForAyahIds(
   const { data, error } = await supabaseServer
     .from("word_occurrences")
     .select(
-      "ayah_id, position, word_id, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency)",
+      "ayah_id, page_number, position, word_id, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency)",
     )
     .in("ayah_id", uniqueAyahIds)
     .order("ayah_id", { ascending: true })
@@ -182,7 +194,7 @@ export async function getDueFahamCards(
   const { data, error } = await supabaseServer
     .from("vocab_progress")
     .select(
-      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayat(surah_id, ayah_number)))",
+      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, page_number, ayat(surah_id, ayah_number)))",
     )
     .eq("user_id", userId)
     .in("word_id", topWordIds)
@@ -263,7 +275,7 @@ export async function getFahamExposureCandidates(
       supabaseServer
         .from("words")
         .select(
-          "id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayat(surah_id, ayah_number))",
+          "id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, page_number, ayat(surah_id, ayah_number))",
         )
         .in("id", wordIds),
       supabaseServer
@@ -335,7 +347,7 @@ export async function getBootstrapFahamCards(
       supabaseServer
         .from("words")
         .select(
-          "id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayat(surah_id, ayah_number))",
+          "id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, page_number, ayat(surah_id, ayah_number))",
         )
         .in("id", topWordIds)
         .not("translation_bm", "is", null)
@@ -383,7 +395,7 @@ export async function getMasteredFahamCards(
   const { data, error } = await supabaseServer
     .from("vocab_progress")
     .select(
-      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayat(surah_id, ayah_number)))",
+      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, page_number, ayat(surah_id, ayah_number)))",
     )
     .eq("user_id", userId)
     .in("word_id", topWordIds)
@@ -443,7 +455,7 @@ export async function getLearningFahamCards(
   const { data, error } = await supabaseServer
     .from("vocab_progress")
     .select(
-      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayat(surah_id, ayah_number)))",
+      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, page_number, ayat(surah_id, ayah_number)))",
     )
     .eq("user_id", userId)
     .in("word_id", topWordIds)
@@ -566,6 +578,48 @@ export async function getFahamStats(
   };
 }
 
+export async function getRecentFahamExposureSources(
+  userId: string,
+  wordIds: number[],
+): Promise<FahamRecentExposureSource[]> {
+  const uniqueWordIds = Array.from(
+    new Set(wordIds.filter((wordId) => Number.isInteger(wordId) && wordId > 0)),
+  );
+  if (uniqueWordIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabaseServer
+    .from("vocab_exposure_events")
+    .select(
+      "word_id, source_type, source_key, page_number, surah_id, theme_chunk_index, exposed_at",
+    )
+    .eq("user_id", userId)
+    .in("word_id", uniqueWordIds)
+    .order("exposed_at", { ascending: false });
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as Array<{
+    exposed_at: string;
+    page_number: number | null;
+    source_key: string | null;
+    source_type: "reading_page" | "theme_chunk" | "hifz_ayah";
+    surah_id: number | null;
+    theme_chunk_index: number | null;
+    word_id: number;
+  }>).map((row) => ({
+    exposedAt: row.exposed_at,
+    pageNumber: row.page_number,
+    sourceKey: row.source_key,
+    sourceType: row.source_type,
+    surahId: row.surah_id,
+    themeChunkIndex: row.theme_chunk_index,
+    wordId: row.word_id,
+  }));
+}
+
 export async function getFahamMcqWordPool(
   limit: number,
   wordLimit = TOP_FAHAM_WORD_LIMIT,
@@ -578,7 +632,7 @@ export async function getFahamMcqWordPool(
   const { data, error } = await supabaseServer
     .from("words")
     .select(
-      "id, text_uthmani, text_simple, translation_bm, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, ayat(surah_id, ayah_number))",
+      "id, text_uthmani, text_simple, translation_bm, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, page_number, ayat(surah_id, ayah_number))",
     )
     .in("id", topWordIds)
     .not("translation_bm", "is", null)
