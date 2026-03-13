@@ -1072,6 +1072,7 @@ export function MushafPageView({
                 src={`/api/mushaf/page/${pageNumber}?variant=thumb&v=qcfv2`}
                 alt={`Thumbnail halaman mushaf ${pageNumber}`}
                 fill
+                loading="eager"
                 unoptimized
                 sizes="(max-width: 1024px) 100vw, 960px"
                 className={`object-contain transition-opacity duration-200 dark:invert dark:[mix-blend-mode:lighten] ${
@@ -1085,6 +1086,7 @@ export function MushafPageView({
                 src={`/api/mushaf/page/${pageNumber}?v=qcfv2`}
                 alt={`Halaman mushaf ${pageNumber}`}
                 fill
+                loading="eager"
                 unoptimized
                 sizes="(max-width: 1024px) 100vw, 960px"
                 className={`object-contain transition-opacity duration-200 dark:invert dark:[mix-blend-mode:lighten] ${

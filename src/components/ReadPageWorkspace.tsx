@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   MushafPageView,
   type MushafAyahDetail,
@@ -46,6 +46,21 @@ interface ReadPageWorkspaceProps {
 }
 
 const HIFZ_REVEAL_BY_THIRDS_STORAGE_KEY = "miftah:read:hifz-reveal-by-thirds";
+const AUDIO_DISCOVERY_STORAGE_KEY = "miftah:audio:discovered";
+
+function subscribeAudioDiscovery(callback: () => void): () => void {
+  window.addEventListener("miftah:audio-discovery", callback);
+  window.addEventListener("storage", callback);
+
+  return () => {
+    window.removeEventListener("miftah:audio-discovery", callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+function getAudioDiscoverySnapshot(): boolean {
+  return window.localStorage.getItem(AUDIO_DISCOVERY_STORAGE_KEY) === "1";
+}
 
 export function ReadPageWorkspace({
   pageNumber,
@@ -83,12 +98,11 @@ export function ReadPageWorkspace({
   const { mode, setMode } = useReadMode();
   const appliedInitialModeRef = useRef(false);
   const audioEnabledForMode = mode === "read" || mode === "hifz";
-  const [audioDiscovered, setAudioDiscovered] = useState(() => {
-    if (typeof window === "undefined") {
-      return true;
-    }
-    return window.localStorage.getItem("miftah:audio:discovered") === "1";
-  });
+  const audioDiscovered = useSyncExternalStore(
+    subscribeAudioDiscovery,
+    getAudioDiscoverySnapshot,
+    () => true,
+  );
   const [showJumpControls, setShowJumpControls] = useState(false);
   const [tasmiRevealedLines, setTasmiRevealedLines] = useState(0);
   const totalLineCount = manifest?.words
@@ -106,8 +120,8 @@ export function ReadPageWorkspace({
 
   const markAudioDiscovered = useCallback(() => {
     if (!audioDiscovered) {
-      setAudioDiscovered(true);
-      window.localStorage.setItem("miftah:audio:discovered", "1");
+      window.localStorage.setItem(AUDIO_DISCOVERY_STORAGE_KEY, "1");
+      window.dispatchEvent(new Event("miftah:audio-discovery"));
     }
   }, [audioDiscovered]);
 
