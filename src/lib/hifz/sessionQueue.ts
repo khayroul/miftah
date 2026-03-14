@@ -23,6 +23,11 @@ export interface HifzSessionQueue {
   rated: number[]; // progressIds already rated this session
 }
 
+export interface HifzQueuePagePointer {
+  index: number;
+  pageNumber: number;
+}
+
 const STORAGE_PREFIX = "miftah:hifz:queue:";
 
 function storageKey(type: HifzFlowType): string {
@@ -48,6 +53,43 @@ export function groupItemsByPage(items: HifzQueueItem[]): number[] {
     }
   }
   return pages;
+}
+
+export function findQueuePageIndex(
+  queue: Pick<HifzSessionQueue, "pageOrder">,
+  pageNumber: number,
+): number {
+  return queue.pageOrder.indexOf(pageNumber);
+}
+
+export function getAdjacentQueuePageFromQueue(
+  queue: Pick<HifzSessionQueue, "pageOrder">,
+  pageNumber: number,
+  direction: -1 | 1,
+): HifzQueuePagePointer | null {
+  const currentIndex = findQueuePageIndex(queue, pageNumber);
+  if (currentIndex === -1) {
+    return null;
+  }
+
+  const nextIndex = currentIndex + direction;
+  const nextPageNumber = queue.pageOrder[nextIndex];
+  if (nextPageNumber === undefined) {
+    return null;
+  }
+
+  return {
+    index: nextIndex,
+    pageNumber: nextPageNumber,
+  };
+}
+
+export function buildQueuePageHref(
+  type: HifzFlowType,
+  pageNumber: number,
+  index: number,
+): string {
+  return `/read/${pageNumber}?flow=${type}&qi=${index}`;
 }
 
 export function saveQueue(type: HifzFlowType, items: HifzQueueItem[]): HifzSessionQueue | null {
@@ -81,6 +123,51 @@ export function loadQueue(type: HifzFlowType): HifzSessionQueue | null {
   } catch {
     return null;
   }
+}
+
+export function setCurrentPageIndex(
+  type: HifzFlowType,
+  index: number,
+): HifzSessionQueue | null {
+  const queue = loadQueue(type);
+  if (!queue || index < 0 || index >= queue.pageOrder.length) {
+    return null;
+  }
+
+  const updated: HifzSessionQueue = {
+    ...queue,
+    currentPageIndex: index,
+  };
+
+  const storage = getSessionStorage();
+  if (!storage) return null;
+
+  try {
+    storage.setItem(storageKey(type), JSON.stringify(updated));
+    return updated;
+  } catch {
+    return null;
+  }
+}
+
+export function getQueuePagePointer(
+  type: HifzFlowType,
+  pageNumber: number,
+): HifzQueuePagePointer | null {
+  const queue = loadQueue(type);
+  if (!queue) {
+    return null;
+  }
+
+  const index = findQueuePageIndex(queue, pageNumber);
+  if (index === -1) {
+    return null;
+  }
+
+  return {
+    index,
+    pageNumber,
+  };
 }
 
 export function advanceQueue(type: HifzFlowType): HifzSessionQueue | null {
@@ -145,4 +232,17 @@ export function isQueueComplete(queue: HifzSessionQueue): boolean {
 export function currentPage(queue: HifzSessionQueue): number | null {
   if (isQueueComplete(queue)) return null;
   return queue.pageOrder[queue.currentPageIndex] ?? null;
+}
+
+export function getAdjacentQueuePage(
+  type: HifzFlowType,
+  pageNumber: number,
+  direction: -1 | 1,
+): HifzQueuePagePointer | null {
+  const queue = loadQueue(type);
+  if (!queue) {
+    return null;
+  }
+
+  return getAdjacentQueuePageFromQueue(queue, pageNumber, direction);
 }

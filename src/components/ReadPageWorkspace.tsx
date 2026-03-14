@@ -1,7 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   MushafPageView,
   type MushafAyahDetail,
@@ -11,6 +18,12 @@ import { HifzInlineRating } from "@/components/HifzInlineRating";
 import { HifzMemorizeStepper } from "@/components/HifzMemorizeStepper";
 import { useReadAudio } from "@/components/ReadAudioProvider";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
+import {
+  buildQueuePageHref,
+  getAdjacentQueuePage,
+  getQueuePagePointer,
+  setCurrentPageIndex,
+} from "@/lib/hifz/sessionQueue";
 import { rememberLastReadPage } from "@/lib/readingProgressStorage";
 import { useReadMode } from "@/lib/useReadMode";
 import { useRouter } from "next/navigation";
@@ -80,6 +93,7 @@ interface ReadPageWorkspaceProps {
   forceHifzRevealByThirds?: boolean;
   hifzFirstWordCueEnabled?: boolean;
   hifzFlow?: HifzFlowType | null;
+  hifzNavigationSearch?: string | null;
   personalizationPageNumber?: number | null;
 }
 
@@ -140,6 +154,7 @@ export function ReadPageWorkspace({
   forceHifzRevealByThirds = false,
   hifzFirstWordCueEnabled = false,
   hifzFlow = null,
+  hifzNavigationSearch = null,
   personalizationPageNumber = null,
 }: ReadPageWorkspaceProps) {
   const router = useRouter();
@@ -187,6 +202,20 @@ export function ReadPageWorkspace({
     hifzFlow === "memorize" && memorizeViewportInset > 0
       ? memorizeViewportInset + 16
       : undefined;
+  const previousQueuePage = useMemo(
+    () =>
+      hifzFlow === null ? null : getAdjacentQueuePage(hifzFlow, pageNumber, -1),
+    [hifzFlow, pageNumber],
+  );
+  const nextQueuePage = useMemo(
+    () =>
+      hifzFlow === null ? null : getAdjacentQueuePage(hifzFlow, pageNumber, 1),
+    [hifzFlow, pageNumber],
+  );
+  const currentQueuePage = useMemo(
+    () => (hifzFlow === null ? null : getQueuePagePointer(hifzFlow, pageNumber)),
+    [hifzFlow, pageNumber],
+  );
 
   const markAudioDiscovered = useCallback(() => {
     if (!audioDiscovered) {
@@ -331,18 +360,109 @@ export function ReadPageWorkspace({
     };
   }, [hifzFlow, personalizationPageNumber]);
 
-  const handleNavigatePrevPage = useCallback(() => {
+  useEffect(() => {
+    if (hifzFlow === null) {
+      return;
+    }
+
+    if (!currentQueuePage) {
+      return;
+    }
+
+    setCurrentPageIndex(hifzFlow, currentQueuePage.index);
+  }, [currentQueuePage, hifzFlow]);
+
+  useEffect(() => {
+    if (hifzFlow !== null) {
+      if (previousQueuePage) {
+        router.prefetch(
+          buildQueuePageHref(
+            hifzFlow,
+            previousQueuePage.pageNumber,
+            previousQueuePage.index,
+          ),
+        );
+      }
+      if (nextQueuePage) {
+        router.prefetch(
+          buildQueuePageHref(hifzFlow, nextQueuePage.pageNumber, nextQueuePage.index),
+        );
+      }
+      return;
+    }
+
+    if (!hifzNavigationSearch) {
+      return;
+    }
+
+    const previousHref =
+      pageNumber > 1 ? `/read/${pageNumber - 1}?${hifzNavigationSearch}` : null;
+    const nextHref =
+      pageNumber < 604 ? `/read/${pageNumber + 1}?${hifzNavigationSearch}` : null;
+
+    if (previousHref) {
+      router.prefetch(previousHref);
+    }
+    if (nextHref) {
+      router.prefetch(nextHref);
+    }
+  }, [
+    hifzFlow,
+    hifzNavigationSearch,
+    nextQueuePage,
+    pageNumber,
+    previousQueuePage,
+    router,
+  ]);
+
+  const previousPageHref = useMemo(() => {
+    if (hifzFlow !== null) {
+      return previousQueuePage
+        ? buildQueuePageHref(
+            hifzFlow,
+            previousQueuePage.pageNumber,
+            previousQueuePage.index,
+          )
+        : null;
+    }
+
     if (pageNumber <= 1) {
-      return;
+      return null;
     }
-    router.push(`/read/${pageNumber - 1}`);
-  }, [pageNumber, router]);
-  const handleNavigateNextPage = useCallback(() => {
+
+    return hifzNavigationSearch
+      ? `/read/${pageNumber - 1}?${hifzNavigationSearch}`
+      : `/read/${pageNumber - 1}`;
+  }, [hifzFlow, hifzNavigationSearch, pageNumber, previousQueuePage]);
+
+  const nextPageHref = useMemo(() => {
+    if (hifzFlow !== null) {
+      return nextQueuePage
+        ? buildQueuePageHref(hifzFlow, nextQueuePage.pageNumber, nextQueuePage.index)
+        : null;
+    }
+
     if (pageNumber >= 604) {
+      return null;
+    }
+
+    return hifzNavigationSearch
+      ? `/read/${pageNumber + 1}?${hifzNavigationSearch}`
+      : `/read/${pageNumber + 1}`;
+  }, [hifzFlow, hifzNavigationSearch, nextQueuePage, pageNumber]);
+
+  const handleNavigatePrevPage = useCallback(() => {
+    if (!previousPageHref) {
       return;
     }
-    router.push(`/read/${pageNumber + 1}`);
-  }, [pageNumber, router]);
+    router.push(previousPageHref);
+  }, [previousPageHref, router]);
+  const handleNavigateNextPage = useCallback(() => {
+    if (!nextPageHref) {
+      return;
+    }
+    router.push(nextPageHref);
+  }, [nextPageHref, router]);
   const handleMushafTap = useCallback(() => {
     if (!audioEnabledForMode) {
       return;
@@ -465,9 +585,9 @@ export function ReadPageWorkspace({
       {mushafHeader}
 
       <div className="mb-1 flex w-full justify-end gap-2">
-        {pageNumber > 1 ? (
+        {previousPageHref ? (
           <Link
-            href={`/read/${pageNumber - 1}`}
+            href={previousPageHref}
             title="Halaman Sebelum"
             aria-label="Halaman Sebelum"
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 bg-white text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
@@ -485,9 +605,9 @@ export function ReadPageWorkspace({
           </button>
         )}
 
-        {pageNumber < 604 ? (
+        {nextPageHref ? (
           <Link
-            href={`/read/${pageNumber + 1}`}
+            href={nextPageHref}
             title="Halaman Seterusnya"
             aria-label="Halaman Seterusnya"
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 bg-white text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"

@@ -46,6 +46,20 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
       : query.flow === "review"
         ? ("review" as const)
         : null;
+  const preservedHifzParams = new URLSearchParams();
+  if (query.mode === "hifz") {
+    preservedHifzParams.set("mode", "hifz");
+  }
+  if (query.from === "dashboard" || query.from === "hifz") {
+    preservedHifzParams.set("from", query.from);
+  }
+  if (query.intent === "new" || query.intent === "test") {
+    preservedHifzParams.set("intent", query.intent);
+  }
+  if (query.cue === "first-word") {
+    preservedHifzParams.set("cue", query.cue);
+  }
+  const hifzNavigationSearch = preservedHifzParams.toString() || null;
   const fromHifzFlow =
     hifzFlow !== null || query.from === "dashboard" || query.from === "hifz";
   const breadcrumbItems = fromHifzFlow
@@ -132,6 +146,7 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
         forceHifzRevealByThirds={!hifzFlow && forceHifzRevealByThirds}
         hifzFirstWordCueEnabled={!hifzFlow && hifzFirstWordCueEnabled}
         hifzFlow={hifzFlow}
+        hifzNavigationSearch={hifzNavigationSearch}
         personalizationPageNumber={pageNumber}
       />
 

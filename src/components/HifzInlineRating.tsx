@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  buildQueuePageHref,
   loadQueue,
   advanceQueue,
   markRated,
@@ -10,12 +11,24 @@ import {
   isQueueComplete,
   clearQueue,
 } from "@/lib/hifz/sessionQueue";
+import { buildSignInPath } from "@/lib/auth";
 import type { HifzFlowType } from "@/lib/hifz/sessionQueue";
 
 interface HifzInlineRatingProps {
   flowType: HifzFlowType;
   pageNumber: number;
   visible: boolean;
+}
+
+interface FlowErrorState {
+  message: string;
+  requiresSignIn?: boolean;
+}
+
+interface RateBatchResponse {
+  error?: string;
+  ok?: boolean;
+  results?: Array<{ ok: boolean; progressId: number }>;
 }
 
 export function HifzInlineRating({
@@ -26,39 +39,100 @@ export function HifzInlineRating({
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [complete, setComplete] = useState(false);
+  const [errorState, setErrorState] = useState<FlowErrorState | null>(null);
+  const initialFlowError = useMemo(() => {
+    const queue = loadQueue(flowType);
+    if (!queue) {
+      return {
+        message: "Sesi hafalan ini sudah tamat atau hilang. Buka semula dari Hafal.",
+      };
+    }
+
+    const pageItems = getItemsForPage(queue, pageNumber);
+    if (pageItems.length === 0) {
+      return {
+        message: "Halaman ini tiada dalam sesi hafalan semasa. Kembali ke Hafal untuk sambung semula.",
+      };
+    }
+
+    return null;
+  }, [flowType, pageNumber]);
+  const displayedError = errorState ?? initialFlowError;
 
   const handleRate = useCallback(
     async (rating: 1 | 3) => {
       setSubmitting(true);
+      setErrorState(null);
       try {
         const queue = loadQueue(flowType);
         if (!queue) {
+          setErrorState({
+            message: "Sesi hafalan ini sudah tamat atau hilang. Buka semula dari Hafal.",
+          });
           setSubmitting(false);
           return;
         }
 
         const pageItems = getItemsForPage(queue, pageNumber);
-        if (pageItems.length > 0) {
-          const ratings = pageItems.map((item) => ({
-            progressId: item.progressId,
-            rating,
-            block: item.block,
-          }));
-
-          await fetch("/api/hifz/rate-batch", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ratings }),
+        if (pageItems.length === 0) {
+          setErrorState({
+            message: "Halaman ini tiada dalam sesi hafalan semasa. Kembali ke Hafal untuk sambung semula.",
           });
-
-          markRated(
-            flowType,
-            pageItems.map((item) => item.progressId),
-          );
+          setSubmitting(false);
+          return;
         }
 
+        const ratings = pageItems.map((item) => ({
+          progressId: item.progressId,
+          rating,
+          block: item.block,
+        }));
+
+        const response = await fetch("/api/hifz/rate-batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ratings }),
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | RateBatchResponse
+          | null;
+
+        if (
+          !response.ok ||
+          payload?.ok !== true ||
+          payload.results?.some((entry) => entry.ok !== true)
+        ) {
+          setErrorState(
+            response.status === 401
+              ? {
+                  message: "Sesi hafalan perlukan akaun aktif. Log masuk dahulu kemudian buka semula dari Hafal.",
+                  requiresSignIn: true,
+                }
+              : {
+                  message:
+                    payload?.error ??
+                    "Markah hafalan tak dapat disimpan sekarang. Cuba lagi sekali.",
+                },
+          );
+          setSubmitting(false);
+          return;
+        }
+
+        markRated(
+          flowType,
+          pageItems.map((item) => item.progressId),
+        );
+
         const updated = advanceQueue(flowType);
-        if (!updated || isQueueComplete(updated)) {
+        if (!updated) {
+          setErrorState({
+            message: "Sesi hafalan tak dapat disambung. Kembali ke Hafal dan buka semula sesi ini.",
+          });
+          setSubmitting(false);
+          return;
+        }
+
+        if (isQueueComplete(updated)) {
           clearQueue(flowType);
           setComplete(true);
           setSubmitting(false);
@@ -66,15 +140,20 @@ export function HifzInlineRating({
         }
 
         const nextPage = updated.pageOrder[updated.currentPageIndex];
-        router.push(`/read/${nextPage}?flow=${flowType}&qi=${updated.currentPageIndex}`);
+        router.push(
+          buildQueuePageHref(flowType, nextPage, updated.currentPageIndex),
+        );
       } catch {
+        setErrorState({
+          message: "Simpanan hafalan gagal sekarang. Cuba lagi sekali.",
+        });
         setSubmitting(false);
       }
     },
     [flowType, pageNumber, router],
   );
 
-  if (!visible && !complete) return null;
+  if (!visible && !complete && !displayedError) return null;
 
   if (complete) {
     return (
@@ -91,6 +170,35 @@ export function HifzInlineRating({
         >
           Kembali ke Hafal
         </a>
+      </div>
+    );
+  }
+
+  if (displayedError) {
+    return (
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-rose-200 bg-white/95 px-4 py-5 text-center shadow-lg backdrop-blur-md dark:border-rose-900/40 dark:bg-stone-900/95">
+        <p className="mb-2 text-sm font-semibold text-rose-700 dark:text-rose-300">
+          Sesi tergendala
+        </p>
+        <p className="mx-auto mb-4 max-w-xl text-sm text-stone-600 dark:text-stone-300">
+          {displayedError.message}
+        </p>
+        <div className="flex justify-center gap-3">
+          {displayedError.requiresSignIn ? (
+            <a
+              href={buildSignInPath("/hifz")}
+              className="inline-flex items-center rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500"
+            >
+              Log Masuk
+            </a>
+          ) : null}
+          <a
+            href="/hifz"
+            className="inline-flex items-center rounded-xl border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+          >
+            Kembali ke Hafal
+          </a>
+        </div>
       </div>
     );
   }

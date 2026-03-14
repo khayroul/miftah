@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  buildQueuePageHref,
   loadQueue,
   advanceQueue,
   markRated,
@@ -10,6 +11,7 @@ import {
   isQueueComplete,
   clearQueue,
 } from "@/lib/hifz/sessionQueue";
+import { buildSignInPath } from "@/lib/auth";
 import {
   buildMemorizeChunks,
   resolveMemorizeChunkLength,
@@ -46,6 +48,23 @@ const CHUNK_SIZE_OPTIONS: Array<{
   { label: "3", value: 3 },
 ];
 
+interface FlowErrorState {
+  message: string;
+  requiresSignIn?: boolean;
+}
+
+interface RateBatchResponse {
+  error?: string;
+  ok?: boolean;
+  results?: Array<{ ok: boolean; progressId: number }>;
+}
+
+interface MarkMemorizedResponse {
+  count?: number;
+  error?: string;
+  ok?: boolean;
+}
+
 function describeChunk(chunk: MemorizeChunk | null): string {
   if (!chunk || chunk.items.length === 0) {
     return "Tiada ayat dalam chunk ini";
@@ -79,6 +98,7 @@ export function HifzMemorizeStepper({
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [complete, setComplete] = useState(false);
+  const [errorState, setErrorState] = useState<FlowErrorState | null>(null);
   const [panelElement, setPanelElement] = useState<HTMLDivElement | null>(null);
 
   const pageItems = useMemo(() => {
@@ -100,6 +120,23 @@ export function HifzMemorizeStepper({
     () => resolveMemorizeChunkLength(pageItems.length, chunkSize),
     [chunkSize, pageItems.length],
   );
+  const initialFlowError = useMemo(() => {
+    const queue = loadQueue("memorize");
+    if (!queue) {
+      return {
+        message: "Sesi hafalan ini sudah tamat atau hilang. Buka semula dari Hafal.",
+      };
+    }
+
+    if (getItemsForPage(queue, pageNumber).length === 0) {
+      return {
+        message: "Halaman ini tiada dalam sesi hafalan semasa. Kembali ke Hafal untuk sambung semula.",
+      };
+    }
+
+    return null;
+  }, [pageNumber]);
+  const displayedError = errorState ?? initialFlowError;
 
   const goToStep = useCallback(
     (step: Step) => {
@@ -214,6 +251,7 @@ export function HifzMemorizeStepper({
       const chunkItems = currentChunk?.items ?? [];
 
       setSubmitting(true);
+      setErrorState(null);
       try {
         if (!confident) {
           goToStep(1);
@@ -221,32 +259,82 @@ export function HifzMemorizeStepper({
           return;
         }
 
-        if (confident && chunkItems.length > 0) {
-          const ratings = chunkItems.map((item) => ({
-            progressId: item.progressId,
-            rating: 3 as const,
-            block: item.block,
-          }));
-
-          await fetch("/api/hifz/rate-batch", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ratings }),
+        if (chunkItems.length === 0) {
+          setErrorState({
+            message: "Chunk hafalan ini sudah hilang daripada sesi semasa. Kembali ke Hafal dan buka semula.",
           });
-
-          await fetch("/api/hifz/mark-memorized", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ayahIds: chunkItems.map((item) => item.ayahId),
-            }),
-          });
-
-          markRated(
-            "memorize",
-            chunkItems.map((item) => item.progressId),
-          );
+          setSubmitting(false);
+          return;
         }
+
+        const ratings = chunkItems.map((item) => ({
+          progressId: item.progressId,
+          rating: 3 as const,
+          block: item.block,
+        }));
+
+        const rateResponse = await fetch("/api/hifz/rate-batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ratings }),
+        });
+        const ratePayload = (await rateResponse.json().catch(() => null)) as
+          | RateBatchResponse
+          | null;
+
+        if (
+          !rateResponse.ok ||
+          ratePayload?.ok !== true ||
+          ratePayload.results?.some((entry) => entry.ok !== true)
+        ) {
+          setErrorState(
+            rateResponse.status === 401
+              ? {
+                  message: "Sesi hafalan perlukan akaun aktif. Log masuk dahulu kemudian buka semula dari Hafal.",
+                  requiresSignIn: true,
+                }
+              : {
+                  message:
+                    ratePayload?.error ??
+                    "Markah hafalan tak dapat disimpan sekarang. Cuba lagi sekali.",
+                },
+          );
+          setSubmitting(false);
+          return;
+        }
+
+        const markResponse = await fetch("/api/hifz/mark-memorized", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ayahIds: chunkItems.map((item) => item.ayahId),
+          }),
+        });
+        const markPayload = (await markResponse.json().catch(() => null)) as
+          | MarkMemorizedResponse
+          | null;
+
+        if (!markResponse.ok || markPayload?.ok !== true) {
+          setErrorState(
+            markResponse.status === 401
+              ? {
+                  message: "Sesi hafalan perlukan akaun aktif. Log masuk dahulu kemudian buka semula dari Hafal.",
+                  requiresSignIn: true,
+                }
+              : {
+                  message:
+                    markPayload?.error ??
+                    "Status hafalan tak dapat disimpan sekarang. Cuba lagi sekali.",
+                },
+          );
+          setSubmitting(false);
+          return;
+        }
+
+        markRated(
+          "memorize",
+          chunkItems.map((item) => item.progressId),
+        );
 
         const nextChunkIndex = currentChunkIndex + 1;
         if (nextChunkIndex < pageChunks.length) {
@@ -257,7 +345,15 @@ export function HifzMemorizeStepper({
         }
 
         const updated = advanceQueue("memorize");
-        if (!updated || isQueueComplete(updated)) {
+        if (!updated) {
+          setErrorState({
+            message: "Sesi hafalan tak dapat disambung. Kembali ke Hafal dan buka semula sesi ini.",
+          });
+          setSubmitting(false);
+          return;
+        }
+
+        if (isQueueComplete(updated)) {
           clearQueue("memorize");
           setComplete(true);
           setSubmitting(false);
@@ -267,8 +363,13 @@ export function HifzMemorizeStepper({
         }
 
         const nextPage = updated.pageOrder[updated.currentPageIndex];
-        router.push(`/read/${nextPage}?flow=memorize&qi=${updated.currentPageIndex}`);
+        router.push(
+          buildQueuePageHref("memorize", nextPage, updated.currentPageIndex),
+        );
       } catch {
+        setErrorState({
+          message: "Simpanan hafalan gagal sekarang. Cuba lagi sekali.",
+        });
         setSubmitting(false);
       }
     },
@@ -302,6 +403,39 @@ export function HifzMemorizeStepper({
         >
           Kembali ke Hafal
         </a>
+      </div>
+    );
+  }
+
+  if (displayedError) {
+    return (
+      <div
+        ref={setPanelElement}
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-rose-200 bg-white/95 px-4 py-5 text-center shadow-lg backdrop-blur-md dark:border-rose-900/40 dark:bg-stone-900/95"
+        style={{ bottom: bottomOffsetPx }}
+      >
+        <p className="mb-2 text-sm font-semibold text-rose-700 dark:text-rose-300">
+          Sesi tergendala
+        </p>
+        <p className="mx-auto mb-4 max-w-xl text-sm text-stone-600 dark:text-stone-300">
+          {displayedError.message}
+        </p>
+        <div className="flex justify-center gap-3">
+          {displayedError.requiresSignIn ? (
+            <a
+              href={buildSignInPath("/hifz")}
+              className="inline-flex items-center rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500"
+            >
+              Log Masuk
+            </a>
+          ) : null}
+          <a
+            href="/hifz"
+            className="inline-flex items-center rounded-xl border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+          >
+            Kembali ke Hafal
+          </a>
+        </div>
       </div>
     );
   }
