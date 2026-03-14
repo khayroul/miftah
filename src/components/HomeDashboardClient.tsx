@@ -37,6 +37,11 @@ interface ModeCard {
   secondaryOnClick?: () => void;
 }
 
+interface HifzGoalMigrationOverride {
+  dailyGoalCount: number;
+  dailyGoalType: "hifz_pages";
+}
+
 function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, Math.round(value)));
 }
@@ -239,9 +244,13 @@ export function HomeDashboardClient({
 }: HomeDashboardClientProps) {
   const router = useRouter();
   const [migratingHifzGoal, startMigratingHifzGoal] = useTransition();
+  const [submittingHifzGoalMigration, setSubmittingHifzGoalMigration] =
+    useState(false);
   const [hifzGoalMigrationError, setHifzGoalMigrationError] = useState<string | null>(
     null,
   );
+  const [hifzGoalMigrationOverride, setHifzGoalMigrationOverride] =
+    useState<HifzGoalMigrationOverride | null>(null);
   const readingState = useReadingProgressState();
   const readSnapshot = snapshot.read;
   const continuePage = readSnapshot?.lastPage ?? readingState.lastPage ?? 1;
@@ -292,6 +301,21 @@ export function HomeDashboardClient({
     snapshot,
   });
   const heroClasses = toneClasses(homeHero.tone);
+  const activitySnapshot = useMemo(() => {
+    if (!snapshot.activity) {
+      return null;
+    }
+    if (!hifzGoalMigrationOverride) {
+      return snapshot.activity;
+    }
+
+    return {
+      ...snapshot.activity,
+      dailyGoalCount: hifzGoalMigrationOverride.dailyGoalCount,
+      dailyGoalType: hifzGoalMigrationOverride.dailyGoalType,
+      legacyHifzGoalRecommendation: null,
+    };
+  }, [hifzGoalMigrationOverride, snapshot.activity]);
 
   const modeCards: ModeCard[] = [
     {
@@ -393,51 +417,64 @@ export function HomeDashboardClient({
   ];
 
   const goalTypeLabel =
-    snapshot.activity?.dailyGoalType === "faham_words"
+    activitySnapshot?.dailyGoalType === "faham_words"
       ? "perkataan"
-      : snapshot.activity?.dailyGoalType === "read_pages"
+      : activitySnapshot?.dailyGoalType === "read_pages"
         ? "halaman"
-        : snapshot.activity?.dailyGoalType === "hifz_ayat"
+        : activitySnapshot?.dailyGoalType === "hifz_ayat"
           ? "ayat"
-          : snapshot.activity?.dailyGoalType === "hifz_pages"
+          : activitySnapshot?.dailyGoalType === "hifz_pages"
             ? "halaman"
-          : snapshot.activity?.dailyGoalType === "theme_chunks"
+          : activitySnapshot?.dailyGoalType === "theme_chunks"
             ? "tema"
             : "halaman";
 
   const goalProgressPct = clampPercent(
-    snapshot.activity
-      ? (snapshot.activity.todayProgress / snapshot.activity.dailyGoalCount) * 100
+    activitySnapshot
+      ? (activitySnapshot.todayProgress / activitySnapshot.dailyGoalCount) * 100
       : 0,
   );
   const legacyHifzGoalRecommendation =
-    snapshot.activity?.legacyHifzGoalRecommendation ?? null;
+    activitySnapshot?.legacyHifzGoalRecommendation ?? null;
 
-  const handleMigrateLegacyHifzGoal = () => {
+  const handleMigrateLegacyHifzGoal = async () => {
     setHifzGoalMigrationError(null);
-    startMigratingHifzGoal(async () => {
-      try {
-        const response = await fetch("/api/profile/daily-goal/hifz-pages", {
-          method: "POST",
-        });
-        const payload = (await response.json().catch(() => null)) as
-          | { error?: string }
-          | null;
+    setSubmittingHifzGoalMigration(true);
+    try {
+      const response = await fetch("/api/profile/daily-goal/hifz-pages", {
+        method: "POST",
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | {
+            error?: string;
+            nextCount?: number;
+          }
+        | null;
 
-        if (!response.ok) {
-          setHifzGoalMigrationError(
-            payload?.error ?? "Tak dapat tukar sasaran Hafal kepada halaman sekarang.",
-          );
-          return;
-        }
-
-        router.refresh();
-      } catch {
+      if (!response.ok) {
         setHifzGoalMigrationError(
-          "Tak dapat tukar sasaran Hafal kepada halaman sekarang.",
+          payload?.error ?? "Tak dapat tukar sasaran Hafal kepada halaman sekarang.",
         );
+        return;
       }
-    });
+
+      setHifzGoalMigrationOverride({
+        dailyGoalCount:
+          typeof payload?.nextCount === "number"
+            ? payload.nextCount
+            : (legacyHifzGoalRecommendation?.suggestedPageGoal ?? 1),
+        dailyGoalType: "hifz_pages",
+      });
+      startMigratingHifzGoal(() => {
+        router.refresh();
+      });
+    } catch {
+      setHifzGoalMigrationError(
+        "Tak dapat tukar sasaran Hafal kepada halaman sekarang.",
+      );
+    } finally {
+      setSubmittingHifzGoalMigration(false);
+    }
   };
 
   return (
@@ -465,9 +502,9 @@ export function HomeDashboardClient({
                   strokeLinejoin="round"
                 />
               </svg>
-              {snapshot.activity && snapshot.activity.streak > 0 && (
+              {activitySnapshot && activitySnapshot.streak > 0 && (
                 <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-orange-600 text-[10px] font-bold text-white shadow-lg ring-2 ring-white dark:ring-stone-900">
-                  {snapshot.activity.streak}
+                  {activitySnapshot.streak}
                 </span>
               )}
             </div>
@@ -476,7 +513,7 @@ export function HomeDashboardClient({
                 Streak Semasa
               </p>
               <p className="text-xl font-bold text-stone-900 dark:text-white">
-                {snapshot.activity?.streak ?? 0} Hari
+                {activitySnapshot?.streak ?? 0} Hari
               </p>
             </div>
           </div>
@@ -523,8 +560,8 @@ export function HomeDashboardClient({
                 Sasaran Harian
               </p>
               <p className="text-xl font-bold text-stone-900 dark:text-white">
-                {snapshot.activity?.todayProgress ?? 0} /{" "}
-                {snapshot.activity?.dailyGoalCount ?? 10}{" "}
+                {activitySnapshot?.todayProgress ?? 0} /{" "}
+                {activitySnapshot?.dailyGoalCount ?? 10}{" "}
                 <span className="text-sm font-medium text-stone-500">{goalTypeLabel}</span>
               </p>
             </div>
@@ -564,10 +601,12 @@ export function HomeDashboardClient({
             <button
               type="button"
               onClick={handleMigrateLegacyHifzGoal}
-              disabled={migratingHifzGoal}
+              disabled={submittingHifzGoalMigration || migratingHifzGoal}
               className="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400"
             >
-              {migratingHifzGoal ? "Menukar..." : "Tukar ke Halaman"}
+              {submittingHifzGoalMigration || migratingHifzGoal
+                ? "Menukar..."
+                : "Tukar ke Halaman"}
             </button>
           </div>
         </section>
