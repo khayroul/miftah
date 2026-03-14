@@ -185,6 +185,28 @@ export async function getDailyHifzPageCountFromEvents(
   ).size;
 }
 
+export async function getDailyHifzAyahCountFromEvents(
+  userId: string,
+  activityDate: string,
+): Promise<number> {
+  const { data, error } = await supabaseServer
+    .from("activity_events")
+    .select("entity_key")
+    .eq("user_id", userId)
+    .eq("activity_date", activityDate)
+    .in("activity_type", ["hifz_ayah_memorized", "hifz_ayah_reviewed"]);
+
+  if (error) {
+    throw error;
+  }
+
+  return new Set(
+    ((data ?? []) as Array<{ entity_key: string | null }>)
+      .map((row) => row.entity_key)
+      .filter((value): value is string => typeof value === "string" && value.length > 0),
+  ).size;
+}
+
 export async function getLegacyActivityDateKeys(
   userId: string,
 ): Promise<string[]> {

@@ -253,6 +253,8 @@ export interface ReviewLog {
 export interface Profile {
   id: string;
   display_name: string | null;
+  daily_goal_count: number | null;
+  daily_goal_type: string | null;
   locale: string;
   created_at: string;
   updated_at: string;

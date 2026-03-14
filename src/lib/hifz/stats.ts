@@ -30,82 +30,65 @@ export interface HifzStats {
   streak: number;
 }
 
-interface AyahPageRef {
+interface HifzPageProgressRow {
+  is_complete_manzil: boolean | null;
+  is_due: boolean | null;
+  is_started: boolean | null;
   juz_number: number;
   page_number: number;
-}
-
-function extractAyahPageRef(value: unknown): AyahPageRef | null {
-  if (Array.isArray(value)) {
-    return extractAyahPageRef(value[0] ?? null);
-  }
-
-  if (typeof value !== "object" || value === null) {
-    return null;
-  }
-
-  const juzNumber = Reflect.get(value, "juz_number");
-  const pageNumber = Reflect.get(value, "page_number");
-  if (typeof juzNumber !== "number" || typeof pageNumber !== "number") {
-    return null;
-  }
-
-  return {
-    juz_number: juzNumber,
-    page_number: pageNumber,
-  };
+  sabak_ayat: number | null;
+  sabqi_ayat: number | null;
 }
 
 export async function getJuzProgress(userId: string): Promise<JuzStat[]> {
   const { data, error } = await supabaseServer
-    .from("study_progress")
-    .select("hifz_status, ayat!inner(juz_number, page_number)")
-    .eq("user_id", userId)
-    .not("hifz_status", "is", null);
+    .from("v_hifz_page_progress")
+    .select("juz_number, page_number, is_started, is_complete_manzil, sabqi_ayat, sabak_ayat")
+    .eq("user_id", userId);
   if (error) throw error;
 
-  const startedPagesByJuz = new Map<number, Set<number>>();
-  const manzilPagesByJuz = new Map<number, Set<number>>();
-  const sabqiPagesByJuz = new Map<number, Set<number>>();
-  const sabakPagesByJuz = new Map<number, Set<number>>();
+  const startedPagesByJuz = new Map<number, number>();
+  const manzilPagesByJuz = new Map<number, number>();
+  const sabqiPagesByJuz = new Map<number, number>();
+  const sabakPagesByJuz = new Map<number, number>();
 
-  for (const row of (data ?? []) as Array<{ ayat: unknown; hifz_status: string | null }>) {
-    const ayah = extractAyahPageRef(row.ayat);
-    if (!ayah) {
-      continue;
+  for (const row of (data ?? []) as HifzPageProgressRow[]) {
+    if (row.is_started) {
+      startedPagesByJuz.set(
+        row.juz_number,
+        (startedPagesByJuz.get(row.juz_number) ?? 0) + 1,
+      );
     }
 
-    if (!startedPagesByJuz.has(ayah.juz_number)) {
-      startedPagesByJuz.set(ayah.juz_number, new Set<number>());
-    }
-    startedPagesByJuz.get(ayah.juz_number)!.add(ayah.page_number);
-
-    const targetMap =
-      row.hifz_status === "manzil"
-        ? manzilPagesByJuz
-        : row.hifz_status === "sabqi"
-          ? sabqiPagesByJuz
-          : row.hifz_status === "sabak"
-            ? sabakPagesByJuz
-            : null;
-
-    if (!targetMap) {
-      continue;
+    if (row.is_complete_manzil) {
+      manzilPagesByJuz.set(
+        row.juz_number,
+        (manzilPagesByJuz.get(row.juz_number) ?? 0) + 1,
+      );
     }
 
-    if (!targetMap.has(ayah.juz_number)) {
-      targetMap.set(ayah.juz_number, new Set<number>());
+    if ((row.sabqi_ayat ?? 0) > 0) {
+      sabqiPagesByJuz.set(
+        row.juz_number,
+        (sabqiPagesByJuz.get(row.juz_number) ?? 0) + 1,
+      );
     }
-    targetMap.get(ayah.juz_number)!.add(ayah.page_number);
+
+    if ((row.sabak_ayat ?? 0) > 0) {
+      sabakPagesByJuz.set(
+        row.juz_number,
+        (sabakPagesByJuz.get(row.juz_number) ?? 0) + 1,
+      );
+    }
   }
 
   return Array.from({ length: 30 }, (_, i) => {
     const juzNum = i + 1;
     const totalPages = JUZ_PAGE_COUNTS[juzNum] ?? 0;
-    const startedPages = startedPagesByJuz.get(juzNum)?.size ?? 0;
-    const manzilPages = manzilPagesByJuz.get(juzNum)?.size ?? 0;
-    const sabqiPages = sabqiPagesByJuz.get(juzNum)?.size ?? 0;
-    const sabakPages = sabakPagesByJuz.get(juzNum)?.size ?? 0;
+    const startedPages = startedPagesByJuz.get(juzNum) ?? 0;
+    const manzilPages = manzilPagesByJuz.get(juzNum) ?? 0;
+    const sabqiPages = sabqiPagesByJuz.get(juzNum) ?? 0;
+    const sabakPages = sabakPagesByJuz.get(juzNum) ?? 0;
 
     return (
       {
@@ -122,20 +105,11 @@ export async function getJuzProgress(userId: string): Promise<JuzStat[]> {
 }
 
 export async function getHifzStats(userId: string): Promise<HifzStats> {
-  const now = new Date().toISOString();
-
-  const [manzilResult, dueResult, reviewDatesResult] = await Promise.all([
+  const [pageProgressResult, reviewDatesResult] = await Promise.all([
     supabaseServer
-      .from("study_progress")
-      .select("ayat!inner(page_number)")
-      .eq("user_id", userId)
-      .eq("hifz_status", "manzil"),
-    supabaseServer
-      .from("study_progress")
-      .select("ayat!inner(page_number)")
-      .eq("user_id", userId)
-      .in("hifz_status", ["sabqi", "manzil"])
-      .lte("due", now),
+      .from("v_hifz_page_progress")
+      .select("is_due, is_complete_manzil")
+      .eq("user_id", userId),
     supabaseServer
       .from("review_log")
       .select("reviewed_at")
@@ -145,26 +119,19 @@ export async function getHifzStats(userId: string): Promise<HifzStats> {
       .limit(365),
   ]);
 
-  if (manzilResult.error) {
-    throw manzilResult.error;
-  }
-  if (dueResult.error) {
-    throw dueResult.error;
+  if (pageProgressResult.error) {
+    throw pageProgressResult.error;
   }
   if (reviewDatesResult.error) {
     throw reviewDatesResult.error;
   }
 
-  const totalManzilPages = new Set(
-    ((manzilResult.data ?? []) as Array<{ ayat: unknown }>)
-      .map((row) => extractAyahPageRef(row.ayat)?.page_number ?? null)
-      .filter((value): value is number => typeof value === "number"),
-  ).size;
-  const dueTodayPages = new Set(
-    ((dueResult.data ?? []) as Array<{ ayat: unknown }>)
-      .map((row) => extractAyahPageRef(row.ayat)?.page_number ?? null)
-      .filter((value): value is number => typeof value === "number"),
-  ).size;
+  const pageRows = (pageProgressResult.data ?? []) as Array<{
+    is_complete_manzil: boolean | null;
+    is_due: boolean | null;
+  }>;
+  const totalManzilPages = pageRows.filter((row) => row.is_complete_manzil).length;
+  const dueTodayPages = pageRows.filter((row) => row.is_due).length;
   const streak = calcStreak(
     (reviewDatesResult.data ?? []).map((r: { reviewed_at: string }) =>
       r.reviewed_at.slice(0, 10),

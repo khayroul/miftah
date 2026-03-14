@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import type { SurahJumpTarget } from "@/lib/readNavigation";
 import { saveReadMode } from "@/lib/readMode";
 import { findMarkerForPage } from "@/lib/readNavigationUtils";
@@ -236,6 +237,11 @@ export function HomeDashboardClient({
   snapshot,
   surahTargets,
 }: HomeDashboardClientProps) {
+  const router = useRouter();
+  const [migratingHifzGoal, startMigratingHifzGoal] = useTransition();
+  const [hifzGoalMigrationError, setHifzGoalMigrationError] = useState<string | null>(
+    null,
+  );
   const readingState = useReadingProgressState();
   const readSnapshot = snapshot.read;
   const continuePage = readSnapshot?.lastPage ?? readingState.lastPage ?? 1;
@@ -392,7 +398,9 @@ export function HomeDashboardClient({
       : snapshot.activity?.dailyGoalType === "read_pages"
         ? "halaman"
         : snapshot.activity?.dailyGoalType === "hifz_ayat"
-          ? "halaman"
+          ? "ayat"
+          : snapshot.activity?.dailyGoalType === "hifz_pages"
+            ? "halaman"
           : snapshot.activity?.dailyGoalType === "theme_chunks"
             ? "tema"
             : "halaman";
@@ -402,6 +410,35 @@ export function HomeDashboardClient({
       ? (snapshot.activity.todayProgress / snapshot.activity.dailyGoalCount) * 100
       : 0,
   );
+  const legacyHifzGoalRecommendation =
+    snapshot.activity?.legacyHifzGoalRecommendation ?? null;
+
+  const handleMigrateLegacyHifzGoal = () => {
+    setHifzGoalMigrationError(null);
+    startMigratingHifzGoal(async () => {
+      try {
+        const response = await fetch("/api/profile/daily-goal/hifz-pages", {
+          method: "POST",
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+
+        if (!response.ok) {
+          setHifzGoalMigrationError(
+            payload?.error ?? "Tak dapat tukar sasaran Hafal kepada halaman sekarang.",
+          );
+          return;
+        }
+
+        router.refresh();
+      } catch {
+        setHifzGoalMigrationError(
+          "Tak dapat tukar sasaran Hafal kepada halaman sekarang.",
+        );
+      }
+    });
+  };
 
   return (
     <div className="flex flex-col gap-10">
@@ -495,6 +532,47 @@ export function HomeDashboardClient({
         </div>
 
       </section>
+
+      {legacyHifzGoalRecommendation ? (
+        <section className="animate-fade-in-up rounded-[28px] border border-amber-200/80 bg-amber-50/85 p-5 shadow-sm backdrop-blur-sm dark:border-amber-700/30 dark:bg-amber-950/25">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-800 dark:text-amber-300">
+                Legacy Hifz Goal
+              </p>
+              <h2 className="mt-2 text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+                Tukar sasaran Hafal daripada ayat kepada halaman
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-stone-700 dark:text-stone-300">
+                Sasaran semasa anda masih guna unit ayat. Miftah sekarang tunjuk progres Hafal dalam halaman, jadi kami cadangkan tukar
+                {" "}
+                <strong>{legacyHifzGoalRecommendation.currentAyahGoal} ayat</strong>
+                {" "}
+                kepada
+                {" "}
+                <strong>{legacyHifzGoalRecommendation.suggestedPageGoal} halaman</strong>
+                {" "}
+                supaya sasaran harian, papan pemuka, dan plan Hafal guna unit yang sama.
+              </p>
+              {hifzGoalMigrationError ? (
+                <p className="mt-3 text-sm text-rose-700 dark:text-rose-300">
+                  {hifzGoalMigrationError}
+                </p>
+              ) : null}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleMigrateLegacyHifzGoal}
+              disabled={migratingHifzGoal}
+              className="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400"
+            >
+              {migratingHifzGoal ? "Menukar..." : "Tukar ke Halaman"}
+            </button>
+          </div>
+        </section>
+      ) : null}
+
       <section
         className={`animate-fade-in-up relative overflow-hidden rounded-[36px] border p-6 shadow-[0_30px_100px_-50px_rgba(28,25,23,0.52)] backdrop-blur-md sm:p-8 ${heroClasses.border} ${heroClasses.surface}`}
       >

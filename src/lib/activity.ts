@@ -2,12 +2,19 @@ import { supabaseServer } from "@/lib/supabase-server";
 import {
   getActivityEventDateKeys,
   getDailyActivityEventSummary,
+  getDailyHifzAyahCountFromEvents,
   getDailyHifzPageCountFromEvents,
   getLegacyActivityDateKeys,
   todayActivityDateKey,
 } from "@/lib/activityEvents";
 
 export type ActivityType = "read" | "faham" | "hifz" | "theme";
+export type DailyGoalType =
+  | "faham_words"
+  | "read_pages"
+  | "hifz_ayat"
+  | "hifz_pages"
+  | "theme_chunks";
 type ActivityMetadata = {
   ayahId?: number;
   ayat?: number[];
@@ -17,6 +24,7 @@ type ActivityMetadata = {
 };
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const AVERAGE_AYAT_PER_PAGE = 6236 / 604;
 
 function toDateKey(value: string): string {
   return value.slice(0, 10);
@@ -197,11 +205,103 @@ export async function getUserDailyGoal(userId: string) {
 
   return {
     count: data.daily_goal_count || 10,
-    type: data.daily_goal_type || "faham_words",
+    type: (data.daily_goal_type || "faham_words") as DailyGoalType,
   };
 }
 
-export async function getDailyActivityCount(userId: string, type: ActivityType) {
+export function recommendHifzPageGoalFromAyahGoal(ayahGoal: number): number {
+  if (!Number.isFinite(ayahGoal) || ayahGoal <= 0) {
+    return 1;
+  }
+
+  return Math.max(1, Math.round(ayahGoal / AVERAGE_AYAT_PER_PAGE));
+}
+
+interface DailyActivityCountOptions {
+  hifzUnit?: "ayah" | "page";
+}
+
+async function getDailyHifzAyahCount(
+  userId: string,
+  today: string,
+  eventSummaryAyahCount: number,
+): Promise<number> {
+  const eventAyahCount = await getDailyHifzAyahCountFromEvents(userId, today).catch(
+    (error: unknown) => {
+      console.error("[getDailyActivityCount] Error loading hifz ayah count:", error);
+      return eventSummaryAyahCount;
+    },
+  );
+
+  const { data, error } = await supabaseServer
+    .from("review_log")
+    .select("item_id")
+    .eq("user_id", userId)
+    .eq("review_type", "ayah")
+    .gte("reviewed_at", today);
+
+  if (error) {
+    console.error("[getDailyActivityCount] Error counting hifz ayat:", error);
+    return Math.max(eventSummaryAyahCount, eventAyahCount);
+  }
+
+  const reviewAyahCount = new Set(
+    ((data ?? []) as Array<{ item_id: number | null }>)
+      .map((row) => row.item_id)
+      .filter((value): value is number => typeof value === "number"),
+  ).size;
+
+  return Math.max(eventSummaryAyahCount, eventAyahCount, reviewAyahCount);
+}
+
+async function getDailyHifzPageCount(
+  userId: string,
+  today: string,
+): Promise<number> {
+  const eventPageCount = await getDailyHifzPageCountFromEvents(userId, today).catch(
+    (error: unknown) => {
+      console.error("[getDailyActivityCount] Error loading hifz page count:", error);
+      return 0;
+    },
+  );
+
+  const { data, error } = await supabaseServer
+    .from("review_log")
+    .select("ayat!inner(page_number)")
+    .eq("user_id", userId)
+    .eq("review_type", "ayah")
+    .gte("reviewed_at", today);
+
+  if (error) {
+    console.error("[getDailyActivityCount] Error counting hifz pages:", error);
+    return eventPageCount;
+  }
+
+  const reviewPageCount = new Set(
+    ((data ?? []) as Array<{ ayat: unknown }>)
+      .map((row) => {
+        const ayat = row.ayat;
+        if (Array.isArray(ayat)) {
+          const first = ayat[0];
+          return typeof first?.page_number === "number" ? first.page_number : null;
+        }
+        if (typeof ayat !== "object" || ayat === null) {
+          return null;
+        }
+        const pageNumber = Reflect.get(ayat, "page_number");
+        return typeof pageNumber === "number" ? pageNumber : null;
+      })
+      .filter((value): value is number => typeof value === "number"),
+  ).size;
+
+  return Math.max(eventPageCount, reviewPageCount);
+}
+
+export async function getDailyActivityCount(
+  userId: string,
+  type: ActivityType,
+  options?: DailyActivityCountOptions,
+) {
   const today = todayActivityDateKey();
   const eventSummary = await getDailyActivityEventSummary(userId, today).catch(
     (error: unknown) => {
@@ -229,43 +329,11 @@ export async function getDailyActivityCount(userId: string, type: ActivityType) 
     return eventSummary.readPagesCount;
   }
   if (type === "hifz") {
-    const eventPageCount = await getDailyHifzPageCountFromEvents(userId, today).catch(
-      (error: unknown) => {
-        console.error("[getDailyActivityCount] Error loading hifz page count:", error);
-        return 0;
-      },
-    );
-
-    const { data, error } = await supabaseServer
-      .from("review_log")
-      .select("ayat!inner(page_number)")
-      .eq("user_id", userId)
-      .eq("review_type", "ayah")
-      .gte("reviewed_at", today);
-
-    if (error) {
-      console.error("[getDailyActivityCount] Error counting hifz pages:", error);
-      return eventPageCount;
+    if (options?.hifzUnit === "ayah") {
+      return getDailyHifzAyahCount(userId, today, eventSummary?.hifzAyatCount ?? 0);
     }
 
-    const reviewPageCount = new Set(
-      ((data ?? []) as Array<{ ayat: unknown }>)
-        .map((row) => {
-          const ayat = row.ayat;
-          if (Array.isArray(ayat)) {
-            const first = ayat[0];
-            return typeof first?.page_number === "number" ? first.page_number : null;
-          }
-          if (typeof ayat !== "object" || ayat === null) {
-            return null;
-          }
-          const pageNumber = Reflect.get(ayat, "page_number");
-          return typeof pageNumber === "number" ? pageNumber : null;
-        })
-        .filter((value): value is number => typeof value === "number"),
-    ).size;
-
-    return Math.max(eventPageCount, reviewPageCount);
+    return getDailyHifzPageCount(userId, today);
   }
   if (type === "theme" && eventSummary) {
     return eventSummary.themeChunksCount;

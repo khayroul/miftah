@@ -11,8 +11,13 @@ import { hasAnyHifzProgress } from "@/lib/hifz/study-progress";
 import { getHifzStats } from "@/lib/hifz/stats";
 import { supabaseServer } from "@/lib/supabase-server";
 import { getReadPageActivityRows } from "@/lib/activityEvents";
-import { getUserStreak, getUserDailyGoal, getDailyActivityCount } from "@/lib/activity";
-import type { ActivityType } from "@/lib/activity";
+import {
+  getUserStreak,
+  getUserDailyGoal,
+  getDailyActivityCount,
+  recommendHifzPageGoalFromAyahGoal,
+} from "@/lib/activity";
+import type { ActivityType, DailyGoalType } from "@/lib/activity";
 import type { PlanItem } from "@/lib/hifz/scheduler";
 
 const TOTAL_QURAN_PAGES = 604;
@@ -67,6 +72,11 @@ export interface HomeDashboardSnapshot {
     streak: number;
     dailyGoalCount: number;
     dailyGoalType: string;
+    legacyHifzGoalRecommendation: {
+      currentAyahGoal: number;
+      suggestedPageGoal: number;
+      targetType: "hifz_pages";
+    } | null;
     todayProgress: number;
   } | null;
 }
@@ -383,17 +393,22 @@ async function loadReadSnapshot(userId: string): Promise<HomeReadSnapshot> {
 }
 
 async function loadActivitySnapshot(userId: string) {
-  const goalTypeToActivityType = (value: string): ActivityType => {
+  const goalTypeToActivityMetric = (
+    value: DailyGoalType,
+  ): { hifzUnit?: "ayah" | "page"; type: ActivityType } => {
     if (value === "read_pages") {
-      return "read";
+      return { type: "read" };
     }
-  if (value === "hifz_ayat") {
-    return "hifz";
-  }
+    if (value === "hifz_ayat") {
+      return { type: "hifz", hifzUnit: "ayah" };
+    }
+    if (value === "hifz_pages") {
+      return { type: "hifz", hifzUnit: "page" };
+    }
     if (value === "theme_chunks") {
-      return "theme";
+      return { type: "theme" };
     }
-    return "faham";
+    return { type: "faham" };
   };
 
   const [streak, goal, todayProgress] = await Promise.all([
@@ -401,9 +416,11 @@ async function loadActivitySnapshot(userId: string) {
     getUserDailyGoal(userId),
     // We need to know which type to count based on the goal
   ]).then(async ([streak, goal]) => {
+    const metric = goalTypeToActivityMetric(goal.type);
     const progress = await getDailyActivityCount(
       userId,
-      goalTypeToActivityType(goal.type),
+      metric.type,
+      metric,
     );
     return [streak, goal, progress] as const;
   });
@@ -412,6 +429,14 @@ async function loadActivitySnapshot(userId: string) {
     streak: streak?.current_streak ?? 0,
     dailyGoalCount: goal.count,
     dailyGoalType: goal.type,
+    legacyHifzGoalRecommendation:
+      goal.type === "hifz_ayat"
+        ? {
+            currentAyahGoal: goal.count,
+            suggestedPageGoal: recommendHifzPageGoalFromAyahGoal(goal.count),
+            targetType: "hifz_pages",
+          }
+        : null,
     todayProgress,
   };
 }
