@@ -56,6 +56,19 @@ function formatActivityDate(value: string | null): string {
   }).format(date);
 }
 
+function isWithinRecentDays(value: string | null, days: number): boolean {
+  if (!value) {
+    return false;
+  }
+
+  const timestamp = new Date(value).getTime();
+  if (Number.isNaN(timestamp)) {
+    return false;
+  }
+
+  return Date.now() - timestamp <= days * 24 * 60 * 60 * 1000;
+}
+
 function toneClasses(tone: CardTone) {
   if (tone === "teal") {
     return {
@@ -226,8 +239,17 @@ export function HomeDashboardClient({
   const readingState = useReadingProgressState();
   const readSnapshot = snapshot.read;
   const continuePage = readSnapshot?.lastPage ?? readingState.lastPage ?? 1;
-  const uniquePagesLifetime = readSnapshot?.uniquePagesLifetime ?? (readingState.lastPage ? 1 : 0);
-  const uniquePages7d = readSnapshot?.uniquePages7d ?? (readingState.lastPage ? 1 : 0);
+  const localReadLifetimeFloor = readingState.lastPage ? 1 : 0;
+  const localReadRecentFloor =
+    readingState.lastPage && isWithinRecentDays(readingState.lastReadAt, 7) ? 1 : 0;
+  const uniquePagesLifetime = Math.max(
+    readSnapshot?.uniquePagesLifetime ?? 0,
+    localReadLifetimeFloor,
+  );
+  const uniquePages7d = Math.max(
+    readSnapshot?.uniquePages7d ?? 0,
+    localReadRecentFloor,
+  );
   const readingPositionPct = clampPercent(
     (uniquePagesLifetime / TOTAL_QURAN_PAGES) * 100,
   );
@@ -369,7 +391,11 @@ export function HomeDashboardClient({
       ? "perkataan"
       : snapshot.activity?.dailyGoalType === "read_pages"
         ? "halaman"
-        : "halaman";
+        : snapshot.activity?.dailyGoalType === "hifz_ayat"
+          ? "ayat"
+          : snapshot.activity?.dailyGoalType === "theme_chunks"
+            ? "tema"
+            : "halaman";
 
   const goalProgressPct = clampPercent(
     snapshot.activity
@@ -468,12 +494,6 @@ export function HomeDashboardClient({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 rounded-full border border-stone-200 bg-white/50 px-4 py-2 dark:border-stone-800 dark:bg-stone-900/50">
-          <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-          <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-            Sesi aktif: {formattedLastRead}
-          </span>
-        </div>
       </section>
       <section
         className={`animate-fade-in-up relative overflow-hidden rounded-[36px] border p-6 shadow-[0_30px_100px_-50px_rgba(28,25,23,0.52)] backdrop-blur-md sm:p-8 ${heroClasses.border} ${heroClasses.surface}`}
@@ -518,12 +538,6 @@ export function HomeDashboardClient({
                 </Link>
               ) : null}
             </div>
-
-            <p className="mt-4 text-xs text-stone-500 dark:text-stone-400">
-              {homeHero.isZeroState
-                ? "Mulakan dengan satu sesi ringkas. Selepas itu Miftah akan mula menyesuaikan cadangan harian berdasarkan progres anda."
-                : "Butang utama sentiasa cuba membawa anda ke tindakan seterusnya yang paling berguna, sementara mod lain kekal tersedia di bawah."}
-            </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -543,7 +557,7 @@ export function HomeDashboardClient({
           </div>
         </div>
 
-        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/20 blur-3xl dark:bg-white/5" />
+        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-stone-300/8 blur-3xl dark:bg-stone-400/6" />
       </section>
 
       <section className="space-y-4">
@@ -556,9 +570,6 @@ export function HomeDashboardClient({
               Semua laluan masih tersedia
             </h2>
           </div>
-          <p className="max-w-2xl text-sm text-stone-600 dark:text-stone-300">
-            Kad di bawah kekal sebagai navigasi sekunder untuk Baca, Faham, Tema, dan Hafal bila anda mahu tukar fokus sendiri.
-          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

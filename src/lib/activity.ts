@@ -1,4 +1,10 @@
 import { supabaseServer } from "@/lib/supabase-server";
+import {
+  getActivityEventDateKeys,
+  getDailyActivityEventSummary,
+  getLegacyActivityDateKeys,
+  todayActivityDateKey,
+} from "@/lib/activityEvents";
 
 export type ActivityType = "read" | "faham" | "hifz" | "theme";
 type ActivityMetadata = {
@@ -59,23 +65,25 @@ function buildStreakFromDateKeys(dateKeys: string[]): {
 }
 
 async function deriveStreakFallback(userId: string) {
-  const { data: activityRows, error: activityError } = await supabaseServer
-    .from("user_activity_log")
-    .select("activity_date")
-    .eq("user_id", userId)
-    .order("activity_date", { ascending: false })
-    .limit(3650);
+  const [eventDateKeys, activityDateKeys] = await Promise.all([
+    getActivityEventDateKeys(userId).catch((error: unknown) => {
+      console.error("[deriveStreakFallback] Error loading activity events:", error);
+      return [] as string[];
+    }),
+    getLegacyActivityDateKeys(userId).catch((error: unknown) => {
+      console.error("[deriveStreakFallback] Error loading activity log:", error);
+      return [] as string[];
+    }),
+  ]);
 
-  if (activityError) {
-    console.error("[deriveStreakFallback] Error loading activity log:", activityError);
-    return { current_streak: 0, longest_streak: 0, last_activity_date: null };
+  const combinedActivityDateKeys = [...eventDateKeys, ...activityDateKeys];
+  if (combinedActivityDateKeys.length > 0) {
+    return buildStreakFromDateKeys(combinedActivityDateKeys);
   }
 
-  const activityDateKeys = ((activityRows ?? []) as Array<{ activity_date: string }>)
-    .map((row) => row.activity_date)
-    .filter((value) => typeof value === "string" && value.length >= 10);
+  const dedupedActivityDateKeys = Array.from(new Set(activityDateKeys));
   if (activityDateKeys.length > 0) {
-    return buildStreakFromDateKeys(activityDateKeys);
+    return buildStreakFromDateKeys(dedupedActivityDateKeys);
   }
 
   // Backward-compatible fallback for users with legacy reviews before activity log existed.
@@ -171,21 +179,6 @@ export async function logUserActivity(
 }
 
 export async function getUserStreak(userId: string) {
-  const { data, error } = await supabaseServer
-    .from("user_streaks")
-    .select("current_streak, longest_streak, last_activity_date")
-    .eq("user_id", userId)
-    .single();
-
-  if (error && error.code !== "PGRST116") {
-    console.error("[getUserStreak] Error:", error);
-    return null;
-  }
-
-  if (data) {
-    return data;
-  }
-
   return deriveStreakFallback(userId);
 }
 
@@ -208,23 +201,39 @@ export async function getUserDailyGoal(userId: string) {
 }
 
 export async function getDailyActivityCount(userId: string, type: ActivityType) {
-  const today = new Date().toISOString().split("T")[0];
-  
+  const today = todayActivityDateKey();
+  const eventSummary = await getDailyActivityEventSummary(userId, today).catch(
+    (error: unknown) => {
+      console.error("[getDailyActivityCount] Error loading event summary:", error);
+      return null;
+    },
+  );
+
   if (type === "faham") {
-    // For faham, we actually want to count how many unique words were reviewed today
     const { count, error } = await supabaseServer
       .from("vocab_progress")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
       .gte("last_review", today);
-      
+
     if (error) {
       console.error("[getDailyActivityCount] Error counting faham:", error);
-      return 0;
+      return eventSummary?.fahamWordsCount ?? 0;
     }
-    return count || 0;
+
+    return Math.max(eventSummary?.fahamWordsCount ?? 0, count || 0);
   }
-  
+
+  if (type === "read" && eventSummary) {
+    return eventSummary.readPagesCount;
+  }
+  if (type === "hifz" && eventSummary) {
+    return eventSummary.hifzAyatCount;
+  }
+  if (type === "theme" && eventSummary) {
+    return eventSummary.themeChunksCount;
+  }
+
   const { data: todayData } = await supabaseServer
     .from("user_activity_log")
     .select("metadata")

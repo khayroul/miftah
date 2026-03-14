@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { saveUserReadingState } from "@/lib/userReadingState";
-import { logUserActivity } from "@/lib/activity";
+import { recordActivityEvent } from "@/lib/activityEvents";
 
 const readingStateSchema = z.object({
   page: z.number().int().min(1).max(604),
@@ -24,7 +24,16 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     const body = readingStateSchema.parse(rawBody);
     const state = await saveUserReadingState(user.id, body.page);
-    await logUserActivity(user.id, "read", { page: body.page });
+    await recordActivityEvent({
+      activityType: "read_page_viewed",
+      entityId: body.page,
+      entityKey: String(body.page),
+      entityType: "page",
+      metadata: {
+        page: body.page,
+      },
+      userId: user.id,
+    });
     return NextResponse.json({ ok: true, state });
   } catch (error) {
     if (error instanceof ZodError) {

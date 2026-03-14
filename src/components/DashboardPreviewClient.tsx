@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useReadingProgressState } from "@/lib/useReadingProgressState";
+import type { HomeDashboardSnapshot } from "@/lib/homeDashboard";
 
 const TOTAL_QURAN_PAGES = 604;
 
@@ -18,6 +18,7 @@ interface HifzSnapshot {
 
 interface DashboardPreviewClientProps {
   hifzSnapshot: HifzSnapshot | null;
+  homeSnapshot: HomeDashboardSnapshot;
 }
 
 interface ModeCard {
@@ -179,32 +180,31 @@ function ModeProgressCard({
 
 export function DashboardPreviewClient({
   hifzSnapshot,
+  homeSnapshot,
 }: DashboardPreviewClientProps) {
-  const readingState = useReadingProgressState();
-
-  const continuePage = readingState.lastPage ?? 1;
+  const continuePage = homeSnapshot.read?.lastPage ?? 1;
   const readingPositionPct = clampPercent(
-    readingState.lastPage
-      ? (readingState.lastPage / TOTAL_QURAN_PAGES) * 100
+    homeSnapshot.read?.uniquePagesLifetime
+      ? (homeSnapshot.read.uniquePagesLifetime / TOTAL_QURAN_PAGES) * 100
       : 0,
   );
-  const formattedLastRead = formatActivityDate(readingState.lastReadAt);
+  const formattedLastRead = formatActivityDate(homeSnapshot.read?.lastReadAt ?? null);
   const hifzCoveragePct = hifzSnapshot?.manzilCoveragePct ?? 0;
   const hifzTodayTotal = hifzSnapshot?.todayTotal ?? 0;
   const hifzDueTodayCount = hifzSnapshot?.dueTodayCount ?? 0;
 
   const modeCards: ModeCard[] = [
     {
-      ctaLabel: readingState.lastPage ? "Sambung baca" : "Mulakan bacaan",
-      helper: readingState.lastPage
-        ? `Simpan muka terakhir sahaja supaya sambungan sesi rasa segera. Jump dan audio saya cadangkan keluar ke utility layer berasingan. Aktiviti terakhir ${formattedLastRead}.`
+      ctaLabel: homeSnapshot.read?.lastPage ? "Sambung baca" : "Mulakan bacaan",
+      helper: homeSnapshot.read?.lastPage
+        ? `Gunakan snapshot server supaya nombor baca kekal konsisten merentas device. Aktiviti terakhir ${formattedLastRead}.`
         : "Mushaf kekal minimal. Fokus utama ialah terus masuk baca tanpa bookmark dan tanpa panel utiliti di atas halaman.",
       href: `/read/${continuePage}`,
       inside: ["Mushaf", "Continue", "Utility hub"],
-      metricLabel: readingState.lastPage
-        ? `Kedudukan semasa sekitar page ${readingState.lastPage}`
+      metricLabel: homeSnapshot.read?.lastPage
+        ? `${homeSnapshot.read.uniquePages7d} halaman dalam 7 hari`
         : "Belum ada rekod bacaan",
-      metricValue: readingState.lastPage ? `p. ${readingState.lastPage}` : "Baru",
+      metricValue: homeSnapshot.read?.lastPage ? `p. ${homeSnapshot.read.lastPage}` : "Baru",
       percent: readingPositionPct,
       title: "Baca",
       tone: "teal",
@@ -313,13 +313,13 @@ export function DashboardPreviewClient({
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-2xl border border-stone-200/80 bg-stone-50/90 px-4 py-3 dark:border-stone-700 dark:bg-stone-900/80">
-                <p className="text-xs uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
-                  Last page
-                </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
-                  {readingState.lastPage ? `p. ${readingState.lastPage}` : "p. 1"}
-                </p>
-              </div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
+                    Last page
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+                  {homeSnapshot.read?.lastPage ? `p. ${homeSnapshot.read.lastPage}` : "p. 1"}
+                  </p>
+                </div>
               <div className="rounded-2xl border border-stone-200/80 bg-stone-50/90 px-4 py-3 dark:border-stone-700 dark:bg-stone-900/80">
                 <p className="text-xs uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
                   Bacaan terakhir
@@ -337,13 +337,13 @@ export function DashboardPreviewClient({
                 </p>
               </div>
               <div className="rounded-2xl border border-stone-200/80 bg-stone-50/90 px-4 py-3 dark:border-stone-700 dark:bg-stone-900/80">
-                <p className="text-xs uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
-                  Streak
-                </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
-                  {hifzSnapshot?.streak ?? 0} hari
-                </p>
-              </div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
+                    Streak
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+                  {homeSnapshot.activity?.streak ?? 0} hari
+                  </p>
+                </div>
             </div>
           </div>
 
@@ -362,8 +362,8 @@ export function DashboardPreviewClient({
                     1. Sambung baca
                   </p>
                   <p className="mt-1 text-lg font-medium text-stone-900 dark:text-stone-100">
-                    {readingState.lastPage
-                      ? `Teruskan di page ${readingState.lastPage}`
+                    {homeSnapshot.read?.lastPage
+                      ? `Teruskan di page ${homeSnapshot.read.lastPage}`
                       : "Mulakan dari page 1"}
                   </p>
                   <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">

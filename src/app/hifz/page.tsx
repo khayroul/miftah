@@ -8,6 +8,7 @@ import { hasAnyHifzProgress } from "@/lib/hifz/study-progress";
 import { getHifzStats, getJuzProgress } from "@/lib/hifz/stats";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
+import { getUserStreak } from "@/lib/activity";
 import type { DailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import type { HifzStats, JuzStat } from "@/lib/hifz/stats";
 
@@ -18,12 +19,15 @@ export default async function HifzPage() {
   let plan: DailyPlanWithDetails;
   let stats: HifzStats;
   let juzProgress: JuzStat[];
+  let globalStreak = 0;
   let canStartFresh = false;
   const jumpTargets = await getReadJumpTargets();
 
   if (userId) {
     const hasStarted = await hasAnyHifzProgress(userId);
     canStartFresh = !hasStarted;
+    const streak = await getUserStreak(userId);
+    globalStreak = streak?.current_streak ?? 0;
 
     if (hasStarted) {
       [plan, stats, juzProgress] = await Promise.all([
@@ -93,6 +97,7 @@ export default async function HifzPage() {
           newCount={newCount}
           reviewCount={reviewCount}
           stats={stats}
+          globalStreak={globalStreak}
           juzProgress={juzProgress}
           isGuest={!userId}
           hasProgress={hasProgress}

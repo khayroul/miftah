@@ -30,6 +30,7 @@ interface HifzOverviewProps {
   newCount: number;
   reviewCount: number;
   stats: HifzStats;
+  globalStreak?: number;
   juzProgress: JuzStat[];
   isGuest: boolean;
   hasProgress: boolean;
@@ -53,6 +54,7 @@ export function HifzOverview({
   newCount,
   reviewCount,
   stats,
+  globalStreak,
   juzProgress,
   isGuest,
   hasProgress,
@@ -72,6 +74,7 @@ export function HifzOverview({
   const [pendingJourney, setPendingJourney] = useState<PendingJourney | null>(null);
 
   const effectiveStats = importSummary?.stats ?? stats;
+  const effectiveGlobalStreak = globalStreak ?? effectiveStats.streak;
   const effectiveJuzProgress = importSummary?.juzProgress ?? juzProgress;
   const effectiveNewCount = importSummary?.newCount ?? newCount;
   const effectiveReviewCount = importSummary?.reviewCount ?? reviewCount;
@@ -595,9 +598,9 @@ export function HifzOverview({
             ) : null}
           </div>
 
-          {effectiveStats.streak > 0 ? (
+          {effectiveGlobalStreak > 0 ? (
             <p className="mb-6 text-sm text-stone-500 dark:text-stone-400">
-              {effectiveStats.streak} hari berturut-turut
+              Streak semasa: {effectiveGlobalStreak} hari
             </p>
           ) : null}
 

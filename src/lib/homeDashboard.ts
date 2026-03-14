@@ -10,6 +10,7 @@ import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { hasAnyHifzProgress } from "@/lib/hifz/study-progress";
 import { getHifzStats } from "@/lib/hifz/stats";
 import { supabaseServer } from "@/lib/supabase-server";
+import { getReadPageActivityRows } from "@/lib/activityEvents";
 import { getUserStreak, getUserDailyGoal, getDailyActivityCount } from "@/lib/activity";
 import type { ActivityType } from "@/lib/activity";
 import type { PlanItem } from "@/lib/hifz/scheduler";
@@ -311,7 +312,7 @@ async function loadTemaSnapshot(userId: string): Promise<HomeTemaSnapshot> {
 }
 
 async function loadReadSnapshot(userId: string): Promise<HomeReadSnapshot> {
-  const [readingStateResult, readActivityResult] = await Promise.all([
+  const [readingStateResult, readActivityResult, readEventRows] = await Promise.all([
     supabaseServer
       .from("user_reading_state")
       .select("last_page, last_read_at")
@@ -322,6 +323,7 @@ async function loadReadSnapshot(userId: string): Promise<HomeReadSnapshot> {
       .select("activity_date, metadata")
       .eq("user_id", userId)
       .eq("activity_type", "read"),
+    getReadPageActivityRows(userId),
   ]);
 
   if (readingStateResult.error && readingStateResult.error.code !== "PGRST116") {
@@ -341,11 +343,23 @@ async function loadReadSnapshot(userId: string): Promise<HomeReadSnapshot> {
     activity_date: string;
     metadata: unknown;
   }>;
+  for (const row of readEventRows) {
+    if (!row.entityId) {
+      continue;
+    }
+    uniquePagesLifetime.add(row.entityId);
+    if (row.activityDate >= cutoffKey) {
+      uniquePages7d.add(row.entityId);
+    }
+  }
+
   for (const row of rows) {
-    const meta = row.metadata as { pages?: unknown };
+    const meta = row.metadata as { page?: unknown; pages?: unknown };
     const pages = Array.isArray(meta?.pages)
       ? meta.pages.filter((value): value is number => typeof value === "number")
-      : [];
+      : typeof meta?.page === "number"
+        ? [meta.page]
+        : [];
     for (const page of pages) {
       uniquePagesLifetime.add(page);
       if (row.activity_date >= cutoffKey) {

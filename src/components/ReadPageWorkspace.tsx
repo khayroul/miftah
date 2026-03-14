@@ -157,6 +157,7 @@ export function ReadPageWorkspace({
   hifzNavigationSearch = null,
   personalizationPageNumber = null,
 }: ReadPageWorkspaceProps) {
+  const lastSyncedPageRef = useRef<number | null>(null);
   const router = useRouter();
   const {
     activePlaybackAyahKey,
@@ -263,6 +264,25 @@ export function ReadPageWorkspace({
 
   useEffect(() => {
     rememberLastReadPage(pageNumber);
+  }, [pageNumber]);
+
+  useEffect(() => {
+    if (lastSyncedPageRef.current === pageNumber) {
+      return;
+    }
+
+    lastSyncedPageRef.current = pageNumber;
+
+    void fetch("/api/reading/state", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ page: pageNumber }),
+      keepalive: true,
+    }).catch((error: unknown) => {
+      console.error("[ReadPageWorkspace] Failed to sync reading state:", error);
+    });
   }, [pageNumber]);
 
   useEffect(() => {

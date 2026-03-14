@@ -11,6 +11,7 @@ import { logReview } from "@/lib/hifz/review-log";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import type { FsrsRating, FsrsState } from "@/types/database";
 import type { Grade } from "@/lib/fsrs";
+import { recordActivityEvent } from "@/lib/activityEvents";
 
 interface RateBody {
   progressId: number;
@@ -79,6 +80,19 @@ export async function POST(request: Request): Promise<NextResponse> {
       stateAfter,
       elapsedDays: newCard.elapsed_days,
       scheduledDays: newCard.scheduled_days,
+    });
+
+    await recordActivityEvent({
+      activityType: "hifz_ayah_reviewed",
+      entityId: progress.ayah_id,
+      entityKey: String(progress.ayah_id),
+      entityType: "ayah",
+      metadata: {
+        block,
+        progressId,
+        rating,
+      },
+      userId,
     });
 
     return NextResponse.json({ ok: true });

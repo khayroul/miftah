@@ -4,6 +4,7 @@ import { DashboardPreviewClient } from "@/components/DashboardPreviewClient";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { getHifzStats } from "@/lib/hifz/stats";
+import { loadHomeDashboardSnapshot } from "@/lib/homeDashboard";
 
 const TOTAL_QURAN_AYAT = 6236;
 
@@ -57,7 +58,9 @@ async function loadHifzSnapshot(): Promise<HifzSnapshot | null> {
 }
 
 export default async function DashboardPreviewPage() {
+  const userId = process.env.MIFTAH_USER_ID ?? null;
   const hifzSnapshot = await loadHifzSnapshot();
+  const homeSnapshot = await loadHomeDashboardSnapshot(userId);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -68,7 +71,10 @@ export default async function DashboardPreviewPage() {
           <ThemeToggle />
         </header>
 
-        <DashboardPreviewClient hifzSnapshot={hifzSnapshot} />
+        <DashboardPreviewClient
+          hifzSnapshot={hifzSnapshot}
+          homeSnapshot={homeSnapshot}
+        />
       </main>
     </div>
   );

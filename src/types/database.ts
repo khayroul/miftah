@@ -279,6 +279,30 @@ export interface ThemeChunkProgress {
   updated_at: string;
 }
 
+export type ActivityEventType =
+  | "faham_word_reviewed"
+  | "hifz_ayah_memorized"
+  | "hifz_ayah_reviewed"
+  | "read_page_viewed"
+  | "theme_chunk_completed"
+  | "theme_chunk_started";
+
+export type ActivityEntityType = "ayah" | "page" | "theme_chunk" | "word";
+
+export interface ActivityEvent {
+  id: number;
+  user_id: string;
+  activity_date: string;
+  occurred_at: string;
+  activity_type: ActivityEventType;
+  entity_type: ActivityEntityType;
+  entity_id: number | null;
+  entity_key: string;
+  metadata: Record<string, unknown> | null;
+  idempotency_key: string;
+  created_at: string;
+}
+
 // ============================================================
 // Layer 5: Cross-References
 // ============================================================

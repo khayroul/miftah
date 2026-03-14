@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getOrCreateProgress, updateHifzStatus } from "@/lib/hifz/study-progress";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import type { HifzStatus } from "@/types/database";
+import { recordActivityEvent } from "@/lib/activityEvents";
 
 interface MarkMemorizedBody {
   ayahId?: number;
@@ -49,6 +50,16 @@ export async function POST(request: Request): Promise<NextResponse> {
         if (currentStatus !== "sabqi" && currentStatus !== "manzil") {
           await updateHifzStatus(progress.id, "sabqi", now);
         }
+        await recordActivityEvent({
+          activityType: "hifz_ayah_memorized",
+          entityId: ayahId,
+          entityKey: String(ayahId),
+          entityType: "ayah",
+          metadata: {
+            progressId: progress.id,
+          },
+          userId,
+        });
       }),
     );
 

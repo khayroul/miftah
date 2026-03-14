@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { markThemeChunkProgress } from "@/lib/themeChunkProgress";
+import { recordActivityEvent } from "@/lib/activityEvents";
 
 const themeProgressSchema = z.object({
   chunkIndex: z.number().int().min(1),
@@ -28,6 +29,22 @@ export async function POST(request: Request): Promise<NextResponse> {
       chunkIndex: body.chunkIndex,
       status: body.status,
       surahId: body.surahId,
+      userId: user.id,
+    });
+
+    await recordActivityEvent({
+      activityType:
+        body.status === "completed"
+          ? "theme_chunk_completed"
+          : "theme_chunk_started",
+      entityId: body.chunkIndex,
+      entityKey: `${body.surahId}:${body.chunkIndex}`,
+      entityType: "theme_chunk",
+      metadata: {
+        chunkIndex: body.chunkIndex,
+        status: body.status,
+        surahId: body.surahId,
+      },
       userId: user.id,
     });
 
