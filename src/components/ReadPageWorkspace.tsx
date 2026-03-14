@@ -246,7 +246,6 @@ export function ReadPageWorkspace({
     () => true,
   );
   const [showJumpControls, setShowJumpControls] = useState(false);
-  const [showReadTools, setShowReadTools] = useState(hifzFlow !== null);
   const [tasmiRevealedLines, setTasmiRevealedLines] = useState(0);
   const totalLineCount =
     hifzFlow === "review" && manifest?.words
@@ -518,18 +517,6 @@ export function ReadPageWorkspace({
   }, [memorizedAyahKeys]);
 
   useEffect(() => {
-    if (hifzFlow !== null) {
-      setShowReadTools(false);
-      return;
-    }
-
-    setShowReadTools(false);
-    return scheduleIdleTask(() => {
-      setShowReadTools(true);
-    }, 700);
-  }, [hifzFlow, pageNumber]);
-
-  useEffect(() => {
     if (hifzFlow !== null || !isCurrentPageImageReady) {
       setShouldTrackExposure(false);
       return;
@@ -773,7 +760,7 @@ export function ReadPageWorkspace({
         />
       ) : null}
 
-      {!hifzFlow && showReadTools ? (
+      {!hifzFlow ? (
         <ReadModeTools
           themeSurahId={themeSurahId}
           hifzRevealByThirdsEnabled={hifzRevealByThirdsEnabled}
@@ -786,12 +773,6 @@ export function ReadPageWorkspace({
           isAudioVisible={isAudioVisible}
           onToggleAudio={handleToggleAudio}
         />
-      ) : !hifzFlow ? (
-        <section className="space-y-3 sm:space-y-4" aria-hidden>
-          <div className="flex w-full flex-col items-stretch justify-center gap-3 sm:items-center sm:gap-4">
-            <div className="h-12 w-full rounded-full bg-stone-200/75 dark:bg-stone-800 sm:max-w-md" />
-          </div>
-        </section>
       ) : null}
 
       <div className="hidden sm:block">
