@@ -280,6 +280,7 @@ export interface ThemeAppearanceChunk {
   theme: Theme | null;
   label_bm: string | null;
   label_en: string | null;
+  synopsis_bm: string | null;
   source: "auto" | "manual";
   ayat: ThemeAppearanceAyah[];
 }
@@ -292,6 +293,7 @@ interface ThemeAppearanceChunkSeed {
   theme: Theme | null;
   label_bm: string | null;
   label_en: string | null;
+  synopsis_bm: string | null;
   source: "auto" | "manual";
   ayat: ThemeAppearanceAyah[];
 }
@@ -302,6 +304,7 @@ interface ThemeChunkOverride {
   theme_id: number | null;
   label_bm: string | null;
   label_en: string | null;
+  synopsis_bm: string | null;
 }
 
 interface AyahThemeLinkRow {
@@ -451,6 +454,7 @@ function parseThemeChunkOverride(
     theme_id: parseOptionalInt(record.theme_id),
     label_bm: parseOptionalString(record.label_bm),
     label_en: parseOptionalString(record.label_en),
+    synopsis_bm: parseOptionalString(record.synopsis_bm),
   };
 }
 
@@ -560,6 +564,7 @@ function buildAutoChunks(ayat: ThemeAppearanceAyah[]): ThemeAppearanceChunkSeed[
         theme: ayah.theme,
         label_bm: null,
         label_en: null,
+        synopsis_bm: null,
         source: "auto",
         ayat: [ayah],
       });
@@ -592,12 +597,19 @@ function buildBaseThemeAppearanceAyat(
 function buildChunksFromAyahThemeDataset(
   themedAyat: ThemeAppearanceAyah[],
   datasetRows: AyahThemeChunkDatasetRow[],
+  overrides: ThemeChunkOverride[],
 ): ThemeAppearanceChunk[] {
   if (themedAyat.length === 0) {
     return [];
   }
 
   const chunks: ThemeAppearanceChunkSeed[] = [];
+  const overrideMap = new Map(
+    overrides.map((override) => [
+      `${override.start_ayah}:${override.end_ayah}`,
+      override,
+    ]),
+  );
   const firstAyah = themedAyat[0].ayah_number;
   const lastAyah = themedAyat[themedAyat.length - 1].ayah_number;
   let cursorAyah = firstAyah;
@@ -616,6 +628,7 @@ function buildChunksFromAyahThemeDataset(
       theme: null,
       label_bm: null,
       label_en: null,
+      synopsis_bm: null,
       source: "auto",
       ayat,
     });
@@ -641,6 +654,7 @@ function buildChunksFromAyahThemeDataset(
     if (ayat.length === 0) {
       continue;
     }
+    const override = overrideMap.get(`${row.ayah_from}:${row.ayah_to}`) ?? null;
 
     chunks.push({
       surah_id: ayat[0].surah_id,
@@ -648,8 +662,9 @@ function buildChunksFromAyahThemeDataset(
       end_ayah: ayat[ayat.length - 1].ayah_number,
       ayah_count: ayat.length,
       theme: null,
-      label_bm: row.theme_bm ?? null,
-      label_en: row.theme,
+      label_bm: override?.label_bm ?? row.theme_bm ?? null,
+      label_en: override?.label_en ?? row.theme,
+      synopsis_bm: override?.synopsis_bm ?? null,
       source: "auto",
       ayat,
     });
@@ -698,6 +713,7 @@ function buildManualChunk(
     theme,
     label_bm: labelBm,
     label_en: labelEn,
+    synopsis_bm: override.synopsis_bm,
     source: "manual",
     ayat,
   };
@@ -715,6 +731,7 @@ function withChunkIndex(
     theme: chunk.theme,
     label_bm: chunk.label_bm,
     label_en: chunk.label_en,
+    synopsis_bm: chunk.synopsis_bm,
     source: chunk.source,
     ayat: chunk.ayat,
   }));
@@ -740,6 +757,8 @@ async function fetchThemeAppearanceChunksBySurah(
   }
 
   const themedAyat = buildBaseThemeAppearanceAyat(ayatRows);
+  const lastAyahNumber = ayatRows[ayatRows.length - 1].ayah_number;
+  const overrides = await loadSurahThemeChunkOverrides(surahId, lastAyahNumber);
 
   const { data: datasetChunks, error: datasetError } = await supabase
     .from("ayah_theme_chunks")
@@ -757,6 +776,7 @@ async function fetchThemeAppearanceChunksBySurah(
     return buildChunksFromAyahThemeDataset(
       themedAyat,
       (datasetChunks ?? []) as AyahThemeChunkDatasetRow[],
+      overrides,
     );
   }
 
@@ -793,7 +813,6 @@ async function fetchThemeAppearanceChunksBySurah(
 
   const firstAyah = themedAyatWithFallbackThemes[0];
   const lastAyah = themedAyatWithFallbackThemes[themedAyatWithFallbackThemes.length - 1];
-  const overrides = await loadSurahThemeChunkOverrides(surahId, lastAyah.ayah_number);
   if (overrides.length === 0) {
     return withChunkIndex(buildAutoChunks(themedAyatWithFallbackThemes));
   }

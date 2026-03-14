@@ -125,8 +125,16 @@ function buildThemeSynopsis(chunk: ThemeAppearanceChunk): {
   sourceLabel: string;
   synopsis: string;
 } {
+  const curatedSynopsis = chunk.synopsis_bm?.trim();
   const description = chunk.theme?.description_bm?.trim();
   const title = chunkTitleBm(chunk);
+
+  if (curatedSynopsis) {
+    return {
+      sourceLabel: "sinopsis tema",
+      synopsis: curatedSynopsis,
+    };
+  }
 
   if (description) {
     return {
