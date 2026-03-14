@@ -139,8 +139,6 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
         currentSurahId={pageData.currentSurahId}
         currentJuzNumber={pageData.currentJuzNumber}
         themeSurahId={pageData.themeSurahId}
-        jumpSurahOptions={pageData.jumpTargets.surahs}
-        jumpJuzOptions={pageData.jumpTargets.juzs}
         audioTracks={pageData.audioTracks}
         ayahDetails={pageData.ayahDetails}
         memorizedAyahKeys={[]}

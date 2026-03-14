@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
-
-const geist = Geist({
-  variable: "--font-geist",
-  subsets: ["latin"],
-});
 
 const arabicText = localFont({
   src: "../../assets/fonts/UthmanicHafs_V22.ttf",
@@ -52,7 +46,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${geist.variable} ${arabicText.variable} antialiased`}>
+      <body className={`${arabicText.variable} antialiased`}>
         <ReadAudioProvider>{children}</ReadAudioProvider>
       </body>
     </html>

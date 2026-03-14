@@ -1,12 +1,33 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo } from "react";
 import { saveReadMode, type ReadMode } from "@/lib/readMode";
 import { findMarkerForPage } from "@/lib/readNavigationUtils";
 import { useReadingProgressState } from "@/lib/useReadingProgressState";
-import { AuthStatusButton } from "./AuthStatusButton";
-import { ThemeToggle } from "./ThemeToggle";
+
+const AuthStatusButton = dynamic(
+  () =>
+    import("@/components/AuthStatusButton").then(
+      (module) => module.AuthStatusButton,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
+const ThemeToggle = dynamic(
+  () =>
+    import("@/components/ThemeToggle").then(
+      (module) => module.ThemeToggle,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
 
 interface ModeNavigatorProps {
   activeMode: ReadMode;

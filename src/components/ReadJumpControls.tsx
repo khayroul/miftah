@@ -1,52 +1,120 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import type {
+  JuzJumpTarget,
+  ReadJumpTargets,
+  SurahJumpTarget,
+} from "@/lib/readNavigation";
 import {
   getMarkerPageById,
   parseBoundedIntegerInput,
 } from "@/lib/readNavigationUtils";
 
-interface SurahOption {
-  surah: number;
-  name: string;
-  page: number;
-}
-
-interface JuzOption {
-  juz: number;
-  page: number;
-}
-
 interface ReadJumpControlsProps {
   currentPage: number;
   currentSurahId: number;
   currentJuzNumber: number;
-  surahOptions: SurahOption[];
-  juzOptions: JuzOption[];
+  surahOptions?: SurahJumpTarget[];
+  juzOptions?: JuzJumpTarget[];
 }
 
 export function ReadJumpControls({
   currentPage,
   currentSurahId,
   currentJuzNumber,
-  surahOptions,
-  juzOptions,
+  surahOptions: initialSurahOptions,
+  juzOptions: initialJuzOptions,
 }: ReadJumpControlsProps) {
   const router = useRouter();
   const [pageInput, setPageInput] = useState(String(currentPage));
   const [surahInput, setSurahInput] = useState(String(currentSurahId));
   const [juzInput, setJuzInput] = useState(String(currentJuzNumber));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [surahOptions, setSurahOptions] = useState<SurahJumpTarget[]>(
+    initialSurahOptions ?? [],
+  );
+  const [juzOptions, setJuzOptions] = useState<JuzJumpTarget[]>(
+    initialJuzOptions ?? [],
+  );
+  const [isLoadingTargets, setIsLoadingTargets] = useState(
+    !initialSurahOptions || !initialJuzOptions,
+  );
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const surahMarkers = surahOptions.map((option) => ({
-    id: option.surah,
-    page: option.page,
-  }));
-  const juzMarkers = juzOptions.map((option) => ({
-    id: option.juz,
-    page: option.page,
-  }));
+  useEffect(() => {
+    if (initialSurahOptions) {
+      setSurahOptions(initialSurahOptions);
+    }
+  }, [initialSurahOptions]);
+
+  useEffect(() => {
+    if (initialJuzOptions) {
+      setJuzOptions(initialJuzOptions);
+    }
+  }, [initialJuzOptions]);
+
+  useEffect(() => {
+    if (initialSurahOptions && initialJuzOptions) {
+      setIsLoadingTargets(false);
+      setLoadError(null);
+      return;
+    }
+
+    const abortController = new AbortController();
+    setIsLoadingTargets(true);
+    setLoadError(null);
+
+    void fetch("/api/read/jump-targets", {
+      signal: abortController.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Jump target request failed");
+        }
+
+        return (await response.json()) as ReadJumpTargets;
+      })
+      .then((payload) => {
+        setSurahOptions(payload.surahs);
+        setJuzOptions(payload.juzs);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        console.error("[ReadJumpControls] Failed to load jump targets", error);
+        setLoadError("Senarai surah dan juz belum dapat dimuatkan.");
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setIsLoadingTargets(false);
+        }
+      });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [initialJuzOptions, initialSurahOptions]);
+
+  const surahMarkers = useMemo(
+    () =>
+      surahOptions.map((option) => ({
+        id: option.surah,
+        page: option.page,
+      })),
+    [surahOptions],
+  );
+  const juzMarkers = useMemo(
+    () =>
+      juzOptions.map((option) => ({
+        id: option.juz,
+        page: option.page,
+      })),
+    [juzOptions],
+  );
 
   function jumpToPage(page: number) {
     setErrorMessage(null);
@@ -94,6 +162,10 @@ export function ReadJumpControls({
           className="flex items-end gap-2"
           onSubmit={(event) => {
             event.preventDefault();
+            if (isLoadingTargets || surahOptions.length === 0) {
+              setErrorMessage("Senarai surah sedang dimuatkan.");
+              return;
+            }
             const surahId = parseBoundedIntegerInput(surahInput, 1, 114);
             if (!surahId) {
               setErrorMessage("Surah mesti antara 1 hingga 114.");
@@ -116,14 +188,21 @@ export function ReadJumpControls({
               onChange={(event) => {
                 const value = event.target.value;
                 setSurahInput(value);
+                if (isLoadingTargets || surahOptions.length === 0) {
+                  return;
+                }
                 const surahId = parseBoundedIntegerInput(value, 1, 114);
                 if (surahId) {
                   const targetPage = getMarkerPageById(surahMarkers, surahId);
                   if (targetPage) jumpToPage(targetPage);
                 }
               }}
+              disabled={isLoadingTargets || surahOptions.length === 0}
               className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-stone-500 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
             >
+              {isLoadingTargets ? (
+                <option value={surahInput}>Memuatkan senarai surah...</option>
+              ) : null}
               {surahOptions.map((option) => (
                 <option key={option.surah} value={option.surah}>
                   {option.surah}. {option.name}
@@ -137,6 +216,10 @@ export function ReadJumpControls({
           className="flex items-end gap-2"
           onSubmit={(event) => {
             event.preventDefault();
+            if (isLoadingTargets || juzOptions.length === 0) {
+              setErrorMessage("Senarai juz sedang dimuatkan.");
+              return;
+            }
             const juzNumber = parseBoundedIntegerInput(juzInput, 1, 30);
             if (!juzNumber) {
               setErrorMessage("Juz mesti antara 1 hingga 30.");
@@ -159,14 +242,21 @@ export function ReadJumpControls({
               onChange={(event) => {
                 const value = event.target.value;
                 setJuzInput(value);
+                if (isLoadingTargets || juzOptions.length === 0) {
+                  return;
+                }
                 const juzNumber = parseBoundedIntegerInput(value, 1, 30);
                 if (juzNumber) {
                   const targetPage = getMarkerPageById(juzMarkers, juzNumber);
                   if (targetPage) jumpToPage(targetPage);
                 }
               }}
+              disabled={isLoadingTargets || juzOptions.length === 0}
               className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-stone-500 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
             >
+              {isLoadingTargets ? (
+                <option value={juzInput}>Memuatkan senarai juz...</option>
+              ) : null}
               {juzOptions.map((option) => (
                 <option key={option.juz} value={option.juz}>
                   Juz {option.juz} (p. {option.page})
@@ -179,6 +269,9 @@ export function ReadJumpControls({
 
       {errorMessage ? (
         <p className="mt-3 text-sm text-rose-700 dark:text-rose-400">{errorMessage}</p>
+      ) : null}
+      {!errorMessage && loadError ? (
+        <p className="mt-3 text-sm text-rose-700 dark:text-rose-400">{loadError}</p>
       ) : null}
     </section>
   );

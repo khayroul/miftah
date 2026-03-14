@@ -3,7 +3,6 @@ import type { MushafAyahDetail } from "@/components/MushafPageView";
 import { getPageImageClientSrc, loadPageManifest, pageImageExists } from "@/lib/mushafAssets";
 import { mapAyatToPageAudioTracks, type ReadAudioTrack } from "@/lib/pageAudioTracks";
 import { getAyatByPage, getSurah } from "@/lib/queries";
-import { getReadJumpTargets, type ReadJumpTargets } from "@/lib/readNavigation";
 import { getWordTranslationsByHitboxes } from "@/lib/wbwTranslations";
 import type { Ayah, Surah } from "@/types/database";
 import type { MushafPageManifest, MushafWordTranslationMap } from "@/types/mushaf";
@@ -16,7 +15,6 @@ export interface ReadPageStaticData {
   currentSurahId: number;
   fullImageSrc: string | null;
   imageAvailable: boolean;
-  jumpTargets: ReadJumpTargets;
   manifest: MushafPageManifest | null;
   mobileImageSrc: string | null;
   nextPageFullImageSrc: string | null;
@@ -50,7 +48,6 @@ const getCachedReadPageStaticData = unstable_cache(
       thumbnailAvailable,
       mobileImageAvailable,
       nextPageMobileImageAvailable,
-      jumpTargets,
       ayatOnPage,
     ] =
       await Promise.all([
@@ -61,7 +58,6 @@ const getCachedReadPageStaticData = unstable_cache(
         pageNumber < 604
           ? pageImageExists(pageNumber + 1, "mobile").catch(() => false)
           : Promise.resolve(false),
-        getReadJumpTargets(),
         getAyatByPage(pageNumber).catch(() => [] as Ayah[]),
       ]);
 
@@ -83,7 +79,6 @@ const getCachedReadPageStaticData = unstable_cache(
       currentSurahId,
       fullImageSrc: imageAvailable ? getPageImageClientSrc(pageNumber) : null,
       imageAvailable,
-      jumpTargets,
       manifest,
       mobileImageSrc: mobileImageAvailable
         ? getPageImageClientSrc(pageNumber, "mobile")

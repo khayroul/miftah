@@ -13,9 +13,7 @@ import {
   MushafPageView,
   type MushafAyahDetail,
 } from "@/components/MushafPageView";
-import { HifzTasmiOverlay } from "@/components/HifzTasmiOverlay";
-import { HifzInlineRating } from "@/components/HifzInlineRating";
-import { HifzMemorizeStepper } from "@/components/HifzMemorizeStepper";
+import { ReadOnlyMushafPageView } from "@/components/ReadOnlyMushafPageView";
 import { useReadAudio } from "@/components/ReadAudioProvider";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
 import type { HifzQueueResponse } from "@/lib/hifz/queue";
@@ -35,7 +33,6 @@ import { buildSignInPath } from "@/lib/auth";
 import { rememberLastReadPage } from "@/lib/readingProgressStorage";
 import { useReadMode } from "@/lib/useReadMode";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { JuzJumpTarget, SurahJumpTarget } from "@/lib/readNavigation";
 import type { ReadMode } from "@/lib/readMode";
 import type { MushafPageManifest, MushafWordTranslationMap } from "@/types/mushaf";
 import type { ReactNode } from "react";
@@ -80,6 +77,39 @@ const ReadModeTools = dynamic(
   },
 );
 
+const HifzTasmiOverlay = dynamic(
+  () =>
+    import("@/components/HifzTasmiOverlay").then(
+      (module) => module.HifzTasmiOverlay,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
+const HifzInlineRating = dynamic(
+  () =>
+    import("@/components/HifzInlineRating").then(
+      (module) => module.HifzInlineRating,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
+const HifzMemorizeStepper = dynamic(
+  () =>
+    import("@/components/HifzMemorizeStepper").then(
+      (module) => module.HifzMemorizeStepper,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
 interface ReadPageWorkspaceProps {
   pageNumber: number;
   fullImageSrc: string | null;
@@ -92,8 +122,6 @@ interface ReadPageWorkspaceProps {
   currentSurahId: number;
   currentJuzNumber: number;
   themeSurahId: number;
-  jumpSurahOptions: SurahJumpTarget[];
-  jumpJuzOptions: JuzJumpTarget[];
   audioTracks: ReadAudioTrack[];
   ayahDetails: MushafAyahDetail[];
   memorizedAyahKeys: string[];
@@ -197,8 +225,6 @@ export function ReadPageWorkspace({
   currentSurahId,
   currentJuzNumber,
   themeSurahId,
-  jumpSurahOptions,
-  jumpJuzOptions,
   audioTracks,
   ayahDetails,
   memorizedAyahKeys,
@@ -281,6 +307,7 @@ export function ReadPageWorkspace({
     hifzFlow === "memorize" && memorizeViewportInset > 0
       ? memorizeViewportInset + 16
       : undefined;
+  const useLightweightReadViewer = hifzFlow === null && initialReadMode !== "hifz";
 
   const applyQueuePointers = useCallback(
     (
@@ -478,23 +505,29 @@ export function ReadPageWorkspace({
   }, [isCurrentPageImageReady, nextPageFullImageSrc, nextPageMobileImageSrc]);
 
   useEffect(() => {
+    if (hifzFlow !== null || !isCurrentPageImageReady) {
+      return;
+    }
+
     if (lastSyncedPageRef.current === pageNumber) {
       return;
     }
 
     lastSyncedPageRef.current = pageNumber;
 
-    void fetch("/api/reading/state", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ page: pageNumber }),
-      keepalive: true,
-    }).catch((error: unknown) => {
-      console.error("[ReadPageWorkspace] Failed to sync reading state:", error);
-    });
-  }, [pageNumber]);
+    return scheduleIdleTask(() => {
+      void fetch("/api/reading/state", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ page: pageNumber }),
+        keepalive: true,
+      }).catch((error: unknown) => {
+        console.error("[ReadPageWorkspace] Failed to sync reading state:", error);
+      });
+    }, 900);
+  }, [hifzFlow, isCurrentPageImageReady, pageNumber]);
 
   useEffect(() => {
     setResolvedMemorizedAyahKeys(memorizedAyahKeys);
@@ -513,10 +546,15 @@ export function ReadPageWorkspace({
   }, [hifzFlow, pageNumber]);
 
   useEffect(() => {
+    if (hifzFlow !== null || !isCurrentPageImageReady) {
+      setShouldTrackExposure(false);
+      return;
+    }
+
     return scheduleIdleTask(() => {
       setShouldTrackExposure(true);
     }, 1500);
-  }, [pageNumber]);
+  }, [hifzFlow, isCurrentPageImageReady, pageNumber]);
 
   useEffect(() => {
     if (!audioEnabledForMode) {
@@ -787,8 +825,6 @@ export function ReadPageWorkspace({
                 currentPage={pageNumber}
                 currentSurahId={currentSurahId}
                 currentJuzNumber={currentJuzNumber}
-                surahOptions={jumpSurahOptions}
-                juzOptions={jumpJuzOptions}
               />
             ) : null}
           </div>
@@ -827,8 +863,6 @@ export function ReadPageWorkspace({
                 currentPage={pageNumber}
                 currentSurahId={currentSurahId}
                 currentJuzNumber={currentJuzNumber}
-                surahOptions={jumpSurahOptions}
-                juzOptions={jumpJuzOptions}
               />
             </section>
           </div>
@@ -894,30 +928,50 @@ export function ReadPageWorkspace({
             </p>
           </div>
         )}
-        <MushafPageView
-          key={pageNumber}
-          pageNumber={pageNumber}
-          fullImageSrc={fullImageSrc}
-          imageAvailable={imageAvailable}
-          mobileImageSrc={mobileImageSrc}
-          thumbnailAvailable={thumbnailAvailable}
-          thumbnailSrc={thumbnailSrc}
-          manifest={manifest}
-          wordTranslations={wordTranslations}
-          ayahDetails={ayahDetails}
-          memorizedAyahKeys={resolvedMemorizedAyahKeys}
-          hifzRevealByThirdsEnabled={!hifzFlow && hifzRevealByThirdsEnabled}
-          onNavigatePrevPage={handleNavigatePrevPage}
-          onNavigateNextPage={handleNavigateNextPage}
-          onCanvasTap={handleMushafTap}
-          audioDiscovered={audioDiscovered}
-          onAudioDiscovered={markAudioDiscovered}
-          onFullImageReadyChange={setIsCurrentPageImageReady}
-          activePlaybackAyahKey={activePlaybackAyahKey}
-          isAudioDockVisible={isAudioVisible}
-          onPlayableAyahKeysChange={hifzFlow === "memorize" ? undefined : setPlayableAyahKeys}
-          hifzFirstWordCueEnabled={!hifzFlow && hifzFirstWordCueEnabled}
-        />
+        {useLightweightReadViewer ? (
+          <ReadOnlyMushafPageView
+            key={pageNumber}
+            pageNumber={pageNumber}
+            fullImageSrc={fullImageSrc}
+            imageAvailable={imageAvailable}
+            mobileImageSrc={mobileImageSrc}
+            thumbnailAvailable={thumbnailAvailable}
+            thumbnailSrc={thumbnailSrc}
+            manifest={manifest}
+            onNavigatePrevPage={handleNavigatePrevPage}
+            onNavigateNextPage={handleNavigateNextPage}
+            onCanvasTap={handleMushafTap}
+            audioDiscovered={audioDiscovered}
+            onAudioDiscovered={markAudioDiscovered}
+            onFullImageReadyChange={setIsCurrentPageImageReady}
+            activePlaybackAyahKey={activePlaybackAyahKey}
+          />
+        ) : (
+          <MushafPageView
+            key={pageNumber}
+            pageNumber={pageNumber}
+            fullImageSrc={fullImageSrc}
+            imageAvailable={imageAvailable}
+            mobileImageSrc={mobileImageSrc}
+            thumbnailAvailable={thumbnailAvailable}
+            thumbnailSrc={thumbnailSrc}
+            manifest={manifest}
+            wordTranslations={wordTranslations}
+            ayahDetails={ayahDetails}
+            memorizedAyahKeys={resolvedMemorizedAyahKeys}
+            hifzRevealByThirdsEnabled={!hifzFlow && hifzRevealByThirdsEnabled}
+            onNavigatePrevPage={handleNavigatePrevPage}
+            onNavigateNextPage={handleNavigateNextPage}
+            onCanvasTap={handleMushafTap}
+            audioDiscovered={audioDiscovered}
+            onAudioDiscovered={markAudioDiscovered}
+            onFullImageReadyChange={setIsCurrentPageImageReady}
+            activePlaybackAyahKey={activePlaybackAyahKey}
+            isAudioDockVisible={isAudioVisible}
+            onPlayableAyahKeysChange={hifzFlow === "memorize" ? undefined : setPlayableAyahKeys}
+            hifzFirstWordCueEnabled={!hifzFlow && hifzFirstWordCueEnabled}
+          />
+        )}
       </div>
 
       {hifzFlow === "review" && (

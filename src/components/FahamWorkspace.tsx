@@ -15,6 +15,7 @@ interface FahamWorkspaceProps {
   initialPreset?: FahamSourcePreset;
   entryContext?: FahamWorkspaceEntryContext | null;
   setupMessage?: string | null;
+  shouldHydrateInitialQueue?: boolean;
 }
 
 interface FahamWorkspaceEntryContext {
@@ -141,6 +142,7 @@ export function FahamWorkspace({
   initialPreset = "mixed",
   entryContext = null,
   setupMessage = null,
+  shouldHydrateInitialQueue = false,
 }: FahamWorkspaceProps) {
   const [isConfigExpanded, setIsConfigExpanded] = useState(false);
   const [preset, setPreset] = useState<FahamSourcePreset>(initialPreset);
@@ -161,6 +163,9 @@ export function FahamWorkspace({
     return window.localStorage.getItem("miftah:faham:audio-enabled") !== "0";
   });
   const [isPending, startTransition] = useTransition();
+  const [isHydratingInitialQueue, setIsHydratingInitialQueue] = useState(
+    shouldHydrateInitialQueue,
+  );
   const cards = useMemo(() => queueItems(snapshot), [snapshot]);
   const currentCard = cards[currentIndex] ?? null;
   const levelProgress = stats?.levelProgress ?? snapshot.levelProgress;
@@ -195,9 +200,38 @@ export function FahamWorkspace({
         })
         .catch(() => {
           setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
+        })
+        .finally(() => {
+          setIsHydratingInitialQueue(false);
         });
     });
   };
+
+  useEffect(() => {
+    if (!shouldHydrateInitialQueue) {
+      setIsHydratingInitialQueue(false);
+      return;
+    }
+
+    startTransition(() => {
+      void requestQueue(initialPreset, "arab_to_bm")
+        .then((nextSnapshot) => {
+          setPreset(initialPreset);
+          setDirectionMode("arab_to_bm");
+          setIsRevision(false);
+          setSnapshot(nextSnapshot);
+          setCurrentIndex(0);
+          setAnswerState(null);
+          setErrorMessage(null);
+        })
+        .catch(() => {
+          setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
+        })
+        .finally(() => {
+          setIsHydratingInitialQueue(false);
+        });
+    });
+  }, [initialPreset, shouldHydrateInitialQueue, startTransition]);
 
   const moveToNextCard = useCallback(async () => {
     const nextIndex = currentIndex + 1;
@@ -433,7 +467,7 @@ export function FahamWorkspace({
         </section>
       ) : null}
 
-      {snapshot.blockedReason === "due_backlog" ? (
+      {snapshot.blockedReason === "due_backlog" && !isHydratingInitialQueue ? (
         <section className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
           Kad baharu dijeda sementara kerana baki ulang kaji masih tinggi.
           Selesaikan kad ulang kaji dahulu, kemudian enjin akan membuka kad
@@ -751,6 +785,25 @@ export function FahamWorkspace({
               ) : null}
             </div>
           ) : null}
+        </section>
+      ) : isHydratingInitialQueue ? (
+        <section className="animate-fade-in-up rounded-3xl border border-stone-200/90 bg-white/88 p-8 shadow-[0_25px_70px_-48px_rgba(28,25,23,0.55)] backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/80">
+          <div className="space-y-6" aria-hidden>
+            <div className="h-6 w-40 rounded-full bg-stone-200/80 dark:bg-stone-800" />
+            <div className="h-12 w-3/4 rounded-3xl bg-stone-200/80 dark:bg-stone-800" />
+            <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="h-64 rounded-[1.75rem] bg-stone-200/75 dark:bg-stone-800" />
+              <div className="space-y-3">
+                <div className="h-20 rounded-[1.35rem] bg-stone-200/75 dark:bg-stone-800" />
+                <div className="h-20 rounded-[1.35rem] bg-stone-200/75 dark:bg-stone-800" />
+                <div className="h-20 rounded-[1.35rem] bg-stone-200/75 dark:bg-stone-800" />
+                <div className="h-20 rounded-[1.35rem] bg-stone-200/75 dark:bg-stone-800" />
+              </div>
+            </div>
+          </div>
+          <p className="mt-6 text-sm text-stone-600 dark:text-stone-300">
+            Barisan ulang kaji sedang disusun ikut pendedahan dan kad yang due.
+          </p>
         </section>
       ) : (
         <section className="animate-fade-in-up rounded-3xl border border-stone-200/90 bg-white/88 p-8 text-center shadow-[0_25px_70px_-48px_rgba(28,25,23,0.55)] backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/80">

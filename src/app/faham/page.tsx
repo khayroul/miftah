@@ -4,11 +4,9 @@ import { FahamWorkspace } from "@/components/FahamWorkspace";
 import { ModeNavigator } from "@/components/ModeNavigator";
 import type { FahamQueueSnapshot } from "@/lib/faham/queue";
 import type { FahamLevelProgress } from "@/lib/faham/levels";
-import { buildFahamQueueSnapshot } from "@/lib/faham/queue";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import {
-  FAHAM_PRESET_CONFIGS,
   parseFahamSourcePreset,
 } from "@/lib/faham/presets";
 
@@ -84,7 +82,7 @@ export default async function FahamPage({ searchParams }: FahamPageProps) {
     unlockMasteredRequired: 0,
     unlockReady: false,
   };
-  let initialQueue: FahamQueueSnapshot = {
+  const initialQueue: FahamQueueSnapshot = {
     blockedReason: null,
     due: [],
     levelProgress: defaultLevelProgress,
@@ -100,20 +98,9 @@ export default async function FahamPage({ searchParams }: FahamPageProps) {
       learningCount: 0,
     },
   };
+  const shouldHydrateInitialQueue = Boolean(userId);
 
-  if (userId) {
-    try {
-      initialQueue = await buildFahamQueueSnapshot(userId, {
-        preferredSources: FAHAM_PRESET_CONFIGS[initialPreset].preferredSources,
-      });
-    } catch (error: unknown) {
-      const debugMessage = error instanceof Error ? error.message : String(error);
-      console.error("[faham/page] Failed to build initial queue:", error);
-      setupMessage =
-        "Enjin Faham perlukan migration SQL baharu sebelum queue boleh dimuatkan. Jalankan SQL di Supabase editor dahulu. Debug: " +
-        debugMessage;
-    }
-  } else {
+  if (!userId) {
     setupMessage = "Akaun Diperlukan: Anda sedang menggunakan mod pratonton. Log masuk untuk menyimpan kemajuan anda.";
     initialQueue.new = [
       {
@@ -215,6 +202,7 @@ export default async function FahamPage({ searchParams }: FahamPageProps) {
           initialPreset={initialPreset}
           entryContext={entryContext}
           setupMessage={setupMessage}
+          shouldHydrateInitialQueue={shouldHydrateInitialQueue}
         />
       </main>
     </div>

@@ -3,15 +3,12 @@ export const dynamic = "force-dynamic";
 import { FeedbackButton } from "@/components/FeedbackButton";
 import { HomeDashboardClient } from "@/components/HomeDashboardClient";
 import { ModeNavigator } from "@/components/ModeNavigator";
-import { loadHomeDashboardSnapshot } from "@/lib/homeDashboard";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 
 export default async function Home() {
-  const user = await getOptionalAuthUser();
-  const userId = user?.id ?? null;
-  const [snapshot, jumpTargets] = await Promise.all([
-    loadHomeDashboardSnapshot(userId),
+  const [user, jumpTargets] = await Promise.all([
+    getOptionalAuthUser(),
     getReadJumpTargets(),
   ]);
 
@@ -29,7 +26,7 @@ export default async function Home() {
         />
 
         <HomeDashboardClient
-          snapshot={snapshot}
+          hasAuthenticatedSession={user !== null}
           surahTargets={jumpTargets.surahs}
         />
       </main>

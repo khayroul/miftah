@@ -19,8 +19,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "SF Pro Text", "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "SF Mono", "Cascadia Code", "JetBrains Mono", ui-monospace, monospace;
   --font-arabic: var(--font-quran-arabic);
 }
 
@@ -60,7 +60,7 @@ body {
     radial-gradient(circle at 86% 0%, var(--bg-glow-secondary), transparent 28%),
     var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist), "Segoe UI", sans-serif;
+  font-family: "SF Pro Text", "SF Pro Display", "Segoe UI", system-ui, sans-serif;
 }
 
 body,
