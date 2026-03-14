@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import { createPortal } from "react-dom";
 import type { FahamQueueSnapshot, SerializedFahamCard } from "@/lib/faham/queue";
 import type { FahamLevelProgress } from "@/lib/faham/levels";
 import type { FahamMcqDirectionMode } from "@/lib/faham/mcq";
@@ -56,24 +64,49 @@ const DIRECTION_CONFIGS: Record<
   },
 };
 
+type FahamCorrectAdvanceMode = "fast" | "normal" | "pause";
+
+const CORRECT_ADVANCE_STORAGE_KEY = "miftah:faham:correct-advance-mode";
+
+const CORRECT_ADVANCE_CONFIGS: Record<
+  FahamCorrectAdvanceMode,
+  {
+    delayMs: number | null;
+    helper: string;
+    label: string;
+    shortLabel: string;
+  }
+> = {
+  fast: {
+    delayMs: 1000,
+    helper: "Kad seterusnya muncul selepas 1 saat. Sesuai jika anda mahu rentak lebih laju.",
+    label: "Cepat",
+    shortLabel: "1s",
+  },
+  normal: {
+    delayMs: 3000,
+    helper: "Kad seterusnya muncul selepas 3 saat. Ini kadar biasa untuk dengar jawapan seketika.",
+    label: "Normal",
+    shortLabel: "3s",
+  },
+  pause: {
+    delayMs: null,
+    helper: "Sesi berhenti selepas jawapan betul sehingga anda tekan kad seterusnya sendiri.",
+    label: "Jeda",
+    shortLabel: "Jeda",
+  },
+};
+
 function queueItems(snapshot: FahamQueueSnapshot): SerializedFahamCard[] {
   return [...snapshot.due, ...snapshot.learning, ...snapshot.new, ...snapshot.mastered];
 }
 
-function dueLabel(count: number): string {
-  return count === 1 ? "1 kad ulang kaji" : `${count} kad ulang kaji`;
-}
+function formatMetricValue(value: number | null): string {
+  if (value === null) {
+    return "...";
+  }
 
-function newLabel(count: number): string {
-  return count === 1 ? "1 kad baharu" : `${count} kad baharu`;
-}
-
-function learningLabel(count: number): string {
-  return count === 1 ? "1 kad menunggu giliran" : `${count} kad menunggu giliran`;
-}
-
-function masteredLabel(count: number): string {
-  return count === 1 ? "1 kad pengukuhan" : `${count} kad pengukuhan`;
+  return value.toLocaleString();
 }
 
 async function requestQueue(
@@ -137,6 +170,22 @@ interface FahamStats {
   levelProgress?: FahamLevelProgress;
 }
 
+interface FahamSessionSummary {
+  correctCount: number;
+  foundCount: number;
+  masteredCount: number;
+  totalCount: number;
+}
+
+async function requestStats(): Promise<FahamStats> {
+  const response = await fetch("/api/faham/stats");
+  if (!response.ok) {
+    throw new Error("Failed to fetch Faham stats");
+  }
+
+  return (await response.json()) as FahamStats;
+}
+
 export function FahamWorkspace({
   initialQueue,
   initialPreset = "mixed",
@@ -150,8 +199,8 @@ export function FahamWorkspace({
   const [isRevision, setIsRevision] = useState(false);
   const [snapshot, setSnapshot] = useState<FahamQueueSnapshot>(initialQueue);
   const [stats, setStats] = useState<FahamStats | null>(null);
-  const [prevMastered, setPrevMastered] = useState<number | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [sessionSummary, setSessionSummary] = useState<FahamSessionSummary | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answerState, setAnswerState] = useState<AnswerState | null>(null);
   const [sessionDoneCount, setSessionDoneCount] = useState(0);
@@ -162,25 +211,143 @@ export function FahamWorkspace({
     }
     return window.localStorage.getItem("miftah:faham:audio-enabled") !== "0";
   });
+  const [correctAdvanceMode, setCorrectAdvanceMode] = useState<FahamCorrectAdvanceMode>(() => {
+    if (typeof window === "undefined") {
+      return "normal";
+    }
+
+    const savedMode = window.localStorage.getItem(CORRECT_ADVANCE_STORAGE_KEY);
+    if (
+      savedMode === "fast" ||
+      savedMode === "normal" ||
+      savedMode === "pause"
+    ) {
+      return savedMode;
+    }
+
+    return "normal";
+  });
   const [isPending, startTransition] = useTransition();
   const [isHydratingInitialQueue, setIsHydratingInitialQueue] = useState(
     shouldHydrateInitialQueue,
   );
+  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lastAutoplayKeyRef = useRef<string | null>(null);
+  const prevMasteredRef = useRef<number | null>(null);
+  const sessionCorrectCountRef = useRef(0);
   const cards = useMemo(() => queueItems(snapshot), [snapshot]);
   const currentCard = cards[currentIndex] ?? null;
   const levelProgress = stats?.levelProgress ?? snapshot.levelProgress;
-  const foundUnlockPct = levelProgress.unlockFoundRequired > 0
-    ? Math.min(100, (levelProgress.unlockFoundProgress / levelProgress.unlockFoundRequired) * 100)
-    : 0;
-  const masteredUnlockPct = levelProgress.unlockMasteredRequired > 0
-    ? Math.min(100, (levelProgress.unlockMasteredProgress / levelProgress.unlockMasteredRequired) * 100)
-    : 0;
   const foundCount = stats?.wordBank ?? 0;
+  const masteredCount = stats?.mastered ?? 0;
+  const hasLiveStats = stats !== null;
   const foundCap = levelProgress.activeWordLimit;
-  const nextCapLabel = levelProgress.nextWordLimit
-    ? `${Math.round(levelProgress.nextWordLimit / 1000)}k`
-    : "seterusnya";
   const progressPct = cards.length > 0 ? ((currentIndex + 1) / cards.length) * 100 : 0;
+  const foundShare = foundCap > 0 ? Math.min(1, foundCount / foundCap) : 0;
+  const masteredShare = foundCount > 0 ? Math.min(1, masteredCount / foundCount) : 0;
+
+  const stopActiveAudio = useCallback(() => {
+    const activeAudio = activeAudioRef.current;
+    if (!activeAudio) {
+      return;
+    }
+
+    activeAudio.pause();
+    activeAudio.currentTime = 0;
+    activeAudioRef.current = null;
+  }, []);
+
+  const playFeedbackSound = useCallback((kind: "correct" | "incorrect" | "mastered" | "session_complete") => {
+    if (!audioEnabled) return;
+    
+    const AudioCtx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+
+    const scheduleTone = (
+      frequency: number,
+      startAt: number,
+      duration: number,
+      type: OscillatorType,
+      volume: number,
+    ) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = type;
+      osc.frequency.setValueAtTime(frequency, startAt);
+      gain.gain.setValueAtTime(volume, startAt);
+      gain.gain.exponentialRampToValueAtTime(0.01, startAt + duration);
+      osc.start(startAt);
+      osc.stop(startAt + duration);
+    };
+
+    if (kind === "session_complete") {
+      scheduleTone(523.25, now, 0.24, "triangle", 0.18);
+      scheduleTone(659.25, now + 0.12, 0.24, "triangle", 0.18);
+      scheduleTone(783.99, now + 0.24, 0.28, "triangle", 0.18);
+      scheduleTone(1046.5, now + 0.38, 0.42, "sine", 0.22);
+      scheduleTone(1318.51, now + 0.52, 0.42, "sine", 0.18);
+      return;
+    }
+
+    if (kind === "mastered") {
+      scheduleTone(523.25, now, 0.18, "square", 0.1);
+      scheduleTone(659.25, now + 0.1, 0.18, "square", 0.1);
+      scheduleTone(783.99, now + 0.2, 0.18, "square", 0.1);
+      scheduleTone(1046.5, now + 0.3, 0.32, "square", 0.1);
+      return;
+    }
+
+    if (kind === "correct") {
+      scheduleTone(523.25, now, 0.1, "sine", 0.2);
+      scheduleTone(1046.5, now + 0.08, 0.28, "sine", 0.16);
+      return;
+    }
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(110, now);
+    osc.frequency.linearRampToValueAtTime(80, now + 0.2);
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    osc.start(now);
+    osc.stop(now + 0.3);
+  }, [audioEnabled]);
+
+  const resetSessionTracking = useCallback(() => {
+    sessionCorrectCountRef.current = 0;
+  }, []);
+
+  const applyStats = useCallback((newStats: FahamStats, celebrateMastered: boolean) => {
+    if (
+      celebrateMastered &&
+      prevMasteredRef.current !== null &&
+      newStats.mastered > prevMasteredRef.current
+    ) {
+      setShowCelebration(true);
+      playFeedbackSound("mastered");
+      setTimeout(() => setShowCelebration(false), 4000);
+    }
+
+    prevMasteredRef.current = newStats.mastered;
+    setStats(newStats);
+  }, [playFeedbackSound]);
+
+  const refreshStats = useCallback(async (celebrateMastered: boolean) => {
+    try {
+      const latestStats = await requestStats();
+      applyStats(latestStats, celebrateMastered);
+      return latestStats;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  }, [applyStats]);
 
   const reloadQueue = (
     nextPreset: FahamSourcePreset,
@@ -197,6 +364,8 @@ export function FahamWorkspace({
           setCurrentIndex(0);
           setAnswerState(null);
           setErrorMessage(null);
+          setSessionSummary(null);
+          resetSessionTracking();
         })
         .catch(() => {
           setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
@@ -209,7 +378,6 @@ export function FahamWorkspace({
 
   useEffect(() => {
     if (!shouldHydrateInitialQueue) {
-      setIsHydratingInitialQueue(false);
       return;
     }
 
@@ -223,6 +391,8 @@ export function FahamWorkspace({
           setCurrentIndex(0);
           setAnswerState(null);
           setErrorMessage(null);
+          setSessionSummary(null);
+          resetSessionTracking();
         })
         .catch(() => {
           setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
@@ -231,29 +401,59 @@ export function FahamWorkspace({
           setIsHydratingInitialQueue(false);
         });
     });
-  }, [initialPreset, shouldHydrateInitialQueue, startTransition]);
+  }, [initialPreset, resetSessionTracking, shouldHydrateInitialQueue, startTransition]);
 
   const moveToNextCard = useCallback(async () => {
     const nextIndex = currentIndex + 1;
-    setSessionDoneCount((value) => value + 1);
 
     if (nextIndex < cards.length) {
       setCurrentIndex(nextIndex);
       setAnswerState(null);
       setErrorMessage(null);
+      setSessionDoneCount((value) => value + 1);
       return;
     }
 
+    const completedSessionTotal = cards.length;
+    const completedSessionCorrect = sessionCorrectCountRef.current;
+    const latestStats = await refreshStats(false);
     const refreshed = await requestQueue(preset, directionMode, isRevision);
+
+    stopActiveAudio();
+    playFeedbackSound("session_complete");
     setSnapshot(refreshed);
     setCurrentIndex(0);
     setAnswerState(null);
     setErrorMessage(null);
-  }, [cards.length, currentIndex, directionMode, isRevision, preset]);
+    setSessionSummary({
+      correctCount: completedSessionCorrect,
+      foundCount: latestStats?.wordBank ?? foundCount,
+      masteredCount: latestStats?.mastered ?? masteredCount,
+      totalCount: completedSessionTotal,
+    });
+    resetSessionTracking();
+    setSessionDoneCount((value) => value + 1);
+  }, [
+    cards.length,
+    currentIndex,
+    directionMode,
+    foundCount,
+    isRevision,
+    masteredCount,
+    playFeedbackSound,
+    preset,
+    refreshStats,
+    resetSessionTracking,
+    stopActiveAudio,
+  ]);
 
   const handleAnswer = (selectedIndex: number) => {
     if (!currentCard || answerState || isPending) {
       return;
+    }
+
+    if (selectedIndex === currentCard.mcq.correctIndex) {
+      sessionCorrectCountRef.current += 1;
     }
 
     setAnswerState({
@@ -272,8 +472,25 @@ export function FahamWorkspace({
     });
   };
 
-  const playWordAudio = useCallback((text: string, lang: "ar" | "ms", explicitUrl?: string | null) => {
-    if (!audioEnabled || !text) return;
+  const handleCorrectAdvanceModeChange = (mode: FahamCorrectAdvanceMode) => {
+    setCorrectAdvanceMode(mode);
+    window.localStorage.setItem(CORRECT_ADVANCE_STORAGE_KEY, mode);
+  };
+
+  const playWordAudio = useCallback((params: {
+    text: string;
+    lang: "ar" | "ms";
+    explicitUrl?: string | null;
+    autoplayKey?: string;
+  }) => {
+    const { autoplayKey, explicitUrl, lang, text } = params;
+    if (!audioEnabled || !text) {
+      return;
+    }
+
+    if (autoplayKey && lastAutoplayKeyRef.current === autoplayKey) {
+      return;
+    }
 
     const normalizedExplicitUrl =
       typeof explicitUrl === "string" ? explicitUrl.trim() : "";
@@ -284,86 +501,68 @@ export function FahamWorkspace({
         : lang === "ms"
           ? `/api/audio/tts?text=${encodeURIComponent(text)}&lang=ms&voice=male`
           : null;
-    if (!url) return;
+    if (!url) {
+      return;
+    }
+
+    stopActiveAudio();
 
     const audio = new Audio(url);
+    activeAudioRef.current = audio;
+    if (autoplayKey) {
+      lastAutoplayKeyRef.current = autoplayKey;
+    }
+
+    const clearActiveAudio = () => {
+      if (activeAudioRef.current === audio) {
+        activeAudioRef.current = null;
+      }
+    };
+
+    audio.addEventListener("ended", clearActiveAudio, { once: true });
+    audio.addEventListener("error", clearActiveAudio, { once: true });
     audio.play().catch(() => {
+      clearActiveAudio();
       // Ignore autoplay blocks or failures
     });
-  }, [audioEnabled]);
-
-  const playFeedbackSound = useCallback((kind: "correct" | "incorrect" | "mastered") => {
-    if (!audioEnabled) return;
-    
-    const AudioCtx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    
-    const now = ctx.currentTime;
-    
-    if (kind === "mastered") {
-      // Triumphant arpeggio
-      osc.type = "square";
-      osc.frequency.setValueAtTime(523.25, now); // C5
-      osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
-      osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
-      osc.frequency.setValueAtTime(1046.5, now + 0.3); // C6
-      gain.gain.setValueAtTime(0.1, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-      osc.start(now);
-      osc.stop(now + 0.8);
-    } else if (kind === "correct") {
-      // Pleasant bright chime (Major triad)
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(523.25, now); // C5
-      osc.frequency.exponentialRampToValueAtTime(1046.5, now + 0.1); // C6
-      gain.gain.setValueAtTime(0.2, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-      osc.start(now);
-      osc.stop(now + 0.5);
-    } else {
-      // Subtle corrective low tone
-      osc.type = "triangle";
-      osc.frequency.setValueAtTime(110.0, now); // A2
-      osc.frequency.linearRampToValueAtTime(80.0, now + 0.2);
-      gain.gain.setValueAtTime(0.15, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-      osc.start(now);
-      osc.stop(now + 0.3);
-    }
-  }, [audioEnabled]);
+  }, [audioEnabled, stopActiveAudio]);
 
   useEffect(() => {
-    void fetch("/api/faham/stats")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && !data.error) {
-          const newStats = data as FahamStats;
-          if (prevMastered !== null && newStats.mastered > prevMastered) {
-            setShowCelebration(true);
-            playFeedbackSound("mastered");
-            setTimeout(() => setShowCelebration(false), 4000);
-          }
-          setStats(newStats);
-          setPrevMastered(newStats.mastered);
-        }
-      })
-      .catch(console.error);
-  }, [playFeedbackSound, prevMastered, sessionDoneCount]);
+    const timeoutId = window.setTimeout(() => {
+      void refreshStats(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [refreshStats, sessionDoneCount]);
+
+  useEffect(() => {
+    return () => {
+      stopActiveAudio();
+    };
+  }, [stopActiveAudio]);
+
+  useEffect(() => {
+    if (!audioEnabled) {
+      stopActiveAudio();
+    }
+  }, [audioEnabled, stopActiveAudio]);
 
   // Autoplay prompt when card changes
   useEffect(() => {
-    if (currentCard && !answerState) {
-      playWordAudio(currentCard.mcq.promptPrimary, currentCard.mcq.promptLang, currentCard.mcq.promptAudioUrl);
+    if (currentCard && !answerState && !sessionSummary) {
+      playWordAudio({
+        autoplayKey: `prompt:${currentCard.progressId}`,
+        explicitUrl: currentCard.mcq.promptAudioUrl,
+        lang: currentCard.mcq.promptLang,
+        text: currentCard.mcq.promptPrimary,
+      });
     }
-  }, [answerState, currentCard, playWordAudio]);
+  }, [answerState, currentCard, playWordAudio, sessionSummary]);
 
   const handleManualAudio = (lang: "ar" | "ms", text: string, explicitUrl?: string | null) => {
-    playWordAudio(text, lang, explicitUrl);
+    playWordAudio({ explicitUrl, lang, text });
   };
 
   const handleContinue = useCallback(() => {
@@ -400,17 +599,141 @@ export function FahamWorkspace({
   useEffect(() => {
     if (currentCard && answerState) {
       const lang = currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms";
-      playWordAudio(currentCard.mcq.answerPrimary, lang, currentCard.mcq.answerAudioUrl);
+      playWordAudio({
+        autoplayKey: `answer:${currentCard.progressId}`,
+        explicitUrl: currentCard.mcq.answerAudioUrl,
+        lang,
+        text: currentCard.mcq.answerPrimary,
+      });
 
       // Auto-continue to next card after 3 seconds if correct
       if (answerState.isCorrect) {
+        const delayMs = CORRECT_ADVANCE_CONFIGS[correctAdvanceMode].delayMs;
+        if (delayMs === null) {
+          return;
+        }
+
         const timer = setTimeout(() => {
           handleContinue();
-        }, 3000);
+        }, delayMs);
         return () => clearTimeout(timer);
       }
     }
-  }, [answerState, currentCard, handleContinue, playWordAudio]);
+  }, [answerState, correctAdvanceMode, currentCard, handleContinue, playWordAudio]);
+
+  useEffect(() => {
+    if (!sessionSummary) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSessionSummary(null);
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [sessionSummary]);
+
+  const sessionSummaryModal =
+    sessionSummary && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-stone-950/55 px-4 backdrop-blur-sm"
+            onClick={() => setSessionSummary(null)}
+          >
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="faham-session-summary-title"
+              className="animate-bounce-in relative w-full max-w-xl rounded-[2rem] border border-emerald-200/80 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.18),transparent_55%),linear-gradient(180deg,rgba(236,253,245,0.97),rgba(255,255,255,0.98))] p-6 shadow-[0_30px_90px_-35px_rgba(16,185,129,0.45)] dark:border-emerald-500/30 dark:bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.2),transparent_55%),linear-gradient(180deg,rgba(6,78,59,0.75),rgba(17,24,39,0.95))] sm:p-7"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                aria-label="Tutup popup sesi"
+                onClick={() => setSessionSummary(null)}
+                className="absolute right-4 top-4 inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-300/80 bg-white/90 text-stone-700 transition hover:bg-stone-100 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
+              >
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <path d="M6 6L18 18" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M18 6L6 18" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <span className="inline-flex rounded-full border border-emerald-300/80 bg-white/75 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-950/40 dark:text-emerald-200">
+                    Sesi Selesai
+                  </span>
+                  <h2
+                    id="faham-session-summary-title"
+                    className="mt-4 text-3xl font-semibold tracking-tight text-stone-950 dark:text-emerald-50 sm:text-4xl"
+                  >
+                    Skor sesi anda
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-stone-600 sm:text-base dark:text-stone-200">
+                    Teruskan momentum ini. Sesi seterusnya sudah sedia untuk anda sambung.
+                  </p>
+                </div>
+
+                <div className="rounded-[1.5rem] border border-emerald-300/70 bg-white/88 px-5 py-4 text-center shadow-sm dark:border-emerald-300/40 dark:bg-white/12">
+                  <p className="text-5xl font-semibold tracking-tight text-emerald-950 dark:text-white sm:text-6xl">
+                    {sessionSummary.correctCount}
+                    <span className="text-2xl text-emerald-700/80 dark:text-emerald-100">
+                      /{sessionSummary.totalCount}
+                    </span>
+                  </p>
+                  <p className="mt-1 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-100">
+                    Jawapan betul
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-[1.5rem] border border-amber-200/80 bg-amber-50/85 p-4 dark:border-amber-500/30 dark:bg-amber-950/30">
+                  <p className="text-sm font-bold uppercase tracking-[0.22em] text-amber-800 dark:text-amber-300">
+                    Perkataan Ditemui
+                  </p>
+                  <p className="mt-2 text-3xl font-semibold tracking-tight text-amber-950 dark:text-amber-50">
+                    {formatMetricValue(sessionSummary.foundCount)}
+                  </p>
+                </div>
+                <div className="rounded-[1.5rem] border border-emerald-200/80 bg-emerald-50/85 p-4 dark:border-emerald-500/30 dark:bg-emerald-950/30">
+                  <p className="text-sm font-bold uppercase tracking-[0.22em] text-emerald-800 dark:text-emerald-300">
+                    Perkataan Dikuasai
+                  </p>
+                  <p className="mt-2 text-3xl font-semibold tracking-tight text-emerald-950 dark:text-emerald-50">
+                    {formatMetricValue(sessionSummary.masteredCount)}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSessionSummary(null)}
+                className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-stone-950 px-5 py-3 text-base font-semibold text-white transition hover:bg-stone-800 dark:bg-emerald-100 dark:text-emerald-950 dark:hover:bg-emerald-200"
+              >
+                Teruskan ke sesi seterusnya
+              </button>
+            </section>
+          </div>,
+          document.body,
+        )
+      : null;
 
   return (
     <div className="relative flex flex-col gap-6">
@@ -423,12 +746,14 @@ export function FahamWorkspace({
               </svg>
             </div>
             <div className="text-left">
-              <p className="text-sm font-bold uppercase tracking-widest text-emerald-600 sm:text-base dark:text-emerald-400">Tahniah! +1 Mastered</p>
+              <p className="text-sm font-bold uppercase tracking-widest text-emerald-600 sm:text-base dark:text-emerald-400">Tahniah! +1 Dikuasai</p>
               <p className="text-base font-bold text-emerald-950 sm:text-lg dark:text-emerald-50">Perkataan Baru Dikuasai</p>
             </div>
           </div>
         </div>
       )}
+
+      {sessionSummaryModal}
 
       {errorMessage ? (
         <section className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
@@ -475,71 +800,111 @@ export function FahamWorkspace({
         </section>
       ) : null}
 
+      <section className="grid gap-3 sm:grid-cols-2">
+        <MotivationMetricCard
+          accent="amber"
+          helper="Perkataan dalam cap aktif yang anda sudah jumpa daripada baca, tema, atau hafal."
+          label="Perkataan Ditemui"
+          progress={foundShare}
+          progressLabel={
+            foundCap > 0
+              ? `${Math.round(foundShare * 100)}% daripada cap aktif ${formatMetricValue(foundCap)}`
+              : "Belum ada cap aktif"
+          }
+          value={formatMetricValue(hasLiveStats ? foundCount : null)}
+        />
+        <MotivationMetricCard
+          accent="emerald"
+          helper="Perkataan yang sudah benar-benar kuat dan kini masuk fasa pengukuhan."
+          label="Perkataan Dikuasai"
+          progress={masteredShare}
+          progressLabel={
+            foundCount > 0
+              ? `${Math.round(masteredShare * 100)}% daripada ${formatMetricValue(foundCount)} perkataan ditemui`
+              : "Perkataan dikuasai akan naik selepas ada perkataan ditemui"
+          }
+          value={formatMetricValue(hasLiveStats ? masteredCount : null)}
+        />
+      </section>
+
       {currentCard ? (
         <section className="animate-fade-in-up rounded-[2rem] border border-stone-200/90 bg-white/88 p-5 shadow-[0_30px_80px_-52px_rgba(41,37,36,0.65)] backdrop-blur-sm sm:p-7 dark:border-stone-700 dark:bg-stone-900/80">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span
-                className={`rounded-full border px-3 py-1 text-sm font-medium sm:text-base ${
-                  currentCard.kind === "due"
-                    ? "border-teal-900/15 bg-teal-950/5 text-teal-900 dark:border-teal-300/20 dark:bg-teal-900/35 dark:text-teal-100"
-                    : currentCard.kind === "mastered"
-                    ? "border-indigo-900/15 bg-indigo-950/5 text-indigo-900 dark:border-indigo-300/20 dark:bg-indigo-900/35 dark:text-indigo-100"
-                    : "border-amber-900/15 bg-amber-100/75 text-amber-900 dark:border-amber-300/20 dark:bg-amber-900/35 dark:text-amber-100"
-                }`}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleToggleAudio}
+              className={`group flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition shadow-sm sm:text-base ${
+                audioEnabled
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/30 dark:text-emerald-300"
+                  : "border-stone-200 bg-stone-50 text-stone-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400"
+              }`}
+            >
+              {audioEnabled ? (
+                <>
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M11 5L6 9H2v6h4l5 4V5z" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Audio On
+                </>
+              ) : (
+                <>
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M11 5L6 9H2v6h4l5 4V5z" strokeLinecap="round" strokeLinejoin="round" />
+                    <line x1="23" y1="9" x2="17" y2="15" strokeLinecap="round" strokeLinejoin="round" />
+                    <line x1="17" y1="9" x2="23" y2="15" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Audio Off
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => reloadQueue(preset, directionMode, !isRevision)}
+              disabled={isPending}
+              className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition shadow-sm sm:text-base ${
+                isRevision
+                  ? "border-emerald-300 bg-emerald-100 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-900/50"
+                  : "border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
+              }`}
+            >
+              <svg
+                className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : isRevision ? "animate-pulse" : ""}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
               >
-                {currentCard.kind === "due" ? "Ulang kaji" : currentCard.kind === "mastered" ? "Pengukuhan" : "Kad baharu"}
-              </span>
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {isRevision ? "Ulang Kaji Aktif" : "Mula Ulang Kaji"}
+            </button>
 
-              <button
-                type="button"
-                onClick={handleToggleAudio}
-                className={`group flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium transition sm:text-base ${
-                  audioEnabled
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/30 dark:text-emerald-300"
-                    : "border-stone-200 bg-stone-50 text-stone-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400"
-                }`}
+            <button
+              type="button"
+              onClick={() => setIsConfigExpanded((value) => !value)}
+              className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition shadow-sm sm:text-base ${
+                isConfigExpanded
+                  ? "border-amber-300 bg-amber-100 text-amber-950 dark:border-amber-500/30 dark:bg-amber-900/50"
+                  : "border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
+              }`}
+              aria-expanded={isConfigExpanded}
+            >
+              <svg
+                className={`h-3.5 w-3.5 transition-transform duration-300 ${isConfigExpanded ? "rotate-180" : ""}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
               >
-                {audioEnabled ? (
-                  <>
-                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M11 5L6 9H2v6h4l5 4V5z" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    Audio On
-                  </>
-                ) : (
-                  <>
-                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M11 5L6 9H2v6h4l5 4V5z" strokeLinecap="round" strokeLinejoin="round" />
-                      <line x1="23" y1="9" x2="17" y2="15" strokeLinecap="round" strokeLinejoin="round" />
-                      <line x1="17" y1="9" x2="23" y2="15" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    Audio Off
-                  </>
-                )}
-              </button>
+                <path d="M12 5v14M5 12l7 7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {isConfigExpanded ? "Tutup Pilihan Tambahan" : "Pilihan Tambahan"}
+            </button>
+          </div>
 
-              <span className="rounded-full border border-stone-200 bg-stone-100 px-3 py-1 text-sm text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300">
-                {currentCard.kind === "due"
-                  ? dueLabel(snapshot.due.length)
-                  : currentCard.kind === "mastered"
-                  ? masteredLabel(snapshot.mastered.length)
-                  : newLabel(snapshot.new.length)}
-              </span>
-              <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
-                Susunan: {FAHAM_PRESET_CONFIGS[preset].shortLabel}
-              </span>
-              <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
-                Arah: {DIRECTION_CONFIGS[directionMode].shortLabel}
-              </span>
-              {currentCard.needsReinforcement ? (
-                <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm text-rose-700 sm:text-base dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-200">
-                  Pengukuhan {currentCard.mistakeStreak}
-                </span>
-              ) : null}
-            </div>
-
+          <div className="flex flex-wrap items-center justify-end gap-3">
             <div className="min-w-32">
               <div className="flex items-center justify-between text-sm text-stone-500 sm:text-base dark:text-stone-400">
                 <span>
@@ -817,262 +1182,124 @@ export function FahamWorkspace({
         </section>
       )}
 
-      <section className="rounded-[2rem] border border-stone-200/85 bg-white/85 p-5 shadow-[0_30px_80px_-52px_rgba(41,37,36,0.4)] backdrop-blur-sm sm:p-7 dark:border-stone-700 dark:bg-stone-900/78">
-        <div className="flex flex-col gap-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center rounded-full border border-stone-200 bg-stone-100/70 px-3 py-1 text-sm font-bold tracking-[0.18em] text-stone-500 uppercase dark:border-stone-700 dark:bg-stone-800/40 dark:text-stone-400">
-                Sesi ini
-              </div>
-              <h1 className="mt-3 text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-50">
-                Jawab dahulu, ubah tetapan hanya bila perlu.
-              </h1>
-              <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-stone-600 sm:text-base dark:text-stone-300">
-                Kad ulang kaji datang daripada jawapan lepas yang sudah due. Kad menunggu giliran ialah kad yang masih dalam fasa belajar tetapi belum sampai masanya. Kad baharu pula dibuka daripada perkataan yang anda sudah jumpa semasa Baca, Tema, atau Hafal. Found menunjukkan berapa banyak perkataan dalam cap aktif yang anda telah temui setakat ini.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => setIsConfigExpanded(!isConfigExpanded)}
-                className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition shadow-sm sm:text-base ${
-                  isConfigExpanded
-                    ? "border-amber-300 bg-amber-100 text-amber-950 dark:border-amber-500/30 dark:bg-amber-900/50"
-                    : "border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
-                }`}
-              >
-                <svg
-                  className={`h-3.5 w-3.5 transition-transform duration-300 ${isConfigExpanded ? "rotate-180" : ""}`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <path d="M12 5v14M5 12l7 7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                {isConfigExpanded ? "Tutup Pilihan Lanjutan" : "Buka Pilihan Lanjutan"}
-              </button>
-
-              <button
-                onClick={() => reloadQueue(preset, directionMode, !isRevision)}
-                disabled={isPending}
-                className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition shadow-sm sm:text-base ${
-                  isRevision
-                    ? "border-emerald-300 bg-emerald-100 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-900/50"
-                    : "border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
-                }`}
-              >
-                <svg
-                  className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : isRevision ? "animate-pulse" : ""}`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                {isRevision ? "Ulang Kaji Aktif" : "Mula Ulang Kaji"}
-              </button>
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-teal-200/70 bg-teal-50/70 p-4 dark:border-teal-700/40 dark:bg-teal-950/20">
-              <p className="text-sm font-bold uppercase tracking-[0.2em] text-teal-800 dark:text-teal-300">
-                Ulang kaji
-              </p>
-              <p className="mt-2 text-3xl font-semibold tracking-tight text-teal-950 dark:text-teal-50">
-                {snapshot.due.length}
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-teal-900/80 dark:text-teal-100/80">
-                Kad yang pernah dijawab dan sudah sampai masa untuk disemak semula.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-sky-200/70 bg-sky-50/70 p-4 dark:border-sky-700/40 dark:bg-sky-950/20">
-              <p className="text-sm font-bold uppercase tracking-[0.2em] text-sky-800 dark:text-sky-300">
-                Menunggu giliran
-              </p>
-              <p className="mt-2 text-3xl font-semibold tracking-tight text-sky-950 dark:text-sky-50">
-                {snapshot.learning.length}
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-sky-900/80 dark:text-sky-100/80">
-                Kad yang masih belajar, tetapi belum due untuk sesi ini.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-amber-200/70 bg-amber-50/70 p-4 dark:border-amber-700/40 dark:bg-amber-950/20">
-              <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-800 dark:text-amber-300">
-                Kad baharu
-              </p>
-              <p className="mt-2 text-3xl font-semibold tracking-tight text-amber-950 dark:text-amber-50">
-                {snapshot.new.length}
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-amber-900/80 dark:text-amber-100/80">
-                Perkataan yang baru terbuka hasil pendedahan daripada baca, tema, atau hafal.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-indigo-200/70 bg-indigo-50/70 p-4 dark:border-indigo-700/40 dark:bg-indigo-950/20">
-              <p className="text-sm font-bold uppercase tracking-[0.2em] text-indigo-800 dark:text-indigo-300">
-                Pengukuhan
-              </p>
-              <p className="mt-2 text-3xl font-semibold tracking-tight text-indigo-950 dark:text-indigo-50">
-                {snapshot.mastered.length}
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-indigo-900/80 dark:text-indigo-100/80">
-                Kad mahir yang diselitkan sekali-sekala supaya sambungan dengan ayat asal kekal segar.
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4 dark:border-amber-500/30 dark:bg-amber-950/20">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 dark:border-amber-500/50 dark:bg-amber-900/40 dark:text-amber-100">
-                L{levelProgress.activeLevel}
-              </span>
-              <span className="text-sm text-stone-700 dark:text-stone-200">
-                Found {foundCount} / {foundCap}
-              </span>
-              <span className="text-sm text-stone-700 dark:text-stone-200">
-                {learningLabel(snapshot.learning.length)}
-              </span>
-              <span className="text-sm text-stone-700 dark:text-stone-200">
-                {stats?.dueToday ?? snapshot.due.length} due hari ini
-              </span>
-            </div>
-
-            {levelProgress.isMaxLevel ? (
-              <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">
-                Tahap maksimum telah dibuka. Teruskan naikkan Mahir.
-              </p>
-            ) : (
-              <div className="mt-3 space-y-2">
-                <p className="text-sm text-stone-700 dark:text-stone-200">
-                  L{levelProgress.nextLevel} akan buka cap ke {nextCapLabel} perkataan.
-                </p>
-                <div>
-                  <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-300">
-                    <span>Ditemui</span>
-                    <span>{Math.round(foundUnlockPct)}%</span>
-                  </div>
-                  <div className="mt-1 h-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30">
-                    <div className="h-full rounded-full bg-amber-500" style={{ width: `${foundUnlockPct}%` }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-300">
-                    <span>Mahir</span>
-                    <span>{Math.round(masteredUnlockPct)}%</span>
-                  </div>
-                  <div className="mt-1 h-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-                    <div className="h-full rounded-full bg-emerald-500" style={{ width: `${masteredUnlockPct}%` }} />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {isConfigExpanded ? (
+      {isConfigExpanded ? (
+        <section className="rounded-[2rem] border border-stone-200/85 bg-white/85 p-5 shadow-[0_30px_80px_-52px_rgba(41,37,36,0.4)] backdrop-blur-sm sm:p-7 dark:border-stone-700 dark:bg-stone-900/78">
+          <aside className="animate-in fade-in slide-in-from-top-2 duration-300 rounded-[1.75rem] border border-stone-200/80 bg-white/80 p-5 shadow-xl backdrop-blur-md dark:border-stone-700 dark:bg-stone-950/60">
             <div className="space-y-5">
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                <StatCard
-                  label="Found"
-                  value={`${foundCount} / ${foundCap}`}
-                  highlight
-                  helper="Perkataan ditemui"
-                  progress={foundCap > 0 ? foundCount / foundCap : 0}
-                  progressLabel={`${Math.floor(foundCap > 0 ? (foundCount / foundCap) * 100 : 0)}% sasaran`}
-                />
-                <StatCard
-                  label="Mahir"
-                  value={`${stats?.mastered ?? 0} / ${foundCount}`}
-                  helper="Mastered / Found"
-                />
-                <StatCard
-                  label="Learning"
-                  value={String(stats?.learning ?? 0)}
-                  helper="Sedang Belajar"
-                />
-                <StatCard
-                  label="Due Today"
-                  value={String(stats?.dueToday ?? 0)}
-                  helper="Ulang kaji"
-                />
-                <StatCard
-                  label="7-Day Retention"
-                  value={
-                    stats && Number.isFinite(stats.retentionRate7d)
-                      ? `${(stats.retentionRate7d * 100).toFixed(0)}%`
-                      : "0%"
-                  }
-                  helper="Kadar Ingatan"
-                />
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold uppercase tracking-[0.22em] text-stone-500 sm:text-base dark:text-stone-400">
+                  Susun deck sesi ini
+                </p>
+                <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm font-bold text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
+                  {FAHAM_PRESET_CONFIGS[preset].shortLabel}
+                </span>
               </div>
 
-              <aside className="animate-in fade-in slide-in-from-top-2 duration-300 rounded-[1.75rem] border border-stone-200/80 bg-white/80 p-5 shadow-xl backdrop-blur-md dark:border-stone-700 dark:bg-stone-950/60">
-                <div className="grid gap-8 lg:grid-cols-2">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-bold uppercase tracking-[0.22em] text-stone-500 sm:text-base dark:text-stone-400">
-                        Susun deck sesi ini
-                      </p>
-                      <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm font-bold text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
-                        {FAHAM_PRESET_CONFIGS[preset].shortLabel}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(Object.keys(FAHAM_PRESET_CONFIGS) as FahamSourcePreset[]).map((key) => {
-                        const active = preset === key;
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => reloadQueue(key, directionMode)}
-                            disabled={isPending}
-                            className={`rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition sm:text-base ${
-                              active
-                                ? "border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-500/50 dark:bg-amber-900/30 dark:text-amber-100"
-                                : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
-                            }`}
-                          >
-                            {FAHAM_PRESET_CONFIGS[key].label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="rounded-xl border border-stone-200/80 bg-white/60 p-3 text-sm leading-relaxed text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900/50 dark:text-stone-400">
-                      {FAHAM_PRESET_CONFIGS[preset].helper}
-                    </div>
+              <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-stone-500 sm:text-base dark:text-stone-400">
+                      Sumber deck
+                    </p>
+                    <p className="mt-1 text-sm text-stone-600 sm:text-base dark:text-stone-300">
+                      Pilih sumber pendedahan yang paling dekat dengan fokus bacaan anda sekarang.
+                    </p>
                   </div>
 
-                  <div className="space-y-4 border-t border-stone-200/80 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0 dark:border-stone-700">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-bold uppercase tracking-[0.22em] text-stone-500 sm:text-base dark:text-stone-400">
-                        Arah soalan
-                      </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(Object.keys(FAHAM_PRESET_CONFIGS) as FahamSourcePreset[]).map((key) => {
+                      const active = preset === key;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => reloadQueue(key, directionMode)}
+                          disabled={isPending}
+                          className={`rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition sm:text-base ${
+                            active
+                              ? "border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-500/50 dark:bg-amber-900/30 dark:text-amber-100"
+                              : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
+                          }`}
+                        >
+                          {FAHAM_PRESET_CONFIGS[key].label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="rounded-xl border border-stone-200/80 bg-white/60 p-3 text-sm leading-relaxed text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900/50 dark:text-stone-400">
+                    {FAHAM_PRESET_CONFIGS[preset].helper}
+                  </div>
+                </div>
+
+                <div className="space-y-4 border-t border-stone-200/80 pt-5 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0 dark:border-stone-700">
+                  <div>
+                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-stone-500 sm:text-base dark:text-stone-400">
+                      Arah soalan
+                    </p>
+                    <p className="mt-1 text-sm text-stone-600 sm:text-base dark:text-stone-300">
+                      {DIRECTION_CONFIGS[directionMode].helper}
+                    </p>
+                  </div>
+
+                  <div className="grid gap-2">
+                    {(Object.keys(DIRECTION_CONFIGS) as FahamMcqDirectionMode[]).map((key) => {
+                      const active = directionMode === key;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => reloadQueue(preset, key)}
+                          disabled={isPending}
+                          className={`rounded-xl border px-4 py-2.5 text-left transition ${
+                            active
+                              ? "border-teal-300 bg-teal-50 text-teal-900 dark:border-teal-500/50 dark:bg-teal-950/30 dark:text-teal-100"
+                              : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
+                          }`}
+                        >
+                          <div className="text-sm font-bold sm:text-base">{DIRECTION_CONFIGS[key].label}</div>
+                          <div className="mt-0.5 text-sm leading-tight text-stone-500 sm:text-base dark:text-stone-400">
+                            {DIRECTION_CONFIGS[key].shortLabel}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="rounded-[1.35rem] border border-stone-200/80 bg-stone-50/80 p-4 dark:border-stone-700 dark:bg-stone-900/50">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold uppercase tracking-[0.22em] text-stone-500 sm:text-base dark:text-stone-400">
+                          Rentak selepas betul
+                        </p>
+                        <p className="mt-1 text-sm text-stone-600 sm:text-base dark:text-stone-300">
+                          {CORRECT_ADVANCE_CONFIGS[correctAdvanceMode].helper}
+                        </p>
+                      </div>
                       <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm font-bold text-stone-600 sm:text-base dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
-                        {DIRECTION_CONFIGS[directionMode].shortLabel}
+                        {CORRECT_ADVANCE_CONFIGS[correctAdvanceMode].shortLabel}
                       </span>
                     </div>
-                    <div className="grid gap-2">
-                      {(Object.keys(DIRECTION_CONFIGS) as FahamMcqDirectionMode[]).map((key) => {
-                        const active = directionMode === key;
+
+                    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                      {(Object.keys(CORRECT_ADVANCE_CONFIGS) as FahamCorrectAdvanceMode[]).map((mode) => {
+                        const active = correctAdvanceMode === mode;
                         return (
                           <button
-                            key={key}
+                            key={mode}
                             type="button"
-                            onClick={() => reloadQueue(preset, key)}
-                            disabled={isPending}
+                            onClick={() => handleCorrectAdvanceModeChange(mode)}
                             className={`rounded-xl border px-4 py-2.5 text-left transition ${
                               active
-                                ? "border-teal-300 bg-teal-50 text-teal-900 dark:border-teal-500/50 dark:bg-teal-950/30 dark:text-teal-100"
+                                ? "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-500/50 dark:bg-emerald-950/30 dark:text-emerald-100"
                                 : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
                             }`}
                           >
-                            <div className="text-sm font-bold sm:text-base">{DIRECTION_CONFIGS[key].label}</div>
+                            <div className="text-sm font-bold sm:text-base">
+                              {CORRECT_ADVANCE_CONFIGS[mode].label}
+                            </div>
                             <div className="mt-0.5 text-sm leading-tight text-stone-500 sm:text-base dark:text-stone-400">
-                              {DIRECTION_CONFIGS[key].helper}
+                              {CORRECT_ADVANCE_CONFIGS[mode].shortLabel}
                             </div>
                           </button>
                         );
@@ -1080,86 +1307,87 @@ export function FahamWorkspace({
                     </div>
                   </div>
                 </div>
-              </aside>
+              </div>
             </div>
-          ) : null}
-        </div>
-      </section>
+          </aside>
+        </section>
+      ) : null}
     </div>
   );
 }
 
-function StatCard({ 
-  label, 
-  value, 
+function MotivationMetricCard({
+  accent,
   helper,
-  highlight = false,
+  label,
   progress,
-  progressLabel
-}: { 
-  label: string; 
-  value: string; 
-  helper?: string;
-  highlight?: boolean;
-  progress?: number;
-  progressLabel?: string;
+  progressLabel,
+  value,
+}: {
+  accent: "amber" | "emerald";
+  helper: string;
+  label: string;
+  progress: number;
+  progressLabel: string;
+  value: string;
 }) {
-  if (highlight) {
-    return (
-      <div className={`relative overflow-hidden rounded-2xl border border-emerald-300/60 bg-gradient-to-br from-emerald-50 to-white px-4 py-3 shadow-[0_8px_30px_-12px_rgba(16,185,129,0.25)] transition-all duration-500 dark:border-emerald-500/30 dark:from-emerald-950/40 dark:to-stone-900/40 ${progressLabel?.includes('100') ? 'animate-pulse' : ''}`}>
-        <div className="absolute -right-1 -top-1 opacity-[0.08] dark:opacity-[0.15]">
-          <svg className="h-16 w-16 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-          </svg>
-        </div>
-        
-        <p className="text-sm font-bold uppercase tracking-[0.25em] text-emerald-800 sm:text-base dark:text-emerald-400/90">
-          {label}
-        </p>
-        
-        <div className="mt-1 flex items-baseline gap-1">
-          <p className="text-4xl font-extrabold tracking-tight text-emerald-950 dark:text-emerald-50">
+  const palette =
+    accent === "amber"
+      ? {
+          badge:
+            "border-amber-300/80 bg-amber-100/80 text-amber-900 dark:border-amber-500/40 dark:bg-amber-900/35 dark:text-amber-100",
+          card:
+            "border-amber-200/80 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.18),transparent_55%),linear-gradient(180deg,rgba(255,251,235,0.96),rgba(255,255,255,0.98))] dark:border-amber-500/30 dark:bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.18),transparent_55%),linear-gradient(180deg,rgba(69,26,3,0.45),rgba(28,25,23,0.92))]",
+          progressBar: "bg-amber-500 dark:bg-amber-400",
+          progressTrack: "bg-amber-100 dark:bg-amber-900/30",
+          value: "text-amber-950 dark:text-amber-50",
+        }
+      : {
+          badge:
+            "border-emerald-300/80 bg-emerald-100/80 text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-900/35 dark:text-emerald-100",
+          card:
+            "border-emerald-200/80 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.16),transparent_55%),linear-gradient(180deg,rgba(236,253,245,0.96),rgba(255,255,255,0.98))] dark:border-emerald-500/30 dark:bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.18),transparent_55%),linear-gradient(180deg,rgba(2,44,34,0.45),rgba(28,25,23,0.92))]",
+          progressBar: "bg-emerald-500 dark:bg-emerald-400",
+          progressTrack: "bg-emerald-100 dark:bg-emerald-900/30",
+          value: "text-emerald-950 dark:text-emerald-50",
+        };
+
+  return (
+    <section className={`rounded-[1.75rem] border p-5 shadow-[0_20px_60px_-44px_rgba(41,37,36,0.55)] ${palette.card}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] ${palette.badge}`}>
+            Momentum
+          </span>
+          <p className="mt-3 text-sm font-bold uppercase tracking-[0.24em] text-stone-500 sm:text-base dark:text-stone-400">
+            {label}
+          </p>
+          <p className={`mt-2 text-4xl font-semibold tracking-tight sm:text-5xl ${palette.value}`}>
             {value}
           </p>
         </div>
 
-        {progress !== undefined && (
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-sm font-semibold text-emerald-700 sm:text-base dark:text-emerald-400">
-              <span>Progress</span>
-              <span>{progressLabel}</span>
-            </div>
-            <div className="mt-1.5 h-1.5 w-full rounded-full bg-emerald-200/50 dark:bg-emerald-900/30">
-              <div 
-                className="h-full rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] transition-[width] duration-1000 dark:bg-emerald-400" 
-                style={{ width: `${Math.min(100, progress * 100)}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {!progress && helper && (
-          <p className="mt-1 text-sm font-medium text-emerald-600 sm:text-base dark:text-emerald-500">
-            {helper}
-          </p>
-        )}
+        <div className="rounded-full border border-white/70 bg-white/60 px-3 py-1 text-sm font-medium text-stone-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-stone-300">
+          {Math.round(progress * 100)}%
+        </div>
       </div>
-    );
-  }
 
-  return (
-    <div className="rounded-2xl border border-stone-200/80 bg-stone-50/90 px-4 py-3 dark:border-stone-700 dark:bg-stone-950/60">
-      <p className="text-sm font-bold uppercase tracking-[0.2em] text-stone-500 sm:text-base dark:text-stone-400">
-        {label}
+      <p className="mt-3 text-sm leading-relaxed text-stone-700 sm:text-base dark:text-stone-200">
+        {helper}
       </p>
-      <p className="mt-1 text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
-        {value}
-      </p>
-      {helper && (
-        <p className="mt-1 text-sm text-stone-400 sm:text-base dark:text-stone-500">
-          {helper}
-        </p>
-      )}
-    </div>
+
+      <div className="mt-4">
+        <div className="flex items-center justify-between text-xs font-medium text-stone-600 dark:text-stone-300">
+          <span>Progress</span>
+          <span>{progressLabel}</span>
+        </div>
+        <div className={`mt-1.5 h-2 rounded-full ${palette.progressTrack}`}>
+          <div
+            className={`h-full rounded-full transition-[width] duration-500 ${palette.progressBar}`}
+            style={{ width: `${Math.min(100, Math.max(0, progress * 100))}%` }}
+          />
+        </div>
+      </div>
+    </section>
   );
 }
