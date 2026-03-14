@@ -18,13 +18,13 @@ export function ThemeAyahMarker({
   if (variant === "ornate") {
     return (
       <span
-        className={`relative inline-flex h-12 w-12 items-center justify-center text-stone-700 dark:text-stone-200 sm:h-14 sm:w-14 ${className}`.trim()}
+        className={`relative inline-flex h-20 w-20 items-center justify-center text-stone-700 dark:text-stone-200 sm:h-24 sm:w-24 ${className}`.trim()}
         aria-label={`Ayat ${ayahNumber}`}
         title={`Ayat ${ayahNumber}`}
       >
         <span
           aria-hidden="true"
-          className="font-arabic text-[2.5rem] leading-none sm:text-[3rem]"
+          className="font-arabic text-[5rem] leading-none sm:text-[6rem]"
         >
           ۝
         </span>
@@ -32,7 +32,7 @@ export function ThemeAyahMarker({
           aria-hidden="true"
           lang="ar"
           dir="rtl"
-          className="font-arabic absolute inset-0 flex items-center justify-center text-[0.82rem] font-semibold leading-none sm:text-[0.95rem]"
+          className="font-arabic absolute inset-0 flex items-center justify-center text-[1.55rem] font-semibold leading-none sm:text-[1.85rem]"
         >
           {toArabicIndicNumerals(ayahNumber)}
         </span>
