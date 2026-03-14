@@ -1,6 +1,7 @@
 interface ThemeAyahMarkerProps {
   ayahNumber: number;
   className?: string;
+  variant?: "clean" | "ornate";
 }
 
 function toArabicIndicNumerals(value: number): string {
@@ -12,7 +13,33 @@ function toArabicIndicNumerals(value: number): string {
 export function ThemeAyahMarker({
   ayahNumber,
   className = "",
+  variant = "clean",
 }: ThemeAyahMarkerProps) {
+  if (variant === "ornate") {
+    return (
+      <span
+        className={`relative inline-flex h-12 w-12 items-center justify-center text-stone-700 dark:text-stone-200 sm:h-14 sm:w-14 ${className}`.trim()}
+        aria-label={`Ayat ${ayahNumber}`}
+        title={`Ayat ${ayahNumber}`}
+      >
+        <span
+          aria-hidden="true"
+          className="font-arabic text-[2.5rem] leading-none sm:text-[3rem]"
+        >
+          ۝
+        </span>
+        <span
+          aria-hidden="true"
+          lang="ar"
+          dir="rtl"
+          className="font-arabic absolute inset-0 flex items-center justify-center text-[0.82rem] font-semibold leading-none sm:text-[0.95rem]"
+        >
+          {toArabicIndicNumerals(ayahNumber)}
+        </span>
+      </span>
+    );
+  }
+
   return (
     <span
       className={`inline-flex h-10 min-w-10 items-center justify-center rounded-full border border-stone-400/70 bg-white px-2.5 text-stone-700 shadow-[0_6px_18px_-14px_rgba(28,25,23,0.45)] dark:border-stone-500/70 dark:bg-stone-900 dark:text-stone-200 sm:h-11 sm:min-w-11 sm:px-3 ${className}`.trim()}
