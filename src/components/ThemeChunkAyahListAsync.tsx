@@ -5,16 +5,12 @@ import type {
 } from "@/lib/queries";
 import { ThemeAyahMarker } from "./ThemeAyahMarker";
 
-export type ThemeMarkerStyle = "auth-small" | "clean";
-
 interface ThemeChunkAyahListAsyncProps {
   ayat: ThemeAppearanceAyah[];
-  markerStyle: ThemeMarkerStyle;
 }
 
 export async function ThemeChunkAyahListAsync({
   ayat,
-  markerStyle,
 }: ThemeChunkAyahListAsyncProps) {
   let wbwByAyahId: Record<number, AyahWordByWordEntry[]> = {};
 
@@ -67,19 +63,10 @@ export async function ThemeChunkAyahListAsync({
                         </span>
                       </div>
                     ))}
-                    {markerStyle === "auth-small" ? (
-                      <ThemeAyahMarker
-                        ayahNumber={ayah.ayah_number}
-                        variant="ornate"
-                        className="mr-1 self-center"
-                      />
-                    ) : (
-                      <ThemeAyahMarker
-                        ayahNumber={ayah.ayah_number}
-                        variant="clean"
-                        className="mr-1 self-center"
-                      />
-                    )}
+                    <ThemeAyahMarker
+                      ayahNumber={ayah.ayah_number}
+                      className="mr-1 self-center"
+                    />
                   </div>
                 </div>
               ) : (

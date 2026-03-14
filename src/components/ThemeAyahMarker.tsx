@@ -1,7 +1,6 @@
 interface ThemeAyahMarkerProps {
   ayahNumber: number;
   className?: string;
-  variant?: "clean" | "ornate";
 }
 
 const QURAN_IOS_AYAH_END_MARKER_SRC = "/mushaf/ayah-end-marker-quran-ios.png";
@@ -15,44 +14,10 @@ function toArabicIndicNumerals(value: number): string {
 export function ThemeAyahMarker({
   ayahNumber,
   className = "",
-  variant = "clean",
 }: ThemeAyahMarkerProps) {
-  if (variant === "ornate") {
-    return (
-      <span
-        className={`relative inline-flex h-11 w-11 items-center justify-center text-[#004D40] dark:text-[#039F85] sm:h-12 sm:w-12 ${className}`.trim()}
-        aria-label={`Ayat ${ayahNumber}`}
-        title={`Ayat ${ayahNumber}`}
-        lang="ar"
-        dir="rtl"
-      >
-        <span
-          aria-hidden="true"
-          className="absolute inset-0 bg-current"
-          style={{
-            WebkitMaskImage: `url(${QURAN_IOS_AYAH_END_MARKER_SRC})`,
-            maskImage: `url(${QURAN_IOS_AYAH_END_MARKER_SRC})`,
-            WebkitMaskRepeat: "no-repeat",
-            maskRepeat: "no-repeat",
-            WebkitMaskPosition: "center",
-            maskPosition: "center",
-            WebkitMaskSize: "contain",
-            maskSize: "contain",
-          }}
-        />
-        <span
-          aria-hidden="true"
-          className="relative translate-y-[0.5px] text-[1.02rem] font-semibold leading-none sm:text-[1.14rem]"
-        >
-          {toArabicIndicNumerals(ayahNumber)}
-        </span>
-      </span>
-    );
-  }
-
   return (
     <span
-      className={`inline-flex h-10 min-w-10 items-center justify-center rounded-full border border-stone-400/70 bg-white px-2.5 text-stone-700 shadow-[0_6px_18px_-14px_rgba(28,25,23,0.45)] dark:border-stone-500/70 dark:bg-stone-900 dark:text-stone-200 sm:h-11 sm:min-w-11 sm:px-3 ${className}`.trim()}
+      className={`relative inline-flex h-11 w-11 items-center justify-center text-[#004D40] dark:text-[#039F85] sm:h-12 sm:w-12 ${className}`.trim()}
       aria-label={`Ayat ${ayahNumber}`}
       title={`Ayat ${ayahNumber}`}
       lang="ar"
@@ -60,7 +25,21 @@ export function ThemeAyahMarker({
     >
       <span
         aria-hidden="true"
-        className="font-arabic text-[0.95rem] font-semibold leading-none sm:text-[1.05rem]"
+        className="absolute inset-0 bg-current"
+        style={{
+          WebkitMaskImage: `url(${QURAN_IOS_AYAH_END_MARKER_SRC})`,
+          maskImage: `url(${QURAN_IOS_AYAH_END_MARKER_SRC})`,
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          WebkitMaskPosition: "center",
+          maskPosition: "center",
+          WebkitMaskSize: "contain",
+          maskSize: "contain",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        className="relative translate-y-[0.5px] text-[1.02rem] font-semibold leading-none sm:text-[1.14rem]"
       >
         {toArabicIndicNumerals(ayahNumber)}
       </span>

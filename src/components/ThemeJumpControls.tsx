@@ -14,7 +14,6 @@ interface ThemeJumpControlsProps {
   currentChunkIndex: number;
   currentChunkCount: number;
   surahOptions: ThemeSurahOption[];
-  markerStyle?: string;
 }
 
 export function ThemeJumpControls({
@@ -22,7 +21,6 @@ export function ThemeJumpControls({
   currentChunkIndex,
   currentChunkCount,
   surahOptions,
-  markerStyle,
 }: ThemeJumpControlsProps) {
   const router = useRouter();
   const [selectedSurah, setSelectedSurah] = useState(String(currentSurahNumber));
@@ -41,9 +39,6 @@ export function ThemeJumpControls({
               const nextValue = event.target.value;
               setSelectedSurah(nextValue);
               const params = new URLSearchParams({ chunk: "1" });
-              if (markerStyle) {
-                params.set("marker", markerStyle);
-              }
               router.push(`/read/surah/${nextValue}/themes?${params.toString()}`);
             }}
             className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-stone-500 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
