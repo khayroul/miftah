@@ -1,11 +1,9 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import { ThemeActionPanel } from "@/components/ThemeActionPanel";
 import { ThemeAyahMarker } from "@/components/ThemeAyahMarker";
 import { ThemeChunkAyahListAsync } from "@/components/ThemeChunkAyahListAsync";
 import { ThemeChunkProgressTracker } from "@/components/ThemeChunkProgressTracker";
-import { ThemeChunkSelect } from "@/components/ThemeChunkSelect";
 import { ThemeJumpControls } from "@/components/ThemeJumpControls";
 import { getSurahs, getThemeAppearanceChunksBySurah } from "@/lib/queries";
 import { resolveThemeChunkLabelBm } from "@/lib/themeLabels";
@@ -175,20 +173,6 @@ export async function ThemePageContentAsync({
         : 1
       : 1;
   const selectedChunk = chunks[selectedChunkIndex - 1] ?? null;
-  const hasNextThemeInSurah = selectedChunkIndex < chunks.length;
-  const canJumpToNextSurahTheme =
-    chunks.length > 0 &&
-    selectedChunkIndex === chunks.length &&
-    surahNumber < 114;
-  const previousThemeHref =
-    chunks.length > 0 && selectedChunkIndex > 1
-      ? `/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex - 1}`
-      : null;
-  const nextThemeHref = hasNextThemeInSurah
-    ? `/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex + 1}`
-    : canJumpToNextSurahTheme
-      ? `/read/surah/${surahNumber + 1}/themes?chunk=1`
-      : null;
   const selectedChunkSynopsis = selectedChunk
     ? buildThemeSynopsis(selectedChunk)
     : null;
@@ -278,73 +262,6 @@ export async function ThemePageContentAsync({
               </article>
             ) : null}
           </section>
-
-          <nav className="sticky bottom-6 z-10 mx-auto mt-4 flex w-fit items-center justify-center gap-1 rounded-full border border-stone-200/80 bg-white/90 p-2 shadow-xl shadow-black/5 backdrop-blur-xl dark:border-stone-700/80 dark:bg-stone-900/90 sm:gap-2">
-            {surahNumber > 1 ? (
-              <Link
-                href={`/read/surah/${surahNumber - 1}/themes`}
-                className="flex h-10 items-center justify-center whitespace-nowrap rounded-full px-3 text-xs font-medium text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100 sm:px-4 sm:text-sm"
-              >
-                &laquo;
-              </Link>
-            ) : (
-              <span className="flex h-10 items-center justify-center whitespace-nowrap px-3 text-xs font-medium opacity-0 sm:px-4 sm:text-sm">
-                &laquo;
-              </span>
-            )}
-
-            <div className="flex items-center gap-1 border-x border-stone-200/60 px-1 dark:border-stone-700/60 sm:gap-2 sm:px-2">
-              {previousThemeHref ? (
-                <Link
-                  href={previousThemeHref}
-                  className="flex h-10 items-center justify-center whitespace-nowrap rounded-full border border-stone-200 bg-stone-50 px-4 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700 sm:text-sm"
-                >
-                  &larr; Tema
-                </Link>
-              ) : (
-                <span className="flex h-10 items-center justify-center whitespace-nowrap rounded-full border border-stone-100 bg-stone-50/50 px-4 text-xs font-medium text-stone-400 dark:border-stone-800 dark:bg-stone-800/30 dark:text-stone-600 sm:text-sm">
-                  &larr; Tema
-                </span>
-              )}
-
-              <div className="hidden flex-row items-center gap-1 md:flex">
-                <ThemeChunkSelect
-                  surahNumber={surahNumber}
-                  selectedChunkIndex={selectedChunkIndex}
-                  chunks={chunks.map((chunk) => ({
-                    chunk_index: chunk.chunk_index,
-                    label: chunkTitleBm(chunk),
-                  }))}
-                />
-              </div>
-
-              {nextThemeHref ? (
-                <Link
-                  href={nextThemeHref}
-                  className="flex h-10 items-center justify-center whitespace-nowrap rounded-full bg-stone-900 px-4 text-xs font-medium text-white shadow-sm transition hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white sm:text-sm"
-                >
-                  Tema &rarr;
-                </Link>
-              ) : (
-                <span className="flex h-10 items-center justify-center whitespace-nowrap rounded-full bg-stone-100 px-4 text-xs font-medium text-stone-400 dark:bg-stone-800 dark:text-stone-600 sm:text-sm">
-                  Tamat Surah
-                </span>
-              )}
-            </div>
-
-            {surahNumber < 114 ? (
-              <Link
-                href={`/read/surah/${surahNumber + 1}/themes`}
-                className="flex h-10 items-center justify-center whitespace-nowrap rounded-full px-3 text-xs font-medium text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100 sm:px-4 sm:text-sm"
-              >
-                &raquo;
-              </Link>
-            ) : (
-              <span className="flex h-10 items-center justify-center whitespace-nowrap px-3 text-xs font-medium opacity-0 sm:px-4 sm:text-sm">
-                &raquo;
-              </span>
-            )}
-          </nav>
         </div>
       ) : null}
     </>
