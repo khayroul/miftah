@@ -9,8 +9,8 @@ export interface HifzQueueResponse {
 export interface HifzPlanSnapshot {
   memorizeQueue: HifzQueueResponse;
   reviewQueue: HifzQueueResponse;
-  newCount: number;
-  reviewCount: number;
+  newPages: number;
+  reviewPages: number;
   nextPage: number | null;
 }
 
@@ -36,6 +36,14 @@ function uniquePages(items: HifzQueueItem[]): number[] {
   }
 
   return pages;
+}
+
+export function countUniqueQueuePages(items: HifzQueueItem[]): number {
+  return uniquePages(items).length;
+}
+
+export function countUniquePlanItemPages(items: PlanItem[]): number {
+  return new Set(items.map((item) => item.ayah.pageNumber)).size;
 }
 
 function buildQueueResponse(items: HifzQueueItem[]): HifzQueueResponse {
@@ -68,8 +76,8 @@ export function buildHifzPlanSnapshot(
   return {
     memorizeQueue,
     reviewQueue,
-    newCount: plan.sabak.length,
-    reviewCount: plan.sabqi.length + plan.manzil.length,
+    newPages: memorizeQueue.pageOrder.length,
+    reviewPages: reviewQueue.pageOrder.length,
     nextPage: memorizeQueue.pageOrder[0] ?? null,
   };
 }

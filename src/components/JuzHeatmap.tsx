@@ -7,24 +7,24 @@ interface JuzHeatmapProps {
 }
 
 function juzColor(stat: JuzStat): string {
-  if (stat.manzilCount <= 0) {
+  if (stat.manzilPages <= 0) {
     return "bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400";
   }
 
-  if (stat.manzilPct < 25) {
+  if (stat.manzilPagePct < 25) {
     return "bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300";
   }
-  if (stat.manzilPct < 75) {
+  if (stat.manzilPagePct < 75) {
     return "bg-teal-300 text-teal-900 dark:bg-teal-700 dark:text-teal-100";
   }
   return "bg-teal-600 text-white dark:bg-teal-500 dark:text-white";
 }
 
-const TOTAL_QURAN_AYAT = 6236;
+const TOTAL_QURAN_PAGES = 604;
 
 export function JuzHeatmap({ juzProgress }: JuzHeatmapProps) {
-  const totalManzil = juzProgress.reduce((sum, stat) => sum + stat.manzilCount, 0);
-  const overallPct = (totalManzil / TOTAL_QURAN_AYAT) * 100;
+  const totalManzilPages = juzProgress.reduce((sum, stat) => sum + stat.manzilPages, 0);
+  const overallPct = (totalManzilPages / TOTAL_QURAN_PAGES) * 100;
 
   return (
     <div>
@@ -39,20 +39,20 @@ export function JuzHeatmap({ juzProgress }: JuzHeatmapProps) {
           />
         </div>
         <p className="mt-1 text-[10px] text-stone-500 dark:text-stone-400">
-          {Math.round(overallPct)}% liputan manzil
+          {Math.round(overallPct)}% liputan halaman manzil
         </p>
       </div>
       <div className="grid grid-cols-6 gap-1.5">
         {juzProgress.map((stat) => (
           <div
             key={stat.juz}
-            title={`Juz ${stat.juz}: ${stat.manzilPct}% liputan manzil`}
+            title={`Juz ${stat.juz}: ${Math.round(stat.manzilPagePct)}% liputan halaman manzil`}
             className={`flex flex-col items-center justify-center rounded-lg p-1.5 transition-opacity hover:opacity-80 ${juzColor(stat)}`}
           >
             <span className="text-[10px] font-bold leading-none">{stat.juz}</span>
-            {stat.manzilCount > 0 && (
+            {stat.manzilPages > 0 && (
               <span className="mt-0.5 text-[9px] leading-none opacity-80">
-                {Math.round(stat.manzilPct)}%
+                {Math.round(stat.manzilPagePct)}%
               </span>
             )}
           </div>

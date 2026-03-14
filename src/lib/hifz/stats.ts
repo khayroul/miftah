@@ -1,72 +1,121 @@
 import { supabaseServer } from "@/lib/supabase-server";
 
-// Approximate ayat counts per juz (standard Quran division)
-const JUZ_AYAT_COUNTS: Record<number, number> = {
-  1: 148, 2: 111, 3: 126, 4: 176, 5: 124,
-  6: 110, 7: 149, 8: 142, 9: 159, 10: 127,
-  11: 151, 12: 170, 13: 154, 14: 227, 15: 185,
-  16: 286, 17: 145, 18: 141, 19: 94,  20: 135,
-  21: 107, 22: 115, 23: 93,  24: 75,  25: 43,
-  26: 144, 27: 93,  28: 80,  29: 88,  30: 236,
-};
+const TOTAL_QURAN_PAGES = 604;
+const JUZ_BOUNDARY_PAGES = [
+  1, 22, 42, 62, 82, 102, 121, 142, 162, 182,
+  201, 222, 242, 262, 282, 302, 322, 342, 362, 382,
+  402, 422, 442, 462, 482, 502, 522, 542, 562, 582,
+] as const;
+
+const JUZ_PAGE_COUNTS: Record<number, number> = Object.fromEntries(
+  JUZ_BOUNDARY_PAGES.map((startPage, index) => {
+    const nextStartPage = JUZ_BOUNDARY_PAGES[index + 1] ?? (TOTAL_QURAN_PAGES + 1);
+    return [index + 1, nextStartPage - startPage];
+  }),
+);
 
 export interface JuzStat {
   juz: number;
-  totalAyat: number;
-  manzilCount: number;
-  sabqiCount: number;
-  sabakCount: number;
-  notStartedCount: number;
-  manzilPct: number;
+  totalPages: number;
+  manzilPages: number;
+  sabqiPages: number;
+  sabakPages: number;
+  notStartedPages: number;
+  manzilPagePct: number;
 }
 
 export interface HifzStats {
-  totalManzil: number;
-  dueTodayCount: number;
+  totalManzilPages: number;
+  dueTodayPages: number;
   streak: number;
+}
+
+interface AyahPageRef {
+  juz_number: number;
+  page_number: number;
+}
+
+function extractAyahPageRef(value: unknown): AyahPageRef | null {
+  if (Array.isArray(value)) {
+    return extractAyahPageRef(value[0] ?? null);
+  }
+
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const juzNumber = Reflect.get(value, "juz_number");
+  const pageNumber = Reflect.get(value, "page_number");
+  if (typeof juzNumber !== "number" || typeof pageNumber !== "number") {
+    return null;
+  }
+
+  return {
+    juz_number: juzNumber,
+    page_number: pageNumber,
+  };
 }
 
 export async function getJuzProgress(userId: string): Promise<JuzStat[]> {
   const { data, error } = await supabaseServer
-    .from("v_juz_progress")
-    .select("*")
+    .from("study_progress")
+    .select("hifz_status, ayat!inner(juz_number, page_number)")
     .eq("user_id", userId)
-    .order("juz_number", { ascending: true });
+    .not("hifz_status", "is", null);
   if (error) throw error;
 
-  const byJuz = new Map<number, JuzStat>();
-  for (const row of (data ?? []) as {
-    juz_number: number;
-    total_ayat: number;
-    manzil_count: number;
-    sabqi_count: number;
-    sabak_count: number;
-    not_started_count: number;
-    manzil_pct: number;
-  }[]) {
-    byJuz.set(row.juz_number, {
-      juz: row.juz_number,
-      totalAyat: row.total_ayat,
-      manzilCount: row.manzil_count,
-      sabqiCount: row.sabqi_count,
-      sabakCount: row.sabak_count,
-      notStartedCount: row.not_started_count,
-      manzilPct: row.manzil_pct,
-    });
+  const startedPagesByJuz = new Map<number, Set<number>>();
+  const manzilPagesByJuz = new Map<number, Set<number>>();
+  const sabqiPagesByJuz = new Map<number, Set<number>>();
+  const sabakPagesByJuz = new Map<number, Set<number>>();
+
+  for (const row of (data ?? []) as Array<{ ayat: unknown; hifz_status: string | null }>) {
+    const ayah = extractAyahPageRef(row.ayat);
+    if (!ayah) {
+      continue;
+    }
+
+    if (!startedPagesByJuz.has(ayah.juz_number)) {
+      startedPagesByJuz.set(ayah.juz_number, new Set<number>());
+    }
+    startedPagesByJuz.get(ayah.juz_number)!.add(ayah.page_number);
+
+    const targetMap =
+      row.hifz_status === "manzil"
+        ? manzilPagesByJuz
+        : row.hifz_status === "sabqi"
+          ? sabqiPagesByJuz
+          : row.hifz_status === "sabak"
+            ? sabakPagesByJuz
+            : null;
+
+    if (!targetMap) {
+      continue;
+    }
+
+    if (!targetMap.has(ayah.juz_number)) {
+      targetMap.set(ayah.juz_number, new Set<number>());
+    }
+    targetMap.get(ayah.juz_number)!.add(ayah.page_number);
   }
 
-  // Fill all 30 juz, including those with no progress yet
   return Array.from({ length: 30 }, (_, i) => {
     const juzNum = i + 1;
+    const totalPages = JUZ_PAGE_COUNTS[juzNum] ?? 0;
+    const startedPages = startedPagesByJuz.get(juzNum)?.size ?? 0;
+    const manzilPages = manzilPagesByJuz.get(juzNum)?.size ?? 0;
+    const sabqiPages = sabqiPagesByJuz.get(juzNum)?.size ?? 0;
+    const sabakPages = sabakPagesByJuz.get(juzNum)?.size ?? 0;
+
     return (
-      byJuz.get(juzNum) ?? {
+      {
         juz: juzNum,
-        totalAyat: JUZ_AYAT_COUNTS[juzNum] ?? 0,
-        manzilCount: 0,
-        sabqiCount: 0,
-        sabakCount: 0,
-        notStartedCount: JUZ_AYAT_COUNTS[juzNum] ?? 0,
-        manzilPct: 0,
+        totalPages,
+        manzilPages,
+        sabqiPages,
+        sabakPages,
+        notStartedPages: Math.max(totalPages - startedPages, 0),
+        manzilPagePct: totalPages > 0 ? (manzilPages / totalPages) * 100 : 0,
       }
     );
   });
@@ -78,12 +127,12 @@ export async function getHifzStats(userId: string): Promise<HifzStats> {
   const [manzilResult, dueResult, reviewDatesResult] = await Promise.all([
     supabaseServer
       .from("study_progress")
-      .select("id", { count: "exact", head: true })
+      .select("ayat!inner(page_number)")
       .eq("user_id", userId)
       .eq("hifz_status", "manzil"),
     supabaseServer
       .from("study_progress")
-      .select("id", { count: "exact", head: true })
+      .select("ayat!inner(page_number)")
       .eq("user_id", userId)
       .in("hifz_status", ["sabqi", "manzil"])
       .lte("due", now),
@@ -96,15 +145,37 @@ export async function getHifzStats(userId: string): Promise<HifzStats> {
       .limit(365),
   ]);
 
-  const totalManzil = manzilResult.count ?? 0;
-  const dueTodayCount = dueResult.count ?? 0;
+  if (manzilResult.error) {
+    throw manzilResult.error;
+  }
+  if (dueResult.error) {
+    throw dueResult.error;
+  }
+  if (reviewDatesResult.error) {
+    throw reviewDatesResult.error;
+  }
+
+  const totalManzilPages = new Set(
+    ((manzilResult.data ?? []) as Array<{ ayat: unknown }>)
+      .map((row) => extractAyahPageRef(row.ayat)?.page_number ?? null)
+      .filter((value): value is number => typeof value === "number"),
+  ).size;
+  const dueTodayPages = new Set(
+    ((dueResult.data ?? []) as Array<{ ayat: unknown }>)
+      .map((row) => extractAyahPageRef(row.ayat)?.page_number ?? null)
+      .filter((value): value is number => typeof value === "number"),
+  ).size;
   const streak = calcStreak(
     (reviewDatesResult.data ?? []).map((r: { reviewed_at: string }) =>
       r.reviewed_at.slice(0, 10),
     ),
   );
 
-  return { totalManzil, dueTodayCount, streak };
+  return {
+    totalManzilPages,
+    dueTodayPages,
+    streak,
+  };
 }
 
 function calcStreak(dates: string[]): number {

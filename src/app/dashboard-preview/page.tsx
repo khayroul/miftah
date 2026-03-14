@@ -6,18 +6,18 @@ import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { getHifzStats } from "@/lib/hifz/stats";
 import { loadHomeDashboardSnapshot } from "@/lib/homeDashboard";
 
-const TOTAL_QURAN_AYAT = 6236;
+const TOTAL_QURAN_PAGES = 604;
 
 interface HifzSnapshot {
-  dueTodayCount: number;
+  dueTodayPages: number;
   manzilCoveragePct: number;
-  nextAyahLabel: string | null;
+  nextPageLabel: string | null;
   streak: number;
-  todayTotal: number;
-  totalManzil: number;
+  todayPages: number;
+  totalManzilPages: number;
 }
 
-function nextAyahLabel(
+function nextPageLabel(
   plan: Awaited<ReturnType<typeof buildDailyPlanWithDetails>>,
 ): string | null {
   const nextItem = plan.sabqi[0] ?? plan.sabak[0] ?? plan.manzil[0];
@@ -25,7 +25,7 @@ function nextAyahLabel(
     return null;
   }
 
-  return `${nextItem.ayah.surahId}:${nextItem.ayah.ayahNumber} ${nextItem.ayah.surahNameTranslit}`;
+  return `Halaman ${nextItem.ayah.pageNumber} · ${nextItem.ayah.surahNameTranslit}`;
 }
 
 async function loadHifzSnapshot(): Promise<HifzSnapshot | null> {
@@ -41,15 +41,17 @@ async function loadHifzSnapshot(): Promise<HifzSnapshot | null> {
     ]);
 
     return {
-      dueTodayCount: stats.dueTodayCount,
+      dueTodayPages: stats.dueTodayPages,
       manzilCoveragePct: Math.min(
         100,
-        Math.round((stats.totalManzil / TOTAL_QURAN_AYAT) * 100),
+        Math.round((stats.totalManzilPages / TOTAL_QURAN_PAGES) * 100),
       ),
-      nextAyahLabel: nextAyahLabel(plan),
+      nextPageLabel: nextPageLabel(plan),
       streak: stats.streak,
-      todayTotal: plan.sabqi.length + plan.sabak.length + plan.manzil.length,
-      totalManzil: stats.totalManzil,
+      todayPages: new Set(
+        [...plan.sabqi, ...plan.sabak, ...plan.manzil].map((item) => item.ayah.pageNumber),
+      ).size,
+      totalManzilPages: stats.totalManzilPages,
     };
   } catch (error) {
     console.error("Failed to load dashboard preview hifz data", error);

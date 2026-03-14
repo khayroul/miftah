@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { ModeNavigator } from "@/components/ModeNavigator";
 import { HifzOverview } from "@/components/HifzOverview";
 import { LightweightBreadcrumb } from "@/components/LightweightBreadcrumb";
+import { countUniquePlanItemPages } from "@/lib/hifz/queue";
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { hasAnyHifzProgress } from "@/lib/hifz/study-progress";
 import { getHifzStats, getJuzProgress } from "@/lib/hifz/stats";
@@ -37,37 +38,47 @@ export default async function HifzPage() {
       ]);
     } else {
       plan = { sabqi: [], sabak: [], manzil: [] } as DailyPlanWithDetails;
-      stats = { totalManzil: 0, dueTodayCount: 0, streak: 0 };
+      stats = {
+        totalManzilPages: 0,
+        dueTodayPages: 0,
+        streak: 0,
+      };
       juzProgress = Array.from({ length: 30 }, (_, i) => ({
         juz: i + 1,
-        totalAyat: 100,
-        manzilCount: 0,
-        sabqiCount: 0,
-        sabakCount: 0,
-        notStartedCount: 100,
-        manzilPct: 0,
+        totalPages: 20,
+        manzilPages: 0,
+        sabqiPages: 0,
+        sabakPages: 0,
+        notStartedPages: 20,
+        manzilPagePct: 0,
       }));
     }
   } else {
     // Guest preview data — simplified counts only
     plan = { sabqi: [], sabak: [], manzil: [] } as unknown as DailyPlanWithDetails;
-    stats = { totalManzil: 68, dueTodayCount: 8, streak: 9 };
+    stats = {
+      totalManzilPages: 68,
+      dueTodayPages: 8,
+      streak: 9,
+    };
     juzProgress = Array.from({ length: 30 }, (_, i) => ({
       juz: i + 1,
-      totalAyat: 100,
-      manzilCount: 0,
-      sabqiCount: 0,
-      sabakCount: 0,
-      notStartedCount: 100,
-      manzilPct: 0,
+      totalPages: 20,
+      manzilPages: 0,
+      sabqiPages: 0,
+      sabakPages: 0,
+      notStartedPages: 20,
+      manzilPagePct: 0,
     }));
   }
 
-  const newCount = userId ? plan.sabak.length : 4;
-  const reviewCount = userId ? plan.sabqi.length + plan.manzil.length : 8;
+  const newPageCount = userId ? countUniquePlanItemPages(plan.sabak) : 4;
+  const reviewPageCount = userId
+    ? countUniquePlanItemPages([...plan.sabqi, ...plan.manzil])
+    : 8;
   const hasProgress = userId
     ? plan.sabak.length + plan.sabqi.length + plan.manzil.length > 0 ||
-      stats.totalManzil > 0
+      stats.totalManzilPages > 0
     : false;
 
   return (
@@ -94,8 +105,8 @@ export default async function HifzPage() {
         )}
 
         <HifzOverview
-          newCount={newCount}
-          reviewCount={reviewCount}
+          newPages={newPageCount}
+          reviewPages={reviewPageCount}
           stats={stats}
           globalStreak={globalStreak}
           juzProgress={juzProgress}

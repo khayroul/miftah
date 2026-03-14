@@ -14,10 +14,10 @@ import type { JuzStat, HifzStats } from "@/lib/hifz/stats";
 interface ImportSummary {
   count: number;
   juzProgress: JuzStat[];
-  newCount: number;
+  newPages: number;
   nextPage: number | null;
   queue: HifzQueueResponse | null;
-  reviewCount: number;
+  reviewPages: number;
   stats: HifzStats;
   upToPage: number;
 }
@@ -27,8 +27,8 @@ interface ImportResponse extends ImportSummary {
 }
 
 interface HifzOverviewProps {
-  newCount: number;
-  reviewCount: number;
+  newPages: number;
+  reviewPages: number;
   stats: HifzStats;
   globalStreak?: number;
   juzProgress: JuzStat[];
@@ -51,8 +51,8 @@ function isValidPageNumber(pageValue: string): boolean {
 }
 
 export function HifzOverview({
-  newCount,
-  reviewCount,
+  newPages,
+  reviewPages,
   stats,
   globalStreak,
   juzProgress,
@@ -76,20 +76,20 @@ export function HifzOverview({
   const effectiveStats = importSummary?.stats ?? stats;
   const effectiveGlobalStreak = globalStreak ?? effectiveStats.streak;
   const effectiveJuzProgress = importSummary?.juzProgress ?? juzProgress;
-  const effectiveNewCount = importSummary?.newCount ?? newCount;
-  const effectiveReviewCount = importSummary?.reviewCount ?? reviewCount;
+  const effectiveNewPages = importSummary?.newPages ?? newPages;
+  const effectiveReviewPages = importSummary?.reviewPages ?? reviewPages;
 
   const effectiveHasProgress = useMemo(
     () =>
       hasProgress ||
       importSummary !== null ||
-      effectiveStats.totalManzil > 0 ||
-      effectiveNewCount > 0 ||
-      effectiveReviewCount > 0,
+      effectiveStats.totalManzilPages > 0 ||
+      effectiveNewPages > 0 ||
+      effectiveReviewPages > 0,
     [
-      effectiveNewCount,
-      effectiveReviewCount,
-      effectiveStats.totalManzil,
+      effectiveNewPages,
+      effectiveReviewPages,
+      effectiveStats.totalManzilPages,
       hasProgress,
       importSummary,
     ],
@@ -179,10 +179,10 @@ export function HifzOverview({
       setImportSummary({
         count: payload.count,
         juzProgress: payload.juzProgress,
-        newCount: payload.newCount,
+        newPages: payload.newPages,
         nextPage: payload.nextPage,
         queue: payload.queue,
-        reviewCount: payload.reviewCount,
+        reviewPages: payload.reviewPages,
         stats: payload.stats,
         upToPage: payload.upToPage,
       });
@@ -243,7 +243,7 @@ export function HifzOverview({
         if (data.pageOrder.length === 0) {
           setQueueError(
             type === "memorize"
-              ? "Belum ada ayat baru untuk dibuka. Cuba pilih “Saya belum mula” atau import hafalan sedia ada dahulu."
+              ? "Belum ada halaman baru untuk dibuka. Cuba pilih “Saya belum mula” atau import hafalan sedia ada dahulu."
               : "Belum ada ulangan dijadualkan hari ini. Bila ada, butang ini akan terus buka sesi ujian.",
           );
           setLoading(null);
@@ -266,8 +266,8 @@ export function HifzOverview({
     [importSummary?.queue, isGuest, loadQueue, openQueue],
   );
 
-  const hasNew = effectiveNewCount > 0;
-  const hasReview = effectiveReviewCount > 0;
+  const hasNew = effectiveNewPages > 0;
+  const hasReview = effectiveReviewPages > 0;
   const showStartFresh = !isGuest && canStartFresh && !effectiveHasProgress;
   const canOpenMemorizeFlow = hasNew || showStartFresh;
   const showFirstRunPaths = !isGuest && !effectiveHasProgress;
@@ -507,10 +507,10 @@ export function HifzOverview({
                   Dikemas Kini
                 </p>
                 <p className="mt-2 text-2xl font-bold text-stone-900 dark:text-stone-100">
-                  {importSummary.count}
+                  {importSummary.upToPage}
                 </p>
                 <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">
-                  ayat berjaya direkod
+                  halaman kini direkod
                 </p>
               </div>
               <div className="rounded-2xl bg-white/85 p-4 shadow-sm dark:bg-stone-900/55">
@@ -529,18 +529,18 @@ export function HifzOverview({
                   Pelan Hari Ini
                 </p>
                 <p className="mt-2 text-2xl font-bold text-stone-900 dark:text-stone-100">
-                  {importSummary.newCount}
+                  {importSummary.newPages}
                 </p>
                 <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">
-                  ayat baru, {importSummary.reviewCount} ayat ulangan
+                  halaman baru, {importSummary.reviewPages} halaman ulangan
                 </p>
               </div>
             </div>
 
             <p className="mt-5 text-sm leading-relaxed text-stone-600 dark:text-stone-300">
-              {importSummary.newCount > 0 && importSummary.nextPage
+              {importSummary.newPages > 0 && importSummary.nextPage
                 ? `Cadangan sekarang: buka halaman ${importSummary.nextPage} dan teruskan sabak pertama anda.`
-                : "Tiada ayat baru dijadualkan sekarang. Bila tiba masanya, ulangan akan muncul terus di sini."}
+                : "Tiada halaman baru dijadualkan sekarang. Bila tiba masanya, ulangan akan muncul terus di sini."}
             </p>
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -577,18 +577,18 @@ export function HifzOverview({
             {hasNew ? (
               <span>
                 <span className="font-semibold text-amber-600 dark:text-amber-400">
-                  {effectiveNewCount}
+                  {effectiveNewPages}
                 </span>{" "}
-                ayat baru
+                halaman baru
               </span>
             ) : null}
             {hasNew && hasReview ? <span aria-hidden="true">&middot;</span> : null}
             {hasReview ? (
               <span>
                 <span className="font-semibold text-teal-600 dark:text-teal-400">
-                  {effectiveReviewCount}
+                  {effectiveReviewPages}
                 </span>{" "}
-                perlu diuji
+                halaman perlu diuji
               </span>
             ) : null}
             {!hasNew && !hasReview ? (
@@ -630,7 +630,7 @@ export function HifzOverview({
 
           {!hasNew && hasReview ? (
             <p className="mt-3 text-center text-sm text-stone-400 dark:text-stone-500">
-              Tiada ayat baru hari ini
+              Tiada halaman baru hari ini
             </p>
           ) : null}
           {hasNew && !hasReview ? (

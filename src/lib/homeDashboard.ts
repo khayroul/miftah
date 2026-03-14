@@ -15,7 +15,7 @@ import { getUserStreak, getUserDailyGoal, getDailyActivityCount } from "@/lib/ac
 import type { ActivityType } from "@/lib/activity";
 import type { PlanItem } from "@/lib/hifz/scheduler";
 
-const TOTAL_QURAN_AYAT = 6236;
+const TOTAL_QURAN_PAGES = 604;
 
 export interface HomeFahamSnapshot {
   blockedReason: "due_backlog" | null;
@@ -39,15 +39,15 @@ export interface HomeReadSnapshot {
 }
 
 export interface HomeHifzSnapshot {
-  dueTodayCount: number;
+  dueTodayPages: number;
   manzilCoveragePct: number;
   nextAyahKey: string | null;
-  nextAyahLabel: string | null;
+  nextPageLabel: string | null;
   nextBlock: "sabqi" | "sabak" | "manzil" | null;
   nextPage: number | null;
   streak: number;
-  todayTotal: number;
-  totalManzil: number;
+  todayPages: number;
+  totalManzilPages: number;
 }
 
 export interface HomeTemaSnapshot {
@@ -94,29 +94,35 @@ function resolveNextPlanEntry(
   return null;
 }
 
-function nextAyahLabel(
+function nextPageLabel(
   nextEntry: { block: "sabqi" | "sabak" | "manzil"; item: PlanItem } | null,
 ): string | null {
   if (!nextEntry) {
     return null;
   }
 
-  return `${nextEntry.item.ayah.surahId}:${nextEntry.item.ayah.ayahNumber} ${nextEntry.item.ayah.surahNameTranslit}`;
+  return `Halaman ${nextEntry.item.ayah.pageNumber} · ${nextEntry.item.ayah.surahNameTranslit}`;
+}
+
+function countUniquePlanPages(plan: Awaited<ReturnType<typeof buildDailyPlanWithDetails>>): number {
+  return new Set(
+    [...plan.sabqi, ...plan.sabak, ...plan.manzil].map((item) => item.ayah.pageNumber),
+  ).size;
 }
 
 async function loadHifzSnapshot(userId: string): Promise<HomeHifzSnapshot> {
   const hasStarted = await hasAnyHifzProgress(userId);
   if (!hasStarted) {
     return {
-      dueTodayCount: 0,
+      dueTodayPages: 0,
       manzilCoveragePct: 0,
       nextAyahKey: null,
-      nextAyahLabel: null,
+      nextPageLabel: null,
       nextBlock: null,
       nextPage: null,
       streak: 0,
-      todayTotal: 0,
-      totalManzil: 0,
+      todayPages: 0,
+      totalManzilPages: 0,
     };
   }
 
@@ -127,17 +133,17 @@ async function loadHifzSnapshot(userId: string): Promise<HomeHifzSnapshot> {
   const nextEntry = resolveNextPlanEntry(plan);
 
   return {
-    dueTodayCount: stats.dueTodayCount,
-    manzilCoveragePct: percentage(stats.totalManzil, TOTAL_QURAN_AYAT),
+    dueTodayPages: stats.dueTodayPages,
+    manzilCoveragePct: percentage(stats.totalManzilPages, TOTAL_QURAN_PAGES),
     nextAyahKey: nextEntry
       ? `${nextEntry.item.ayah.surahId}:${nextEntry.item.ayah.ayahNumber}`
       : null,
-    nextAyahLabel: nextAyahLabel(nextEntry),
+    nextPageLabel: nextPageLabel(nextEntry),
     nextBlock: nextEntry?.block ?? null,
     nextPage: nextEntry?.item.ayah.pageNumber ?? null,
     streak: stats.streak,
-    todayTotal: plan.sabqi.length + plan.sabak.length + plan.manzil.length,
-    totalManzil: stats.totalManzil,
+    todayPages: countUniquePlanPages(plan),
+    totalManzilPages: stats.totalManzilPages,
   };
 }
 
@@ -381,9 +387,9 @@ async function loadActivitySnapshot(userId: string) {
     if (value === "read_pages") {
       return "read";
     }
-    if (value === "hifz_ayat") {
-      return "hifz";
-    }
+  if (value === "hifz_ayat") {
+    return "hifz";
+  }
     if (value === "theme_chunks") {
       return "theme";
     }

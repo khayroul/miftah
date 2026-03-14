@@ -8,12 +8,12 @@ const TOTAL_QURAN_PAGES = 604;
 type CardTone = "teal" | "amber" | "indigo" | "stone";
 
 interface HifzSnapshot {
-  dueTodayCount: number;
+  dueTodayPages: number;
   manzilCoveragePct: number;
-  nextAyahLabel: string | null;
+  nextPageLabel: string | null;
   streak: number;
-  todayTotal: number;
-  totalManzil: number;
+  todayPages: number;
+  totalManzilPages: number;
 }
 
 interface DashboardPreviewClientProps {
@@ -190,8 +190,8 @@ export function DashboardPreviewClient({
   );
   const formattedLastRead = formatActivityDate(homeSnapshot.read?.lastReadAt ?? null);
   const hifzCoveragePct = hifzSnapshot?.manzilCoveragePct ?? 0;
-  const hifzTodayTotal = hifzSnapshot?.todayTotal ?? 0;
-  const hifzDueTodayCount = hifzSnapshot?.dueTodayCount ?? 0;
+  const hifzTodayPages = hifzSnapshot?.todayPages ?? 0;
+  const hifzDueTodayPages = hifzSnapshot?.dueTodayPages ?? 0;
 
   const modeCards: ModeCard[] = [
     {
@@ -238,14 +238,14 @@ export function DashboardPreviewClient({
     {
       ctaLabel: "Masuk papan hafal",
       helper:
-        hifzSnapshot && hifzTodayTotal > 0
-          ? `~${Math.ceil(hifzTodayTotal / 15)} halaman aktif hari ini merentas Sabak, Sabqi, dan Manzil. ${hifzDueTodayCount} item daripadanya sudah due sekarang.`
+        hifzSnapshot && hifzTodayPages > 0
+          ? `${hifzTodayPages} halaman aktif hari ini merentas Sabak, Sabqi, dan Manzil. ${hifzDueTodayPages} halaman daripadanya sudah due sekarang.`
           : "Hafal patut kekal sebagai workspace tersendiri dengan fokus Sabak, Sabqi, dan Manzil.",
       href: "/hifz",
       inside: ["Sabak", "Sabqi", "Manzil"],
       metricLabel:
-        hifzSnapshot && hifzSnapshot.totalManzil > 0
-          ? `~${Math.ceil(hifzSnapshot.totalManzil / 15)} halaman sudah stabil di Manzil`
+        hifzSnapshot && hifzSnapshot.totalManzilPages > 0
+          ? `${hifzSnapshot.totalManzilPages} halaman sudah stabil di Manzil`
           : "Belum ada data hafalan stabil",
       metricValue: `${hifzCoveragePct}%`,
       percent: hifzCoveragePct,
@@ -333,7 +333,7 @@ export function DashboardPreviewClient({
                   Due hafal
                 </p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
-                  {hifzDueTodayCount}
+                  {hifzDueTodayPages}
                 </p>
               </div>
               <div className="rounded-2xl border border-stone-200/80 bg-stone-50/90 px-4 py-3 dark:border-stone-700 dark:bg-stone-900/80">
@@ -379,13 +379,13 @@ export function DashboardPreviewClient({
                     2. Fokus hafal
                   </p>
                   <p className="mt-1 text-lg font-medium text-stone-900 dark:text-stone-100">
-                    {hifzTodayTotal > 0
-                      ? `~${Math.ceil(hifzTodayTotal / 15)} halaman dalam sesi hari ini`
+                    {hifzTodayPages > 0
+                      ? `${hifzTodayPages} halaman dalam sesi hari ini`
                       : "Buka sesi Sabak, Sabqi, Manzil"}
                   </p>
                   <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
-                    {hifzSnapshot?.nextAyahLabel
-                      ? `Ayat seterusnya: ${hifzSnapshot.nextAyahLabel}`
+                    {hifzSnapshot?.nextPageLabel
+                      ? `Halaman seterusnya: ${hifzSnapshot.nextPageLabel}`
                       : "Ringkasan harian dan queue review duduk di satu tempat."}
                   </p>
                 </Link>

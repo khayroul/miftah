@@ -2,6 +2,7 @@ import { supabaseServer } from "@/lib/supabase-server";
 import {
   getActivityEventDateKeys,
   getDailyActivityEventSummary,
+  getDailyHifzPageCountFromEvents,
   getLegacyActivityDateKeys,
   todayActivityDateKey,
 } from "@/lib/activityEvents";
@@ -227,8 +228,44 @@ export async function getDailyActivityCount(userId: string, type: ActivityType) 
   if (type === "read" && eventSummary) {
     return eventSummary.readPagesCount;
   }
-  if (type === "hifz" && eventSummary) {
-    return eventSummary.hifzAyatCount;
+  if (type === "hifz") {
+    const eventPageCount = await getDailyHifzPageCountFromEvents(userId, today).catch(
+      (error: unknown) => {
+        console.error("[getDailyActivityCount] Error loading hifz page count:", error);
+        return 0;
+      },
+    );
+
+    const { data, error } = await supabaseServer
+      .from("review_log")
+      .select("ayat!inner(page_number)")
+      .eq("user_id", userId)
+      .eq("review_type", "ayah")
+      .gte("reviewed_at", today);
+
+    if (error) {
+      console.error("[getDailyActivityCount] Error counting hifz pages:", error);
+      return eventPageCount;
+    }
+
+    const reviewPageCount = new Set(
+      ((data ?? []) as Array<{ ayat: unknown }>)
+        .map((row) => {
+          const ayat = row.ayat;
+          if (Array.isArray(ayat)) {
+            const first = ayat[0];
+            return typeof first?.page_number === "number" ? first.page_number : null;
+          }
+          if (typeof ayat !== "object" || ayat === null) {
+            return null;
+          }
+          const pageNumber = Reflect.get(ayat, "page_number");
+          return typeof pageNumber === "number" ? pageNumber : null;
+        })
+        .filter((value): value is number => typeof value === "number"),
+    ).size;
+
+    return Math.max(eventPageCount, reviewPageCount);
   }
   if (type === "theme" && eventSummary) {
     return eventSummary.themeChunksCount;

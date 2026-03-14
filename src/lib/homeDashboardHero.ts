@@ -86,9 +86,9 @@ function hasHifzProgress(snapshot: HomeDashboardSnapshot): boolean {
   const hifz = snapshot.hifz;
   return Boolean(
     hifz &&
-      (hifz.dueTodayCount > 0 ||
-        hifz.todayTotal > 0 ||
-        hifz.totalManzil > 0 ||
+      (hifz.dueTodayPages > 0 ||
+        hifz.todayPages > 0 ||
+        hifz.totalManzilPages > 0 ||
         hifz.nextPage !== null),
   );
 }
@@ -130,13 +130,13 @@ export function buildHomeHero({
     hasHifzProgress(snapshot) ||
     hasTemaProgress(snapshot);
 
-  if (hifz && hifz.dueTodayCount > 0) {
-    const focus = hifz.nextAyahLabel ?? readFocus;
+  if (hifz && hifz.dueTodayPages > 0) {
+    const focus = hifz.nextPageLabel ?? readFocus;
     const blockLabel = formatHifzBlock(hifz.nextBlock);
 
     return {
       badge: "Tindakan hari ini",
-      description: `Mulakan dengan ${focus}. Ada ${hifz.dueTodayCount} ulangan yang sudah due, jadi ini patut didahulukan sebelum mod lain.`,
+      description: `Mulakan dengan ${focus}. Ada ${hifz.dueTodayPages} halaman ulangan yang sudah due, jadi ini patut didahulukan sebelum mod lain.`,
       isZeroState: false,
       primaryHref: hifzReadHref,
       primaryLabel: "Teruskan di Mushaf",
@@ -156,12 +156,12 @@ export function buildHomeHero({
         {
           label: "Anggaran",
           value: formatMinutes(
-            estimateMinutes(hifz.dueTodayCount, 1.5, 6, 24),
+            estimateMinutes(hifz.dueTodayPages, 3, 6, 24),
           ),
         },
         {
           label: "Due",
-          value: `${hifz.dueTodayCount} ulangan`,
+          value: `${hifz.dueTodayPages} halaman`,
         },
       ],
       title: "Ulang hafalan yang due",
@@ -210,8 +210,8 @@ export function buildHomeHero({
     };
   }
 
-  if (hifz && hifz.todayTotal > 0) {
-    const focus = hifz.nextAyahLabel ?? readFocus;
+  if (hifz && hifz.todayPages > 0) {
+    const focus = hifz.nextPageLabel ?? readFocus;
     const blockLabel = formatHifzBlock(hifz.nextBlock);
 
     return {
@@ -236,12 +236,12 @@ export function buildHomeHero({
         {
           label: "Anggaran",
           value: formatMinutes(
-            estimateMinutes(hifz.todayTotal, 1.2, 6, 20),
+            estimateMinutes(hifz.todayPages, 3, 6, 20),
           ),
         },
         {
           label: "Hari ini",
-          value: `${hifz.todayTotal} item aktif`,
+          value: `${hifz.todayPages} halaman aktif`,
         },
       ],
       title: "Teruskan hafalan hari ini",

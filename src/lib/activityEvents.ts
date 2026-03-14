@@ -146,6 +146,45 @@ export async function getReadPageActivityRows(
   }));
 }
 
+export async function getDailyHifzPageCountFromEvents(
+  userId: string,
+  activityDate: string,
+): Promise<number> {
+  const { data, error } = await supabaseServer
+    .from("activity_events")
+    .select("entity_id")
+    .eq("user_id", userId)
+    .eq("activity_date", activityDate)
+    .in("activity_type", ["hifz_ayah_memorized", "hifz_ayah_reviewed"]);
+
+  if (error) {
+    throw error;
+  }
+
+  const ayahIds = ((data ?? []) as Array<{ entity_id: number | null }>)
+    .map((row) => row.entity_id)
+    .filter((value): value is number => typeof value === "number");
+
+  if (ayahIds.length === 0) {
+    return 0;
+  }
+
+  const { data: ayatRows, error: ayatError } = await supabaseServer
+    .from("ayat")
+    .select("page_number")
+    .in("id", ayahIds);
+
+  if (ayatError) {
+    throw ayatError;
+  }
+
+  return new Set(
+    ((ayatRows ?? []) as Array<{ page_number: number | null }>)
+      .map((row) => row.page_number)
+      .filter((value): value is number => typeof value === "number"),
+  ).size;
+}
+
 export async function getLegacyActivityDateKeys(
   userId: string,
 ): Promise<string[]> {

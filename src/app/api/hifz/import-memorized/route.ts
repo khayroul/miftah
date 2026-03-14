@@ -127,12 +127,12 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({
       ok: true,
       count,
-      newCount: snapshot.newCount,
+      newPages: snapshot.newPages,
       nextPage: snapshot.nextPage,
       queue: snapshot.memorizeQueue.pageOrder.length > 0
         ? snapshot.memorizeQueue
         : null,
-      reviewCount: snapshot.reviewCount,
+      reviewPages: snapshot.reviewPages,
       stats,
       upToPage,
       juzProgress,
