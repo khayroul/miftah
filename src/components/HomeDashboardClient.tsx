@@ -8,6 +8,12 @@ import { saveReadMode } from "@/lib/readMode";
 import { findMarkerForPage } from "@/lib/readNavigationUtils";
 import type { HomeDashboardSnapshot } from "@/lib/homeDashboard";
 import { buildHomeHero } from "@/lib/homeDashboardHero";
+import {
+  emptyHomeDashboardSnapshot,
+  hasHomeDashboardData,
+  loadHomeDashboardSnapshotCache,
+  saveHomeDashboardSnapshotCache,
+} from "@/lib/homeDashboardStorage";
 import { useReadingProgressState } from "@/lib/useReadingProgressState";
 
 const TOTAL_QURAN_PAGES = 604;
@@ -15,7 +21,8 @@ const TOTAL_QURAN_PAGES = 604;
 type CardTone = "amber" | "indigo" | "stone" | "teal";
 
 interface HomeDashboardClientProps {
-  hasAuthenticatedSession: boolean;
+  authUserId: string | null;
+  initialSnapshot: HomeDashboardSnapshot;
   surahTargets: SurahJumpTarget[];
 }
 
@@ -41,14 +48,6 @@ interface HifzGoalMigrationOverride {
   dailyGoalCount: number;
   dailyGoalType: "hifz_pages";
 }
-
-const EMPTY_HOME_DASHBOARD_SNAPSHOT: HomeDashboardSnapshot = {
-  faham: null,
-  hifz: null,
-  read: null,
-  tema: null,
-  activity: null,
-};
 
 function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, Math.round(value)));
@@ -247,19 +246,12 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
 }
 
 export function HomeDashboardClient({
-  hasAuthenticatedSession,
+  authUserId,
+  initialSnapshot,
   surahTargets,
 }: HomeDashboardClientProps) {
   const router = useRouter();
-  const [snapshot, setSnapshot] = useState<HomeDashboardSnapshot>(
-    EMPTY_HOME_DASHBOARD_SNAPSHOT,
-  );
-  const [isLoadingDashboard, setIsLoadingDashboard] = useState(
-    hasAuthenticatedSession,
-  );
-  const [hasLoadedDashboard, setHasLoadedDashboard] = useState(
-    !hasAuthenticatedSession,
-  );
+  const [snapshot, setSnapshot] = useState<HomeDashboardSnapshot>(initialSnapshot);
   const [migratingHifzGoal, startMigratingHifzGoal] = useTransition();
   const [submittingHifzGoalMigration, setSubmittingHifzGoalMigration] =
     useState(false);
@@ -271,48 +263,27 @@ export function HomeDashboardClient({
   const readingState = useReadingProgressState();
 
   useEffect(() => {
-    if (!hasAuthenticatedSession) {
-      setSnapshot(EMPTY_HOME_DASHBOARD_SNAPSHOT);
-      setIsLoadingDashboard(false);
-      setHasLoadedDashboard(true);
+    if (!authUserId) {
+      setSnapshot(emptyHomeDashboardSnapshot());
       return;
     }
 
-    const abortController = new AbortController();
-    setIsLoadingDashboard(true);
+    if (hasHomeDashboardData(initialSnapshot)) {
+      setSnapshot(initialSnapshot);
+      return;
+    }
 
-    void fetch("/api/home/dashboard", {
-      cache: "no-store",
-      signal: abortController.signal,
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error("Home dashboard request failed");
-        }
+    const cachedSnapshot = loadHomeDashboardSnapshotCache(authUserId);
+    setSnapshot(cachedSnapshot ?? initialSnapshot);
+  }, [authUserId, initialSnapshot]);
 
-        return (await response.json()) as HomeDashboardSnapshot;
-      })
-      .then((nextSnapshot) => {
-        setSnapshot(nextSnapshot);
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
+  useEffect(() => {
+    if (!authUserId || !hasHomeDashboardData(snapshot)) {
+      return;
+    }
 
-        console.error("[HomeDashboardClient] Failed to hydrate dashboard", error);
-      })
-      .finally(() => {
-        if (!abortController.signal.aborted) {
-          setIsLoadingDashboard(false);
-          setHasLoadedDashboard(true);
-        }
-      });
-
-    return () => {
-      abortController.abort();
-    };
-  }, [hasAuthenticatedSession]);
+    saveHomeDashboardSnapshotCache(authUserId, snapshot);
+  }, [authUserId, snapshot]);
 
   const readSnapshot = snapshot.read;
   const continuePage = readSnapshot?.lastPage ?? readingState.lastPage ?? 1;
@@ -355,41 +326,14 @@ export function HomeDashboardClient({
     ayahKey: snapshot.hifz?.nextAyahKey ?? null,
   });
   const homeHero =
-    hasAuthenticatedSession && isLoadingDashboard && !hasLoadedDashboard
-      ? {
-          badge: "Sedang menyusun",
-          description:
-            "Kemajuan akaun anda sedang dimuatkan. Sementara itu, anda masih boleh terus sambung baca dari mushaf.",
-          isZeroState: false,
-          primaryHref: `/read/${continuePage}`,
-          primaryLabel: continuePage > 1 ? "Sambung Baca" : "Mula Baca",
-          primaryMode: "read" as const,
-          secondaryHref: "/faham",
-          secondaryLabel: "Buka Faham",
-          secondaryMode: "faham" as const,
-          stats: [
-            {
-              label: "Fokus",
-              value: activeSurah?.name
-                ? `Halaman ${continuePage} · ${activeSurah.name}`
-                : `Halaman ${continuePage}`,
-            },
-            {
-              label: "Status",
-              value: "Memuatkan kemajuan",
-            },
-          ],
-          title: "Dashboard anda sedang dimuatkan",
-          tone: "teal" as const,
-        }
-      : buildHomeHero({
-          activeSurahId,
-          activeSurahName: activeSurah?.name ?? null,
-          continuePage,
-          formattedLastRead,
-          hifzReadHref,
-          snapshot,
-        });
+    buildHomeHero({
+      activeSurahId,
+      activeSurahName: activeSurah?.name ?? null,
+      continuePage,
+      formattedLastRead,
+      hifzReadHref,
+      snapshot,
+    });
   const heroClasses = toneClasses(homeHero.tone);
   const activitySnapshot = useMemo(() => {
     if (!snapshot.activity) {
@@ -517,12 +461,9 @@ export function HomeDashboardClient({
           : activitySnapshot?.dailyGoalType === "theme_chunks"
             ? "tema"
             : "halaman";
-  const activitySummaryLabel =
-    hasAuthenticatedSession && isLoadingDashboard && !hasLoadedDashboard
-      ? "Memuatkan kemajuan"
-      : `${activitySnapshot?.todayProgress ?? 0} / ${
-          activitySnapshot?.dailyGoalCount ?? 10
-        } ${goalTypeLabel}`;
+  const activitySummaryLabel = `${activitySnapshot?.todayProgress ?? 0} / ${
+    activitySnapshot?.dailyGoalCount ?? 10
+  } ${goalTypeLabel}`;
 
   const goalProgressPct = clampPercent(
     activitySnapshot
@@ -660,12 +601,6 @@ export function HomeDashboardClient({
             </div>
           </div>
         </div>
-
-        {hasAuthenticatedSession && isLoadingDashboard && !hasLoadedDashboard ? (
-          <p className="text-xs font-medium text-stone-500 dark:text-stone-400">
-            Menyusun ringkasan Faham, Hafal, Baca, dan Tema...
-          </p>
-        ) : null}
 
       </section>
 
