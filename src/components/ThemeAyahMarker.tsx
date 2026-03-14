@@ -15,13 +15,13 @@ export function ThemeAyahMarker({
 }: ThemeAyahMarkerProps) {
   return (
     <span
-      className={`relative inline-flex h-28 w-28 items-center justify-center text-stone-600 dark:text-stone-300 sm:h-32 sm:w-32 ${className}`.trim()}
+      className={`relative inline-flex h-32 w-32 items-center justify-center text-stone-600 dark:text-stone-300 sm:h-40 sm:w-40 ${className}`.trim()}
       aria-label={`Ayat ${ayahNumber}`}
       title={`Ayat ${ayahNumber}`}
     >
       <span
         aria-hidden="true"
-        className="font-arabic text-[5.9rem] leading-none sm:text-[6.8rem]"
+        className="font-arabic text-[8.75rem] leading-none sm:text-[10.5rem]"
       >
         ۝
       </span>
@@ -29,7 +29,7 @@ export function ThemeAyahMarker({
         aria-hidden="true"
         lang="ar"
         dir="rtl"
-        className="font-arabic absolute inset-0 flex items-center justify-center text-[1.8rem] font-semibold leading-none sm:text-[2.05rem]"
+        className="font-arabic absolute inset-0 flex items-center justify-center text-[2.45rem] font-semibold leading-none sm:text-[2.95rem]"
       >
         {toArabicIndicNumerals(ayahNumber)}
       </span>
