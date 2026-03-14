@@ -92,6 +92,21 @@ export function buildQueuePageHref(
   return `/read/${pageNumber}?flow=${type}&qi=${index}`;
 }
 
+export function buildRecoveredRatedProgressIds(
+  items: HifzQueueItem[],
+  pageOrder: number[],
+  currentPageIndex: number,
+): number[] {
+  if (currentPageIndex <= 0) {
+    return [];
+  }
+
+  const completedPages = new Set(pageOrder.slice(0, currentPageIndex));
+  return items
+    .filter((item) => completedPages.has(item.pageNumber))
+    .map((item) => item.progressId);
+}
+
 export function saveQueueState(
   type: HifzFlowType,
   items: HifzQueueItem[],
@@ -154,6 +169,69 @@ export function setCurrentPageIndex(
 
   const storage = getSessionStorage();
   if (!storage) return null;
+
+  try {
+    storage.setItem(storageKey(type), JSON.stringify(updated));
+    return updated;
+  } catch {
+    return null;
+  }
+}
+
+export function recoverQueueState(
+  type: HifzFlowType,
+  pageNumber: number,
+  requestedPageIndex: number | null = null,
+): HifzSessionQueue | null {
+  const queue = loadQueue(type);
+  if (!queue) {
+    return null;
+  }
+
+  const requestedIndexIsValid =
+    Number.isInteger(requestedPageIndex) &&
+    requestedPageIndex !== null &&
+    requestedPageIndex >= 0 &&
+    requestedPageIndex < queue.pageOrder.length &&
+    queue.pageOrder[requestedPageIndex] === pageNumber;
+  const resolvedPageIndex = requestedIndexIsValid
+    ? requestedPageIndex
+    : findQueuePageIndex(queue, pageNumber);
+
+  if (resolvedPageIndex === -1) {
+    return queue;
+  }
+
+  const recoveredPageIndex = Math.max(queue.currentPageIndex, resolvedPageIndex);
+  const recoveredRated = [
+    ...new Set([
+      ...queue.rated,
+      ...buildRecoveredRatedProgressIds(
+        queue.items,
+        queue.pageOrder,
+        recoveredPageIndex,
+      ),
+    ]),
+  ];
+
+  const queueAlreadyRecovered =
+    queue.currentPageIndex === recoveredPageIndex &&
+    queue.rated.length === recoveredRated.length &&
+    queue.rated.every((progressId) => recoveredRated.includes(progressId));
+  if (queueAlreadyRecovered) {
+    return queue;
+  }
+
+  const updated: HifzSessionQueue = {
+    ...queue,
+    currentPageIndex: recoveredPageIndex,
+    rated: recoveredRated,
+  };
+
+  const storage = getSessionStorage();
+  if (!storage) {
+    return null;
+  }
 
   try {
     storage.setItem(storageKey(type), JSON.stringify(updated));
@@ -236,6 +314,26 @@ export function clearQueue(type: HifzFlowType): void {
 
 export function getItemsForPage(queue: HifzSessionQueue, pageNumber: number): HifzQueueItem[] {
   return queue.items.filter((item) => item.pageNumber === pageNumber);
+}
+
+export function areAllProgressIdsRated(
+  queue: Pick<HifzSessionQueue, "rated">,
+  progressIds: number[],
+): boolean {
+  if (progressIds.length === 0) {
+    return false;
+  }
+
+  const ratedSet = new Set(queue.rated);
+  return progressIds.every((progressId) => ratedSet.has(progressId));
+}
+
+export function isPageFullyRated(
+  queue: HifzSessionQueue,
+  pageNumber: number,
+): boolean {
+  const progressIds = getItemsForPage(queue, pageNumber).map((item) => item.progressId);
+  return areAllProgressIdsRated(queue, progressIds);
 }
 
 export function isQueueComplete(queue: HifzSessionQueue): boolean {

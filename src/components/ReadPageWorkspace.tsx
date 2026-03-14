@@ -21,11 +21,12 @@ import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
 import type { HifzQueueResponse } from "@/lib/hifz/queue";
 import {
   buildQueuePageHref,
+  buildRecoveredRatedProgressIds,
   findQueuePageIndex,
   getAdjacentQueuePageFromQueue,
   loadQueue,
+  recoverQueueState,
   saveQueueState,
-  setCurrentPageIndex,
   type HifzFlowType,
   type HifzQueuePagePointer,
   type HifzSessionQueue,
@@ -81,8 +82,11 @@ const ReadModeTools = dynamic(
 
 interface ReadPageWorkspaceProps {
   pageNumber: number;
+  fullImageSrc: string | null;
   imageAvailable: boolean;
+  mobileImageSrc?: string | null;
   thumbnailAvailable: boolean;
+  thumbnailSrc: string | null;
   manifest: MushafPageManifest | null;
   wordTranslations: MushafWordTranslationMap;
   currentSurahId: number;
@@ -100,6 +104,8 @@ interface ReadPageWorkspaceProps {
   hifzFirstWordCueEnabled?: boolean;
   hifzFlow?: HifzFlowType | null;
   hifzNavigationSearch?: string | null;
+  nextPageFullImageSrc?: string | null;
+  nextPageMobileImageSrc?: string | null;
   personalizationPageNumber?: number | null;
 }
 
@@ -166,7 +172,11 @@ function toQueueState(
     items: response.items,
     pageOrder: response.pageOrder,
     currentPageIndex,
-    rated: [],
+    rated: buildRecoveredRatedProgressIds(
+      response.items,
+      response.pageOrder,
+      currentPageIndex,
+    ),
   };
 }
 
@@ -177,8 +187,11 @@ interface HifzQueueRecoveryError {
 
 export function ReadPageWorkspace({
   pageNumber,
+  fullImageSrc,
   imageAvailable,
+  mobileImageSrc = null,
   thumbnailAvailable,
+  thumbnailSrc,
   manifest,
   wordTranslations,
   currentSurahId,
@@ -196,6 +209,8 @@ export function ReadPageWorkspace({
   hifzFirstWordCueEnabled = false,
   hifzFlow = null,
   hifzNavigationSearch = null,
+  nextPageFullImageSrc = null,
+  nextPageMobileImageSrc = null,
   personalizationPageNumber = null,
 }: ReadPageWorkspaceProps) {
   const lastSyncedPageRef = useRef<number | null>(null);
@@ -260,6 +275,7 @@ export function ReadPageWorkspace({
 
     return parsed;
   }, [searchParams]);
+  const [isCurrentPageImageReady, setIsCurrentPageImageReady] = useState(false);
   const [memorizeViewportInset, setMemorizeViewportInset] = useState(0);
   const contentBottomPadding =
     hifzFlow === "memorize" && memorizeViewportInset > 0
@@ -269,16 +285,9 @@ export function ReadPageWorkspace({
   const applyQueuePointers = useCallback(
     (
       queue: Pick<HifzSessionQueue, "pageOrder">,
-      flow: HifzFlowType,
-      queuePageIndex: number,
     ) => {
-      setPreviousQueuePage(
-        getAdjacentQueuePageFromQueue(queue, pageNumber, -1),
-      );
-      setNextQueuePage(
-        getAdjacentQueuePageFromQueue(queue, pageNumber, 1),
-      );
-      setCurrentPageIndex(flow, queuePageIndex);
+      setPreviousQueuePage(getAdjacentQueuePageFromQueue(queue, pageNumber, -1));
+      setNextQueuePage(getAdjacentQueuePageFromQueue(queue, pageNumber, 1));
     },
     [pageNumber],
   );
@@ -345,7 +354,9 @@ export function ReadPageWorkspace({
       ? resolveQueueIndex(existingQueue, pageNumber, hifzQueueIndex)
       : null;
     if (existingQueue && existingQueueIndex !== null) {
-      applyQueuePointers(existingQueue, hifzFlow, existingQueueIndex);
+      const recoveredQueue =
+        recoverQueueState(hifzFlow, pageNumber, existingQueueIndex) ?? existingQueue;
+      applyQueuePointers(recoveredQueue);
       setIsRecoveringHifzQueue(false);
       setHifzQueueRecoveryError(null);
       return;
@@ -385,18 +396,18 @@ export function ReadPageWorkspace({
           hifzFlow,
           queueResponse.items,
           queuePageIndex,
+          buildRecoveredRatedProgressIds(
+            queueResponse.items,
+            queueResponse.pageOrder,
+            queuePageIndex,
+          ),
         );
         applyQueuePointers(
           recoveredQueue ?? toQueueState(hifzFlow, queueResponse, queuePageIndex),
-          hifzFlow,
-          queuePageIndex,
         );
       })
       .catch((error: unknown) => {
-        if (
-          error instanceof DOMException &&
-          error.name === "AbortError"
-        ) {
+        if (error instanceof DOMException && error.name === "AbortError") {
           return;
         }
 
@@ -431,6 +442,40 @@ export function ReadPageWorkspace({
       abortController.abort();
     };
   }, [applyQueuePointers, hifzFlow, hifzQueueIndex, pageNumber]);
+
+  useEffect(() => {
+    setIsCurrentPageImageReady(false);
+  }, [pageNumber]);
+
+  useEffect(() => {
+    if (!isCurrentPageImageReady) {
+      return;
+    }
+
+    const prefersMobileViewport = window.matchMedia("(max-width: 768px)").matches;
+    const selectedNextImageSrc =
+      prefersMobileViewport && nextPageMobileImageSrc
+        ? nextPageMobileImageSrc
+        : nextPageFullImageSrc;
+
+    if (!selectedNextImageSrc) {
+      return;
+    }
+
+    const connection = Reflect.get(window.navigator, "connection");
+    if (
+      typeof connection === "object" &&
+      connection !== null &&
+      "saveData" in connection &&
+      connection.saveData === true
+    ) {
+      return;
+    }
+
+    const preloadImage = new window.Image();
+    preloadImage.decoding = "async";
+    preloadImage.src = selectedNextImageSrc;
+  }, [isCurrentPageImageReady, nextPageFullImageSrc, nextPageMobileImageSrc]);
 
   useEffect(() => {
     if (lastSyncedPageRef.current === pageNumber) {
@@ -852,8 +897,11 @@ export function ReadPageWorkspace({
         <MushafPageView
           key={pageNumber}
           pageNumber={pageNumber}
+          fullImageSrc={fullImageSrc}
           imageAvailable={imageAvailable}
+          mobileImageSrc={mobileImageSrc}
           thumbnailAvailable={thumbnailAvailable}
+          thumbnailSrc={thumbnailSrc}
           manifest={manifest}
           wordTranslations={wordTranslations}
           ayahDetails={ayahDetails}
@@ -864,6 +912,7 @@ export function ReadPageWorkspace({
           onCanvasTap={handleMushafTap}
           audioDiscovered={audioDiscovered}
           onAudioDiscovered={markAudioDiscovered}
+          onFullImageReadyChange={setIsCurrentPageImageReady}
           activePlaybackAyahKey={activePlaybackAyahKey}
           isAudioDockVisible={isAudioVisible}
           onPlayableAyahKeysChange={hifzFlow === "memorize" ? undefined : setPlayableAyahKeys}

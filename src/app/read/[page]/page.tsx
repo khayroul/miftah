@@ -129,8 +129,11 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
             </p>
           </div>
         }
+        fullImageSrc={pageData.fullImageSrc}
         imageAvailable={pageData.imageAvailable}
+        mobileImageSrc={pageData.mobileImageSrc}
         thumbnailAvailable={pageData.thumbnailAvailable}
+        thumbnailSrc={pageData.thumbnailSrc}
         manifest={pageData.manifest}
         wordTranslations={pageData.wordTranslations}
         currentSurahId={pageData.currentSurahId}
@@ -147,6 +150,8 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
         hifzFirstWordCueEnabled={!hifzFlow && hifzFirstWordCueEnabled}
         hifzFlow={hifzFlow}
         hifzNavigationSearch={hifzNavigationSearch}
+        nextPageFullImageSrc={pageData.nextPageFullImageSrc}
+        nextPageMobileImageSrc={pageData.nextPageMobileImageSrc}
         personalizationPageNumber={pageNumber}
       />
 

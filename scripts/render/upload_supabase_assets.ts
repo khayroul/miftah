@@ -15,6 +15,7 @@ const DEFAULT_PAGES_BUCKET = "mushaf-pages";
 const DEFAULT_MANIFESTS_BUCKET = "mushaf-manifests";
 const PAGE_REGEX = /^page_\d{3}\.png$/;
 const THUMB_REGEX = /^page_\d{3}_thumb\.png$/;
+const MOBILE_REGEX = /^page_\d{3}_mobile\.webp$/;
 const MANIFEST_REGEX = /^page_\d{3}\.manifest\.json$/;
 
 interface UploadItem {
@@ -94,7 +95,10 @@ async function ensureBucketPublic(
 async function collectUploadItems(
   pagesBucket: string,
   manifestsBucket: string,
+  includePages: boolean,
   includeThumbs: boolean,
+  includeMobile: boolean,
+  includeManifests: boolean,
 ): Promise<UploadItem[]> {
   const pageEntries = (await readdir(PAGES_DIR)).sort();
   const manifestEntries = (await readdir(MANIFESTS_DIR)).sort();
@@ -102,10 +106,11 @@ async function collectUploadItems(
   const items: UploadItem[] = [];
   let pagesCount = 0;
   let thumbsCount = 0;
+  let mobileCount = 0;
   let manifestsCount = 0;
 
   for (const entry of pageEntries) {
-    if (PAGE_REGEX.test(entry)) {
+    if (includePages && PAGE_REGEX.test(entry)) {
       pagesCount += 1;
       items.push({
         bucket: pagesBucket,
@@ -124,7 +129,25 @@ async function collectUploadItems(
         objectPath: entry,
         contentType: "image/png",
       });
+      continue;
     }
+
+    if (includeMobile && MOBILE_REGEX.test(entry)) {
+      mobileCount += 1;
+      items.push({
+        bucket: pagesBucket,
+        localPath: path.join(PAGES_DIR, entry),
+        objectPath: entry,
+        contentType: "image/webp",
+      });
+    }
+  }
+
+  if (!includeManifests) {
+    console.log(
+      `[scan] pages=${pagesCount}, thumbs=${thumbsCount}, mobile=${mobileCount}, manifests=0`,
+    );
+    return items;
   }
 
   for (const entry of manifestEntries) {
@@ -141,7 +164,7 @@ async function collectUploadItems(
   }
 
   console.log(
-    `[scan] pages=${pagesCount}, thumbs=${thumbsCount}, manifests=${manifestsCount}`,
+    `[scan] pages=${pagesCount}, thumbs=${thumbsCount}, mobile=${mobileCount}, manifests=${manifestsCount}`,
   );
   return items;
 }
@@ -225,7 +248,11 @@ async function main(): Promise<void> {
   const manifestsBucket =
     process.env.MUSHAF_MANIFESTS_BUCKET?.trim() || DEFAULT_MANIFESTS_BUCKET;
 
-  const includeThumbs = !hasArg("--no-thumbs");
+  const onlyMobile = hasArg("--only-mobile");
+  const includePages = onlyMobile ? false : !hasArg("--no-pages");
+  const includeThumbs = onlyMobile ? false : !hasArg("--no-thumbs");
+  const includeMobile = !hasArg("--no-mobile");
+  const includeManifests = onlyMobile ? false : !hasArg("--no-manifests");
   const dryRun = hasArg("--dry-run");
   const upsert = parseBoolean(process.env.MUSHAF_UPLOAD_UPSERT, true);
   const concurrency = parsePositiveInt(
@@ -240,7 +267,14 @@ async function main(): Promise<void> {
   await ensureBucketPublic(supabase, pagesBucket);
   await ensureBucketPublic(supabase, manifestsBucket);
 
-  const items = await collectUploadItems(pagesBucket, manifestsBucket, includeThumbs);
+  const items = await collectUploadItems(
+    pagesBucket,
+    manifestsBucket,
+    includePages,
+    includeThumbs,
+    includeMobile,
+    includeManifests,
+  );
   console.log(
     `[plan] upload_count=${items.length}, concurrency=${concurrency}, upsert=${upsert}, dry_run=${dryRun}`,
   );

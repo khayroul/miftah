@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  areAllProgressIdsRated,
   buildQueuePageHref,
   loadQueue,
   advanceQueue,
@@ -51,6 +52,8 @@ const CHUNK_SIZE_OPTIONS: Array<{
 interface FlowErrorState {
   message: string;
   requiresSignIn?: boolean;
+  continueHref?: string;
+  continueLabel?: string;
 }
 
 interface RateBatchResponse {
@@ -100,6 +103,20 @@ export function HifzMemorizeStepper({
   const [complete, setComplete] = useState(false);
   const [errorState, setErrorState] = useState<FlowErrorState | null>(null);
   const [panelElement, setPanelElement] = useState<HTMLDivElement | null>(null);
+  const buildAlreadyRatedState = useCallback(
+    (queuePageIndex: number, activePageNumber: number | undefined): FlowErrorState => ({
+      message:
+        activePageNumber && activePageNumber !== pageNumber
+          ? "Halaman ini sudah ditandakan dalam sesi hafalan semasa. Sambung pada halaman aktif untuk elak rekod berganda."
+          : "Chunk ini sudah ditandakan dalam sesi hafalan semasa.",
+      continueHref:
+        activePageNumber && activePageNumber !== pageNumber
+          ? buildQueuePageHref("memorize", activePageNumber, queuePageIndex)
+          : undefined,
+      continueLabel: "Teruskan Sesi",
+    }),
+    [pageNumber],
+  );
 
   const pageItems = useMemo(() => {
     const queue = loadQueue("memorize");
@@ -113,6 +130,26 @@ export function HifzMemorizeStepper({
     () => buildMemorizeChunks(pageItems, chunkSize),
     [chunkSize, pageItems],
   );
+  const recoveredChunkIndex = useMemo(() => {
+    const queue = loadQueue("memorize");
+    if (!queue || pageChunks.length === 0) {
+      return 0;
+    }
+
+    const nextIncompleteChunkIndex = pageChunks.findIndex(
+      (chunk) =>
+        !areAllProgressIdsRated(
+          queue,
+          chunk.items.map((item) => item.progressId),
+        ),
+    );
+
+    if (nextIncompleteChunkIndex === -1) {
+      return 0;
+    }
+
+    return nextIncompleteChunkIndex;
+  }, [pageChunks]);
   const currentChunk = pageChunks[currentChunkIndex] ?? null;
   const chunkCount = pageChunks.length;
   const chunkAyahCount = currentChunk?.items.length ?? 0;
@@ -120,7 +157,7 @@ export function HifzMemorizeStepper({
     () => resolveMemorizeChunkLength(pageItems.length, chunkSize),
     [chunkSize, pageItems.length],
   );
-  const initialFlowError = useMemo(() => {
+  const initialFlowError = useMemo<FlowErrorState | null>(() => {
     const queue = loadQueue("memorize");
     if (!queue) {
       return {
@@ -134,9 +171,16 @@ export function HifzMemorizeStepper({
       };
     }
 
+    if (areAllProgressIdsRated(queue, getItemsForPage(queue, pageNumber).map((item) => item.progressId))) {
+      return buildAlreadyRatedState(
+        queue.currentPageIndex,
+        queue.pageOrder[queue.currentPageIndex],
+      );
+    }
+
     return null;
-  }, [pageNumber]);
-  const displayedError = errorState ?? initialFlowError;
+  }, [buildAlreadyRatedState, pageNumber]);
+  const displayedError: FlowErrorState | null = errorState ?? initialFlowError;
 
   const goToStep = useCallback(
     (step: Step) => {
@@ -164,6 +208,13 @@ export function HifzMemorizeStepper({
       onChunkAyahKeysChange(null);
     };
   }, [currentChunk?.ayahKeys, onChunkAyahKeysChange]);
+
+  useEffect(() => {
+    setCurrentChunkIndex((current) =>
+      current === recoveredChunkIndex ? current : recoveredChunkIndex,
+    );
+    setCurrentStep(1);
+  }, [recoveredChunkIndex]);
 
   useEffect(() => {
     if (currentStep === 1 && currentChunk && currentChunk.items.length > 0) {
@@ -253,6 +304,15 @@ export function HifzMemorizeStepper({
       setSubmitting(true);
       setErrorState(null);
       try {
+        const queue = loadQueue("memorize");
+        if (!queue) {
+          setErrorState({
+            message: "Sesi hafalan ini sudah tamat atau hilang. Buka semula dari Hafal.",
+          });
+          setSubmitting(false);
+          return;
+        }
+
         if (!confident) {
           goToStep(1);
           setSubmitting(false);
@@ -263,6 +323,36 @@ export function HifzMemorizeStepper({
           setErrorState({
             message: "Chunk hafalan ini sudah hilang daripada sesi semasa. Kembali ke Hafal dan buka semula.",
           });
+          setSubmitting(false);
+          return;
+        }
+
+        const chunkProgressIds = chunkItems.map((item) => item.progressId);
+        if (areAllProgressIdsRated(queue, chunkProgressIds)) {
+          const nextIncompleteChunkIndex = pageChunks.findIndex(
+            (chunk) =>
+              !areAllProgressIdsRated(
+                queue,
+                chunk.items.map((item) => item.progressId),
+              ),
+          );
+
+          if (
+            nextIncompleteChunkIndex !== -1 &&
+            nextIncompleteChunkIndex !== currentChunkIndex
+          ) {
+            setCurrentChunkIndex(nextIncompleteChunkIndex);
+            goToStep(1);
+            setSubmitting(false);
+            return;
+          }
+
+          setErrorState(
+            buildAlreadyRatedState(
+              queue.currentPageIndex,
+              queue.pageOrder[queue.currentPageIndex],
+            ),
+          );
           setSubmitting(false);
           return;
         }
@@ -374,12 +464,13 @@ export function HifzMemorizeStepper({
       }
     },
     [
+      buildAlreadyRatedState,
       currentChunk,
       currentChunkIndex,
       goToStep,
       onChunkAyahKeysChange,
       onMushafHide,
-      pageChunks.length,
+      pageChunks,
       router,
     ],
   );
@@ -421,6 +512,14 @@ export function HifzMemorizeStepper({
           {displayedError.message}
         </p>
         <div className="flex justify-center gap-3">
+          {displayedError.continueHref ? (
+            <a
+              href={displayedError.continueHref}
+              className="inline-flex items-center rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500"
+            >
+              {displayedError.continueLabel ?? "Teruskan Sesi"}
+            </a>
+          ) : null}
           {displayedError.requiresSignIn ? (
             <a
               href={buildSignInPath("/hifz")}

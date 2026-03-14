@@ -6,7 +6,7 @@ import type {
   MushafWordHitbox,
 } from "@/types/mushaf";
 
-export type PageVariant = "page" | "thumb";
+export type PageVariant = "page" | "thumb" | "mobile";
 type RawManifest = Record<string, unknown>;
 type RawWord = Record<string, unknown>;
 
@@ -120,6 +120,9 @@ function getPageFilename(pageNumber: number, variant: PageVariant): string {
   const padded = formatPageNumber(pageNumber);
   if (variant === "thumb") {
     return `page_${padded}_thumb.png`;
+  }
+  if (variant === "mobile") {
+    return `page_${padded}_mobile.webp`;
   }
   return `page_${padded}.png`;
 }
@@ -495,6 +498,24 @@ export function getRemotePageImageUrl(
     return null;
   }
   return joinUrl(baseUrl, getPageFilename(pageNumber, variant));
+}
+
+export function getPageImageClientSrc(
+  pageNumber: number,
+  variant: PageVariant = "page",
+): string {
+  const remoteUrl = getRemotePageImageUrl(pageNumber, variant);
+  if (remoteUrl) {
+    return remoteUrl;
+  }
+
+  const params =
+    variant === "thumb"
+      ? "?variant=thumb&v=qcfv2"
+      : variant === "mobile"
+        ? "?variant=mobile&v=qcfv2"
+        : "?v=qcfv2";
+  return `/api/mushaf/page/${pageNumber}${params}`;
 }
 
 export async function resolvePageImageSource(

@@ -1,5 +1,8 @@
 import { readFile } from "node:fs/promises";
-import { resolvePageImageSource } from "@/lib/mushafAssets";
+import {
+  resolvePageImageSource,
+  type PageVariant,
+} from "@/lib/mushafAssets";
 
 export const runtime = "nodejs";
 
@@ -15,6 +18,16 @@ function parsePageNumber(value: string): number | null {
   return parsed;
 }
 
+function resolveVariant(rawVariant: string | null): PageVariant {
+  if (rawVariant === "thumb") {
+    return "thumb";
+  }
+  if (rawVariant === "mobile") {
+    return "mobile";
+  }
+  return "page";
+}
+
 export async function GET(
   request: Request,
   context: PageImageRouteContext,
@@ -27,7 +40,7 @@ export async function GET(
   }
 
   const url = new URL(request.url);
-  const variant = url.searchParams.get("variant") === "thumb" ? "thumb" : "page";
+  const variant = resolveVariant(url.searchParams.get("variant"));
   const imageSource = await resolvePageImageSource(pageNumber, variant);
 
   if (!imageSource) {
@@ -46,9 +59,10 @@ export async function GET(
 
   try {
     const imageBuffer = await readFile(imageSource.path);
+    const contentType = variant === "mobile" ? "image/webp" : "image/png";
     return new Response(imageBuffer, {
       headers: {
-        "Content-Type": "image/png",
+        "Content-Type": contentType,
         "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
       },
     });

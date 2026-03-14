@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import type { MushafAyahDetail } from "@/components/MushafPageView";
-import { loadPageManifest, pageImageExists } from "@/lib/mushafAssets";
+import { getPageImageClientSrc, loadPageManifest, pageImageExists } from "@/lib/mushafAssets";
 import { mapAyatToPageAudioTracks, type ReadAudioTrack } from "@/lib/pageAudioTracks";
 import { getAyatByPage, getSurah } from "@/lib/queries";
 import { getReadJumpTargets, type ReadJumpTargets } from "@/lib/readNavigation";
@@ -14,11 +14,16 @@ export interface ReadPageStaticData {
   ayatOnPage: Ayah[];
   currentJuzNumber: number;
   currentSurahId: number;
+  fullImageSrc: string | null;
   imageAvailable: boolean;
   jumpTargets: ReadJumpTargets;
   manifest: MushafPageManifest | null;
+  mobileImageSrc: string | null;
+  nextPageFullImageSrc: string | null;
+  nextPageMobileImageSrc: string | null;
   surahMeta: Surah | null;
   themeSurahId: number;
+  thumbnailSrc: string | null;
   thumbnailAvailable: boolean;
   wordTranslations: MushafWordTranslationMap;
 }
@@ -39,11 +44,23 @@ function toAyahDetails(ayatOnPage: Ayah[]): MushafAyahDetail[] {
 
 const getCachedReadPageStaticData = unstable_cache(
   async (pageNumber: number): Promise<ReadPageStaticData> => {
-    const [manifest, imageAvailable, thumbnailAvailable, jumpTargets, ayatOnPage] =
+    const [
+      manifest,
+      imageAvailable,
+      thumbnailAvailable,
+      mobileImageAvailable,
+      nextPageMobileImageAvailable,
+      jumpTargets,
+      ayatOnPage,
+    ] =
       await Promise.all([
         loadPageManifest(pageNumber),
         pageImageExists(pageNumber),
         pageImageExists(pageNumber, "thumb"),
+        pageImageExists(pageNumber, "mobile").catch(() => false),
+        pageNumber < 604
+          ? pageImageExists(pageNumber + 1, "mobile").catch(() => false)
+          : Promise.resolve(false),
         getReadJumpTargets(),
         getAyatByPage(pageNumber).catch(() => [] as Ayah[]),
       ]);
@@ -64,11 +81,24 @@ const getCachedReadPageStaticData = unstable_cache(
       ayatOnPage,
       currentJuzNumber,
       currentSurahId,
+      fullImageSrc: imageAvailable ? getPageImageClientSrc(pageNumber) : null,
       imageAvailable,
       jumpTargets,
       manifest,
+      mobileImageSrc: mobileImageAvailable
+        ? getPageImageClientSrc(pageNumber, "mobile")
+        : null,
+      nextPageFullImageSrc:
+        pageNumber < 604 ? getPageImageClientSrc(pageNumber + 1) : null,
+      nextPageMobileImageSrc:
+        nextPageMobileImageAvailable && pageNumber < 604
+          ? getPageImageClientSrc(pageNumber + 1, "mobile")
+          : null,
       surahMeta,
       themeSurahId,
+      thumbnailSrc: thumbnailAvailable
+        ? getPageImageClientSrc(pageNumber, "thumb")
+        : null,
       thumbnailAvailable,
       wordTranslations,
     };

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   useEffect,
   useMemo,
@@ -34,8 +33,11 @@ export interface MushafAyahDetail {
 
 interface MushafPageViewProps {
   pageNumber: number;
+  fullImageSrc?: string | null;
   imageAvailable: boolean;
+  mobileImageSrc?: string | null;
   thumbnailAvailable: boolean;
+  thumbnailSrc?: string | null;
   manifest: MushafPageManifest | null;
   wordTranslations: MushafWordTranslationMap;
   ayahDetails: MushafAyahDetail[];
@@ -46,6 +48,7 @@ interface MushafPageViewProps {
   onCanvasTap?: () => void;
   audioDiscovered?: boolean;
   onAudioDiscovered?: () => void;
+  onFullImageReadyChange?: (ready: boolean) => void;
   activePlaybackAyahKey?: string | null;
   isAudioDockVisible?: boolean;
   onPlayableAyahKeysChange?: (ayahKeys: string[] | null) => void;
@@ -271,8 +274,11 @@ function mapYToLinePosition(y: number, lineCenters: number[]): number {
 
 export function MushafPageView({
   pageNumber,
+  fullImageSrc = null,
   imageAvailable,
+  mobileImageSrc = null,
   thumbnailAvailable,
+  thumbnailSrc = null,
   manifest,
   wordTranslations,
   ayahDetails,
@@ -283,6 +289,7 @@ export function MushafPageView({
   onCanvasTap,
   audioDiscovered = true,
   onAudioDiscovered,
+  onFullImageReadyChange,
   activePlaybackAyahKey = null,
   isAudioDockVisible = false,
   onPlayableAyahKeysChange,
@@ -755,6 +762,9 @@ export function MushafPageView({
     onPlayableAyahKeysChange?.(hifzPlayableAyahKeys);
   }, [hifzPlayableAyahKeys, onPlayableAyahKeysChange]);
   useEffect(() => {
+    onFullImageReadyChange?.(fullImageReady);
+  }, [fullImageReady, onFullImageReadyChange]);
+  useEffect(() => {
     return () => {
       onPlayableAyahKeysChange?.(null);
     };
@@ -1081,37 +1091,36 @@ export function MushafPageView({
         {canShowAnyImage ? (
           <>
             {canShowThumbnail ? (
-              <Image
-                src={`/api/mushaf/page/${pageNumber}?variant=thumb&v=qcfv2`}
+              <img
+                src={thumbnailSrc ?? `/api/mushaf/page/${pageNumber}?variant=thumb&v=qcfv2`}
                 alt={`Thumbnail halaman mushaf ${pageNumber}`}
-                fill
                 loading="eager"
-                unoptimized
-                sizes="(max-width: 1024px) 100vw, 960px"
-                className={`object-contain transition-opacity duration-200 dark:invert dark:[mix-blend-mode:lighten] ${
+                className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-200 dark:invert dark:[mix-blend-mode:lighten] ${
                   fullImageReady ? "opacity-0" : "opacity-100"
                 }`}
                 onError={() => setThumbnailFailed(true)}
               />
             ) : null}
             {canShowFullImage ? (
-              <Image
-                src={`/api/mushaf/page/${pageNumber}?v=qcfv2`}
-                alt={`Halaman mushaf ${pageNumber}`}
-                fill
-                loading="eager"
-                unoptimized
-                sizes="(max-width: 1024px) 100vw, 960px"
-                className={`object-contain transition-opacity duration-200 dark:invert dark:[mix-blend-mode:lighten] ${
-                  fullImageReady ? "opacity-100" : "opacity-0"
-                }`}
-                onLoad={() => setFullImageReady(true)}
-                onError={() => {
-                  setFullImageFailed(true);
-                  setFullImageReady(false);
-                  setSelectedWord(null);
-                }}
-              />
+              <picture>
+                {mobileImageSrc ? (
+                  <source media="(max-width: 768px)" srcSet={mobileImageSrc} />
+                ) : null}
+                <img
+                  src={fullImageSrc ?? `/api/mushaf/page/${pageNumber}?v=qcfv2`}
+                  alt={`Halaman mushaf ${pageNumber}`}
+                  loading="eager"
+                  className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-200 dark:invert dark:[mix-blend-mode:lighten] ${
+                    fullImageReady ? "opacity-100" : "opacity-0"
+                  }`}
+                  onLoad={() => setFullImageReady(true)}
+                  onError={() => {
+                    setFullImageFailed(true);
+                    setFullImageReady(false);
+                    setSelectedWord(null);
+                  }}
+                />
+              </picture>
             ) : null}
             {canSelectAyah
               ? selectableAyahTargets.map(({ key, box, detail }) => (
