@@ -14,6 +14,7 @@ import {
   type MushafAyahDetail,
 } from "@/components/MushafPageView";
 import { ReadOnlyMushafPageView } from "@/components/ReadOnlyMushafPageView";
+import { ReadModeTools } from "@/components/ReadModeTools";
 import { useReadAudio } from "@/components/ReadAudioProvider";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
 import type { HifzQueueResponse } from "@/lib/hifz/queue";
@@ -57,23 +58,6 @@ const ReadJumpControls = dynamic(
   {
     ssr: false,
     loading: () => null,
-  },
-);
-
-const ReadModeTools = dynamic(
-  () =>
-    import("@/components/ReadModeTools").then(
-      (module) => module.ReadModeTools,
-    ),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="space-y-3 sm:space-y-4" aria-hidden>
-        <div className="flex w-full flex-col items-stretch justify-center gap-3 sm:items-center sm:gap-4">
-          <div className="h-12 w-full rounded-full bg-stone-200/75 dark:bg-stone-800 sm:max-w-md" />
-        </div>
-      </div>
-    ),
   },
 );
 

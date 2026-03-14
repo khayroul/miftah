@@ -70,10 +70,6 @@ function modeHref(params: {
   return "/faham";
 }
 
-function isReadRoute(href: string): boolean {
-  return href.startsWith("/read/");
-}
-
 export function ModeNavigator({
   activeMode,
   fallbackReadPage = 1,
@@ -146,7 +142,6 @@ export function ModeNavigator({
           <Link
             key={item.value}
             href={href}
-            prefetch={!isReadRoute(href)}
             onClick={(e) => {
               saveReadMode(item.value);
               if (onModeClick) {
