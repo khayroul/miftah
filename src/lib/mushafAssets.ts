@@ -567,6 +567,15 @@ export function getRemoteWordImageUrl(wordId: number): string | null {
   return joinUrl(baseUrl, getWordFilename(wordId));
 }
 
+export function getWordImageClientSrc(wordId: number): string {
+  const remoteUrl = getRemoteWordImageUrl(wordId);
+  if (remoteUrl) {
+    return remoteUrl;
+  }
+
+  return `/api/mushaf/word/${wordId}?v=qcfv2`;
+}
+
 export async function resolveWordImageSource(
   wordId: number,
 ): Promise<MushafPageImageSource | null> {
