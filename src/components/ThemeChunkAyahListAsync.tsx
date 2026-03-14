@@ -146,7 +146,7 @@ export async function ThemeChunkAyahListAsync({
                         width={markerAsset.width}
                         height={markerAsset.height}
                         unoptimized
-                        className="mr-1 h-9 w-auto self-center object-contain sm:h-10"
+                        className="mr-1 h-11 w-auto self-center object-contain sm:h-12"
                       />
                     ) : (
                       <ThemeAyahMarker
