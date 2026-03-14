@@ -43,18 +43,26 @@ function ThemeChunkAyahListFallback({ ayat }: { ayat: ThemeAppearanceAyah[] }) {
   return (
     <div className="space-y-10 pb-8">
       {ayat.map((ayah) => (
-        <div key={ayah.id} className="flex flex-col gap-4">
-          <div className="rounded-2xl border border-stone-200/80 bg-stone-50/80 p-4 dark:border-stone-700/70 dark:bg-stone-900/40">
-            <div className="flex items-center justify-start gap-3" dir="rtl">
-              <ThemeAyahMarker ayahNumber={ayah.ayah_number} className="shrink-0" />
-              <div className="h-20 flex-1 rounded-xl bg-stone-200/80 dark:bg-stone-800/80" />
+        <div
+          key={ayah.id}
+          className="rounded-[1.9rem] border border-stone-200/80 bg-white/80 p-5 shadow-[0_28px_80px_-52px_rgba(28,25,23,0.16)] dark:border-stone-700/80 dark:bg-stone-900/55"
+        >
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="h-3 w-28 rounded-full bg-stone-200 dark:bg-stone-800" />
+                <div className="mt-3 h-4 w-44 rounded-full bg-stone-200/90 dark:bg-stone-800/90" />
+              </div>
+              <ThemeAyahMarker
+                ayahNumber={ayah.ayah_number}
+                className="shrink-0 rounded-full border border-stone-200/80 bg-white/85 px-3 py-2 dark:border-stone-700/80 dark:bg-stone-900/80"
+              />
             </div>
-            <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
+            <div className="h-28 rounded-[1.5rem] border border-stone-200/70 bg-stone-100/90 dark:border-stone-800/80 dark:bg-stone-800/70" />
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               Memuatkan paparan kata demi kata.
             </p>
-          </div>
-          <div>
-            <div className="rounded-xl border border-stone-100 bg-stone-50/50 p-4 dark:border-stone-800/80 dark:bg-stone-800/20 sm:p-5">
+            <div className="rounded-[1.4rem] border border-stone-100 bg-stone-50/50 p-4 dark:border-stone-800/80 dark:bg-stone-800/20 sm:p-5">
               <p className="text-[15px] leading-relaxed text-stone-700 dark:text-stone-300">
                 {ayah.display_bm ?? "Terjemahan BM belum tersedia."}
               </p>
