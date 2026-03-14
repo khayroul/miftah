@@ -16,6 +16,11 @@ const PAGE_IMAGE_DIRS = [
   path.resolve("test/golden/pages"),
 ];
 
+const AYAH_IMAGE_DIRS = [
+  path.resolve("assets/ayat"),
+  path.resolve("test/golden/ayat"),
+];
+
 const DEFAULT_WORDS_DIR = `assets${path.sep}words`;
 const LEGACY_WORDS_DIR = "words";
 const GOLDEN_WORDS_DIR = `test${path.sep}golden${path.sep}words`;
@@ -34,15 +39,18 @@ const MANIFEST_DIRS = [
 
 const DEFAULT_WIDTH = 1200;
 const DEFAULT_HEIGHT = 1920;
+const DEFAULT_AYAT_BUCKET = "mushaf-ayat";
 const DEFAULT_PAGES_BUCKET = "mushaf-pages";
 const DEFAULT_MANIFESTS_BUCKET = "mushaf-manifests";
 
 type BucketEnvName =
+  | "MUSHAF_AYAT_BUCKET"
   | "MUSHAF_PAGES_BUCKET"
   | "MUSHAF_MANIFESTS_BUCKET"
   | "MUSHAF_WORDS_BUCKET";
 
 type BaseUrlEnvName =
+  | "MUSHAF_AYAT_BASE_URL"
   | "MUSHAF_PAGES_BASE_URL"
   | "MUSHAF_MANIFESTS_BASE_URL"
   | "MUSHAF_WORDS_BASE_URL";
@@ -124,6 +132,10 @@ function getAyahManifestFilename(surah: number, ayah: number): string {
   return `ayah_${formatPageNumber(surah)}_${formatPageNumber(ayah)}.manifest.json`;
 }
 
+function getAyahFilename(surah: number, ayah: number): string {
+  return `ayah_${formatPageNumber(surah)}_${formatPageNumber(ayah)}.png`;
+}
+
 function getWordFilename(wordId: number): string {
   return `word_${formatWordNumber(wordId)}.png`;
 }
@@ -133,6 +145,14 @@ export function getQuranWordAudioUrl(surah: number, ayah: number, wordPosition: 
   const a = String(ayah).padStart(3, "0");
   const w = String(wordPosition).padStart(3, "0");
   return `https://audio.qurancdn.com/wbw/${s}_${a}_${w}.mp3`;
+}
+
+function getRemoteAyahBaseUrl(): string | null {
+  return getRemoteBaseUrl(
+    "MUSHAF_AYAT_BASE_URL",
+    "MUSHAF_AYAT_BUCKET",
+    DEFAULT_AYAT_BUCKET,
+  );
 }
 
 function getRemotePageBaseUrl(): string | null {
@@ -389,6 +409,81 @@ export async function resolvePageImagePath(
   variant: PageVariant = "page",
 ): Promise<string | null> {
   return findExistingFile(PAGE_IMAGE_DIRS, getPageFilename(pageNumber, variant));
+}
+
+export async function resolveAyahImagePath(
+  surah: number,
+  ayah: number,
+): Promise<string | null> {
+  if (
+    !Number.isInteger(surah) ||
+    !Number.isInteger(ayah) ||
+    surah <= 0 ||
+    ayah <= 0
+  ) {
+    return null;
+  }
+
+  return findExistingFile(AYAH_IMAGE_DIRS, getAyahFilename(surah, ayah));
+}
+
+export function getRemoteAyahImageUrl(
+  surah: number,
+  ayah: number,
+): string | null {
+  if (
+    !Number.isInteger(surah) ||
+    !Number.isInteger(ayah) ||
+    surah <= 0 ||
+    ayah <= 0
+  ) {
+    return null;
+  }
+
+  const baseUrl = getRemoteAyahBaseUrl();
+  if (!baseUrl) {
+    return null;
+  }
+
+  return joinUrl(baseUrl, getAyahFilename(surah, ayah));
+}
+
+export function getAyahImageClientSrc(surah: number, ayah: number): string {
+  const remoteUrl = getRemoteAyahImageUrl(surah, ayah);
+  if (remoteUrl) {
+    return remoteUrl;
+  }
+
+  return `/api/mushaf/ayah/${surah}/${ayah}?v=qcfv2`;
+}
+
+export async function resolveAyahImageSource(
+  surah: number,
+  ayah: number,
+): Promise<MushafPageImageSource | null> {
+  const remoteUrl = getRemoteAyahImageUrl(surah, ayah);
+  if (remoteUrl) {
+    return { kind: "remote", url: remoteUrl };
+  }
+
+  const localPath = await resolveAyahImagePath(surah, ayah);
+  if (!localPath) {
+    return null;
+  }
+
+  return { kind: "local", path: localPath };
+}
+
+export async function ayahImageExists(
+  surah: number,
+  ayah: number,
+): Promise<boolean> {
+  if (getRemoteAyahImageUrl(surah, ayah)) {
+    return true;
+  }
+
+  const localPath = await resolveAyahImagePath(surah, ayah);
+  return localPath !== null;
 }
 
 export function getRemotePageImageUrl(

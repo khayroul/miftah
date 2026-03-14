@@ -50,7 +50,7 @@ function ThemeChunkAyahListFallback({ ayat }: { ayat: ThemeAppearanceAyah[] }) {
               <div className="h-20 flex-1 rounded-xl bg-stone-200/80 dark:bg-stone-800/80" />
             </div>
             <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
-              Memuatkan paparan kata demi kata.
+              Memuatkan paparan ayat dan kata demi kata.
             </p>
           </div>
           <div>
