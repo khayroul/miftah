@@ -1,3 +1,8 @@
+import Image from "next/image";
+import {
+  getWordImageClientSrc,
+  loadAyahManifest,
+} from "@/lib/mushafAssets";
 import { getWordByWordForAyahIds } from "@/lib/queries";
 import type {
   AyahWordByWordEntry,
@@ -12,6 +17,46 @@ interface ThemeChunkAyahListAsyncProps {
   markerStyle: ThemeMarkerStyle;
 }
 
+interface AyahMarkerAsset {
+  ayahId: number;
+  height: number;
+  width: number;
+  wordId: number;
+}
+
+function resolveAyahMarkerAsset(
+  ayahId: number,
+  manifestWordsCount: number,
+  wbwWordsCount: number,
+  lastWord: {
+    height?: number;
+    width?: number;
+    wordId?: number;
+    wordPosition?: number;
+  } | null,
+): AyahMarkerAsset | null {
+  if (!lastWord?.wordId || !lastWord.width || !lastWord.height) {
+    return null;
+  }
+
+  // Some ayah manifests include extra micro-crops before the final marker,
+  // so the reliable signal is that the last crop sits beyond the WBW sequence.
+  if (
+    manifestWordsCount <= wbwWordsCount ||
+    !lastWord.wordPosition ||
+    lastWord.wordPosition <= wbwWordsCount
+  ) {
+    return null;
+  }
+
+  return {
+    ayahId,
+    height: lastWord.height,
+    width: lastWord.width,
+    wordId: lastWord.wordId,
+  };
+}
+
 export async function ThemeChunkAyahListAsync({
   ayat,
   markerStyle,
@@ -24,9 +69,43 @@ export async function ThemeChunkAyahListAsync({
     wbwByAyahId = {};
   }
 
+  const markerAssets = await Promise.all(
+    ayat.map(async (ayah) => {
+      const manifest = await loadAyahManifest(ayah.surah_id, ayah.ayah_number);
+      if (!manifest) {
+        return null;
+      }
+
+      const wbwWords = wbwByAyahId[ayah.id] ?? [];
+      const lastWord = manifest.words[manifest.words.length - 1] ?? null;
+
+      return resolveAyahMarkerAsset(
+        ayah.id,
+        manifest.words.length,
+        wbwWords.length,
+        lastWord
+          ? {
+              height: lastWord.height,
+              width: lastWord.width,
+              wordId: lastWord.wordId,
+              wordPosition: lastWord.wordPosition,
+            }
+          : null,
+      );
+    }),
+  );
+
+  const markerAssetByAyahId = new Map(
+    markerAssets
+      .filter((asset): asset is AyahMarkerAsset => asset !== null)
+      .map((asset) => [asset.ayahId, asset]),
+  );
+
   return (
     <div className="space-y-14 pb-8">
       {ayat.map((ayah) => {
+        const markerAsset = markerAssetByAyahId.get(ayah.id) ?? null;
+
         return (
           <article
             key={ayah.id}
@@ -67,13 +146,24 @@ export async function ThemeChunkAyahListAsync({
                         </span>
                       </div>
                     ))}
-                    <ThemeAyahMarker
-                      ayahNumber={ayah.ayah_number}
-                      variant={
-                        markerStyle === "auth-small" ? "ornate" : "clean"
-                      }
-                      className="mr-1 self-center"
-                    />
+                    {markerStyle === "auth-small" ? (
+                      markerAsset ? (
+                        <Image
+                          src={getWordImageClientSrc(markerAsset.wordId)}
+                          alt={`Tanda akhir ayat ${ayah.surah_id}:${ayah.ayah_number}`}
+                          width={markerAsset.width}
+                          height={markerAsset.height}
+                          unoptimized
+                          className="mr-1 h-11 w-auto self-center object-contain sm:h-12"
+                        />
+                      ) : null
+                    ) : (
+                      <ThemeAyahMarker
+                        ayahNumber={ayah.ayah_number}
+                        variant="clean"
+                        className="mr-1 self-center"
+                      />
+                    )}
                   </div>
                 </div>
               ) : (
