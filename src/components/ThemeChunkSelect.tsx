@@ -6,12 +6,14 @@ interface ThemeChunkSelectProps {
   surahNumber: number;
   selectedChunkIndex: number;
   chunks: Array<{ chunk_index: number; label: string }>;
+  markerStyle?: string;
 }
 
 export function ThemeChunkSelect({
   surahNumber,
   selectedChunkIndex,
   chunks,
+  markerStyle,
 }: ThemeChunkSelectProps) {
   const router = useRouter();
 
@@ -21,7 +23,11 @@ export function ThemeChunkSelect({
       defaultValue={String(selectedChunkIndex)}
       onChange={(e) => {
         const value = e.target.value;
-        router.push(`/read/surah/${surahNumber}/themes?chunk=${value}`);
+        const params = new URLSearchParams({ chunk: value });
+        if (markerStyle) {
+          params.set("marker", markerStyle);
+        }
+        router.push(`/read/surah/${surahNumber}/themes?${params.toString()}`);
       }}
       className="max-w-[12rem] h-10 truncate rounded-full border border-stone-200 bg-white px-3 pr-8 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 cursor-pointer"
     >

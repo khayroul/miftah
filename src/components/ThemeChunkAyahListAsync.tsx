@@ -10,8 +10,11 @@ import type {
 } from "@/lib/queries";
 import { ThemeAyahMarker } from "./ThemeAyahMarker";
 
+export type ThemeMarkerStyle = "auth-small" | "clean";
+
 interface ThemeChunkAyahListAsyncProps {
   ayat: ThemeAppearanceAyah[];
+  markerStyle: ThemeMarkerStyle;
 }
 
 interface AyahMarkerAsset {
@@ -51,6 +54,7 @@ function resolveAyahMarkerAsset(
 
 export async function ThemeChunkAyahListAsync({
   ayat,
+  markerStyle,
 }: ThemeChunkAyahListAsyncProps) {
   let wbwByAyahId: Record<number, AyahWordByWordEntry[]> = {};
 
@@ -135,14 +139,14 @@ export async function ThemeChunkAyahListAsync({
                         </span>
                       </div>
                     ))}
-                    {markerAsset ? (
+                    {markerStyle === "auth-small" && markerAsset ? (
                       <Image
                         src={getWordImageClientSrc(markerAsset.wordId)}
                         alt={`Tanda akhir ayat ${ayah.surah_id}:${ayah.ayah_number}`}
                         width={markerAsset.width}
                         height={markerAsset.height}
                         unoptimized
-                        className="mr-1 h-14 w-auto self-center object-contain sm:h-16"
+                        className="mr-1 h-9 w-auto self-center object-contain sm:h-10"
                       />
                     ) : (
                       <ThemeAyahMarker

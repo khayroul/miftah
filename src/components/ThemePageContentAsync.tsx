@@ -3,7 +3,10 @@ import Link from "next/link";
 import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import { ThemeActionPanel } from "@/components/ThemeActionPanel";
 import { ThemeAyahMarker } from "@/components/ThemeAyahMarker";
-import { ThemeChunkAyahListAsync } from "@/components/ThemeChunkAyahListAsync";
+import {
+  ThemeChunkAyahListAsync,
+  type ThemeMarkerStyle,
+} from "@/components/ThemeChunkAyahListAsync";
 import { ThemeChunkProgressTracker } from "@/components/ThemeChunkProgressTracker";
 import { ThemeChunkSelect } from "@/components/ThemeChunkSelect";
 import { ThemeJumpControls } from "@/components/ThemeJumpControls";
@@ -14,8 +17,24 @@ import type { ThemeAppearanceAyah, ThemeAppearanceChunk } from "@/lib/queries";
 
 interface ThemePageContentAsyncProps {
   rawChunkParam?: string | string[];
+  rawMarkerParam?: string | string[];
   surahMeta: Surah;
   surahNumber: number;
+}
+
+function resolveMarkerStyle(value?: string | string[]): ThemeMarkerStyle {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  return rawValue === "auth-small" ? "auth-small" : "clean";
+}
+
+function buildThemeHref(
+  surahNumber: number,
+  chunkIndex: number,
+  markerStyle: ThemeMarkerStyle,
+): string {
+  const params = new URLSearchParams({ chunk: String(chunkIndex) });
+  params.set("marker", markerStyle);
+  return `/read/surah/${surahNumber}/themes?${params.toString()}`;
 }
 
 function rangeLabel(
@@ -39,7 +58,11 @@ function chunkTitleBm(chunk: ThemeAppearanceChunk): string {
   });
 }
 
-function ThemeChunkAyahListFallback({ ayat }: { ayat: ThemeAppearanceAyah[] }) {
+function ThemeChunkAyahListFallback({
+  ayat,
+}: {
+  ayat: ThemeAppearanceAyah[];
+}) {
   return (
     <div className="space-y-10 pb-8">
       {ayat.map((ayah) => (
@@ -55,7 +78,7 @@ function ThemeChunkAyahListFallback({ ayat }: { ayat: ThemeAppearanceAyah[] }) {
               </div>
               <ThemeAyahMarker
                 ayahNumber={ayah.ayah_number}
-                className="shrink-0 rounded-full border border-stone-200/80 bg-white/85 px-3 py-2 dark:border-stone-700/80 dark:bg-stone-900/80"
+                className="shrink-0"
               />
             </div>
             <div className="h-28 rounded-[1.5rem] border border-stone-200/70 bg-stone-100/90 dark:border-stone-800/80 dark:bg-stone-800/70" />
@@ -137,6 +160,7 @@ function buildThemeSynopsis(chunk: ThemeAppearanceChunk): {
 
 export async function ThemePageContentAsync({
   rawChunkParam,
+  rawMarkerParam,
   surahMeta,
   surahNumber,
 }: ThemePageContentAsyncProps) {
@@ -183,13 +207,14 @@ export async function ThemePageContentAsync({
         : 1
       : 1;
   const selectedChunk = chunks[selectedChunkIndex - 1] ?? null;
+  const markerStyle = resolveMarkerStyle(rawMarkerParam);
   const hasNextThemeInSurah = selectedChunkIndex < chunks.length;
   const previousThemeHref =
     chunks.length > 0 && selectedChunkIndex > 1
-      ? `/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex - 1}`
+      ? buildThemeHref(surahNumber, selectedChunkIndex - 1, markerStyle)
       : null;
   const nextThemeHref = hasNextThemeInSurah
-    ? `/read/surah/${surahNumber}/themes?chunk=${selectedChunkIndex + 1}`
+    ? buildThemeHref(surahNumber, selectedChunkIndex + 1, markerStyle)
     : null;
   const selectedChunkSynopsis = selectedChunk
     ? buildThemeSynopsis(selectedChunk)
@@ -215,6 +240,7 @@ export async function ThemePageContentAsync({
           currentChunkIndex={selectedChunkIndex}
           currentChunkCount={chunks.length}
           surahOptions={surahOptions}
+          markerStyle={markerStyle}
         />
       ) : null}
 
@@ -272,10 +298,54 @@ export async function ThemePageContentAsync({
                   themeTitle={chunkTitleBm(selectedChunk)}
                 />
 
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200/80 bg-white/75 px-4 py-3 shadow-sm dark:border-stone-700/80 dark:bg-stone-900/55">
+                  <div>
+                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
+                      Gaya penanda ayat
+                    </p>
+                    <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
+                      Tukar antara Mushaf kecil dan Clean.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full border border-stone-200/80 bg-stone-50/80 p-1 dark:border-stone-700/80 dark:bg-stone-800/70">
+                    <Link
+                      href={buildThemeHref(
+                        surahNumber,
+                        selectedChunkIndex,
+                        "auth-small",
+                      )}
+                      className={`rounded-full px-3 py-2 text-sm font-medium transition ${
+                        markerStyle === "auth-small"
+                          ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+                          : "text-stone-600 hover:bg-white hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-stone-100"
+                      }`}
+                    >
+                      Mushaf kecil
+                    </Link>
+                    <Link
+                      href={buildThemeHref(
+                        surahNumber,
+                        selectedChunkIndex,
+                        "clean",
+                      )}
+                      className={`rounded-full px-3 py-2 text-sm font-medium transition ${
+                        markerStyle === "clean"
+                          ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+                          : "text-stone-600 hover:bg-white hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-stone-100"
+                      }`}
+                    >
+                      Clean
+                    </Link>
+                  </div>
+                </div>
+
                 <Suspense
                   fallback={<ThemeChunkAyahListFallback ayat={selectedChunk.ayat} />}
                 >
-                  <ThemeChunkAyahListAsync ayat={selectedChunk.ayat} />
+                  <ThemeChunkAyahListAsync
+                    ayat={selectedChunk.ayat}
+                    markerStyle={markerStyle}
+                  />
                 </Suspense>
               </article>
             ) : null}
@@ -299,6 +369,7 @@ export async function ThemePageContentAsync({
               <ThemeChunkSelect
                 surahNumber={surahNumber}
                 selectedChunkIndex={selectedChunkIndex}
+                markerStyle={markerStyle}
                 chunks={chunks.map((chunk) => ({
                   chunk_index: chunk.chunk_index,
                   label: chunkTitleBm(chunk),

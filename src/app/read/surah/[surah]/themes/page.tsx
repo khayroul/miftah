@@ -7,7 +7,7 @@ import type { Surah } from "@/types/database";
 
 interface SurahThemeAppearancePageProps {
   params: Promise<{ surah: string }>;
-  searchParams: Promise<{ chunk?: string | string[] }>;
+  searchParams: Promise<{ chunk?: string | string[]; marker?: string | string[] }>;
 }
 
 function parseSurahNumber(value: string): number | null {
@@ -91,6 +91,7 @@ export default async function SurahThemeAppearancePage({
       <Suspense fallback={<ThemePageContentFallback />}>
         <ThemePageContentAsync
           rawChunkParam={query.chunk}
+          rawMarkerParam={query.marker}
           surahMeta={surahMeta}
           surahNumber={surahNumber}
         />
