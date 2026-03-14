@@ -4,11 +4,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
 import { trackReadAudioTelemetry } from "@/lib/readAudioTelemetry";
 import { resolveReadAudioLoopAction } from "@/lib/readAudioLoop";
+import { resolveReadAudioPageStartFromAyah } from "@/lib/readAudioStart";
 
 interface ReadAudioDockProps {
   autoplayRequestKey?: number;
   pauseRequestKey?: number;
   restartRequestKey?: number;
+  startFromAyahKey?: string | null;
+  startFromAyahRequestKey?: number;
   tracks: ReadAudioTrack[];
   playableAyahKeys?: string[] | null;
   visible?: boolean;
@@ -128,6 +131,8 @@ export function ReadAudioDock({
   autoplayRequestKey = 0,
   pauseRequestKey = 0,
   restartRequestKey = 0,
+  startFromAyahKey = null,
+  startFromAyahRequestKey = 0,
   tracks: sourceTracks,
   playableAyahKeys = null,
   visible,
@@ -280,6 +285,53 @@ export function ReadAudioDock({
       setIsPlaying(false);
     });
   }, [canPlay, normalizedRangeStart, restartRequestKey, safeIndex]);
+
+  useEffect(() => {
+    if (startFromAyahRequestKey === 0 || !startFromAyahKey || tracks.length === 0) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const selection = resolveReadAudioPageStartFromAyah(tracks, startFromAyahKey);
+      if (!selection) {
+        return;
+      }
+
+      setRangePreset("page");
+      setRangeStartIndex(selection.rangeStartIndex);
+      setRangeEndIndex(selection.rangeEndIndex);
+      setRepeatEachStep(0);
+      setRepeatSetStep(0);
+
+      const audio = audioRef.current;
+      const isSameTrack =
+        safeIndex === selection.currentIndex && currentTrack?.key === startFromAyahKey;
+
+      if (isSameTrack && audio) {
+        audio.currentTime = 0;
+        audio.play().then(() => {
+          setIsPlaying(true);
+        }).catch(() => {
+          setIsPlaying(false);
+        });
+        return;
+      }
+
+      shouldAutoplayRef.current = true;
+      setCurrentIndex(selection.currentIndex);
+      setIsPlaying(false);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [
+    currentTrack?.key,
+    safeIndex,
+    startFromAyahKey,
+    startFromAyahRequestKey,
+    tracks,
+  ]);
 
   const rangeSummary = useMemo(() => {
     const startTrack = tracks[normalizedRangeStart];

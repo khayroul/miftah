@@ -33,6 +33,7 @@ interface ReadAudioContextValue {
   pauseAudioPlayback: () => void;
   requestAudioAutoplay: () => void;
   restartAudioPlayback: () => void;
+  startAudioFromAyah: (ayahKey: string) => void;
   setPlayableAyahKeys: (ayahKeys: string[] | null) => void;
   setAudioVisible: (next: boolean) => void;
   syncAudioTracks: (pageNumber: number, tracks: ReadAudioTrack[]) => void;
@@ -51,6 +52,8 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
   const [autoplayRequestKey, setAutoplayRequestKey] = useState(0);
   const [pauseRequestKey, setPauseRequestKey] = useState(0);
   const [restartRequestKey, setRestartRequestKey] = useState(0);
+  const [startFromAyahKey, setStartFromAyahKey] = useState<string | null>(null);
+  const [startFromAyahRequestKey, setStartFromAyahRequestKey] = useState(0);
   const [playableAyahKeys, setPlayableAyahKeysState] = useState<string[] | null>(
     null,
   );
@@ -109,6 +112,16 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
     setRestartRequestKey((current) => current + 1);
   }, []);
 
+  const startAudioFromAyah = useCallback((ayahKey: string) => {
+    if (!ayahKey) {
+      return;
+    }
+
+    setStartFromAyahKey(ayahKey);
+    setIsAudioVisible(true);
+    setStartFromAyahRequestKey((current) => current + 1);
+  }, []);
+
   useEffect(() => {
     if (!isAudioVisible || tracks.length === 0) {
       return;
@@ -132,6 +145,7 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
       pauseAudioPlayback,
       requestAudioAutoplay,
       restartAudioPlayback,
+      startAudioFromAyah,
       setPlayableAyahKeys,
       setAudioVisible,
       syncAudioTracks,
@@ -146,6 +160,7 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
       pauseAudioPlayback,
       requestAudioAutoplay,
       restartAudioPlayback,
+      startAudioFromAyah,
       setPlayableAyahKeys,
       setAudioVisible,
       syncAudioTracks,
@@ -161,6 +176,8 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
           autoplayRequestKey={autoplayRequestKey}
           pauseRequestKey={pauseRequestKey}
           restartRequestKey={restartRequestKey}
+          startFromAyahKey={startFromAyahKey}
+          startFromAyahRequestKey={startFromAyahRequestKey}
           tracks={tracks}
           playableAyahKeys={playableAyahKeys}
           visible

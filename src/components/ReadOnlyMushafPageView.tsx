@@ -30,6 +30,7 @@ interface ReadOnlyMushafPageViewProps {
   onNavigatePrevPage?: () => void;
   onNavigateNextPage?: () => void;
   onCanvasTap?: () => void;
+  onAyahAudioTap?: (ayahKey: string) => void;
   audioDiscovered?: boolean;
   onAudioDiscovered?: () => void;
   onFullImageReadyChange?: (ready: boolean) => void;
@@ -79,6 +80,7 @@ export function ReadOnlyMushafPageView({
   onNavigatePrevPage,
   onNavigateNextPage,
   onCanvasTap,
+  onAyahAudioTap,
   audioDiscovered = true,
   onAudioDiscovered,
   onFullImageReadyChange,
@@ -98,6 +100,48 @@ export function ReadOnlyMushafPageView({
   const canShowFullImage = imageAvailable && !fullImageFailed;
   const canShowThumbnail = thumbnailAvailable && !thumbnailFailed;
   const canShowAnyImage = canShowFullImage || canShowThumbnail;
+  const ayahBoxes = useMemo(() => {
+    const map = new Map<string, AyahBoundingBox>();
+
+    for (const word of words) {
+      const ayahKey = getAyahKeyFromWord(word);
+      if (!ayahKey) {
+        continue;
+      }
+
+      const current = map.get(ayahKey);
+      if (!current) {
+        map.set(ayahKey, {
+          x: word.x,
+          y: word.y,
+          width: word.width,
+          height: word.height,
+        });
+        continue;
+      }
+
+      const minX = Math.min(current.x, word.x);
+      const minY = Math.min(current.y, word.y);
+      const maxX = Math.max(current.x + current.width, word.x + word.width);
+      const maxY = Math.max(current.y + current.height, word.y + word.height);
+
+      map.set(ayahKey, {
+        x: minX,
+        y: minY,
+        width: maxX - minX,
+        height: maxY - minY,
+      });
+    }
+
+    return Array.from(map.entries())
+      .map(([key, box]) => ({ key, box }))
+      .sort((a, b) => {
+        if (a.box.y !== b.box.y) {
+          return a.box.y - b.box.y;
+        }
+        return a.box.x - b.box.x;
+      });
+  }, [words]);
 
   const activePlaybackAyahSegments = useMemo(() => {
     if (!activePlaybackAyahKey || !fullImageReady) {
@@ -165,7 +209,13 @@ export function ReadOnlyMushafPageView({
   }, [activePlaybackAyahKey, fullImageReady, imageHeight, imageWidth, words]);
 
   useEffect(() => {
-    setShowDiscoveryHint(!audioDiscovered);
+    const frame = window.requestAnimationFrame(() => {
+      setShowDiscoveryHint(!audioDiscovered);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
   }, [audioDiscovered]);
 
   useEffect(() => {
@@ -302,6 +352,29 @@ export function ReadOnlyMushafPageView({
                 }}
               />
             ))}
+            {fullImageReady
+              ? ayahBoxes.map(({ key, box }) => (
+                  <button
+                    key={`ayah-audio-${key}`}
+                    type="button"
+                    aria-label={`Main ayat ${key}`}
+                    title={`Main ayat ${key}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onAudioDiscovered?.();
+                      setShowDiscoveryHint(false);
+                      onAyahAudioTap?.(key);
+                    }}
+                    className="absolute cursor-pointer bg-transparent focus-visible:bg-sky-300/15 focus-visible:outline-none"
+                    style={{
+                      left: percent(box.x, imageWidth),
+                      top: percent(box.y, imageHeight),
+                      width: percent(box.width, imageWidth),
+                      height: percent(box.height, imageHeight),
+                    }}
+                  />
+                ))
+              : null}
           </>
         ) : (
           <div className="flex h-full items-center justify-center px-6 text-center text-sm text-stone-600 dark:text-stone-300">
@@ -320,7 +393,7 @@ export function ReadOnlyMushafPageView({
         </p>
       ) : (
         <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
-          Mod Baca: Leret untuk tukar halaman. <strong>Ketik halaman atau gunakan butang Audio untuk dengar bacaan.</strong>
+          Mod Baca: Leret untuk tukar halaman. <strong>Ketik ayat untuk mula bacaan dari situ, atau gunakan butang Audio.</strong>
         </p>
       )}
     </section>

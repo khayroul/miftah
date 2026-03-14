@@ -232,6 +232,7 @@ export function ReadPageWorkspace({
     pauseAudioPlayback,
     requestAudioAutoplay,
     restartAudioPlayback,
+    startAudioFromAyah,
     setPlayableAyahKeys,
     setAudioVisible,
     syncAudioTracks,
@@ -698,6 +699,14 @@ export function ReadPageWorkspace({
     toggleAudioVisibility();
     markAudioDiscovered();
   }, [audioEnabledForMode, markAudioDiscovered, toggleAudioVisibility]);
+  const handleAyahAudioTap = useCallback((ayahKey: string) => {
+    if (!audioEnabledForMode) {
+      return;
+    }
+
+    startAudioFromAyah(ayahKey);
+    markAudioDiscovered();
+  }, [audioEnabledForMode, markAudioDiscovered, startAudioFromAyah]);
   const handleMemorizeChunkListen = useCallback(() => {
     setAudioVisible(true);
     restartAudioPlayback();
@@ -906,6 +915,7 @@ export function ReadPageWorkspace({
             onNavigatePrevPage={handleNavigatePrevPage}
             onNavigateNextPage={handleNavigateNextPage}
             onCanvasTap={handleMushafTap}
+            onAyahAudioTap={audioEnabledForMode ? handleAyahAudioTap : undefined}
             audioDiscovered={audioDiscovered}
             onAudioDiscovered={markAudioDiscovered}
             onFullImageReadyChange={setIsCurrentPageImageReady}
@@ -928,6 +938,7 @@ export function ReadPageWorkspace({
             onNavigatePrevPage={handleNavigatePrevPage}
             onNavigateNextPage={handleNavigateNextPage}
             onCanvasTap={handleMushafTap}
+            onAyahAudioTap={audioEnabledForMode ? handleAyahAudioTap : undefined}
             audioDiscovered={audioDiscovered}
             onAudioDiscovered={markAudioDiscovered}
             onFullImageReadyChange={setIsCurrentPageImageReady}

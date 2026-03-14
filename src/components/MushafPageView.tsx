@@ -46,6 +46,7 @@ interface MushafPageViewProps {
   onNavigatePrevPage?: () => void;
   onNavigateNextPage?: () => void;
   onCanvasTap?: () => void;
+  onAyahAudioTap?: (ayahKey: string) => void;
   audioDiscovered?: boolean;
   onAudioDiscovered?: () => void;
   onFullImageReadyChange?: (ready: boolean) => void;
@@ -287,6 +288,7 @@ export function MushafPageView({
   onNavigatePrevPage,
   onNavigateNextPage,
   onCanvasTap,
+  onAyahAudioTap,
   audioDiscovered = true,
   onAudioDiscovered,
   onFullImageReadyChange,
@@ -694,6 +696,29 @@ export function MushafPageView({
     const allPageKeys = ayahLayoutEntries.map((entry) => entry.key);
     return allPageKeys.length > 0 ? allPageKeys : null;
   }, [ayahLayoutEntries, hifzRevealByThirdsEnabled, hifzRevealContext, mode]);
+  const audioTapAyahTargets = useMemo(() => {
+    if (!fullImageReady || !onAyahAudioTap || modeAllowsWordInteraction) {
+      return [] as typeof ayahOverlayTargets;
+    }
+
+    if (mode !== "read" && mode !== "hifz") {
+      return [] as typeof ayahOverlayTargets;
+    }
+
+    if (mode === "hifz" && hifzPlayableAyahKeys) {
+      const playableAyahKeySet = new Set(hifzPlayableAyahKeys);
+      return ayahOverlayTargets.filter(({ key }) => playableAyahKeySet.has(key));
+    }
+
+    return ayahOverlayTargets;
+  }, [
+    ayahOverlayTargets,
+    fullImageReady,
+    hifzPlayableAyahKeys,
+    mode,
+    modeAllowsWordInteraction,
+    onAyahAudioTap,
+  ]);
   const canMarkHifz = mode === "hifz" && remainingAyahKeys.length > 0;
   const showHifzSessionControls =
     mode === "hifz" && canShowAnyImage && hifzRevealByThirdsEnabled;
@@ -1146,6 +1171,30 @@ export function MushafPageView({
                   />
                 ))
               : null}
+            {audioTapAyahTargets.map(({ key, box, detail }) => (
+              <button
+                key={`ayah-audio-${key}`}
+                type="button"
+                aria-label={`Main ayat ${key}`}
+                title={`Main ayat ${detail?.label ?? key}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onAudioDiscovered?.();
+                  setShowDiscoveryHint(false);
+                  setMarkMemorizedError(null);
+                  setSelectedAyahKey(null);
+                  setSelectedWord(null);
+                  onAyahAudioTap?.(key);
+                }}
+                className="absolute cursor-pointer bg-transparent focus-visible:bg-sky-300/15 focus-visible:outline-none"
+                style={{
+                  left: percent(box.x, imageWidth),
+                  top: percent(box.y, imageHeight),
+                  width: percent(box.width, imageWidth),
+                  height: percent(box.height, imageHeight),
+                }}
+              />
+            ))}
             {!fullImageReady && canShowFullImage ? (
               <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-4">
                 <span className="rounded-full border border-stone-300 bg-white/90 px-3 py-1 text-sm text-stone-600 shadow-sm dark:border-stone-700 dark:bg-stone-900/90 dark:text-stone-300">
@@ -1249,7 +1298,7 @@ export function MushafPageView({
         </p>
       ) : mode === "read" ? (
         <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
-          Mod Baca: Leret untuk tukar halaman. <strong>Ketik halaman atau gunakan butang Audio untuk dengar bacaan.</strong>
+          Mod Baca: Leret untuk tukar halaman. <strong>Ketik ayat untuk mula bacaan dari situ, atau gunakan butang Audio.</strong>
         </p>
       ) : mode === "hifz" ? (
         <p className="text-[15px] text-teal-700 sm:text-base dark:text-teal-300">
