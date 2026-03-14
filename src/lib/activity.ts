@@ -191,7 +191,9 @@ export async function getUserStreak(userId: string) {
   return deriveStreakFallback(userId);
 }
 
-export async function getUserDailyGoal(userId: string) {
+export async function getUserDailyGoal(
+  userId: string,
+): Promise<{ count: number; type: DailyGoalType }> {
   const { data, error } = await supabaseServer
     .from("profiles")
     .select("daily_goal_count, daily_goal_type")
@@ -351,9 +353,6 @@ export async function getDailyActivityCount(
     const meta = (todayData.metadata ?? {}) as ActivityMetadata;
     if (type === "read" && Array.isArray(meta.pages)) {
       return meta.pages.length;
-    }
-    if (type === "hifz" && Array.isArray(meta.ayat)) {
-      return meta.ayat.length;
     }
   }
 

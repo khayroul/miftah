@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  areAllProgressIdsRated,
   buildQueuePageHref,
   loadQueue,
   advanceQueue,
@@ -23,6 +24,8 @@ interface HifzInlineRatingProps {
 interface FlowErrorState {
   message: string;
   requiresSignIn?: boolean;
+  continueHref?: string;
+  continueLabel?: string;
 }
 
 interface RateBatchResponse {
@@ -40,7 +43,21 @@ export function HifzInlineRating({
   const [submitting, setSubmitting] = useState(false);
   const [complete, setComplete] = useState(false);
   const [errorState, setErrorState] = useState<FlowErrorState | null>(null);
-  const initialFlowError = useMemo(() => {
+  const buildAlreadyRatedState = useCallback(
+    (queuePageIndex: number, activePageNumber: number | undefined): FlowErrorState => ({
+      message:
+        activePageNumber && activePageNumber !== pageNumber
+          ? "Halaman ini sudah ditandakan dalam sesi semasa. Sambung pada halaman aktif untuk elak rekod berganda."
+          : "Halaman ini sudah ditandakan dalam sesi semasa.",
+      continueHref:
+        activePageNumber && activePageNumber !== pageNumber
+          ? buildQueuePageHref(flowType, activePageNumber, queuePageIndex)
+          : undefined,
+      continueLabel: "Teruskan Sesi",
+    }),
+    [flowType, pageNumber],
+  );
+  const initialFlowError = useMemo<FlowErrorState | null>(() => {
     const queue = loadQueue(flowType);
     if (!queue) {
       return {
@@ -55,9 +72,16 @@ export function HifzInlineRating({
       };
     }
 
+    if (areAllProgressIdsRated(queue, pageItems.map((item) => item.progressId))) {
+      return buildAlreadyRatedState(
+        queue.currentPageIndex,
+        queue.pageOrder[queue.currentPageIndex],
+      );
+    }
+
     return null;
-  }, [flowType, pageNumber]);
-  const displayedError = errorState ?? initialFlowError;
+  }, [buildAlreadyRatedState, flowType, pageNumber]);
+  const displayedError: FlowErrorState | null = errorState ?? initialFlowError;
 
   const handleRate = useCallback(
     async (rating: 1 | 3) => {
@@ -78,6 +102,17 @@ export function HifzInlineRating({
           setErrorState({
             message: "Halaman ini tiada dalam sesi hafalan semasa. Kembali ke Hafal untuk sambung semula.",
           });
+          setSubmitting(false);
+          return;
+        }
+
+        if (areAllProgressIdsRated(queue, pageItems.map((item) => item.progressId))) {
+          setErrorState(
+            buildAlreadyRatedState(
+              queue.currentPageIndex,
+              queue.pageOrder[queue.currentPageIndex],
+            ),
+          );
           setSubmitting(false);
           return;
         }
@@ -150,7 +185,7 @@ export function HifzInlineRating({
         setSubmitting(false);
       }
     },
-    [flowType, pageNumber, router],
+    [buildAlreadyRatedState, flowType, pageNumber, router],
   );
 
   if (!visible && !complete && !displayedError) return null;
@@ -184,6 +219,14 @@ export function HifzInlineRating({
           {displayedError.message}
         </p>
         <div className="flex justify-center gap-3">
+          {displayedError.continueHref ? (
+            <a
+              href={displayedError.continueHref}
+              className="inline-flex items-center rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500"
+            >
+              {displayedError.continueLabel ?? "Teruskan Sesi"}
+            </a>
+          ) : null}
           {displayedError.requiresSignIn ? (
             <a
               href={buildSignInPath("/hifz")}

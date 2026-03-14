@@ -71,7 +71,7 @@ export interface HomeDashboardSnapshot {
   activity: {
     streak: number;
     dailyGoalCount: number;
-    dailyGoalType: string;
+    dailyGoalType: DailyGoalType;
     legacyHifzGoalRecommendation: {
       currentAyahGoal: number;
       suggestedPageGoal: number;
@@ -434,7 +434,7 @@ async function loadActivitySnapshot(userId: string) {
         ? {
             currentAyahGoal: goal.count,
             suggestedPageGoal: recommendHifzPageGoalFromAyahGoal(goal.count),
-            targetType: "hifz_pages",
+            targetType: "hifz_pages" as const,
           }
         : null,
     todayProgress,
