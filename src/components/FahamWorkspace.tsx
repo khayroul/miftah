@@ -800,28 +800,26 @@ export function FahamWorkspace({
         </section>
       ) : null}
 
-      <section className="grid gap-3 sm:grid-cols-2">
+      <section className="grid grid-cols-2 gap-2 sm:gap-3">
         <MotivationMetricCard
           accent="amber"
-          helper="Perkataan dalam cap aktif yang anda sudah jumpa daripada baca, tema, atau hafal."
-          label="Perkataan Ditemui"
+          label="Ditemui"
           progress={foundShare}
           progressLabel={
             foundCap > 0
-              ? `${Math.round(foundShare * 100)}% daripada cap aktif ${formatMetricValue(foundCap)}`
-              : "Belum ada cap aktif"
+              ? `${formatMetricValue(foundCount)}/${formatMetricValue(foundCap)} cap`
+              : "Tiada cap"
           }
           value={formatMetricValue(hasLiveStats ? foundCount : null)}
         />
         <MotivationMetricCard
           accent="emerald"
-          helper="Perkataan yang sudah benar-benar kuat dan kini masuk fasa pengukuhan."
-          label="Perkataan Dikuasai"
+          label="Dikuasai"
           progress={masteredShare}
           progressLabel={
             foundCount > 0
-              ? `${Math.round(masteredShare * 100)}% daripada ${formatMetricValue(foundCount)} perkataan ditemui`
-              : "Perkataan dikuasai akan naik selepas ada perkataan ditemui"
+              ? `${formatMetricValue(masteredCount)}/${formatMetricValue(foundCount)} ditemui`
+              : "Belum mula"
           }
           value={formatMetricValue(hasLiveStats ? masteredCount : null)}
         />
@@ -1318,14 +1316,12 @@ export function FahamWorkspace({
 
 function MotivationMetricCard({
   accent,
-  helper,
   label,
   progress,
   progressLabel,
   value,
 }: {
   accent: "amber" | "emerald";
-  helper: string;
   label: string;
   progress: number;
   progressLabel: string;
@@ -1357,40 +1353,32 @@ function MotivationMetricCard({
         };
 
   return (
-    <section className={`rounded-[1.75rem] border p-5 shadow-[0_20px_60px_-44px_rgba(41,37,36,0.55)] ${palette.card}`}>
+    <section className={`min-w-0 rounded-[1.5rem] border p-4 shadow-[0_20px_60px_-44px_rgba(41,37,36,0.55)] sm:p-5 ${palette.card}`}>
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] ${palette.badge}`}>
-            Momentum
-          </span>
-          <p className="mt-3 text-sm font-bold uppercase tracking-[0.24em] text-stone-500 sm:text-base dark:text-stone-400">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-500 sm:text-xs dark:text-stone-400">
             {label}
           </p>
-          <p className={`mt-2 text-4xl font-semibold tracking-tight sm:text-5xl ${palette.value}`}>
+          <p className={`mt-2 text-3xl font-semibold tracking-tight sm:text-4xl ${palette.value}`}>
             {value}
           </p>
         </div>
 
-        <div className={`rounded-full border px-3 py-1 text-sm font-semibold shadow-sm ${palette.progressBadge}`}>
+        <div className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm sm:px-3 sm:text-sm ${palette.progressBadge}`}>
           {Math.round(progress * 100)}%
         </div>
       </div>
 
-      <p className="mt-3 text-sm leading-relaxed text-stone-700 sm:text-base dark:text-stone-200">
-        {helper}
-      </p>
-
       <div className="mt-4">
-        <div className="flex items-center justify-between text-xs font-medium text-stone-600 dark:text-stone-300">
-          <span>Progress</span>
-          <span>{progressLabel}</span>
-        </div>
-        <div className={`mt-1.5 h-2 rounded-full ${palette.progressTrack}`}>
+        <div className={`h-2 rounded-full ${palette.progressTrack}`}>
           <div
             className={`h-full rounded-full transition-[width] duration-500 ${palette.progressBar}`}
             style={{ width: `${Math.min(100, Math.max(0, progress * 100))}%` }}
           />
         </div>
+        <p className="mt-2 text-[11px] font-medium leading-tight text-stone-600 sm:text-xs dark:text-stone-300">
+          {progressLabel}
+        </p>
       </div>
     </section>
   );
