@@ -4,6 +4,8 @@ interface ThemeAyahMarkerProps {
   variant?: "clean" | "ornate";
 }
 
+const QURAN_IOS_AYAH_END_MARKER_SRC = "/mushaf/ayah-end-marker-quran-ios.png";
+
 function toArabicIndicNumerals(value: number): string {
   return String(value).replaceAll(/\d/g, (digit) =>
     String.fromCharCode(0x0660 + Number.parseInt(digit, 10)),
@@ -18,21 +20,29 @@ export function ThemeAyahMarker({
   if (variant === "ornate") {
     return (
       <span
-        className={`relative inline-flex h-20 w-20 items-center justify-center text-stone-700 dark:text-stone-200 sm:h-24 sm:w-24 ${className}`.trim()}
+        className={`relative inline-flex h-11 w-11 items-center justify-center text-[#004D40] dark:text-[#039F85] sm:h-12 sm:w-12 ${className}`.trim()}
         aria-label={`Ayat ${ayahNumber}`}
         title={`Ayat ${ayahNumber}`}
+        lang="ar"
+        dir="rtl"
       >
         <span
           aria-hidden="true"
-          className="font-arabic text-[5rem] leading-none sm:text-[6rem]"
-        >
-          ۝
-        </span>
+          className="absolute inset-0 bg-current"
+          style={{
+            WebkitMaskImage: `url(${QURAN_IOS_AYAH_END_MARKER_SRC})`,
+            maskImage: `url(${QURAN_IOS_AYAH_END_MARKER_SRC})`,
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+            WebkitMaskPosition: "center",
+            maskPosition: "center",
+            WebkitMaskSize: "contain",
+            maskSize: "contain",
+          }}
+        />
         <span
           aria-hidden="true"
-          lang="ar"
-          dir="rtl"
-          className="font-arabic absolute inset-0 flex items-center justify-center text-[1.55rem] font-semibold leading-none sm:text-[1.85rem]"
+          className="relative translate-y-[0.5px] text-[1.02rem] font-semibold leading-none sm:text-[1.14rem]"
         >
           {toArabicIndicNumerals(ayahNumber)}
         </span>
