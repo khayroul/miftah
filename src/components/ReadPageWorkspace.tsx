@@ -18,18 +18,24 @@ import { HifzInlineRating } from "@/components/HifzInlineRating";
 import { HifzMemorizeStepper } from "@/components/HifzMemorizeStepper";
 import { useReadAudio } from "@/components/ReadAudioProvider";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
+import type { HifzQueueResponse } from "@/lib/hifz/queue";
 import {
   buildQueuePageHref,
-  getAdjacentQueuePage,
-  getQueuePagePointer,
+  findQueuePageIndex,
+  getAdjacentQueuePageFromQueue,
+  loadQueue,
+  saveQueueState,
   setCurrentPageIndex,
+  type HifzFlowType,
+  type HifzQueuePagePointer,
+  type HifzSessionQueue,
 } from "@/lib/hifz/sessionQueue";
+import { buildSignInPath } from "@/lib/auth";
 import { rememberLastReadPage } from "@/lib/readingProgressStorage";
 import { useReadMode } from "@/lib/useReadMode";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { JuzJumpTarget, SurahJumpTarget } from "@/lib/readNavigation";
 import type { ReadMode } from "@/lib/readMode";
-import type { HifzFlowType } from "@/lib/hifz/sessionQueue";
 import type { MushafPageManifest, MushafWordTranslationMap } from "@/types/mushaf";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -134,6 +140,41 @@ function scheduleIdleTask(callback: () => void, timeoutMs = 1200): () => void {
   };
 }
 
+function resolveQueueIndex(
+  queue: Pick<HifzSessionQueue, "pageOrder">,
+  pageNumber: number,
+  queueIndexFromUrl: number | null,
+): number | null {
+  if (
+    queueIndexFromUrl !== null &&
+    queue.pageOrder[queueIndexFromUrl] === pageNumber
+  ) {
+    return queueIndexFromUrl;
+  }
+
+  const index = findQueuePageIndex(queue, pageNumber);
+  return index >= 0 ? index : null;
+}
+
+function toQueueState(
+  flow: HifzFlowType,
+  response: HifzQueueResponse,
+  currentPageIndex: number,
+): HifzSessionQueue {
+  return {
+    type: flow,
+    items: response.items,
+    pageOrder: response.pageOrder,
+    currentPageIndex,
+    rated: [],
+  };
+}
+
+interface HifzQueueRecoveryError {
+  message: string;
+  requiresSignIn?: boolean;
+}
+
 export function ReadPageWorkspace({
   pageNumber,
   imageAvailable,
@@ -159,6 +200,7 @@ export function ReadPageWorkspace({
 }: ReadPageWorkspaceProps) {
   const lastSyncedPageRef = useRef<number | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     activePlaybackAyahKey,
     isAudioVisible,
@@ -198,24 +240,47 @@ export function ReadPageWorkspace({
   const [memorizeChunkAyahKeys, setMemorizeChunkAyahKeys] = useState<string[] | null>(
     null,
   );
+  const [nextQueuePage, setNextQueuePage] =
+    useState<HifzQueuePagePointer | null>(null);
+  const [previousQueuePage, setPreviousQueuePage] =
+    useState<HifzQueuePagePointer | null>(null);
+  const [isRecoveringHifzQueue, setIsRecoveringHifzQueue] = useState(false);
+  const [hifzQueueRecoveryError, setHifzQueueRecoveryError] =
+    useState<HifzQueueRecoveryError | null>(null);
+  const hifzQueueIndex = useMemo(() => {
+    const rawValue = searchParams.get("qi");
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsed = Number.parseInt(rawValue, 10);
+    if (!Number.isInteger(parsed) || parsed < 0) {
+      return null;
+    }
+
+    return parsed;
+  }, [searchParams]);
   const [memorizeViewportInset, setMemorizeViewportInset] = useState(0);
   const contentBottomPadding =
     hifzFlow === "memorize" && memorizeViewportInset > 0
       ? memorizeViewportInset + 16
       : undefined;
-  const previousQueuePage = useMemo(
-    () =>
-      hifzFlow === null ? null : getAdjacentQueuePage(hifzFlow, pageNumber, -1),
-    [hifzFlow, pageNumber],
-  );
-  const nextQueuePage = useMemo(
-    () =>
-      hifzFlow === null ? null : getAdjacentQueuePage(hifzFlow, pageNumber, 1),
-    [hifzFlow, pageNumber],
-  );
-  const currentQueuePage = useMemo(
-    () => (hifzFlow === null ? null : getQueuePagePointer(hifzFlow, pageNumber)),
-    [hifzFlow, pageNumber],
+
+  const applyQueuePointers = useCallback(
+    (
+      queue: Pick<HifzSessionQueue, "pageOrder">,
+      flow: HifzFlowType,
+      queuePageIndex: number,
+    ) => {
+      setPreviousQueuePage(
+        getAdjacentQueuePageFromQueue(queue, pageNumber, -1),
+      );
+      setNextQueuePage(
+        getAdjacentQueuePageFromQueue(queue, pageNumber, 1),
+      );
+      setCurrentPageIndex(flow, queuePageIndex);
+    },
+    [pageNumber],
   );
 
   const markAudioDiscovered = useCallback(() => {
@@ -265,6 +330,107 @@ export function ReadPageWorkspace({
   useEffect(() => {
     rememberLastReadPage(pageNumber);
   }, [pageNumber]);
+
+  useEffect(() => {
+    if (hifzFlow === null) {
+      setNextQueuePage(null);
+      setPreviousQueuePage(null);
+      setIsRecoveringHifzQueue(false);
+      setHifzQueueRecoveryError(null);
+      return;
+    }
+
+    const existingQueue = loadQueue(hifzFlow);
+    const existingQueueIndex = existingQueue
+      ? resolveQueueIndex(existingQueue, pageNumber, hifzQueueIndex)
+      : null;
+    if (existingQueue && existingQueueIndex !== null) {
+      applyQueuePointers(existingQueue, hifzFlow, existingQueueIndex);
+      setIsRecoveringHifzQueue(false);
+      setHifzQueueRecoveryError(null);
+      return;
+    }
+
+    const abortController = new AbortController();
+    setIsRecoveringHifzQueue(true);
+    setHifzQueueRecoveryError(null);
+
+    void fetch(`/api/hifz/queue?type=${hifzFlow}`, {
+      cache: "no-store",
+      signal: abortController.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw { status: response.status };
+        }
+
+        return (await response.json()) as HifzQueueResponse;
+      })
+      .then((queueResponse) => {
+        const queuePageIndex = resolveQueueIndex(
+          queueResponse,
+          pageNumber,
+          hifzQueueIndex,
+        );
+        if (queuePageIndex === null) {
+          setPreviousQueuePage(null);
+          setNextQueuePage(null);
+          setHifzQueueRecoveryError({
+            message: "Sesi hafalan semasa sudah berubah. Kembali ke Hafal untuk buka semula susunan hari ini.",
+          });
+          return;
+        }
+
+        const recoveredQueue = saveQueueState(
+          hifzFlow,
+          queueResponse.items,
+          queuePageIndex,
+        );
+        applyQueuePointers(
+          recoveredQueue ?? toQueueState(hifzFlow, queueResponse, queuePageIndex),
+          hifzFlow,
+          queuePageIndex,
+        );
+      })
+      .catch((error: unknown) => {
+        if (
+          error instanceof DOMException &&
+          error.name === "AbortError"
+        ) {
+          return;
+        }
+
+        console.error("[ReadPageWorkspace] Failed to recover hifz queue", error);
+        setPreviousQueuePage(null);
+        setNextQueuePage(null);
+        const status =
+          typeof error === "object" &&
+          error !== null &&
+          "status" in error &&
+          typeof error.status === "number"
+            ? error.status
+            : null;
+        setHifzQueueRecoveryError(
+          status === 401
+            ? {
+                message: "Sesi hafalan perlukan akaun aktif. Log masuk dahulu kemudian buka semula dari Hafal.",
+                requiresSignIn: true,
+              }
+            : {
+                message: "Sesi hafalan tak dapat dipulihkan sekarang. Kembali ke Hafal dan cuba buka semula.",
+              },
+        );
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setIsRecoveringHifzQueue(false);
+        }
+      });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [applyQueuePointers, hifzFlow, hifzQueueIndex, pageNumber]);
 
   useEffect(() => {
     if (lastSyncedPageRef.current === pageNumber) {
@@ -381,18 +547,6 @@ export function ReadPageWorkspace({
   }, [hifzFlow, personalizationPageNumber]);
 
   useEffect(() => {
-    if (hifzFlow === null) {
-      return;
-    }
-
-    if (!currentQueuePage) {
-      return;
-    }
-
-    setCurrentPageIndex(hifzFlow, currentQueuePage.index);
-  }, [currentQueuePage, hifzFlow]);
-
-  useEffect(() => {
     if (hifzFlow !== null) {
       if (previousQueuePage) {
         router.prefetch(
@@ -504,6 +658,40 @@ export function ReadPageWorkspace({
   const handleMemorizeChunkPause = useCallback(() => {
     pauseAudioPlayback();
   }, [pauseAudioPlayback]);
+
+  const renderHifzQueueRecoveryPanel = (
+    title: string,
+    message: string,
+    options?: { bottomOffsetPx?: number; requiresSignIn?: boolean },
+  ) => (
+    <div
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-5 text-center shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95"
+      style={{ bottom: options?.bottomOffsetPx ?? 0 }}
+    >
+      <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+        {title}
+      </p>
+      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+        {message}
+      </p>
+      <div className="mt-4 flex justify-center gap-3">
+        {options?.requiresSignIn ? (
+          <a
+            href={buildSignInPath("/hifz")}
+            className="inline-flex items-center rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500"
+          >
+            Log Masuk
+          </a>
+        ) : null}
+        <a
+          href="/hifz"
+          className="inline-flex items-center rounded-xl border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+        >
+          Kembali ke Hafal
+        </a>
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ paddingBottom: contentBottomPadding }}>
@@ -684,23 +872,53 @@ export function ReadPageWorkspace({
       </div>
 
       {hifzFlow === "review" && (
-        <HifzInlineRating
-          flowType={hifzFlow}
-          pageNumber={pageNumber}
-          visible={tasmiAllRevealed}
-        />
+        isRecoveringHifzQueue ? (
+          renderHifzQueueRecoveryPanel(
+            "Menyambung sesi uji hafalan...",
+            "Kami sedang bina semula susunan halaman semasa.",
+          )
+        ) : hifzQueueRecoveryError ? (
+          renderHifzQueueRecoveryPanel(
+            "Sesi tergendala",
+            hifzQueueRecoveryError.message,
+            { requiresSignIn: hifzQueueRecoveryError.requiresSignIn },
+          )
+        ) : (
+          <HifzInlineRating
+            flowType={hifzFlow}
+            pageNumber={pageNumber}
+            visible={tasmiAllRevealed}
+          />
+        )
       )}
 
       {hifzFlow === "memorize" && (
-        <HifzMemorizeStepper
-          bottomOffsetPx={isAudioVisible ? 112 : 0}
-          pageNumber={pageNumber}
-          onChunkAyahKeysChange={setMemorizeChunkAyahKeys}
-          onChunkListen={handleMemorizeChunkListen}
-          onChunkPause={handleMemorizeChunkPause}
-          onMushafHide={setMemorizeHideMushaf}
-          onViewportInsetChange={setMemorizeViewportInset}
-        />
+        isRecoveringHifzQueue ? (
+          renderHifzQueueRecoveryPanel(
+            "Menyambung sesi hafalan...",
+            "Kami sedang bina semula chunk dan susunan halaman semasa.",
+            { bottomOffsetPx: isAudioVisible ? 112 : 0 },
+          )
+        ) : hifzQueueRecoveryError ? (
+          renderHifzQueueRecoveryPanel(
+            "Sesi tergendala",
+            hifzQueueRecoveryError.message,
+            {
+              bottomOffsetPx: isAudioVisible ? 112 : 0,
+              requiresSignIn: hifzQueueRecoveryError.requiresSignIn,
+            },
+          )
+        ) : (
+          <HifzMemorizeStepper
+            bottomOffsetPx={isAudioVisible ? 112 : 0}
+            pageNumber={pageNumber}
+            onChunkAyahKeysChange={setMemorizeChunkAyahKeys}
+            onChunkListen={handleMemorizeChunkListen}
+            onChunkPause={handleMemorizeChunkPause}
+            onMushafHide={setMemorizeHideMushaf}
+            onViewportInsetChange={setMemorizeViewportInset}
+          />
+        )
       )}
     </div>
   );

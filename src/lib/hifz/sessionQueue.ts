@@ -92,7 +92,12 @@ export function buildQueuePageHref(
   return `/read/${pageNumber}?flow=${type}&qi=${index}`;
 }
 
-export function saveQueue(type: HifzFlowType, items: HifzQueueItem[]): HifzSessionQueue | null {
+export function saveQueueState(
+  type: HifzFlowType,
+  items: HifzQueueItem[],
+  currentPageIndex = 0,
+  rated: number[] = [],
+): HifzSessionQueue | null {
   const storage = getSessionStorage();
   if (!storage) return null;
 
@@ -100,9 +105,13 @@ export function saveQueue(type: HifzFlowType, items: HifzQueueItem[]): HifzSessi
     type,
     items,
     pageOrder: groupItemsByPage(items),
-    currentPageIndex: 0,
-    rated: [],
+    currentPageIndex,
+    rated,
   };
+
+  if (currentPageIndex < 0 || currentPageIndex >= queue.pageOrder.length) {
+    return null;
+  }
 
   try {
     storage.setItem(storageKey(type), JSON.stringify(queue));
@@ -110,6 +119,10 @@ export function saveQueue(type: HifzFlowType, items: HifzQueueItem[]): HifzSessi
   } catch {
     return null;
   }
+}
+
+export function saveQueue(type: HifzFlowType, items: HifzQueueItem[]): HifzSessionQueue | null {
+  return saveQueueState(type, items, 0, []);
 }
 
 export function loadQueue(type: HifzFlowType): HifzSessionQueue | null {
