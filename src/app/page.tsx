@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { FeedbackButton } from "@/components/FeedbackButton";
 import { HomeDashboardClient } from "@/components/HomeDashboardClient";
 import { ModeNavigator } from "@/components/ModeNavigator";
 import { loadHomeDashboardSnapshot } from "@/lib/homeDashboard";
@@ -32,6 +33,8 @@ export default async function Home() {
           surahTargets={jumpTargets.surahs}
         />
       </main>
+
+      <FeedbackButton />
     </div>
   );
 }

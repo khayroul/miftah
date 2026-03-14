@@ -20,7 +20,6 @@ export const metadata: Metadata = {
   description: "Memorize the Quran by understanding, not just repetition.",
 };
 
-import { FeedbackButton } from "@/components/FeedbackButton";
 import { ReadAudioProvider } from "@/components/ReadAudioProvider";
 
 export default function RootLayout({
@@ -54,10 +53,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${geist.variable} ${arabicText.variable} antialiased`}>
-        <ReadAudioProvider>
-          {children}
-          <FeedbackButton />
-        </ReadAudioProvider>
+        <ReadAudioProvider>{children}</ReadAudioProvider>
       </body>
     </html>
   );
