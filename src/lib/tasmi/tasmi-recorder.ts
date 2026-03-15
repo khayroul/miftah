@@ -32,11 +32,11 @@ export class TasmiRecorder {
         model: 'v5',
         baseAssetPath: '/',
         onnxWASMBasePath: '/',
-        // Lower thresholds for Bluetooth mic sensitivity
+        // Tuned for Quran recitation (tajweed has natural pauses between words)
         positiveSpeechThreshold: 0.3,
         negativeSpeechThreshold: 0.15,
-        minSpeechMs: 90,
-        redemptionMs: 360,
+        minSpeechMs: 250,
+        redemptionMs: 900,
         onSpeechEnd: (audio: Float32Array) => {
           console.log('[tasmi-recorder] speech ended, samples:', audio.length);
           // Reset silence timer — student is speaking

@@ -63,6 +63,8 @@ export class TasmiSession {
   private errorPositions: Set<number> = new Set();
   private totalWordsCorrect: number = 0;
   private isActive: boolean = false;
+  private chunkQueue: Blob[] = [];
+  private processing: boolean = false;
 
   constructor(
     expectedText: string,
@@ -76,14 +78,30 @@ export class TasmiSession {
 
   /**
    * Call this when a new audio chunk is ready (from VAD onSpeechEnd).
+   * Chunks are queued and processed sequentially to preserve order.
    */
   async processAudioChunk(audioBlob: Blob): Promise<void> {
     if (!this.isActive) return;
+    this.chunkQueue = [...this.chunkQueue, audioBlob];
+    if (!this.processing) {
+      void this.drainQueue();
+    }
+  }
 
+  private async drainQueue(): Promise<void> {
+    this.processing = true;
+    while (this.chunkQueue.length > 0 && this.isActive) {
+      const blob = this.chunkQueue[0];
+      this.chunkQueue = this.chunkQueue.slice(1);
+      await this.processOneChunk(blob);
+    }
+    this.processing = false;
+  }
+
+  private async processOneChunk(audioBlob: Blob): Promise<void> {
     this.eventHandler({ type: 'processing' });
 
     try {
-      // Send to server
       const formData = new FormData();
       formData.append('file', audioBlob, 'chunk.wav');
 
@@ -110,7 +128,6 @@ export class TasmiSession {
           data: { matchResult, progress: this.matcher.progress },
         });
       } else if (matchResult.errors.length > 0 || matchResult.wordsTotal > 0) {
-        // Count as error: explicit errors OR speech detected but nothing matched
         this.consecutiveErrors++;
         matchResult.errors.forEach(e => this.errorPositions.add(e.position));
 
@@ -124,14 +141,12 @@ export class TasmiSession {
         }
       }
 
-      // Check completion
       if (this.matcher.isComplete) {
         this.eventHandler({ type: 'complete', data: { progress: 1 } });
         this.end();
       }
     } catch (err) {
       console.error('Tasmi transcription error:', err);
-      // Don't crash the session on a single failed chunk
     }
 
     if (this.isActive) {

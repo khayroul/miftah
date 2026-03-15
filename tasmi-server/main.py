@@ -89,7 +89,7 @@ async def transcribe(
             language="ar",
             beam_size=5,
             vad_filter=True,
-            initial_prompt="بسم الله الرحمن الرحيم. القرآن الكريم. تلاوة.",
+            without_timestamps=True,
         )
         raw_text = " ".join(seg.text for seg in segments).strip()
 
