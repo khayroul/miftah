@@ -22,7 +22,7 @@ import {
   type MemorizeChunkSizeOption,
   type ChunkSizeSuggestion,
 } from "@/lib/hifz/memorizeChunks";
-import { TasmiSessionUI } from "@/components/TasmiSessionUI";
+import { TasmiSessionUI, type AyahRange } from "@/components/TasmiSessionUI";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
 import type { TasmiSessionResult } from "@/lib/tasmi/tasmi-session";
 import type { TasmiRatingLabel } from "@/lib/tasmi/fsrs-bridge";
@@ -124,6 +124,7 @@ export function HifzMemorizeStepper({
   const [tasmiSurahNumber, setTasmiSurahNumber] = useState(0);
   const [tasmiStartAyah, setTasmiStartAyah] = useState(0);
   const [tasmiEndAyah, setTasmiEndAyah] = useState(0);
+  const [tasmiAyahRanges, setTasmiAyahRanges] = useState<AyahRange[]>([]);
   const [tasmiLoading, setTasmiLoading] = useState(false);
   const [chunkSuggestion, setChunkSuggestion] = useState<ChunkSizeSuggestion>(null);
   const [suggestionDismissed, setSuggestionDismissed] = useState(false);
@@ -368,7 +369,7 @@ export function HifzMemorizeStepper({
       const ayahIds = chunkItems.map((item) => item.ayahId);
       const { data: ayahRows } = await supabase
         .from("ayat")
-        .select("id, text_uthmani")
+        .select("id, surah_id, ayah_number, text_uthmani")
         .in("id", ayahIds)
         .order("surah_id")
         .order("ayah_number");
@@ -380,7 +381,22 @@ export function HifzMemorizeStepper({
 
       const expectedText = ayahRows.map((row) => row.text_uthmani).join(" ");
 
+      // Build per-ayah word ranges for talqin resolution
+      let wordOffset = 0;
+      const ranges: AyahRange[] = ayahRows.map((row) => {
+        const wordCount = row.text_uthmani.split(/\s+/).filter(Boolean).length;
+        const range: AyahRange = {
+          surah: row.surah_id,
+          ayah: row.ayah_number,
+          startWordIndex: wordOffset,
+          endWordIndex: wordOffset + wordCount - 1,
+        };
+        wordOffset += wordCount;
+        return range;
+      });
+
       setTasmiExpectedText(expectedText);
+      setTasmiAyahRanges(ranges);
       setTasmiSurahNumber(surahNumber);
       setTasmiStartAyah(startAyah);
       setTasmiEndAyah(endAyah);
@@ -907,6 +923,7 @@ export function HifzMemorizeStepper({
             surahNumber={tasmiSurahNumber}
             startAyah={tasmiStartAyah}
             endAyah={tasmiEndAyah}
+            ayahRanges={tasmiAyahRanges}
             onSessionEnd={handleTasmiEnd}
             onCancel={handleTasmiCancel}
           />

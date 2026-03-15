@@ -8,6 +8,15 @@ import { tasmiResultToLabel, type TasmiRatingLabel } from "@/lib/tasmi/fsrs-brid
 
 type TasmiStatus = "idle" | "ready" | "listening" | "processing" | "error" | "talqin" | "complete";
 
+export interface AyahRange {
+  surah: number;
+  ayah: number;
+  /** First word index in the concatenated expected text */
+  startWordIndex: number;
+  /** Last word index (inclusive) in the concatenated expected text */
+  endWordIndex: number;
+}
+
 interface TasmiSessionUIProps {
   /** Expected Quran text (uthmani) for the recitation range */
   expectedText: string;
@@ -17,6 +26,8 @@ interface TasmiSessionUIProps {
   startAyah: number;
   /** Ending ayah number */
   endAyah: number;
+  /** Per-ayah word ranges for mapping word index → surah:ayah */
+  ayahRanges?: AyahRange[];
   /** Called when session ends — provides FSRS rating label */
   onSessionEnd: (result: TasmiSessionResult, label: TasmiRatingLabel) => void;
   /** Called when user cancels */
@@ -36,11 +47,26 @@ const STATUS_LABELS: Record<TasmiStatus, string> = {
 const TASMI_SERVER_URL = process.env.NEXT_PUBLIC_TASMI_SERVER_URL ?? "";
 const TASMI_API_KEY = process.env.NEXT_PUBLIC_TASMI_API_KEY ?? "";
 
+function resolveAyahFromWordIndex(
+  wordIndex: number,
+  ranges: AyahRange[],
+  fallbackSurah: number,
+  fallbackAyah: number,
+): { surah: number; ayah: number; localWordIndex: number } {
+  for (const r of ranges) {
+    if (wordIndex >= r.startWordIndex && wordIndex <= r.endWordIndex) {
+      return { surah: r.surah, ayah: r.ayah, localWordIndex: wordIndex - r.startWordIndex };
+    }
+  }
+  return { surah: fallbackSurah, ayah: fallbackAyah, localWordIndex: 0 };
+}
+
 export function TasmiSessionUI({
   expectedText,
   surahNumber,
   startAyah,
   endAyah,
+  ayahRanges,
   onSessionEnd,
   onCancel,
 }: TasmiSessionUIProps) {
@@ -78,10 +104,13 @@ export function TasmiSessionUI({
         // Pause mic, play talqin audio
         recorderRef.current?.pause();
         if (event.data?.talqinWordIndex != null) {
+          const resolved = ayahRanges?.length
+            ? resolveAyahFromWordIndex(event.data.talqinWordIndex, ayahRanges, surahNumber, startAyah)
+            : { surah: surahNumber, ayah: startAyah, localWordIndex: event.data.talqinWordIndex };
           talqinRef.current?.play(
-            0, // Will be resolved from ayah context
-            0,
-            event.data.talqinWordIndex,
+            resolved.surah,
+            resolved.ayah,
+            resolved.localWordIndex,
           ).catch(() => {
             // Talqin playback failed — resume mic
             recorderRef.current?.resume();
