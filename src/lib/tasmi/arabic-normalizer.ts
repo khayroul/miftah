@@ -15,7 +15,8 @@ export function normalizeArabic(text: string): string {
     .replace(ALEF_REGEX, 'ا')        // 2. Normalize alef variants
     .replace(/ة/g, 'ه')             // 3. Taa marbuta → haa
     .replace(/ـ/g, '')              // 4. Remove tatweel
-    .replace(/\s+/g, ' ')           // 5. Collapse whitespace
+    .replace(/[.,;:!?،؛؟]/g, '')    // 5. Strip punctuation (Whisper adds these)
+    .replace(/\s+/g, ' ')           // 6. Collapse whitespace
     .trim();
 }
 

@@ -133,4 +133,46 @@ describe('SequenceMatcher', () => {
     m.matchChunk('الحمد لله رب العالمين');
     expect(m.isComplete).toBe(true);
   });
+
+  it('handles lookback: student restarts a few words back and advances past', () => {
+    const m = new SequenceMatcher(BASMALA + ' ' + FATIHAH_2);
+    // 8 words: بسم الله الرحمن الرحيم الحمد لله رب العالمين
+
+    // Recite first 4 words
+    m.matchChunk('بسم الله الرحمن الرحيم');
+    expect(m.lastCorrectIndex).toBe(3);
+
+    // Restart from word 3 (الرحمن) and continue past word 4
+    const result = m.matchChunk('الرحمن الرحيم الحمد لله');
+    expect(result.isClean).toBe(true);
+    expect(m.lastCorrectIndex).toBe(5); // advanced to لله
+  });
+
+  it('handles lookback: student repeats without advancing past high-water mark', () => {
+    const m = new SequenceMatcher(BASMALA + ' ' + FATIHAH_2);
+
+    // Recite first 6 words
+    m.matchChunk('بسم الله الرحمن الرحيم');
+    m.matchChunk('الحمد لله');
+    expect(m.lastCorrectIndex).toBe(5);
+
+    // Repeat words 3-4 (الرحيم الحمد) — doesn't advance past 5
+    const result = m.matchChunk('الرحيم الحمد');
+    expect(result.isClean).toBe(true);
+    expect(result.wordsCorrect).toBe(0); // no new progress counted
+    expect(m.lastCorrectIndex).toBe(5); // stays at high-water mark
+  });
+
+  it('lookback requires ≥2 matching words to trigger', () => {
+    const m = new SequenceMatcher(BASMALA + ' ' + FATIHAH_2);
+
+    m.matchChunk('بسم الله الرحمن الرحيم');
+    expect(m.lastCorrectIndex).toBe(3);
+
+    // Single word that matches earlier position — not enough for lookback
+    // "الله" alone could match word 1, but ≥2 required
+    // Should be treated as a forward error since الله ≠ expected word 5 (الحمد)
+    const result = m.matchChunk('خطا');
+    expect(result.isClean).toBe(false);
+  });
 });

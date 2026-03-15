@@ -19,6 +19,9 @@ _TAA_MARBUTA_RE = re.compile('ة')
 # Tatweel (kashida)
 _TATWEEL_RE = re.compile('ـ')
 
+# Punctuation (Whisper adds periods, commas, etc.)
+_PUNCTUATION_RE = re.compile(r'[.,;:!?،؛؟]')
+
 # Whitespace collapse
 _WHITESPACE_RE = re.compile(r'\s+')
 
@@ -28,5 +31,6 @@ def normalize_arabic(text: str) -> str:
     text = _ALEF_RE.sub('ا', text)           # 2. Normalize alef variants
     text = _TAA_MARBUTA_RE.sub('ه', text)    # 3. Taa marbuta → haa
     text = _TATWEEL_RE.sub('', text)         # 4. Remove tatweel
-    text = _WHITESPACE_RE.sub(' ', text)     # 5. Collapse whitespace
+    text = _PUNCTUATION_RE.sub('', text)     # 5. Strip punctuation
+    text = _WHITESPACE_RE.sub(' ', text)     # 6. Collapse whitespace
     return text.strip()

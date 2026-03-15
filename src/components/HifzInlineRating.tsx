@@ -134,7 +134,7 @@ export function HifzInlineRating({
       const ayahIds = pageItems.map((item) => item.ayahId);
       const { data: ayahRows } = await supabase
         .from("ayat")
-        .select("id, surah_id, ayah_number, text_uthmani")
+        .select("id, surah_id, ayah_number, text_simple")
         .in("id", ayahIds)
         .order("surah_id")
         .order("ayah_number");
@@ -144,12 +144,12 @@ export function HifzInlineRating({
         return;
       }
 
-      const expectedText = ayahRows.map((row) => row.text_uthmani).join(" ");
+      const expectedText = ayahRows.map((row) => row.text_simple).join(" ");
 
       // Build per-ayah word ranges for talqin resolution
       let wordOffset = 0;
       const ranges: AyahRange[] = ayahRows.map((row) => {
-        const wordCount = row.text_uthmani.split(/\s+/).filter(Boolean).length;
+        const wordCount = row.text_simple.split(/\s+/).filter(Boolean).length;
         const range: AyahRange = {
           surah: row.surah_id,
           ayah: row.ayah_number,

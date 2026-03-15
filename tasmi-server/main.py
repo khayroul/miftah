@@ -4,8 +4,12 @@ Accepts WAV audio, returns normalized Arabic transcription.
 """
 
 import os
+import logging
 import tempfile
 from contextlib import asynccontextmanager
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("tasmi")
 
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -85,8 +89,11 @@ async def transcribe(
             language="ar",
             beam_size=5,
             vad_filter=True,
+            initial_prompt="بسم الله الرحمن الرحيم. القرآن الكريم. تلاوة.",
         )
         raw_text = " ".join(seg.text for seg in segments).strip()
 
     normalized = normalize_arabic(raw_text)
+    logger.info("RAW: %s", raw_text)
+    logger.info("NORMALIZED: %s", normalized)
     return {"normalized_text": normalized}
