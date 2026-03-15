@@ -74,9 +74,6 @@ export class TasmiSession {
     this.matcher = new SequenceMatcher(expectedText);
     this.config = config;
     this.eventHandler = onEvent;
-    console.log('[tasmi-session] created with expectedText:', expectedText.substring(0, 100));
-    console.log('[tasmi-session] matcher totalWords:', this.matcher.totalExpectedWords);
-    console.log('[tasmi-session] server:', config.serverUrl);
   }
 
   /**
@@ -108,26 +105,25 @@ export class TasmiSession {
       const formData = new FormData();
       formData.append('file', audioBlob, 'chunk.wav');
 
-      console.log('[tasmi-session] sending chunk to server, blob size:', audioBlob.size);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch(`${this.config.serverUrl}/transcribe`, {
         method: 'POST',
         headers: { 'x-api-key': this.config.apiKey },
         body: formData,
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
 
       if (!response.ok) {
-        const body = await response.text();
-        console.error('[tasmi-session] server error:', response.status, body);
         throw new Error(`Server error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('[tasmi-session] server returned:', JSON.stringify(data));
-      console.log('[tasmi-session] matcher position before:', this.matcher.lastCorrectIndex, '/', this.matcher.totalExpectedWords);
 
       // Match against expected
       const matchResult = this.matcher.matchChunk(data.normalized_text);
-      console.log('[tasmi-session] matchResult:', JSON.stringify(matchResult));
 
       if (matchResult.isClean && matchResult.wordsCorrect > 0) {
         this.consecutiveErrors = 0;

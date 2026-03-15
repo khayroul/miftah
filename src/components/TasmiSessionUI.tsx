@@ -47,6 +47,20 @@ const STATUS_LABELS: Record<TasmiStatus, string> = {
 const TASMI_SERVER_URL = process.env.NEXT_PUBLIC_TASMI_SERVER_URL ?? "";
 const TASMI_API_KEY = process.env.NEXT_PUBLIC_TASMI_API_KEY ?? "";
 
+// Module-level cache for quran-align timestamp data (fetched once per page load)
+let alignDataCache: Array<{ surah: number; ayah: number; segments: [number, number, number, number][] }> | null = null;
+let alignDataPromise: Promise<typeof alignDataCache> | null = null;
+
+function fetchAlignData(): Promise<typeof alignDataCache> {
+  if (alignDataCache) return Promise.resolve(alignDataCache);
+  if (alignDataPromise) return alignDataPromise;
+  alignDataPromise = fetch("/data/quran-align-alafasy.json")
+    .then(r => r.ok ? r.json() : null)
+    .then(data => { alignDataCache = data; return data; })
+    .catch(() => null);
+  return alignDataPromise;
+}
+
 function resolveAyahFromWordIndex(
   wordIndex: number,
   ranges: AyahRange[],
@@ -79,8 +93,17 @@ export function TasmiSessionUI({
   const recorderRef = useRef<TasmiRecorder | null>(null);
   const talqinRef = useRef<TalqinPlayer | null>(null);
 
+  // Keep refs for values used inside handleEvent to avoid stale closures
+  const ayahRangesRef = useRef(ayahRanges);
+  const surahRef = useRef(surahNumber);
+  const startAyahRef = useRef(startAyah);
+  useEffect(() => {
+    ayahRangesRef.current = ayahRanges;
+    surahRef.current = surahNumber;
+    startAyahRef.current = startAyah;
+  }, [ayahRanges, surahNumber, startAyah]);
+
   const handleEvent = useCallback((event: TasmiEvent) => {
-    console.log("[tasmi] event:", event.type, event.data);
     switch (event.type) {
       case "ready":
         setStatus("ready");
@@ -101,18 +124,19 @@ export function TasmiSessionUI({
         break;
       case "talqin":
         setStatus("talqin");
-        // Pause mic, play talqin audio
         recorderRef.current?.pause();
         if (event.data?.talqinWordIndex != null) {
-          const resolved = ayahRanges?.length
-            ? resolveAyahFromWordIndex(event.data.talqinWordIndex, ayahRanges, surahNumber, startAyah)
-            : { surah: surahNumber, ayah: startAyah, localWordIndex: event.data.talqinWordIndex };
+          const ranges = ayahRangesRef.current;
+          const surah = surahRef.current;
+          const ayah = startAyahRef.current;
+          const resolved = ranges?.length
+            ? resolveAyahFromWordIndex(event.data.talqinWordIndex, ranges, surah, ayah)
+            : { surah, ayah, localWordIndex: event.data.talqinWordIndex };
           talqinRef.current?.play(
             resolved.surah,
             resolved.ayah,
             resolved.localWordIndex,
           ).catch(() => {
-            // Talqin playback failed — resume mic
             recorderRef.current?.resume();
             setStatus("listening");
           });
@@ -155,6 +179,12 @@ export function TasmiSessionUI({
         setStatus("listening");
       },
     });
+
+    // Load word-level timestamps for precise talqin seeking
+    const alignData = await fetchAlignData();
+    if (alignData) {
+      talqin.loadFromRawData(alignData);
+    }
 
     const recorder = new TasmiRecorder({
       silenceTimeoutSeconds: 6,

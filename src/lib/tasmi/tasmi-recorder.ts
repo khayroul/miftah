@@ -38,18 +38,11 @@ export class TasmiRecorder {
         minSpeechMs: 250,
         redemptionMs: 900,
         onSpeechEnd: (audio: Float32Array) => {
-          console.log('[tasmi-recorder] speech ended, samples:', audio.length);
-          // Reset silence timer — student is speaking
           this.resetSilenceTimer();
-
-          // Convert Float32Array to WAV blob
           const wavBlob = float32ToWavBlob(audio, 16000);
-          console.log('[tasmi-recorder] WAV blob size:', wavBlob.size);
           this.config.onSpeechEnd(wavBlob);
         },
         onSpeechStart: () => {
-          console.log('[tasmi-recorder] speech started');
-          // Student started speaking — reset silence timer
           this.resetSilenceTimer();
         },
       });
@@ -57,7 +50,6 @@ export class TasmiRecorder {
       this.vad.start();
       this.isListening = true;
       this.startSilenceTimer();
-      console.log('[tasmi-recorder] VAD started, listening for speech');
     } catch (err) {
       this.config.onError(
         err instanceof Error ? err : new Error('Failed to start mic')

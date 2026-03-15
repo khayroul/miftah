@@ -233,6 +233,28 @@ export function ReadOnlyMushafPageView({
   useEffect(() => {
     onFullImageReadyChange?.(fullImageReady);
   }, [fullImageReady, onFullImageReadyChange]);
+  // Detect image load — handles both cached images (SSR hydration race) and slow CDN loads.
+  const fullImgRef = useRef<HTMLImageElement | null>(null);
+  useEffect(() => {
+    const el = fullImgRef.current;
+    if (!el) return;
+    if (el.complete && el.naturalWidth > 0) {
+      setFullImageReady(true);
+      return;
+    }
+    const onLoad = () => setFullImageReady(true);
+    el.addEventListener("load", onLoad);
+    return () => el.removeEventListener("load", onLoad);
+  }, [fullImageSrc, mobileImageSrc]);
+
+  // Safety net: if detection still fails after 5s, force image visible.
+  useEffect(() => {
+    if (fullImageReady) return;
+    const timer = setTimeout(() => {
+      if (fullImgRef.current) setFullImageReady(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [fullImageReady]);
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
     const touch = event.touches[0];
@@ -319,11 +341,7 @@ export function ReadOnlyMushafPageView({
                   <source media="(max-width: 768px)" srcSet={mobileImageSrc} />
                 ) : null}
                 <img
-                  ref={(el) => {
-                    if (el?.complete && el.naturalWidth > 0 && !fullImageReady) {
-                      setFullImageReady(true);
-                    }
-                  }}
+                  ref={fullImgRef}
                   src={fullImageSrc ?? `/api/mushaf/page/${pageNumber}?v=qcfv2`}
                   alt={`Halaman mushaf ${pageNumber}`}
                   loading="eager"

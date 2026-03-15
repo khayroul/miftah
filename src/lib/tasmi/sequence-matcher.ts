@@ -59,34 +59,33 @@ export class SequenceMatcher {
   ): { wordsCorrect: number; lastIndex: number; errors: MatchResult['errors'] } {
     const errors: MatchResult['errors'] = [];
     let wordsCorrect = 0;
-    let lastIndex = fromIndex - 1;
+    let expectedPos = fromIndex;
 
     for (let i = 0; i < transcribedWords.length; i++) {
-      const expectedIndex = fromIndex + i;
-      if (expectedIndex >= this.expectedWords.length) break;
+      if (expectedPos >= this.expectedWords.length) break;
 
-      const expected = this.expectedWords[expectedIndex];
+      const expected = this.expectedWords[expectedPos];
       const got = transcribedWords[i];
 
       if (expected === got) {
-        lastIndex = expectedIndex;
         wordsCorrect++;
+        expectedPos++;
       } else {
-        // Look ahead up to 2 positions for a skip
+        // Look ahead up to 2 positions for a skip (student omitted words)
         let foundAhead = false;
-        for (let lookAhead = 1; lookAhead <= 2; lookAhead++) {
-          if (expectedIndex + lookAhead < this.expectedWords.length &&
-              this.expectedWords[expectedIndex + lookAhead] === got) {
-            for (let skipped = 0; skipped < lookAhead; skipped++) {
+        for (let la = 1; la <= 2; la++) {
+          if (expectedPos + la < this.expectedWords.length &&
+              this.expectedWords[expectedPos + la] === got) {
+            for (let s = 0; s < la; s++) {
               errors.push({
-                position: expectedIndex + skipped,
-                expected: this.expectedWords[expectedIndex + skipped],
+                position: expectedPos + s,
+                expected: this.expectedWords[expectedPos + s],
                 got: null,
                 type: 'omission',
               });
             }
-            lastIndex = expectedIndex + lookAhead;
             wordsCorrect++;
+            expectedPos += la + 1;
             foundAhead = true;
             break;
           }
@@ -94,7 +93,7 @@ export class SequenceMatcher {
 
         if (!foundAhead) {
           errors.push({
-            position: expectedIndex,
+            position: expectedPos,
             expected,
             got,
             type: 'substitution',
@@ -104,7 +103,7 @@ export class SequenceMatcher {
       }
     }
 
-    return { wordsCorrect, lastIndex, errors };
+    return { wordsCorrect, lastIndex: expectedPos - 1, errors };
   }
 
   /**

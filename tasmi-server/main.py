@@ -49,9 +49,8 @@ app = FastAPI(title="Tasmi Transcription Server", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
+    allow_origin_regex=r"https://(miftah\.app|miftah(-[a-z0-9]+)?(-khayrouls-projects)?\.vercel\.app)",
     allow_origins=[
-        "https://miftah.app",
-        "https://miftah-app.vercel.app",
         "http://localhost:3000",
         "http://localhost:3001",
     ],
