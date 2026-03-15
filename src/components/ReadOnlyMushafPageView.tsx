@@ -319,6 +319,11 @@ export function ReadOnlyMushafPageView({
                   <source media="(max-width: 768px)" srcSet={mobileImageSrc} />
                 ) : null}
                 <img
+                  ref={(el) => {
+                    if (el?.complete && el.naturalWidth > 0 && !fullImageReady) {
+                      setFullImageReady(true);
+                    }
+                  }}
                   src={fullImageSrc ?? `/api/mushaf/page/${pageNumber}?v=qcfv2`}
                   alt={`Halaman mushaf ${pageNumber}`}
                   loading="eager"
