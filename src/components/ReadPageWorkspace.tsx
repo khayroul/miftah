@@ -967,6 +967,7 @@ export function ReadPageWorkspace({
             flowType={hifzFlow}
             pageNumber={pageNumber}
             visible={tasmiAllRevealed}
+            onTasmiSuccess={() => setTasmiRevealedLines(totalLineCount)}
           />
         )
       )}

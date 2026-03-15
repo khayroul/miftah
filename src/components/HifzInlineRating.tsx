@@ -23,6 +23,8 @@ interface HifzInlineRatingProps {
   flowType: HifzFlowType;
   pageNumber: number;
   visible: boolean;
+  /** Called when tasmi' completes successfully (non-ulang) — parent can auto-reveal the veil. */
+  onTasmiSuccess?: () => void;
 }
 
 interface FlowErrorState {
@@ -42,6 +44,7 @@ export function HifzInlineRating({
   flowType,
   pageNumber,
   visible,
+  onTasmiSuccess,
 }: HifzInlineRatingProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -253,12 +256,17 @@ export function HifzInlineRating({
       setTasmiActive(false);
       setTasmiExpectedText(null);
       const binaryRating = label === "ulang" ? (1 as const) : (3 as const);
+      if (label !== "ulang") {
+        onTasmiSuccess?.();
+      }
       await handleRate(binaryRating);
     },
-    [handleRate],
+    [handleRate, onTasmiSuccess],
   );
 
-  if (!visible && !tasmiActive && !complete && !displayedError) return null;
+  // Always show when tasmi is active, complete, or has an error.
+  // When veil is still up (!visible), show only the tasmi button.
+  const showTasmiOnly = !visible && !tasmiActive && !complete && !displayedError;
 
   if (complete) {
     return (
@@ -327,6 +335,26 @@ export function HifzInlineRating({
           onSessionEnd={handleTasmiEnd}
           onCancel={handleTasmiCancel}
         />
+      </div>
+    );
+  }
+
+  if (showTasmiOnly) {
+    return (
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95">
+        <p className="mb-3 text-center text-sm font-medium text-stone-600 dark:text-stone-400">
+          Baca tanpa melihat, atau mulakan tasmi&rsquo;
+        </p>
+        <div className="flex justify-center">
+          <button
+            type="button"
+            disabled={tasmiLoading}
+            onClick={startTasmi}
+            className="rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
+          >
+            {tasmiLoading ? "Menyediakan..." : "Mula Tasmi\u2019"}
+          </button>
+        </div>
       </div>
     );
   }
