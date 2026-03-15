@@ -34,16 +34,20 @@ export function HifzTasmiOverlay({
     (e: React.TouchEvent) => {
       if (touchStartYRef.current === null || !onRevealTo || !containerRef.current) return;
       const currentY = e.touches[0]?.clientY ?? 0;
-      const deltaY = touchStartYRef.current - currentY;
-      if (deltaY <= 0) return; // only swipe up reveals
+      const deltaY = currentY - touchStartYRef.current;
 
       const containerHeight = containerRef.current.getBoundingClientRect().height;
       if (containerHeight <= 0) return;
 
-      const lineDelta = Math.floor((deltaY / containerHeight) * safeTotal);
-      const targetLines = Math.min(touchStartRevealedRef.current + lineDelta, safeTotal);
-      if (targetLines > revealedLines) {
-        onRevealTo(targetLines);
+      const lineDelta = Math.round((Math.abs(deltaY) / containerHeight) * safeTotal);
+      if (deltaY > 0) {
+        // Swipe down → reveal more
+        const targetLines = Math.min(touchStartRevealedRef.current + lineDelta, safeTotal);
+        if (targetLines !== revealedLines) onRevealTo(targetLines);
+      } else if (deltaY < 0) {
+        // Swipe up → hide (push veil back up)
+        const targetLines = Math.max(touchStartRevealedRef.current - lineDelta, 0);
+        if (targetLines !== revealedLines) onRevealTo(targetLines);
       }
     },
     [onRevealTo, revealedLines, safeTotal],
@@ -62,7 +66,7 @@ export function HifzTasmiOverlay({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       className="absolute inset-0 z-30 cursor-pointer touch-none focus:outline-none"
-      aria-label="Ketuk atau leret ke atas untuk buka baris seterusnya"
+      aria-label="Leret ke bawah untuk buka, ke atas untuk tutup"
     >
       {/* Dark overlay — shrinks from top as lines are revealed */}
       <div
@@ -102,7 +106,7 @@ export function HifzTasmiOverlay({
             </svg>
           </div>
           <p className="text-lg font-semibold text-white/90">
-            Leret ke atas atau ketuk untuk buka
+            Leret ke bawah atau klik untuk buka
           </p>
           <p className="text-sm text-white/60">
             Baca dari ingatan, kemudian semak
