@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 };
 
 import { ReadAudioProvider } from "@/components/ReadAudioProvider";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
 export default function RootLayout({
   children,
@@ -47,6 +48,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${arabicText.variable} antialiased`}>
+        <ServiceWorkerRegistrar />
         <ReadAudioProvider>{children}</ReadAudioProvider>
       </body>
     </html>

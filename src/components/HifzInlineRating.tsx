@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   areAllProgressIdsRated,
@@ -18,13 +18,17 @@ import { TasmiSessionUI } from "@/components/TasmiSessionUI";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
 import type { TasmiSessionResult } from "@/lib/tasmi/tasmi-session";
 import type { TasmiRatingLabel } from "@/lib/tasmi/fsrs-bridge";
+import { saveResumePoint, clearResumePoint } from "@/lib/hifz/resumePoint";
 
 interface HifzInlineRatingProps {
   flowType: HifzFlowType;
   pageNumber: number;
+  queueIndex?: number;
   visible: boolean;
   /** Called when tasmi' completes successfully (non-ulang) — parent can auto-reveal the veil. */
   onTasmiSuccess?: () => void;
+  onSessionComplete?: () => void;
+  onPageComplete?: () => void;
 }
 
 interface FlowErrorState {
@@ -43,8 +47,11 @@ interface RateBatchResponse {
 export function HifzInlineRating({
   flowType,
   pageNumber,
+  queueIndex = 0,
   visible,
   onTasmiSuccess,
+  onSessionComplete,
+  onPageComplete,
 }: HifzInlineRatingProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -56,6 +63,13 @@ export function HifzInlineRating({
   const [tasmiStartAyah, setTasmiStartAyah] = useState(0);
   const [tasmiEndAyah, setTasmiEndAyah] = useState(0);
   const [tasmiLoading, setTasmiLoading] = useState(false);
+
+  useEffect(() => {
+    if (!complete && !errorState) {
+      saveResumePoint({ flow: flowType, pageNumber, queueIndex });
+    }
+  }, [complete, errorState, flowType, pageNumber, queueIndex]);
+
   const buildAlreadyRatedState = useCallback(
     (queuePageIndex: number, activePageNumber: number | undefined): FlowErrorState => ({
       message:
@@ -232,11 +246,14 @@ export function HifzInlineRating({
 
         if (isQueueComplete(updated)) {
           clearQueue(flowType);
+          clearResumePoint();
           setComplete(true);
           setSubmitting(false);
+          onSessionComplete?.();
           return;
         }
 
+        onPageComplete?.();
         const nextPage = updated.pageOrder[updated.currentPageIndex];
         router.push(
           buildQueuePageHref(flowType, nextPage, updated.currentPageIndex),

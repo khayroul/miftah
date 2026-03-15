@@ -17,6 +17,7 @@ interface ReadAudioDockProps {
   visible?: boolean;
   onPlaybackAyahChange?: (ayahKey: string | null) => void;
   onPanelOpenChange?: (isOpen: boolean) => void;
+  onAllTracksEnded?: () => void;
 }
 
 type RangePreset = "page" | "surah" | "juz";
@@ -34,6 +35,11 @@ const RANGE_PRESET_SHORT_LABEL: Record<RangePreset, string> = {
 };
 
 const REPEAT_OPTIONS: RepeatOption[] = [1, 2, 3, -1];
+const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5] as const;
+
+function speedLabel(rate: number): string {
+  return rate === 1 ? "1x" : `${rate}x`;
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
@@ -138,6 +144,7 @@ export function ReadAudioDock({
   visible,
   onPlaybackAyahChange,
   onPanelOpenChange,
+  onAllTracksEnded,
 }: ReadAudioDockProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const shouldAutoplayRef = useRef(false);
@@ -154,6 +161,13 @@ export function ReadAudioDock({
   const [repeatSet, setRepeatSet] = useState<RepeatOption>(1);
   const [repeatEachStep, setRepeatEachStep] = useState(0);
   const [repeatSetStep, setRepeatSetStep] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState<number>(() => {
+    if (typeof window === "undefined") return 1;
+    const stored = localStorage.getItem("miftah:audio-speed");
+    if (!stored) return 1;
+    const parsed = Number.parseFloat(stored);
+    return [0.75, 1, 1.25, 1.5].includes(parsed) ? parsed : 1;
+  });
   const playableAyahKeySet = useMemo(() => {
     if (!playableAyahKeys || playableAyahKeys.length === 0) {
       return null;
@@ -229,6 +243,7 @@ export function ReadAudioDock({
     }
 
     audio.load();
+    audio.playbackRate = playbackRate;
     if (!shouldAutoplayRef.current) {
       return;
     }
@@ -236,7 +251,7 @@ export function ReadAudioDock({
     audio.play().catch(() => {
       audio.pause();
     });
-  }, [currentTrack?.audioUrl, safeIndex]);
+  }, [currentTrack?.audioUrl, playbackRate, safeIndex]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -444,6 +459,7 @@ export function ReadAudioDock({
     }
 
     setIsPlaying(false);
+    onAllTracksEnded?.();
   };
 
   const currentRangeTracks = tracks.slice(normalizedRangeStart, normalizedRangeEnd + 1);
@@ -574,6 +590,34 @@ export function ReadAudioDock({
         />
       </div>
 
+      <div className="mt-4">
+        <p className="mb-2 text-sm font-medium text-stone-600 dark:text-stone-400">
+          Kelajuan audio
+        </p>
+        <div className="flex gap-2">
+          {SPEED_OPTIONS.map((rate) => (
+            <button
+              key={rate}
+              type="button"
+              onClick={() => {
+                setPlaybackRate(rate);
+                localStorage.setItem("miftah:audio-speed", String(rate));
+                if (audioRef.current) {
+                  audioRef.current.playbackRate = rate;
+                }
+              }}
+              className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                playbackRate === rate
+                  ? "border-teal-400 bg-teal-50 text-teal-800 dark:border-teal-600 dark:bg-teal-900/30 dark:text-teal-200"
+                  : "border-stone-300 text-stone-600 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
+              }`}
+            >
+              {speedLabel(rate)}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="mt-4 flex items-center justify-between gap-2">
         <button
           type="button"
@@ -671,6 +715,24 @@ export function ReadAudioDock({
                 aria-label="Tukar tetapan julat"
               >
                 Julat {RANGE_PRESET_SHORT_LABEL[rangePreset]}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const currentIdx = SPEED_OPTIONS.indexOf(playbackRate as typeof SPEED_OPTIONS[number]);
+                  const nextRate = SPEED_OPTIONS[(currentIdx + 1) % SPEED_OPTIONS.length] ?? 1;
+                  setPlaybackRate(nextRate);
+                  localStorage.setItem("miftah:audio-speed", String(nextRate));
+                  if (audioRef.current) {
+                    audioRef.current.playbackRate = nextRate;
+                  }
+                }}
+                disabled={!canPlay}
+                className="inline-flex h-11 shrink-0 items-center rounded-full border border-stone-300 px-2.5 text-xs font-medium text-stone-700 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-45 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800 sm:h-12 sm:px-3 sm:text-sm"
+                aria-label="Tukar kelajuan audio"
+              >
+                {speedLabel(playbackRate)}
               </button>
 
               <div className="min-w-0 flex-1">

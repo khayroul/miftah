@@ -26,6 +26,7 @@ const ReadAudioDock = dynamic(
 
 interface ReadAudioContextValue {
   activePlaybackAyahKey: string | null;
+  allTracksEndedSignal: number;
   feedbackHidden: boolean;
   feedbackOffsetPx: number;
   isAudioPanelOpen: boolean;
@@ -57,6 +58,7 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
   const [playableAyahKeys, setPlayableAyahKeysState] = useState<string[] | null>(
     null,
   );
+  const [allTracksEndedSignal, setAllTracksEndedSignal] = useState(0);
 
   const setPlayableAyahKeys = useCallback((ayahKeys: string[] | null) => {
     if (!ayahKeys || ayahKeys.length === 0) {
@@ -138,6 +140,7 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
   const contextValue = useMemo<ReadAudioContextValue>(
     () => ({
       activePlaybackAyahKey,
+      allTracksEndedSignal,
       feedbackHidden,
       feedbackOffsetPx,
       isAudioPanelOpen,
@@ -153,6 +156,7 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
     }),
     [
       activePlaybackAyahKey,
+      allTracksEndedSignal,
       feedbackHidden,
       feedbackOffsetPx,
       isAudioPanelOpen,
@@ -183,6 +187,7 @@ export function ReadAudioProvider({ children }: { children: ReactNode }) {
           visible
           onPlaybackAyahChange={setActivePlaybackAyahKey}
           onPanelOpenChange={setIsAudioPanelOpen}
+          onAllTracksEnded={() => setAllTracksEndedSignal((s) => s + 1)}
         />
       ) : null}
     </ReadAudioContext.Provider>

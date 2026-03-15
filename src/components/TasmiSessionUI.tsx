@@ -54,6 +54,7 @@ export function TasmiSessionUI({
   const talqinRef = useRef<TalqinPlayer | null>(null);
 
   const handleEvent = useCallback((event: TasmiEvent) => {
+    console.log("[tasmi] event:", event.type, event.data);
     switch (event.type) {
       case "ready":
         setStatus("ready");
@@ -157,12 +158,18 @@ export function TasmiSessionUI({
     }
   }, []);
 
-  // Cleanup on unmount
+  const hasStartedRef = useRef(false);
+
+  // Auto-start session on mount (guard against React Strict Mode double-mount)
   useEffect(() => {
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+    void startSession();
     return () => {
       recorderRef.current?.stop();
       talqinRef.current?.stop();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSaveResult = useCallback(async () => {

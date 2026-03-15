@@ -38,6 +38,7 @@ import type { ReadMode } from "@/lib/readMode";
 import type { MushafPageManifest, MushafWordTranslationMap } from "@/types/mushaf";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { preCacheAudioUrls } from "@/lib/hifz/audioPreCache";
 
 const FahamExposureTracker = dynamic(
   () =>
@@ -87,6 +88,28 @@ const HifzMemorizeStepper = dynamic(
   () =>
     import("@/components/HifzMemorizeStepper").then(
       (module) => module.HifzMemorizeStepper,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
+const HifzSessionBar = dynamic(
+  () =>
+    import("@/components/HifzSessionBar").then(
+      (module) => module.HifzSessionBar,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
+const HifzSessionComplete = dynamic(
+  () =>
+    import("@/components/HifzSessionComplete").then(
+      (module) => module.HifzSessionComplete,
     ),
   {
     ssr: false,
@@ -228,6 +251,7 @@ export function ReadPageWorkspace({
   const searchParams = useSearchParams();
   const {
     activePlaybackAyahKey,
+    allTracksEndedSignal,
     isAudioVisible,
     pauseAudioPlayback,
     requestAudioAutoplay,
@@ -258,6 +282,9 @@ export function ReadPageWorkspace({
     setTasmiRevealedLines((prev) => Math.min(prev + 1, totalLineCount));
   }, [totalLineCount]);
   const [memorizeHideMushaf, setMemorizeHideMushaf] = useState(false);
+  const [sessionStartTime] = useState(() => Date.now());
+  const [sessionPagesCompleted, setSessionPagesCompleted] = useState(0);
+  const [sessionComplete, setSessionComplete] = useState(false);
   const [resolvedMemorizedAyahKeys, setResolvedMemorizedAyahKeys] = useState(
     memorizedAyahKeys,
   );
@@ -270,6 +297,7 @@ export function ReadPageWorkspace({
   const [previousQueuePage, setPreviousQueuePage] =
     useState<HifzQueuePagePointer | null>(null);
   const [isRecoveringHifzQueue, setIsRecoveringHifzQueue] = useState(false);
+  const [hifzQueueTotalPages, setHifzQueueTotalPages] = useState(0);
   const [hifzQueueRecoveryError, setHifzQueueRecoveryError] =
     useState<HifzQueueRecoveryError | null>(null);
   const hifzQueueIndex = useMemo(() => {
@@ -299,6 +327,7 @@ export function ReadPageWorkspace({
     ) => {
       setPreviousQueuePage(getAdjacentQueuePageFromQueue(queue, pageNumber, -1));
       setNextQueuePage(getAdjacentQueuePageFromQueue(queue, pageNumber, 1));
+      setHifzQueueTotalPages(queue.pageOrder.length);
     },
     [pageNumber],
   );
@@ -559,6 +588,13 @@ export function ReadPageWorkspace({
     setPlayableAyahKeys,
   ]);
 
+  // Pre-cache audio for current and next pages when in hifz flow
+  useEffect(() => {
+    if (hifzFlow === null || audioTracks.length === 0) return;
+    const urls = audioTracks.map((t) => t.audioUrl);
+    void preCacheAudioUrls(urls);
+  }, [hifzFlow, audioTracks]);
+
   useEffect(() => {
     if (!personalizationPageNumber || hifzFlow === null) {
       return;
@@ -758,6 +794,23 @@ export function ReadPageWorkspace({
 
   return (
     <div style={{ paddingBottom: contentBottomPadding }}>
+      {hifzFlow && hifzQueueTotalPages > 0 && !sessionComplete ? (
+        <HifzSessionBar
+          flow={hifzFlow}
+          totalPages={hifzQueueTotalPages}
+          completedPages={sessionPagesCompleted}
+          startTime={sessionStartTime}
+        />
+      ) : null}
+
+      {sessionComplete && hifzFlow ? (
+        <HifzSessionComplete
+          flow={hifzFlow}
+          pagesCompleted={sessionPagesCompleted}
+          timeElapsedMs={Date.now() - sessionStartTime}
+        />
+      ) : null}
+
       {shouldTrackExposure ? (
         <FahamExposureTracker
           payload={{
@@ -893,6 +946,7 @@ export function ReadPageWorkspace({
             totalLines={totalLineCount}
             revealedLines={tasmiRevealedLines}
             onTap={handleTasmiTap}
+            onRevealTo={setTasmiRevealedLines}
           />
         )}
         {memorizeHideMushaf && (
@@ -966,8 +1020,11 @@ export function ReadPageWorkspace({
           <HifzInlineRating
             flowType={hifzFlow}
             pageNumber={pageNumber}
+            queueIndex={hifzQueueIndex ?? 0}
             visible={tasmiAllRevealed}
             onTasmiSuccess={() => setTasmiRevealedLines(totalLineCount)}
+            onSessionComplete={() => setSessionComplete(true)}
+            onPageComplete={() => setSessionPagesCompleted((n) => n + 1)}
           />
         )
       )}
@@ -992,11 +1049,15 @@ export function ReadPageWorkspace({
           <HifzMemorizeStepper
             bottomOffsetPx={isAudioVisible ? 112 : 0}
             pageNumber={pageNumber}
+            queueIndex={hifzQueueIndex ?? 0}
+            audioFinishedSignal={allTracksEndedSignal}
             onChunkAyahKeysChange={setMemorizeChunkAyahKeys}
             onChunkListen={handleMemorizeChunkListen}
             onChunkPause={handleMemorizeChunkPause}
             onMushafHide={setMemorizeHideMushaf}
             onViewportInsetChange={setMemorizeViewportInset}
+            onSessionComplete={() => setSessionComplete(true)}
+            onPageComplete={() => setSessionPagesCompleted((n) => n + 1)}
           />
         )
       )}

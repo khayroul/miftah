@@ -1,7 +1,7 @@
 /**
  * Client-side session queue for hifz flows.
- * Stores the current memorization or review queue in sessionStorage
- * so it survives page-to-page navigation within the same tab.
+ * Stores the current memorization or review queue in localStorage
+ * so it survives page-to-page navigation and tab closes (24h expiry).
  */
 
 export type HifzFlowType = "memorize" | "review";
@@ -21,6 +21,7 @@ export interface HifzSessionQueue {
   pageOrder: number[];
   currentPageIndex: number;
   rated: number[]; // progressIds already rated this session
+  savedAt?: number; // Unix timestamp for expiry
 }
 
 export interface HifzQueuePagePointer {
@@ -34,10 +35,12 @@ function storageKey(type: HifzFlowType): string {
   return `${STORAGE_PREFIX}${type}`;
 }
 
-function getSessionStorage(): Storage | null {
+const QUEUE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function getStorage(): Storage | null {
   if (typeof window === "undefined") return null;
   try {
-    return window.sessionStorage;
+    return window.localStorage;
   } catch {
     return null;
   }
@@ -113,7 +116,7 @@ export function saveQueueState(
   currentPageIndex = 0,
   rated: number[] = [],
 ): HifzSessionQueue | null {
-  const storage = getSessionStorage();
+  const storage = getStorage();
   if (!storage) return null;
 
   const queue: HifzSessionQueue = {
@@ -122,6 +125,7 @@ export function saveQueueState(
     pageOrder: groupItemsByPage(items),
     currentPageIndex,
     rated,
+    savedAt: Date.now(),
   };
 
   if (currentPageIndex < 0 || currentPageIndex >= queue.pageOrder.length) {
@@ -141,13 +145,18 @@ export function saveQueue(type: HifzFlowType, items: HifzQueueItem[]): HifzSessi
 }
 
 export function loadQueue(type: HifzFlowType): HifzSessionQueue | null {
-  const storage = getSessionStorage();
+  const storage = getStorage();
   if (!storage) return null;
 
   try {
     const raw = storage.getItem(storageKey(type));
     if (!raw) return null;
-    return JSON.parse(raw) as HifzSessionQueue;
+    const queue = JSON.parse(raw) as HifzSessionQueue;
+    if (queue.savedAt && Date.now() - queue.savedAt > QUEUE_EXPIRY_MS) {
+      storage.removeItem(storageKey(type));
+      return null;
+    }
+    return queue;
   } catch {
     return null;
   }
@@ -165,9 +174,10 @@ export function setCurrentPageIndex(
   const updated: HifzSessionQueue = {
     ...queue,
     currentPageIndex: index,
+    savedAt: Date.now(),
   };
 
-  const storage = getSessionStorage();
+  const storage = getStorage();
   if (!storage) return null;
 
   try {
@@ -226,9 +236,10 @@ export function recoverQueueState(
     ...queue,
     currentPageIndex: recoveredPageIndex,
     rated: recoveredRated,
+    savedAt: Date.now(),
   };
 
-  const storage = getSessionStorage();
+  const storage = getStorage();
   if (!storage) {
     return null;
   }
@@ -268,9 +279,10 @@ export function advanceQueue(type: HifzFlowType): HifzSessionQueue | null {
   const updated: HifzSessionQueue = {
     ...queue,
     currentPageIndex: queue.currentPageIndex + 1,
+    savedAt: Date.now(),
   };
 
-  const storage = getSessionStorage();
+  const storage = getStorage();
   if (!storage) return null;
 
   try {
@@ -289,9 +301,10 @@ export function markRated(type: HifzFlowType, progressIds: number[]): HifzSessio
   const updated: HifzSessionQueue = {
     ...queue,
     rated: [...ratedSet],
+    savedAt: Date.now(),
   };
 
-  const storage = getSessionStorage();
+  const storage = getStorage();
   if (!storage) return null;
 
   try {
@@ -303,7 +316,7 @@ export function markRated(type: HifzFlowType, progressIds: number[]): HifzSessio
 }
 
 export function clearQueue(type: HifzFlowType): void {
-  const storage = getSessionStorage();
+  const storage = getStorage();
   if (!storage) return;
   try {
     storage.removeItem(storageKey(type));

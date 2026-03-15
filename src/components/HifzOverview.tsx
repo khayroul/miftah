@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { JuzHeatmap } from "@/components/JuzHeatmap";
 import { saveQueue } from "@/lib/hifz/sessionQueue";
@@ -10,6 +10,10 @@ import type {
 } from "@/lib/hifz/sessionQueue";
 import type { HifzQueueResponse } from "@/lib/hifz/queue";
 import type { JuzStat, HifzStats } from "@/lib/hifz/stats";
+import { getResumePoint, clearResumePoint, type HifzResumePoint } from "@/lib/hifz/resumePoint";
+import { getDifficultAyahCount } from "@/lib/hifz/difficultAyahs";
+import { HifzPageGrid } from "@/components/HifzPageGrid";
+import type { PageGridEntry } from "@/lib/hifz/stats";
 
 interface ImportSummary {
   count: number;
@@ -32,6 +36,7 @@ interface HifzOverviewProps {
   stats: HifzStats;
   globalStreak?: number;
   juzProgress: JuzStat[];
+  pageGrid?: PageGridEntry[];
   isGuest: boolean;
   hasProgress: boolean;
   canStartFresh?: boolean;
@@ -56,6 +61,7 @@ export function HifzOverview({
   stats,
   globalStreak,
   juzProgress,
+  pageGrid,
   isGuest,
   hasProgress,
   canStartFresh = false,
@@ -72,6 +78,13 @@ export function HifzOverview({
   const [testError, setTestError] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
   const [pendingJourney, setPendingJourney] = useState<PendingJourney | null>(null);
+  const [resumePoint, setResumePoint] = useState<HifzResumePoint | null>(null);
+  const [difficultCount, setDifficultCount] = useState(0);
+
+  useEffect(() => {
+    setResumePoint(getResumePoint());
+    setDifficultCount(getDifficultAyahCount());
+  }, []);
 
   const effectiveStats = importSummary?.stats ?? stats;
   const effectiveGlobalStreak = globalStreak ?? effectiveStats.streak;
@@ -568,6 +581,50 @@ export function HifzOverview({
           </div>
         ) : null}
 
+        {resumePoint && !isGuest ? (
+          <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-4 shadow-sm backdrop-blur-sm dark:border-amber-700/50 dark:bg-amber-900/20 sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                  Sesi Tergendala
+                </p>
+                <p className="mt-1 text-sm font-medium text-stone-800 dark:text-stone-200">
+                  {resumePoint.flow === "memorize" ? "Hafal" : "Ulang kaji"} — halaman {resumePoint.pageNumber}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    startTransition(() => {
+                      router.push(
+                        `/read/${resumePoint.pageNumber}?flow=${resumePoint.flow}&qi=${resumePoint.queueIndex}`,
+                      );
+                    });
+                  }}
+                  disabled={isPending}
+                  className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 active:bg-amber-700 disabled:opacity-40 dark:bg-amber-600 dark:hover:bg-amber-500"
+                >
+                  Sambung
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearResumePoint();
+                    setResumePoint(null);
+                  }}
+                  className="rounded-lg p-2 text-stone-400 transition hover:bg-stone-200/60 hover:text-stone-600 dark:text-stone-500 dark:hover:bg-stone-700/40 dark:hover:text-stone-300"
+                  aria-label="Abaikan sesi tergendala"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <div className="rounded-2xl border border-stone-200/80 bg-white/80 p-6 shadow-sm backdrop-blur-sm dark:border-stone-700/50 dark:bg-stone-900/60 sm:p-8">
           <h2 className="mb-4 text-2xl font-bold text-stone-900 dark:text-stone-100">
             Hafalan Hari Ini
@@ -598,11 +655,18 @@ export function HifzOverview({
             ) : null}
           </div>
 
-          {effectiveGlobalStreak > 0 ? (
-            <p className="mb-6 text-sm text-stone-500 dark:text-stone-400">
-              Streak semasa: {effectiveGlobalStreak} hari
-            </p>
-          ) : null}
+          <div className="mb-6 flex flex-wrap gap-x-4 gap-y-1">
+            {effectiveGlobalStreak > 0 ? (
+              <p className="text-sm text-stone-500 dark:text-stone-400">
+                Streak semasa: {effectiveGlobalStreak} hari
+              </p>
+            ) : null}
+            {difficultCount > 0 ? (
+              <p className="text-sm text-red-500 dark:text-red-400">
+                {difficultCount} ayat ditanda susah
+              </p>
+            ) : null}
+          </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
@@ -646,6 +710,10 @@ export function HifzOverview({
         </div>
 
         <JuzHeatmap juzProgress={effectiveJuzProgress} />
+
+        {pageGrid && pageGrid.length > 0 ? (
+          <HifzPageGrid entries={pageGrid} />
+        ) : null}
       </div>
     </>
   );

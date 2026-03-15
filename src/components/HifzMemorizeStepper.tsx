@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   areAllProgressIdsRated,
@@ -16,22 +16,30 @@ import { buildSignInPath } from "@/lib/auth";
 import {
   buildMemorizeChunks,
   resolveMemorizeChunkLength,
+  recordChunkRating,
+  getChunkSizeSuggestion,
   type MemorizeChunk,
   type MemorizeChunkSizeOption,
+  type ChunkSizeSuggestion,
 } from "@/lib/hifz/memorizeChunks";
 import { TasmiSessionUI } from "@/components/TasmiSessionUI";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
 import type { TasmiSessionResult } from "@/lib/tasmi/tasmi-session";
 import type { TasmiRatingLabel } from "@/lib/tasmi/fsrs-bridge";
+import { saveResumePoint, clearResumePoint } from "@/lib/hifz/resumePoint";
 
 interface HifzMemorizeStepperProps {
   bottomOffsetPx?: number;
   pageNumber: number;
+  queueIndex?: number;
+  audioFinishedSignal?: number;
   onChunkAyahKeysChange: (ayahKeys: string[] | null) => void;
   onChunkListen: () => void;
   onChunkPause: () => void;
   onMushafHide: (hidden: boolean) => void;
   onViewportInsetChange?: (insetPx: number) => void;
+  onSessionComplete?: () => void;
+  onPageComplete?: () => void;
 }
 
 type Step = 1 | 2 | 3 | 4;
@@ -93,11 +101,15 @@ function describeChunk(chunk: MemorizeChunk | null): string {
 export function HifzMemorizeStepper({
   bottomOffsetPx = 0,
   pageNumber,
+  queueIndex = 0,
+  audioFinishedSignal = 0,
   onChunkAyahKeysChange,
   onChunkListen,
   onChunkPause,
   onMushafHide,
   onViewportInsetChange,
+  onSessionComplete,
+  onPageComplete,
 }: HifzMemorizeStepperProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>(1);
@@ -113,6 +125,13 @@ export function HifzMemorizeStepper({
   const [tasmiStartAyah, setTasmiStartAyah] = useState(0);
   const [tasmiEndAyah, setTasmiEndAyah] = useState(0);
   const [tasmiLoading, setTasmiLoading] = useState(false);
+  const [chunkSuggestion, setChunkSuggestion] = useState<ChunkSizeSuggestion>(null);
+  const [suggestionDismissed, setSuggestionDismissed] = useState(false);
+
+  useEffect(() => {
+    setChunkSuggestion(getChunkSizeSuggestion());
+  }, []);
+
   const buildAlreadyRatedState = useCallback(
     (queuePageIndex: number, activePageNumber: number | undefined): FlowErrorState => ({
       message:
@@ -280,6 +299,53 @@ export function HifzMemorizeStepper({
     };
   }, [bottomOffsetPx, onViewportInsetChange, panelElement]);
 
+  const listenCountRef = useRef(0);
+  const prevAudioSignalRef = useRef(audioFinishedSignal);
+  const [autoAdvancing, setAutoAdvancing] = useState(false);
+
+  useEffect(() => {
+    listenCountRef.current = 0;
+  }, [currentChunkIndex]);
+
+  useEffect(() => {
+    if (audioFinishedSignal === prevAudioSignalRef.current) return;
+    prevAudioSignalRef.current = audioFinishedSignal;
+
+    if (currentStep === 1) {
+      listenCountRef.current += 1;
+      if (listenCountRef.current >= 1) {
+        setAutoAdvancing(true);
+        const timer = setTimeout(() => {
+          setAutoAdvancing(false);
+          goToStep(2);
+        }, 1500);
+        return () => clearTimeout(timer);
+      }
+    } else if (currentStep === 2) {
+      listenCountRef.current += 1;
+      if (listenCountRef.current >= 2) {
+        setAutoAdvancing(true);
+        const timer = setTimeout(() => {
+          setAutoAdvancing(false);
+          goToStep(3);
+        }, 1500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [audioFinishedSignal, currentStep, goToStep]);
+
+  useEffect(() => {
+    if (!complete && !displayedError) {
+      saveResumePoint({
+        flow: "memorize",
+        pageNumber,
+        queueIndex,
+        chunkIndex: currentChunkIndex,
+        step: currentStep,
+      });
+    }
+  }, [complete, currentChunkIndex, currentStep, displayedError, pageNumber, queueIndex]);
+
   const startTasmi = useCallback(async () => {
     const chunkItems = currentChunk?.items ?? [];
     if (chunkItems.length === 0) return;
@@ -400,6 +466,9 @@ export function HifzMemorizeStepper({
 
         if (isQueueComplete(updated)) {
           clearQueue("memorize");
+          clearResumePoint();
+          onPageComplete?.();
+          onSessionComplete?.();
           setComplete(true);
           setSubmitting(false);
           onChunkAyahKeysChange(null);
@@ -407,6 +476,7 @@ export function HifzMemorizeStepper({
           return;
         }
 
+        onPageComplete?.();
         const nextPage = updated.pageOrder[updated.currentPageIndex];
         router.push(
           buildQueuePageHref("memorize", nextPage, updated.currentPageIndex),
@@ -478,6 +548,8 @@ export function HifzMemorizeStepper({
         }
 
         if (!confident) {
+          recordChunkRating(false);
+          setChunkSuggestion(getChunkSizeSuggestion());
           goToStep(1);
           setSubmitting(false);
           return;
@@ -590,6 +662,9 @@ export function HifzMemorizeStepper({
           chunkItems.map((item) => item.progressId),
         );
 
+        recordChunkRating(true);
+        setChunkSuggestion(getChunkSizeSuggestion());
+
         const nextChunkIndex = currentChunkIndex + 1;
         if (nextChunkIndex < pageChunks.length) {
           setCurrentChunkIndex(nextChunkIndex);
@@ -609,6 +684,9 @@ export function HifzMemorizeStepper({
 
         if (isQueueComplete(updated)) {
           clearQueue("memorize");
+          clearResumePoint();
+          onPageComplete?.();
+          onSessionComplete?.();
           setComplete(true);
           setSubmitting(false);
           onChunkAyahKeysChange(null);
@@ -616,6 +694,7 @@ export function HifzMemorizeStepper({
           return;
         }
 
+        onPageComplete?.();
         const nextPage = updated.pageOrder[updated.currentPageIndex];
         router.push(
           buildQueuePageHref("memorize", nextPage, updated.currentPageIndex),
@@ -712,6 +791,14 @@ export function HifzMemorizeStepper({
       className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95"
       style={{ bottom: bottomOffsetPx }}
     >
+      {autoAdvancing ? (
+        <div className="mb-3 flex items-center justify-center">
+          <p className="animate-pulse text-sm font-medium text-amber-600 dark:text-amber-400">
+            Seterusnya...
+          </p>
+        </div>
+      ) : null}
+
       <div className="mb-3 flex items-center justify-center gap-2">
         {STEPS.map((step) => (
           <div
@@ -746,6 +833,37 @@ export function HifzMemorizeStepper({
           {chunkAyahCount} ayat dalam chunk ini
         </p>
       </div>
+
+      {chunkSuggestion && !suggestionDismissed ? (
+        <div className="mb-3 flex items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 dark:border-amber-700/50 dark:bg-amber-900/20">
+          <p className="text-xs text-amber-800 dark:text-amber-200">
+            {chunkSuggestion === "smaller"
+              ? "Nampak susah — cuba chunk lebih kecil?"
+              : "Bagus! Cuba chunk lebih besar?"}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              const current = resolveMemorizeChunkLength(pageItems.length, chunkSize);
+              const next = chunkSuggestion === "smaller"
+                ? Math.max(1, current - 1) as MemorizeChunkSizeOption
+                : Math.min(3, current + 1) as MemorizeChunkSizeOption;
+              handleChunkSizeChange(next);
+              setSuggestionDismissed(true);
+            }}
+            className="rounded-lg bg-amber-500 px-3 py-1 text-xs font-semibold text-white transition hover:bg-amber-600"
+          >
+            {chunkSuggestion === "smaller" ? "Kecilkan" : "Besarkan"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSuggestionDismissed(true)}
+            className="text-xs text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200"
+          >
+            Abaikan
+          </button>
+        </div>
+      ) : null}
 
       <div className="mb-3">
         <p className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">

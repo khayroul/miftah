@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -8,6 +9,10 @@ import {
   type TouchEvent,
   type ReactNode,
 } from "react";
+import {
+  getDifficultAyahs,
+  toggleDifficultAyah,
+} from "@/lib/hifz/difficultAyahs";
 import {
   type AyahEndByLine,
   calculateHifzRevealStageByAyahKeys,
@@ -318,6 +323,19 @@ export function MushafPageView({
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(
     null,
   );
+  const [difficultAyahSet, setDifficultAyahSet] = useState<Set<string>>(() => getDifficultAyahs());
+  const [difficultToast, setDifficultToast] = useState<string | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleLongPress = useCallback((word: MushafWordHitbox) => {
+    const ayahKey = getAyahKeyFromWord(word);
+    if (!ayahKey) return;
+    const nowDifficult = toggleDifficultAyah(ayahKey);
+    setDifficultAyahSet(getDifficultAyahs());
+    setDifficultToast(nowDifficult ? `${ayahKey} ditanda susah` : `${ayahKey} tanda dibuang`);
+    setTimeout(() => setDifficultToast(null), 2000);
+  }, []);
+
   const { mode } = useReadMode();
 
   const imageWidth = manifest?.image_width ?? 1200;
@@ -953,6 +971,24 @@ export function MushafPageView({
           onTouchEnd={(event) => {
             event.stopPropagation();
           }}
+          onPointerDown={() => {
+            longPressTimerRef.current = setTimeout(() => {
+              handleLongPress(word);
+              longPressTimerRef.current = null;
+            }, 600);
+          }}
+          onPointerUp={() => {
+            if (longPressTimerRef.current) {
+              clearTimeout(longPressTimerRef.current);
+              longPressTimerRef.current = null;
+            }
+          }}
+          onPointerLeave={() => {
+            if (longPressTimerRef.current) {
+              clearTimeout(longPressTimerRef.current);
+              longPressTimerRef.current = null;
+            }
+          }}
           className="absolute cursor-pointer bg-transparent hover:bg-amber-300/25 focus-visible:bg-amber-300/30 focus-visible:outline-none"
           style={{
             left: percent(tapBox.x, imageWidth),
@@ -965,6 +1001,7 @@ export function MushafPageView({
     });
   }, [
     canInteract,
+    handleLongPress,
     imageHeight,
     imageWidth,
     wordTapPaddingX,
@@ -1226,9 +1263,32 @@ export function MushafPageView({
                 }}
               />
             ))}
+            {difficultToast ? (
+              <div className="pointer-events-none absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-lg bg-stone-900/90 px-3 py-1.5 text-xs font-medium text-white shadow-lg">
+                {difficultToast}
+              </div>
+            ) : null}
             {canInteract ? (
               <>
                 {wordHitboxButtons}
+                {/* Difficult ayah dots */}
+                {words.map((word, index) => {
+                  const ayahKey = getAyahKeyFromWord(word);
+                  if (!ayahKey || !difficultAyahSet.has(ayahKey)) return null;
+                  // Only show dot on first word of each ayah
+                  const wordPos = word.location.split(":")[2];
+                  if (wordPos !== "1") return null;
+                  return (
+                    <span
+                      key={`diff-${ayahKey}-${index}`}
+                      className="pointer-events-none absolute h-1.5 w-1.5 rounded-full bg-red-500"
+                      style={{
+                        left: percent(word.x + word.width - 2, imageWidth),
+                        top: percent(word.y, imageHeight),
+                      }}
+                    />
+                  );
+                })}
                 {activeWord ? (
                   <div
                     className="pointer-events-none absolute border-2 border-amber-500"

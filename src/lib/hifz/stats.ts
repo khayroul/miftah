@@ -145,6 +145,50 @@ export async function getHifzStats(userId: string): Promise<HifzStats> {
   };
 }
 
+export type PageGridStatus = "not-started" | "sabak" | "manzil" | "due" | "overdue";
+
+export interface PageGridEntry {
+  page: number;
+  status: PageGridStatus;
+}
+
+export async function getPageProgressGrid(userId: string): Promise<PageGridEntry[]> {
+  const { data, error } = await supabaseServer
+    .from("v_hifz_page_progress")
+    .select("page_number, is_started, is_complete_manzil, is_due, sabak_ayat")
+    .eq("user_id", userId);
+
+  if (error) throw error;
+
+  const rowMap = new Map<number, HifzPageProgressRow>();
+  for (const row of (data ?? []) as HifzPageProgressRow[]) {
+    rowMap.set(row.page_number, row);
+  }
+
+  return Array.from({ length: TOTAL_QURAN_PAGES }, (_, i) => {
+    const page = i + 1;
+    const row = rowMap.get(page);
+
+    if (!row || !row.is_started) {
+      return { page, status: "not-started" as const };
+    }
+
+    if (row.is_due) {
+      return { page, status: "due" as const };
+    }
+
+    if (row.is_complete_manzil) {
+      return { page, status: "manzil" as const };
+    }
+
+    if ((row.sabak_ayat ?? 0) > 0) {
+      return { page, status: "sabak" as const };
+    }
+
+    return { page, status: "not-started" as const };
+  });
+}
+
 function calcStreak(dates: string[]): number {
   if (dates.length === 0) return 0;
 

@@ -6,7 +6,8 @@ import { LightweightBreadcrumb } from "@/components/LightweightBreadcrumb";
 import { countUniquePlanItemPages } from "@/lib/hifz/queue";
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { hasAnyHifzProgress } from "@/lib/hifz/study-progress";
-import { getHifzStats, getJuzProgress } from "@/lib/hifz/stats";
+import { getHifzStats, getJuzProgress, getPageProgressGrid } from "@/lib/hifz/stats";
+import type { PageGridEntry } from "@/lib/hifz/stats";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { getUserStreak } from "@/lib/activity";
@@ -20,6 +21,7 @@ export default async function HifzPage() {
   let plan: DailyPlanWithDetails;
   let stats: HifzStats;
   let juzProgress: JuzStat[];
+  let pageGrid: PageGridEntry[] = [];
   let globalStreak = 0;
   let canStartFresh = false;
   const jumpTargets = await getReadJumpTargets();
@@ -31,10 +33,11 @@ export default async function HifzPage() {
     globalStreak = streak?.current_streak ?? 0;
 
     if (hasStarted) {
-      [plan, stats, juzProgress] = await Promise.all([
+      [plan, stats, juzProgress, pageGrid] = await Promise.all([
         buildDailyPlanWithDetails(userId),
         getHifzStats(userId),
         getJuzProgress(userId),
+        getPageProgressGrid(userId),
       ]);
     } else {
       plan = { sabqi: [], sabak: [], manzil: [] } as DailyPlanWithDetails;
@@ -110,6 +113,7 @@ export default async function HifzPage() {
           stats={stats}
           globalStreak={globalStreak}
           juzProgress={juzProgress}
+          pageGrid={pageGrid}
           isGuest={!userId}
           hasProgress={hasProgress}
           canStartFresh={canStartFresh}
