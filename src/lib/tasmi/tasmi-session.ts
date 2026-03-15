@@ -109,7 +109,8 @@ export class TasmiSession {
           type: 'match',
           data: { matchResult, progress: this.matcher.progress },
         });
-      } else if (matchResult.errors.length > 0) {
+      } else if (matchResult.errors.length > 0 || matchResult.wordsTotal > 0) {
+        // Count as error: explicit errors OR speech detected but nothing matched
         this.consecutiveErrors++;
         matchResult.errors.forEach(e => this.errorPositions.add(e.position));
 
