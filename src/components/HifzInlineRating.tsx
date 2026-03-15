@@ -14,6 +14,10 @@ import {
 } from "@/lib/hifz/sessionQueue";
 import { buildSignInPath } from "@/lib/auth";
 import type { HifzFlowType } from "@/lib/hifz/sessionQueue";
+import { TasmiSessionUI } from "@/components/TasmiSessionUI";
+import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
+import type { TasmiSessionResult } from "@/lib/tasmi/tasmi-session";
+import type { TasmiRatingLabel } from "@/lib/tasmi/fsrs-bridge";
 
 interface HifzInlineRatingProps {
   flowType: HifzFlowType;
@@ -43,6 +47,12 @@ export function HifzInlineRating({
   const [submitting, setSubmitting] = useState(false);
   const [complete, setComplete] = useState(false);
   const [errorState, setErrorState] = useState<FlowErrorState | null>(null);
+  const [tasmiActive, setTasmiActive] = useState(false);
+  const [tasmiExpectedText, setTasmiExpectedText] = useState<string | null>(null);
+  const [tasmiSurahNumber, setTasmiSurahNumber] = useState(0);
+  const [tasmiStartAyah, setTasmiStartAyah] = useState(0);
+  const [tasmiEndAyah, setTasmiEndAyah] = useState(0);
+  const [tasmiLoading, setTasmiLoading] = useState(false);
   const buildAlreadyRatedState = useCallback(
     (queuePageIndex: number, activePageNumber: number | undefined): FlowErrorState => ({
       message:
@@ -82,6 +92,56 @@ export function HifzInlineRating({
     return null;
   }, [buildAlreadyRatedState, flowType, pageNumber]);
   const displayedError: FlowErrorState | null = errorState ?? initialFlowError;
+
+  const startTasmi = useCallback(async () => {
+    const queue = loadQueue(flowType);
+    if (!queue) return;
+
+    const pageItems = getItemsForPage(queue, pageNumber);
+    if (pageItems.length === 0) return;
+
+    setTasmiLoading(true);
+    try {
+      const ayahKeys = pageItems.map((item) => item.ayahKey);
+      const parsed = ayahKeys.map((key) => {
+        const [surah, ayah] = key.split(":").map(Number);
+        return { surah: surah ?? 0, ayah: ayah ?? 0 };
+      });
+
+      const surahNumber = parsed[0]?.surah ?? 0;
+      const startAyah = parsed[0]?.ayah ?? 0;
+      const endAyah = parsed[parsed.length - 1]?.ayah ?? startAyah;
+
+      const supabase = createSupabaseBrowserClient();
+      const ayahIds = pageItems.map((item) => item.ayahId);
+      const { data: ayahRows } = await supabase
+        .from("ayat")
+        .select("id, text_uthmani")
+        .in("id", ayahIds)
+        .order("surah_id")
+        .order("ayah_number");
+
+      if (!ayahRows || ayahRows.length === 0) {
+        setTasmiLoading(false);
+        return;
+      }
+
+      const expectedText = ayahRows.map((row) => row.text_uthmani).join(" ");
+      setTasmiExpectedText(expectedText);
+      setTasmiSurahNumber(surahNumber);
+      setTasmiStartAyah(startAyah);
+      setTasmiEndAyah(endAyah);
+      setTasmiActive(true);
+    } catch {
+      // Failed to fetch — stay on manual mode
+    }
+    setTasmiLoading(false);
+  }, [flowType, pageNumber]);
+
+  const handleTasmiCancel = useCallback(() => {
+    setTasmiActive(false);
+    setTasmiExpectedText(null);
+  }, []);
 
   const handleRate = useCallback(
     async (rating: 1 | 3) => {
@@ -188,7 +248,17 @@ export function HifzInlineRating({
     [buildAlreadyRatedState, flowType, pageNumber, router],
   );
 
-  if (!visible && !complete && !displayedError) return null;
+  const handleTasmiEnd = useCallback(
+    async (_result: TasmiSessionResult, label: TasmiRatingLabel) => {
+      setTasmiActive(false);
+      setTasmiExpectedText(null);
+      const binaryRating = label === "ulang" ? (1 as const) : (3 as const);
+      await handleRate(binaryRating);
+    },
+    [handleRate],
+  );
+
+  if (!visible && !tasmiActive && !complete && !displayedError) return null;
 
   if (complete) {
     return (
@@ -246,6 +316,21 @@ export function HifzInlineRating({
     );
   }
 
+  if (tasmiActive && tasmiExpectedText) {
+    return (
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95">
+        <TasmiSessionUI
+          expectedText={tasmiExpectedText}
+          surahNumber={tasmiSurahNumber}
+          startAyah={tasmiStartAyah}
+          endAyah={tasmiEndAyah}
+          onSessionEnd={handleTasmiEnd}
+          onCancel={handleTasmiCancel}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95">
       <p className="mb-3 text-center text-sm font-medium text-stone-600 dark:text-stone-400">
@@ -267,6 +352,16 @@ export function HifzInlineRating({
           className="flex-1 max-w-[200px] rounded-xl bg-red-500 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-red-600 disabled:opacity-50 dark:bg-red-600 dark:hover:bg-red-500"
         >
           Lupa
+        </button>
+      </div>
+      <div className="mt-3 flex justify-center">
+        <button
+          type="button"
+          disabled={tasmiLoading || submitting}
+          onClick={startTasmi}
+          className="rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
+        >
+          {tasmiLoading ? "Menyediakan..." : "Mula Tasmi\u2019"}
         </button>
       </div>
     </div>

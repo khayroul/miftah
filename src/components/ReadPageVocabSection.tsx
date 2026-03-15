@@ -7,6 +7,8 @@ interface ReadPageVocabSectionProps {
   levelProgress: FahamLevelProgress;
   pageNumber: number;
   loadError?: string | null;
+  /** Start with the details section already expanded (default: false). */
+  defaultOpen?: boolean;
 }
 
 function statusLabel(status: ReadPageVocabPreviewItem["status"]): string {
@@ -46,10 +48,11 @@ export function ReadPageVocabSection({
   levelProgress,
   pageNumber,
   loadError = null,
+  defaultOpen = false,
 }: ReadPageVocabSectionProps) {
   return (
     <section className="rounded-[28px] border border-stone-200/90 bg-white/92 p-4 shadow-[0_18px_42px_-34px_rgba(28,25,23,0.42)] backdrop-blur-sm dark:border-stone-700/80 dark:bg-stone-900/88 sm:p-5">
-      <details className="group">
+      <details className="group" open={defaultOpen || undefined}>
         <summary className="flex cursor-pointer list-none items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">

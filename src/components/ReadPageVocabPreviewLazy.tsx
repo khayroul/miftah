@@ -96,6 +96,7 @@ export function ReadPageVocabPreviewLazy({
         levelProgress={levelProgress}
         pageNumber={pageNumber}
         loadError={loadError}
+        defaultOpen
       />
     );
   }

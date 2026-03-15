@@ -36,6 +36,7 @@
     "symphony:run": "bash scripts/symphony/run_symphony.sh"
   },
   "dependencies": {
+    "@ricky0123/vad-web": "^0.0.30",
     "@sentry/nextjs": "^10.43.0",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.98.0",

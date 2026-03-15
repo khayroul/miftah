@@ -426,3 +426,22 @@ export interface ManifestWord {
   width: number;
   height: number;
 }
+
+// ============================================================
+// Tasmi' (Recitation Checking)
+// ============================================================
+
+export interface TasmiSessionRow {
+  id: string;
+  user_id: string;
+  surah_number: number;
+  start_ayah: number;
+  end_ayah: number;
+  total_words: number;
+  words_correct: number;
+  accuracy: number;
+  talqin_count: number;
+  error_positions: number[];
+  duration_seconds: number;
+  created_at: string;
+}

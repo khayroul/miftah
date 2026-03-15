@@ -19,6 +19,10 @@ import {
   type MemorizeChunk,
   type MemorizeChunkSizeOption,
 } from "@/lib/hifz/memorizeChunks";
+import { TasmiSessionUI } from "@/components/TasmiSessionUI";
+import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
+import type { TasmiSessionResult } from "@/lib/tasmi/tasmi-session";
+import type { TasmiRatingLabel } from "@/lib/tasmi/fsrs-bridge";
 
 interface HifzMemorizeStepperProps {
   bottomOffsetPx?: number;
@@ -103,6 +107,12 @@ export function HifzMemorizeStepper({
   const [complete, setComplete] = useState(false);
   const [errorState, setErrorState] = useState<FlowErrorState | null>(null);
   const [panelElement, setPanelElement] = useState<HTMLDivElement | null>(null);
+  const [tasmiActive, setTasmiActive] = useState(false);
+  const [tasmiExpectedText, setTasmiExpectedText] = useState<string | null>(null);
+  const [tasmiSurahNumber, setTasmiSurahNumber] = useState(0);
+  const [tasmiStartAyah, setTasmiStartAyah] = useState(0);
+  const [tasmiEndAyah, setTasmiEndAyah] = useState(0);
+  const [tasmiLoading, setTasmiLoading] = useState(false);
   const buildAlreadyRatedState = useCallback(
     (queuePageIndex: number, activePageNumber: number | undefined): FlowErrorState => ({
       message:
@@ -269,6 +279,160 @@ export function HifzMemorizeStepper({
       onViewportInsetChange(0);
     };
   }, [bottomOffsetPx, onViewportInsetChange, panelElement]);
+
+  const startTasmi = useCallback(async () => {
+    const chunkItems = currentChunk?.items ?? [];
+    if (chunkItems.length === 0) return;
+
+    setTasmiLoading(true);
+    try {
+      // Parse ayahKeys to get surah/ayah numbers
+      const ayahKeys = chunkItems.map((item) => item.ayahKey);
+      const parsed = ayahKeys.map((key) => {
+        const [surah, ayah] = key.split(":").map(Number);
+        return { surah: surah ?? 0, ayah: ayah ?? 0 };
+      });
+
+      const surahNumber = parsed[0]?.surah ?? 0;
+      const startAyah = parsed[0]?.ayah ?? 0;
+      const endAyah = parsed[parsed.length - 1]?.ayah ?? startAyah;
+
+      // Fetch text_uthmani for these ayahs
+      const supabase = createSupabaseBrowserClient();
+      const ayahIds = chunkItems.map((item) => item.ayahId);
+      const { data: ayahRows } = await supabase
+        .from("ayat")
+        .select("id, text_uthmani")
+        .in("id", ayahIds)
+        .order("surah_id")
+        .order("ayah_number");
+
+      if (!ayahRows || ayahRows.length === 0) {
+        setTasmiLoading(false);
+        return;
+      }
+
+      const expectedText = ayahRows.map((row) => row.text_uthmani).join(" ");
+
+      setTasmiExpectedText(expectedText);
+      setTasmiSurahNumber(surahNumber);
+      setTasmiStartAyah(startAyah);
+      setTasmiEndAyah(endAyah);
+      setTasmiActive(true);
+      onChunkPause();
+    } catch {
+      // Failed to fetch ayah text — stay on manual mode
+    }
+    setTasmiLoading(false);
+  }, [currentChunk, onChunkPause]);
+
+  const handleTasmiEnd = useCallback(
+    async (result: TasmiSessionResult, label: TasmiRatingLabel) => {
+      setTasmiActive(false);
+      setTasmiExpectedText(null);
+
+      const chunkItems = currentChunk?.items ?? [];
+      if (chunkItems.length === 0) return;
+
+      // Map tasmi' result to binary rating (1=Again or 3=Good)
+      // rate-batch only accepts 1 | 3; ulang→1 (re-memorize), anything better→3 (pass)
+      const binaryRating = label === "ulang" ? (1 as const) : (3 as const);
+
+      const ratings = chunkItems.map((item) => ({
+        progressId: item.progressId,
+        rating: binaryRating,
+        block: item.block,
+      }));
+
+      setSubmitting(true);
+      try {
+        const rateResponse = await fetch("/api/hifz/rate-batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ratings }),
+        });
+
+        if (!rateResponse.ok) {
+          setErrorState({
+            message: "Markah hafalan tak dapat disimpan sekarang. Cuba lagi sekali.",
+          });
+          setSubmitting(false);
+          return;
+        }
+
+        const markResponse = await fetch("/api/hifz/mark-memorized", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ayahIds: chunkItems.map((item) => item.ayahId),
+          }),
+        });
+
+        if (!markResponse.ok) {
+          setErrorState({
+            message: "Status hafalan tak dapat disimpan sekarang. Cuba lagi sekali.",
+          });
+          setSubmitting(false);
+          return;
+        }
+
+        markRated(
+          "memorize",
+          chunkItems.map((item) => item.progressId),
+        );
+
+        const nextChunkIndex = currentChunkIndex + 1;
+        if (nextChunkIndex < pageChunks.length) {
+          setCurrentChunkIndex(nextChunkIndex);
+          goToStep(1);
+          setSubmitting(false);
+          return;
+        }
+
+        const updated = advanceQueue("memorize");
+        if (!updated) {
+          setErrorState({
+            message: "Sesi hafalan tak dapat disambung. Kembali ke Hafal dan buka semula sesi ini.",
+          });
+          setSubmitting(false);
+          return;
+        }
+
+        if (isQueueComplete(updated)) {
+          clearQueue("memorize");
+          setComplete(true);
+          setSubmitting(false);
+          onChunkAyahKeysChange(null);
+          onMushafHide(false);
+          return;
+        }
+
+        const nextPage = updated.pageOrder[updated.currentPageIndex];
+        router.push(
+          buildQueuePageHref("memorize", nextPage, updated.currentPageIndex),
+        );
+      } catch {
+        setErrorState({
+          message: "Simpanan hafalan gagal sekarang. Cuba lagi sekali.",
+        });
+      }
+      setSubmitting(false);
+    },
+    [
+      currentChunk,
+      currentChunkIndex,
+      goToStep,
+      onChunkAyahKeysChange,
+      onMushafHide,
+      pageChunks.length,
+      router,
+    ],
+  );
+
+  const handleTasmiCancel = useCallback(() => {
+    setTasmiActive(false);
+    setTasmiExpectedText(null);
+  }, []);
 
   const handleNext = useCallback(() => {
     if (currentStep < 4) {
@@ -616,6 +780,31 @@ export function HifzMemorizeStepper({
           {stepInfo.description}
         </p>
       </div>
+
+      {/* Tasmi' engine UI — shown when active on step 3 */}
+      {tasmiActive && tasmiExpectedText ? (
+        <div className="mb-3">
+          <TasmiSessionUI
+            expectedText={tasmiExpectedText}
+            surahNumber={tasmiSurahNumber}
+            startAyah={tasmiStartAyah}
+            endAyah={tasmiEndAyah}
+            onSessionEnd={handleTasmiEnd}
+            onCancel={handleTasmiCancel}
+          />
+        </div>
+      ) : currentStep === 3 ? (
+        <div className="mb-3 flex justify-center">
+          <button
+            type="button"
+            disabled={tasmiLoading}
+            onClick={startTasmi}
+            className="rounded-xl bg-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
+          >
+            {tasmiLoading ? "Menyediakan..." : "Mula Tasmi\u2019"}
+          </button>
+        </div>
+      ) : null}
 
       <div className="mb-3 flex flex-wrap items-center justify-center gap-2">
         <button
