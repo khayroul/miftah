@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { TOP_FAHAM_WORD_LIMIT } from "@/lib/faham/config";
 import { buildFahamQueuePlan, DEFAULT_FAHAM_ENGINE_CONFIG } from "@/lib/faham/engine";
 import { buildFahamLevelProgress, getFahamLevelState, type FahamLevelProgress } from "@/lib/faham/levels";
@@ -453,7 +454,7 @@ async function loadSafely<T>(
   }
 }
 
-export async function loadHomeDashboardSnapshot(
+async function loadHomeDashboardSnapshotUncached(
   userId: string | null,
 ): Promise<HomeDashboardSnapshot> {
   if (!userId) {
@@ -476,3 +477,9 @@ export async function loadHomeDashboardSnapshot(
 
   return { faham, hifz, read, tema, activity };
 }
+
+export const loadHomeDashboardSnapshot = unstable_cache(
+  loadHomeDashboardSnapshotUncached,
+  ["home-dashboard-snapshot"],
+  { revalidate: 30, tags: ["home-dashboard"] },
+);
