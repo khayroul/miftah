@@ -8,6 +8,9 @@
   --mushaf-frame-invert: 0;
 
   aspect-ratio: 768 / 1280;
+  max-width: min(100%, calc((100vh - 280px) * 768 / 1280));
+  margin: 0 auto;
+  border-radius: 24px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -19,7 +22,7 @@
 }
 
 .dark .mushaf-page {
-  --mushaf-bg: transparent;
+  --mushaf-bg: rgba(255, 255, 255, 0.03);
   --mushaf-text: #e7e9ea;
   --mushaf-page-num: #6b6e70;
   --mushaf-frame-invert: 1;
