@@ -136,7 +136,6 @@ interface ReadPageWorkspaceProps {
   mushafHeader?: ReactNode;
   initialReadMode?: ReadMode | null;
   forceHifzRevealByThirds?: boolean;
-  hifzFirstWordCueEnabled?: boolean;
   hifzFlow?: HifzFlowType | null;
   hifzNavigationSearch?: string | null;
   nextPageFullImageSrc?: string | null;
@@ -239,7 +238,6 @@ export function ReadPageWorkspace({
   mushafHeader,
   initialReadMode = null,
   forceHifzRevealByThirds = false,
-  hifzFirstWordCueEnabled = false,
   hifzFlow = null,
   hifzNavigationSearch = null,
   nextPageFullImageSrc = null,
@@ -999,7 +997,6 @@ export function ReadPageWorkspace({
             activePlaybackAyahKey={activePlaybackAyahKey}
             isAudioDockVisible={isAudioVisible}
             onPlayableAyahKeysChange={hifzFlow === "memorize" ? undefined : setPlayableAyahKeys}
-            hifzFirstWordCueEnabled={!hifzFlow && hifzFirstWordCueEnabled}
           />
         )}
       </div>

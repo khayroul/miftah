@@ -30,8 +30,6 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
   const initialReadMode = query.mode === "hifz" ? "hifz" : null;
   const forceHifzRevealByThirds =
     query.mode === "hifz" && (query.from === "dashboard" || query.from === "hifz");
-  const hifzFirstWordCueEnabled =
-    query.mode === "hifz" && query.cue === "first-word";
   const hifzIntent =
     query.from === "hifz" || query.from === "dashboard"
       ? query.intent === "new"
@@ -55,9 +53,6 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
   }
   if (query.intent === "new" || query.intent === "test") {
     preservedHifzParams.set("intent", query.intent);
-  }
-  if (query.cue === "first-word") {
-    preservedHifzParams.set("cue", query.cue);
   }
   const hifzNavigationSearch = preservedHifzParams.toString() || null;
   const fromHifzFlow =
@@ -145,7 +140,6 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
         readingAyahIds={pageData.ayatOnPage.map((ayah) => ayah.id)}
         initialReadMode={hifzFlow ? "hifz" : initialReadMode}
         forceHifzRevealByThirds={!hifzFlow && forceHifzRevealByThirds}
-        hifzFirstWordCueEnabled={!hifzFlow && hifzFirstWordCueEnabled}
         hifzFlow={hifzFlow}
         hifzNavigationSearch={hifzNavigationSearch}
         nextPageFullImageSrc={pageData.nextPageFullImageSrc}

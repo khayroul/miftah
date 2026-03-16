@@ -226,7 +226,7 @@ export function HifzOverview({
         helperText: "Mushaf akan dibuka dengan petunjuk kata pembuka untuk bantu anda menguji hafalan sedia ada.",
         pageNumber: page,
       },
-      `/read/${page}?mode=hifz&from=hifz&intent=test&cue=first-word`,
+      `/read/${page}?mode=hifz&from=hifz&intent=test`,
     );
   }, [openReadPage, testPage]);
 

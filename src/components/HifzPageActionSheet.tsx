@@ -45,7 +45,7 @@ export function HifzPageActionSheet({ entry, onClose }: HifzPageActionSheetProps
   }, [entry.page, navigate]);
 
   const handleTasmi = useCallback(() => {
-    navigate(`/read/${entry.page}?mode=hifz&from=hifz&intent=test&cue=first-word`);
+    navigate(`/read/${entry.page}?mode=hifz&from=hifz&intent=test`);
   }, [entry.page, navigate]);
 
   return (
