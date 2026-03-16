@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { FeedbackButton } from "@/components/FeedbackButton";
 import { HomeDashboardClient } from "@/components/HomeDashboardClient";
 import { ModeNavigator } from "@/components/ModeNavigator";
