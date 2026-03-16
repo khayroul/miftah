@@ -119,25 +119,29 @@ function cardKindConfig(kind: SerializedFahamCard["kind"]): {
   label: string;
   classes: string;
   rowClasses: string;
+  numberClasses: string;
 } {
   switch (kind) {
     case "mastered":
       return {
         label: "Mahir",
-        classes: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/25 dark:text-emerald-300",
-        rowClasses: "border-stone-100 bg-stone-50/80 dark:border-emerald-500/20 dark:bg-gradient-to-r dark:from-emerald-950/40 dark:to-stone-800/50",
+        classes: "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-300",
+        rowClasses: "border-emerald-200 bg-emerald-50/60 dark:border-emerald-400/25 dark:bg-emerald-900/30",
+        numberClasses: "bg-emerald-200 text-emerald-800 dark:bg-emerald-400/30 dark:text-emerald-200",
       };
     case "due":
       return {
         label: "Ulang",
-        classes: "bg-sky-100 text-sky-700 dark:bg-sky-500/25 dark:text-sky-300",
-        rowClasses: "border-stone-100 bg-stone-50/80 dark:border-sky-500/20 dark:bg-gradient-to-r dark:from-sky-950/40 dark:to-stone-800/50",
+        classes: "bg-sky-100 text-sky-700 dark:bg-sky-400/20 dark:text-sky-300",
+        rowClasses: "border-sky-200 bg-sky-50/60 dark:border-sky-400/25 dark:bg-sky-900/30",
+        numberClasses: "bg-sky-200 text-sky-800 dark:bg-sky-400/30 dark:text-sky-200",
       };
     case "new":
       return {
         label: "Baharu",
-        classes: "bg-violet-100 text-violet-700 dark:bg-violet-500/25 dark:text-violet-300",
-        rowClasses: "border-stone-100 bg-stone-50/80 dark:border-violet-500/20 dark:bg-gradient-to-r dark:from-violet-950/40 dark:to-stone-800/50",
+        classes: "bg-violet-100 text-violet-700 dark:bg-violet-400/20 dark:text-violet-300",
+        rowClasses: "border-violet-200 bg-violet-50/60 dark:border-violet-400/25 dark:bg-violet-900/30",
+        numberClasses: "bg-violet-200 text-violet-800 dark:bg-violet-400/30 dark:text-violet-200",
       };
   }
 }
@@ -468,24 +472,35 @@ export function FahamWorkspace({
 
     const completedSessionTotal = cards.length;
     const completedSessionCorrect = sessionCorrectCountRef.current;
-    const latestStats = await refreshStats(false);
-    const refreshed = await requestQueue(preset, directionMode, isRevision);
 
     stopActiveAudio();
     playFeedbackSound("session_complete");
+    setSessionSummary({
+      correctCount: completedSessionCorrect,
+      foundCount: foundCount,
+      masteredCount: masteredCount,
+      totalCount: completedSessionTotal,
+    });
+    resetSessionTracking();
+    setSessionDoneCount((value) => value + 1);
+
+    // Load next queue and refresh stats in the background
+    const [latestStats, refreshed] = await Promise.all([
+      refreshStats(false),
+      requestQueue(preset, directionMode, isRevision),
+    ]);
     setSnapshot(refreshed);
     setCurrentIndex(0);
     setAnswerState(null);
     setErrorMessage(null);
     setShowPreview(true);
-    setSessionSummary({
-      correctCount: completedSessionCorrect,
-      foundCount: latestStats?.wordBank ?? foundCount,
-      masteredCount: latestStats?.mastered ?? masteredCount,
-      totalCount: completedSessionTotal,
-    });
-    resetSessionTracking();
-    setSessionDoneCount((value) => value + 1);
+    if (latestStats) {
+      setSessionSummary((prev) =>
+        prev
+          ? { ...prev, foundCount: latestStats.wordBank, masteredCount: latestStats.mastered }
+          : prev,
+      );
+    }
   }, [
     cards.length,
     currentIndex,
@@ -706,81 +721,31 @@ export function FahamWorkspace({
               role="dialog"
               aria-modal="true"
               aria-labelledby="faham-session-summary-title"
-              className="animate-bounce-in relative w-full max-w-xl rounded-[2rem] border border-emerald-200/80 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.18),transparent_55%),linear-gradient(180deg,rgba(236,253,245,0.97),rgba(255,255,255,0.98))] p-6 shadow-[0_30px_90px_-35px_rgba(16,185,129,0.45)] dark:border-emerald-500/30 dark:bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.2),transparent_55%),linear-gradient(180deg,rgba(6,78,59,0.75),rgba(17,24,39,0.95))] sm:p-7"
+              className="animate-bounce-in relative w-full max-w-sm rounded-[2rem] border border-teal-200/80 bg-[linear-gradient(160deg,rgba(240,253,250,0.98),rgba(255,255,255,0.98))] p-6 shadow-[0_30px_90px_-35px_rgba(20,184,166,0.4)] dark:border-teal-500/30 dark:bg-[linear-gradient(160deg,rgba(15,118,110,0.35),rgba(17,24,39,0.95))]"
               onClick={(event) => event.stopPropagation()}
             >
-              <button
-                type="button"
-                aria-label="Tutup popup sesi"
-                onClick={() => setSessionSummary(null)}
-                className="absolute right-4 top-4 inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-300/80 bg-white/90 text-stone-700 transition hover:bg-stone-100 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
-              >
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
+              <div className="text-center">
+                <p className="text-6xl font-bold tracking-tight text-teal-700 dark:text-teal-300">
+                  {sessionSummary.correctCount}/{sessionSummary.totalCount}
+                </p>
+                <p
+                  id="faham-session-summary-title"
+                  className="mt-2 text-sm font-medium text-stone-500 dark:text-stone-400"
                 >
-                  <path d="M6 6L18 18" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M18 6L6 18" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <span className="inline-flex rounded-full border border-emerald-300/80 bg-white/75 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-950/40 dark:text-emerald-200">
-                    Sesi Selesai
-                  </span>
-                  <h2
-                    id="faham-session-summary-title"
-                    className="mt-4 text-3xl font-semibold tracking-tight text-stone-950 dark:text-emerald-50 sm:text-4xl"
-                  >
-                    Skor sesi anda
-                  </h2>
-                  <p className="mt-2 text-sm leading-relaxed text-stone-600 sm:text-base dark:text-stone-200">
-                    Teruskan momentum ini. Sesi seterusnya sudah sedia untuk anda sambung.
-                  </p>
-                </div>
-
-                <div className="rounded-[1.5rem] border border-emerald-300/70 bg-white/88 px-5 py-4 text-center shadow-sm dark:border-emerald-300/40 dark:bg-white/12">
-                  <p className="text-5xl font-semibold tracking-tight text-emerald-950 dark:text-white sm:text-6xl">
-                    {sessionSummary.correctCount}
-                    <span className="text-2xl text-emerald-700/80 dark:text-emerald-100">
-                      /{sessionSummary.totalCount}
-                    </span>
-                  </p>
-                  <p className="mt-1 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-100">
-                    Jawapan betul
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[1.5rem] border border-amber-200/80 bg-amber-50/85 p-4 dark:border-amber-500/30 dark:bg-amber-950/30">
-                  <p className="text-sm font-bold uppercase tracking-[0.22em] text-amber-800 dark:text-amber-300">
-                    Perkataan Ditemui
-                  </p>
-                  <p className="mt-2 text-3xl font-semibold tracking-tight text-amber-950 dark:text-amber-50">
-                    {formatMetricValue(sessionSummary.foundCount)}
-                  </p>
-                </div>
-                <div className="rounded-[1.5rem] border border-emerald-200/80 bg-emerald-50/85 p-4 dark:border-emerald-500/30 dark:bg-emerald-950/30">
-                  <p className="text-sm font-bold uppercase tracking-[0.22em] text-emerald-800 dark:text-emerald-300">
-                    Perkataan Dikuasai
-                  </p>
-                  <p className="mt-2 text-3xl font-semibold tracking-tight text-emerald-950 dark:text-emerald-50">
-                    {formatMetricValue(sessionSummary.masteredCount)}
-                  </p>
+                  Jawapan betul
+                </p>
+                <div className="mt-4 flex justify-center gap-6 text-sm text-stone-500 dark:text-stone-400">
+                  <span>Ditemui <strong className="text-stone-700 dark:text-stone-200">{formatMetricValue(sessionSummary.foundCount)}</strong></span>
+                  <span>Mahir <strong className="text-stone-700 dark:text-stone-200">{formatMetricValue(sessionSummary.masteredCount)}</strong></span>
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={() => setSessionSummary(null)}
-                className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-stone-950 px-5 py-3 text-base font-semibold text-white transition hover:bg-stone-800 dark:bg-emerald-100 dark:text-emerald-950 dark:hover:bg-emerald-200"
+                className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-teal-600 px-5 py-3 text-base font-semibold text-white transition hover:bg-teal-700 dark:bg-teal-500 dark:text-teal-950 dark:hover:bg-teal-400"
               >
-                Teruskan ke sesi seterusnya
+                Seterusnya
               </button>
             </section>
           </div>,
@@ -855,7 +820,7 @@ export function FahamWorkspace({
 
       <section className="grid grid-cols-2 gap-2 sm:gap-3">
         <MotivationMetricCard
-          accent="amber"
+          accent="sky"
           label="Ditemui"
           progress={foundShare}
           progressLabel={
@@ -880,9 +845,26 @@ export function FahamWorkspace({
 
       {showPreview && cards.length > 0 ? (
         <section className="animate-fade-in-up rounded-[2rem] border border-stone-200/90 bg-white/88 p-5 shadow-[0_30px_80px_-52px_rgba(41,37,36,0.65)] backdrop-blur-sm sm:p-7 dark:border-stone-700 dark:bg-stone-900/80">
-          <h3 className="mb-4 text-lg font-semibold text-stone-800 dark:text-stone-100">
-            Kad Sesi Ini ({cards.length} kad)
+          <h3 className="mb-1 text-lg font-semibold text-stone-800 dark:text-stone-100">
+            Kad Sesi Ini
           </h3>
+          <div className="mb-4 flex gap-3 text-xs font-medium">
+            {cards.filter((c) => c.kind === "new").length > 0 ? (
+              <span className="text-violet-600 dark:text-violet-300">
+                {cards.filter((c) => c.kind === "new").length} Baharu
+              </span>
+            ) : null}
+            {cards.filter((c) => c.kind === "due").length > 0 ? (
+              <span className="text-sky-600 dark:text-sky-300">
+                {cards.filter((c) => c.kind === "due").length} Ulang
+              </span>
+            ) : null}
+            {cards.filter((c) => c.kind === "mastered").length > 0 ? (
+              <span className="text-emerald-600 dark:text-emerald-300">
+                {cards.filter((c) => c.kind === "mastered").length} Mahir
+              </span>
+            ) : null}
+          </div>
           <div className="space-y-2.5">
             {cards.map((card, index) => {
               const statusConfig = cardKindConfig(card.kind);
@@ -891,20 +873,15 @@ export function FahamWorkspace({
                   key={card.progressId}
                   className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 ${statusConfig.rowClasses}`}
                 >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${statusConfig.numberClasses}`}>
                     {index + 1}
                   </span>
                   <span dir="rtl" lang="ar" className="min-w-[3rem] font-arabic text-xl text-stone-900 dark:text-stone-50">
                     {card.word.textUthmani}
                   </span>
                   <span className="text-stone-400 dark:text-stone-600">&mdash;</span>
-                  <span className="flex-1 text-sm text-stone-600 dark:text-stone-300">
+                  <span className="flex-1 text-sm text-stone-600 dark:text-stone-200">
                     {card.word.translationBm}
-                    {card.word.transliteration ? (
-                      <span className="ml-1.5 text-xs text-stone-400 dark:text-stone-500">
-                        ({card.word.transliteration})
-                      </span>
-                    ) : null}
                   </span>
                   <span className={`shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider ${statusConfig.classes}`}>
                     {statusConfig.label}
@@ -916,7 +893,7 @@ export function FahamWorkspace({
           <button
             type="button"
             onClick={() => setShowPreview(false)}
-            className="mt-6 w-full rounded-2xl bg-[linear-gradient(135deg,#b45309,#0f766e)] px-6 py-3.5 text-base font-semibold text-white shadow-lg transition hover:shadow-xl active:scale-[0.98] dark:bg-[linear-gradient(135deg,#f59e0b,#14b8a6)] dark:text-stone-950"
+            className="mt-6 w-full rounded-2xl bg-[linear-gradient(135deg,#0d9488,#6366f1)] px-6 py-3.5 text-base font-semibold text-white shadow-lg transition hover:shadow-xl active:scale-[0.98] dark:bg-[linear-gradient(135deg,#0f766e,#4f46e5)] dark:text-white"
           >
             Mula Sesi
           </button>
@@ -957,28 +934,6 @@ export function FahamWorkspace({
 
             <button
               type="button"
-              onClick={() => reloadQueue(preset, directionMode, !isRevision)}
-              disabled={isPending}
-              className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition shadow-sm sm:text-base ${
-                isRevision
-                  ? "border-emerald-300 bg-emerald-100 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-900/50"
-                  : "border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
-              }`}
-            >
-              <svg
-                className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : isRevision ? "animate-pulse" : ""}`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              {isRevision ? "Ulang Kaji Aktif" : "Mula Ulang Kaji"}
-            </button>
-
-            <button
-              type="button"
               onClick={() => setIsConfigExpanded((value) => !value)}
               className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition shadow-sm sm:text-base ${
                 isConfigExpanded
@@ -1010,7 +965,7 @@ export function FahamWorkspace({
               </div>
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
                 <div
-                  className="h-full rounded-full bg-[linear-gradient(90deg,#b45309,#0f766e)] transition-[width] duration-300 dark:bg-[linear-gradient(90deg,#f59e0b,#14b8a6)]"
+                  className="h-full rounded-full bg-[linear-gradient(90deg,#0d9488,#6366f1)] transition-[width] duration-300 dark:bg-[linear-gradient(90deg,#14b8a6,#818cf8)]"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
@@ -1018,7 +973,7 @@ export function FahamWorkspace({
           </div>
 
           <div className="mt-8 grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="rounded-[1.75rem] border border-amber-200/70 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.14),transparent_55%),linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.96))] p-6 dark:border-amber-500/20 dark:bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.18),transparent_55%),linear-gradient(180deg,rgba(41,37,36,0.92),rgba(12,10,9,0.96))]">
+            <div className="rounded-[1.75rem] border border-teal-200/70 bg-[radial-gradient(circle_at_top,rgba(20,184,166,0.1),transparent_55%),linear-gradient(180deg,rgba(240,253,250,0.92),rgba(255,255,255,0.96))] p-6 dark:border-teal-500/25 dark:bg-[radial-gradient(circle_at_top,rgba(20,184,166,0.15),transparent_55%),linear-gradient(180deg,rgba(17,24,39,0.92),rgba(12,10,9,0.96))]">
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-stone-500 sm:text-base dark:text-stone-400">
                 {currentCard.mcq.promptLabel}
               </p>
@@ -1419,24 +1374,24 @@ function MotivationMetricCard({
   progressLabel,
   value,
 }: {
-  accent: "amber" | "emerald";
+  accent: "sky" | "emerald";
   label: string;
   progress: number;
   progressLabel: string;
   value: string;
 }) {
   const palette =
-    accent === "amber"
+    accent === "sky"
       ? {
           badge:
-            "border-amber-300/80 bg-amber-100/80 text-amber-900 dark:border-amber-500/40 dark:bg-amber-900/35 dark:text-amber-100",
+            "border-sky-300/80 bg-sky-100/80 text-sky-900 dark:border-sky-500/40 dark:bg-sky-900/35 dark:text-sky-100",
           card:
-            "border-amber-200/80 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.18),transparent_55%),linear-gradient(180deg,rgba(255,251,235,0.96),rgba(255,255,255,0.98))] dark:border-amber-500/30 dark:bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.18),transparent_55%),linear-gradient(180deg,rgba(69,26,3,0.45),rgba(28,25,23,0.92))]",
+            "border-sky-200/80 bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.14),transparent_55%),linear-gradient(180deg,rgba(240,249,255,0.96),rgba(255,255,255,0.98))] dark:border-sky-500/30 dark:bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.18),transparent_55%),linear-gradient(180deg,rgba(8,47,73,0.45),rgba(28,25,23,0.92))]",
           progressBadge:
-            "border-amber-300/80 bg-amber-100/85 text-amber-900 dark:border-amber-300/35 dark:bg-amber-200/15 dark:text-amber-50",
-          progressBar: "bg-amber-500 dark:bg-amber-400",
-          progressTrack: "bg-amber-100 dark:bg-amber-900/30",
-          value: "text-amber-950 dark:text-amber-50",
+            "border-sky-300/80 bg-sky-100/85 text-sky-900 dark:border-sky-300/35 dark:bg-sky-200/15 dark:text-sky-50",
+          progressBar: "bg-sky-500 dark:bg-sky-400",
+          progressTrack: "bg-sky-100 dark:bg-sky-900/30",
+          value: "text-sky-950 dark:text-sky-50",
         }
       : {
           badge:
