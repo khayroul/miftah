@@ -157,35 +157,28 @@ export async function ThemePageContentAsync({
   surahMeta,
   surahNumber,
 }: ThemePageContentAsyncProps) {
+  const [chunksResult, surahsResult] = await Promise.allSettled([
+    getThemeAppearanceChunksBySurah(surahNumber),
+    getSurahs(),
+  ]);
+
   let chunks: ThemeAppearanceChunk[] = [];
   let loadError: string | null = null;
-
-  try {
-    chunks = await getThemeAppearanceChunksBySurah(surahNumber);
-  } catch {
-    loadError =
-      "Data tema belum dapat dimuat sekarang. Sila semak sambungan Supabase dan cuba semula.";
+  if (chunksResult.status === "fulfilled") {
+    chunks = chunksResult.value;
+  } else {
+    console.error("Failed to load theme chunks:", chunksResult.reason);
+    loadError = "Tema tidak dapat dimuatkan. Sila cuba lagi.";
   }
 
-  let surahOptions: Array<{ surah: number; nameBm: string; nameEn: string }> =
-    [];
+  const allSurahs =
+    surahsResult.status === "fulfilled" ? surahsResult.value : [surahMeta];
 
-  try {
-    const allSurahs = await getSurahs();
-    surahOptions = allSurahs.map((item) => ({
-      surah: item.id,
-      nameBm: item.name_bm,
-      nameEn: item.name_en,
-    }));
-  } catch {
-    surahOptions = [
-      {
-        surah: surahMeta.id,
-        nameBm: surahMeta.name_bm,
-        nameEn: surahMeta.name_en,
-      },
-    ];
-  }
+  const surahOptions = allSurahs.map((item) => ({
+    surah: item.id,
+    nameBm: item.name_bm,
+    nameEn: item.name_en,
+  }));
 
   const chunkParamValue = Array.isArray(rawChunkParam)
     ? rawChunkParam[0]
