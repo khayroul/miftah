@@ -174,63 +174,52 @@ export function MushafLivePage({
     if (pageNumber < 604) preloadMushafFont(pageNumber + 1);
   }, [pageNumber]);
 
-  // Auto-fit overflow: shrink font if line overflows
+  // Auto-fit overflow: use scaleX() to compress overflowing lines
+  // This keeps text height uniform while slightly narrowing dense lines
   useLayoutEffect(() => {
     if (!fontLoaded || !textAreaRef.current) return;
 
     const area = textAreaRef.current;
-    const firstLine = area.querySelector<HTMLElement>(".mushaf-text-line");
-    const baseFontSize = firstLine
-      ? parseFloat(window.getComputedStyle(firstLine).fontSize)
-      : 37;
-    const minFontSize = baseFontSize * 0.82;
 
     const fitLine = (line: HTMLElement) => {
-      let fontSize = parseFloat(window.getComputedStyle(line).fontSize);
-      if (!Number.isFinite(fontSize)) return;
-      let tries = 0;
-      while (tries < 36) {
-        const lineRect = line.getBoundingClientRect();
-        const groups = Array.from(
-          line.querySelectorAll<HTMLElement>(":scope > .mushaf-word-group"),
-        );
-        if (!groups.length) break;
+      // Reset any previous transform
+      line.style.transform = "";
 
-        let minX = Number.POSITIVE_INFINITY;
-        let maxX = Number.NEGATIVE_INFINITY;
-        for (const group of groups) {
-          const r = group.getBoundingClientRect();
-          if (r.width <= 0) continue;
-          minX = Math.min(minX, r.left);
-          maxX = Math.max(maxX, r.right);
-        }
+      const groups = Array.from(
+        line.querySelectorAll<HTMLElement>(":scope > .mushaf-word-group"),
+      );
+      if (!groups.length) return;
 
-        const overflowLeft = minX < lineRect.left - 0.5;
-        const overflowRight = maxX > lineRect.right + 0.5;
-        if ((!overflowLeft && !overflowRight) || fontSize <= minFontSize) break;
-
-        fontSize -= 0.5;
-        line.style.fontSize = `${fontSize}px`;
-        tries += 1;
+      const lineRect = line.getBoundingClientRect();
+      let minX = Number.POSITIVE_INFINITY;
+      let maxX = Number.NEGATIVE_INFINITY;
+      for (const group of groups) {
+        const r = group.getBoundingClientRect();
+        if (r.width <= 0) continue;
+        minX = Math.min(minX, r.left);
+        maxX = Math.max(maxX, r.right);
       }
+
+      const contentWidth = maxX - minX;
+      if (contentWidth <= lineRect.width + 0.5) return; // no overflow
+
+      // Scale down horizontally — min 0.85 to avoid extreme compression
+      const scale = Math.max(0.85, lineRect.width / contentWidth);
+      line.style.transform = `scaleX(${scale})`;
     };
+
     area
       .querySelectorAll<HTMLElement>(".mushaf-text-line")
       .forEach(fitLine);
 
+    // Basmala overflow — also use scaleX
     area
       .querySelectorAll<HTMLElement>(".mushaf-basmala")
       .forEach((line) => {
-        let fontSize = parseFloat(window.getComputedStyle(line).fontSize);
-        let tries = 0;
-        while (
-          tries < 20 &&
-          line.scrollWidth > line.clientWidth + 1 &&
-          fontSize > 30
-        ) {
-          fontSize -= 0.5;
-          line.style.fontSize = `${fontSize}px`;
-          tries += 1;
+        line.style.transform = "";
+        if (line.scrollWidth > line.clientWidth + 1) {
+          const scale = Math.max(0.85, line.clientWidth / line.scrollWidth);
+          line.style.transform = `scaleX(${scale})`;
         }
       });
 

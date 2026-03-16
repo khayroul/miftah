@@ -7,6 +7,7 @@
   --mushaf-page-num: #888;
   --mushaf-frame-invert: 0;
 
+  width: 100%;
   aspect-ratio: 768 / 1280;
   display: flex;
   flex-direction: column;
@@ -31,35 +32,35 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 16px 26px 0;
+  padding: 16px 10px 0;
   container-type: inline-size;
 }
 
 /* Short pages (<15 elements): fixed gap, content at top */
 .mushaf-short-page {
   justify-content: flex-start;
-  gap: 36px;
+  gap: 28px;
 }
 
 /* Opening pages (1-2): centered, larger font, oval arrangement */
 .mushaf-opening-page {
   justify-content: center;
-  gap: 28px;
-  padding: 0 60px;
+  gap: 22px;
+  padding: 0 48px;
 }
 
 .mushaf-opening-page .mushaf-text-line {
   justify-content: center;
-  gap: 12px;
-  font-size: 10.45cqw;
+  gap: 10px;
+  font-size: 8.5cqw;
 }
 
 .mushaf-opening-page .mushaf-basmala {
-  font-size: 10.45cqw;
+  font-size: 8.5cqw;
 }
 
 .mushaf-opening-page .mushaf-surah-title {
-  font-size: 10.84cqw;
+  font-size: 9cqw;
 }
 
 /* Text line — flexbox RTL with space-between for mushaf justification */
@@ -68,16 +69,18 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 7.2cqw;
+  font-size: 6cqw;
   line-height: 1.0;
   padding: 0 2px;
   font-weight: 400;
+  transform-origin: right center;
 }
 
 /* Last line of a surah — natural spacing, not stretched */
 .mushaf-last-line {
   justify-content: center;
-  gap: 2.71cqw;
+  gap: 3.5cqw;
+  transform-origin: center center;
 }
 
 /* Word groups */
@@ -129,7 +132,7 @@
 .mushaf-basmala {
   direction: rtl;
   text-align: center;
-  font-size: 7.2cqw;
+  font-size: 6cqw;
   line-height: 1.0;
   padding: 0 4px;
   font-weight: 400;
@@ -144,14 +147,14 @@
   text-align: center;
   direction: ltr;
   padding: 0;
-  margin: 12px 0 4px;
+  margin: 8px 0 2px;
 }
 
 .mushaf-surah-frame {
   display: block;
   position: relative;
-  width: 96%;
-  height: 80px;
+  width: 100%;
+  height: 11cqw;
   margin: 0 auto;
   background-image: url("/images/surah-frame-ios.png");
   background-repeat: no-repeat;

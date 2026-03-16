@@ -626,7 +626,7 @@ export function MushafPageView({
       {/* Mushaf page */}
       <div
         ref={containerRef}
-        className="relative overflow-hidden cursor-pointer rounded-2xl dark:rounded-none"
+        className="relative w-full overflow-hidden cursor-pointer rounded-2xl dark:rounded-none"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={() => {
