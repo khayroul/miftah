@@ -244,7 +244,11 @@ export function MushafLivePage({
       dir="rtl"
       lang="ar"
     >
-      <div ref={textAreaRef} className={textAreaClass}>
+      <div
+        ref={textAreaRef}
+        className={textAreaClass}
+        style={fontLoaded ? undefined : { visibility: "hidden" }}
+      >
         {layout.lines.map((line, i) => {
           const isHidden =
             revealBoundaryLineIndex != null && i >= revealBoundaryLineIndex;
