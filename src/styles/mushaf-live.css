@@ -1,0 +1,191 @@
+/* Mushaf Live Page — QCF V2 font rendering in the browser */
+
+/* Theme via CSS custom properties — dark mode via Tailwind's .dark class */
+.mushaf-page {
+  --mushaf-bg: #f5f4f0;
+  --mushaf-text: #1b1b1b;
+  --mushaf-page-num: #888;
+  --mushaf-frame-invert: 0;
+
+  aspect-ratio: 768 / 1280;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--mushaf-bg);
+  color: var(--mushaf-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dark .mushaf-page {
+  --mushaf-bg: transparent;
+  --mushaf-text: #e7e9ea;
+  --mushaf-page-num: #6b6e70;
+  --mushaf-frame-invert: 1;
+}
+
+/* Text area — fills the page between header and page number */
+.mushaf-text-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 26px 0;
+  container-type: inline-size;
+}
+
+/* Short pages (<15 elements): fixed gap, content at top */
+.mushaf-short-page {
+  justify-content: flex-start;
+  gap: 36px;
+}
+
+/* Opening pages (1-2): centered, larger font, oval arrangement */
+.mushaf-opening-page {
+  justify-content: center;
+  gap: 28px;
+  padding: 0 60px;
+}
+
+.mushaf-opening-page .mushaf-text-line {
+  justify-content: center;
+  gap: 12px;
+  font-size: 7.542cqw;
+}
+
+.mushaf-opening-page .mushaf-basmala {
+  font-size: 7.542cqw;
+}
+
+.mushaf-opening-page .mushaf-surah-title {
+  font-size: 7.821cqw;
+}
+
+/* Text line — flexbox RTL with space-between for mushaf justification */
+.mushaf-text-line {
+  direction: rtl;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 5.196cqw;
+  line-height: 1.0;
+  padding: 0 2px;
+  font-weight: 400;
+}
+
+/* Last line of a surah — natural spacing, not stretched */
+.mushaf-last-line {
+  justify-content: center;
+  gap: 1.955cqw;
+}
+
+/* Word groups */
+.mushaf-word-group {
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.mushaf-word,
+.mushaf-sign {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mushaf-word {
+  cursor: pointer;
+  position: relative;
+}
+
+/* Audio playback highlight */
+.mushaf-word--playing {
+  border-radius: 4px;
+  outline: 2px solid rgba(14, 165, 233, 0.9);
+  outline-offset: 1px;
+  background-color: rgba(56, 189, 248, 0.1);
+}
+
+/* Word selection highlight */
+.mushaf-word--highlighted {
+  outline: 2px solid rgb(245, 158, 11);
+  outline-offset: 1px;
+}
+
+/* Difficult ayah dot */
+.mushaf-difficult-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: rgb(239, 68, 68);
+  pointer-events: none;
+}
+
+/* Basmala — centered */
+.mushaf-basmala {
+  direction: rtl;
+  text-align: center;
+  font-size: 5.196cqw;
+  line-height: 1.0;
+  padding: 0 4px;
+  font-weight: 400;
+}
+
+.mushaf-qcf {
+  white-space: nowrap;
+}
+
+/* Surah banner — ornamental frame */
+.mushaf-surah-banner {
+  text-align: center;
+  direction: ltr;
+  padding: 0;
+  margin: 12px 0 4px;
+}
+
+.mushaf-surah-frame {
+  display: block;
+  position: relative;
+  width: 96%;
+  height: 80px;
+  margin: 0 auto;
+  background-image: url("/images/surah-frame-ios.png");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+}
+
+.mushaf-surah-title {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "surah_names", serif;
+  font-size: 6.704cqw;
+  font-weight: normal;
+  line-height: 1;
+  transform: translateY(-2px);
+  z-index: 1;
+}
+
+/* Page number */
+.mushaf-page-number {
+  text-align: center;
+  padding: 6px 0 14px;
+  font-size: 2.514cqw;
+  font-family: -apple-system, "Helvetica Neue", sans-serif;
+  color: var(--mushaf-page-num);
+}
+
+/* Surah frame inversion for dark mode */
+.dark .mushaf-surah-frame {
+  filter: invert(1) brightness(1.2) contrast(1.1);
+}
+.dark .mushaf-surah-title {
+  filter: invert(1) brightness(0.8);
+}

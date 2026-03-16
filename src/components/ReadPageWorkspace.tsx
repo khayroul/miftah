@@ -35,7 +35,8 @@ import { rememberLastReadPage } from "@/lib/readingProgressStorage";
 import { useReadMode } from "@/lib/useReadMode";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ReadMode } from "@/lib/readMode";
-import type { MushafPageManifest, MushafWordTranslationMap } from "@/types/mushaf";
+import type { MushafWordTranslationMap } from "@/types/mushaf";
+import type { MushafLayoutPage } from "@/types/mushafLayout";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { preCacheAudioUrls } from "@/lib/hifz/audioPreCache";
@@ -119,12 +120,7 @@ const HifzSessionComplete = dynamic(
 
 interface ReadPageWorkspaceProps {
   pageNumber: number;
-  fullImageSrc: string | null;
-  imageAvailable: boolean;
-  mobileImageSrc?: string | null;
-  thumbnailAvailable: boolean;
-  thumbnailSrc: string | null;
-  manifest: MushafPageManifest | null;
+  layout: MushafLayoutPage;
   wordTranslations: MushafWordTranslationMap;
   currentSurahId: number;
   currentJuzNumber: number;
@@ -138,8 +134,6 @@ interface ReadPageWorkspaceProps {
   forceHifzRevealByThirds?: boolean;
   hifzFlow?: HifzFlowType | null;
   hifzNavigationSearch?: string | null;
-  nextPageFullImageSrc?: string | null;
-  nextPageMobileImageSrc?: string | null;
   personalizationPageNumber?: number | null;
 }
 
@@ -221,12 +215,7 @@ interface HifzQueueRecoveryError {
 
 export function ReadPageWorkspace({
   pageNumber,
-  fullImageSrc,
-  imageAvailable,
-  mobileImageSrc = null,
-  thumbnailAvailable,
-  thumbnailSrc,
-  manifest,
+  layout,
   wordTranslations,
   currentSurahId,
   currentJuzNumber,
@@ -240,8 +229,6 @@ export function ReadPageWorkspace({
   forceHifzRevealByThirds = false,
   hifzFlow = null,
   hifzNavigationSearch = null,
-  nextPageFullImageSrc = null,
-  nextPageMobileImageSrc = null,
   personalizationPageNumber = null,
 }: ReadPageWorkspaceProps) {
   const lastSyncedPageRef = useRef<number | null>(null);
@@ -271,8 +258,8 @@ export function ReadPageWorkspace({
   const [showJumpControls, setShowJumpControls] = useState(false);
   const [tasmiRevealedLines, setTasmiRevealedLines] = useState(0);
   const totalLineCount =
-    hifzFlow === "review" && manifest?.words
-      ? Math.max(new Set(manifest.words.map((w) => Math.round(w.y))).size, 1)
+    hifzFlow === "review"
+      ? Math.max(layout.lines.filter((l) => l.type === "text").length, 1)
       : 15;
   const tasmiAllRevealed = hifzFlow === "review" && tasmiRevealedLines >= totalLineCount;
   const showTasmiOverlay = hifzFlow === "review" && !tasmiAllRevealed;
@@ -485,35 +472,7 @@ export function ReadPageWorkspace({
     setIsCurrentPageImageReady(false);
   }, [pageNumber]);
 
-  useEffect(() => {
-    if (!isCurrentPageImageReady) {
-      return;
-    }
-
-    const prefersMobileViewport = window.matchMedia("(max-width: 768px)").matches;
-    const selectedNextImageSrc =
-      prefersMobileViewport && nextPageMobileImageSrc
-        ? nextPageMobileImageSrc
-        : nextPageFullImageSrc;
-
-    if (!selectedNextImageSrc) {
-      return;
-    }
-
-    const connection = Reflect.get(window.navigator, "connection");
-    if (
-      typeof connection === "object" &&
-      connection !== null &&
-      "saveData" in connection &&
-      connection.saveData === true
-    ) {
-      return;
-    }
-
-    const preloadImage = new window.Image();
-    preloadImage.decoding = "async";
-    preloadImage.src = selectedNextImageSrc;
-  }, [isCurrentPageImageReady, nextPageFullImageSrc, nextPageMobileImageSrc]);
+  // Font preloading for adjacent pages is handled by MushafLivePage
 
   useEffect(() => {
     if (hifzFlow !== null || !isCurrentPageImageReady) {
@@ -958,31 +917,21 @@ export function ReadPageWorkspace({
           <ReadOnlyMushafPageView
             key={pageNumber}
             pageNumber={pageNumber}
-            fullImageSrc={fullImageSrc}
-            imageAvailable={imageAvailable}
-            mobileImageSrc={mobileImageSrc}
-            thumbnailAvailable={thumbnailAvailable}
-            thumbnailSrc={thumbnailSrc}
-            manifest={manifest}
+            layout={layout}
             onNavigatePrevPage={handleNavigatePrevPage}
             onNavigateNextPage={handleNavigateNextPage}
             onCanvasTap={handleMushafTap}
             onAyahAudioTap={audioEnabledForMode ? handleAyahAudioTap : undefined}
             audioDiscovered={audioDiscovered}
             onAudioDiscovered={markAudioDiscovered}
-            onFullImageReadyChange={setIsCurrentPageImageReady}
+            onReadyChange={setIsCurrentPageImageReady}
             activePlaybackAyahKey={activePlaybackAyahKey}
           />
         ) : (
           <MushafPageView
             key={pageNumber}
             pageNumber={pageNumber}
-            fullImageSrc={fullImageSrc}
-            imageAvailable={imageAvailable}
-            mobileImageSrc={mobileImageSrc}
-            thumbnailAvailable={thumbnailAvailable}
-            thumbnailSrc={thumbnailSrc}
-            manifest={manifest}
+            layout={layout}
             wordTranslations={wordTranslations}
             ayahDetails={ayahDetails}
             memorizedAyahKeys={resolvedMemorizedAyahKeys}
@@ -993,7 +942,7 @@ export function ReadPageWorkspace({
             onAyahAudioTap={audioEnabledForMode ? handleAyahAudioTap : undefined}
             audioDiscovered={audioDiscovered}
             onAudioDiscovered={markAudioDiscovered}
-            onFullImageReadyChange={setIsCurrentPageImageReady}
+            onReadyChange={setIsCurrentPageImageReady}
             activePlaybackAyahKey={activePlaybackAyahKey}
             isAudioDockVisible={isAudioVisible}
             onPlayableAyahKeysChange={hifzFlow === "memorize" ? undefined : setPlayableAyahKeys}

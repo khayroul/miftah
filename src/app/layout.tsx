@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import "@/styles/mushaf-live.css";
 
 const arabicText = localFont({
   src: "../../assets/fonts/UthmanicHafs_V22.ttf",

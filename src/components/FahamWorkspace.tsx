@@ -888,13 +888,15 @@ export function FahamWorkspace({
               );
             })}
           </div>
-          <button
-            type="button"
-            onClick={() => setShowPreview(false)}
-            className="mt-6 w-full rounded-2xl bg-[linear-gradient(135deg,#0d9488,#6366f1)] px-6 py-3.5 text-base font-semibold text-white shadow-lg transition hover:shadow-xl active:scale-[0.98] dark:bg-[linear-gradient(135deg,#0f766e,#4f46e5)] dark:text-white"
-          >
-            Mula Sesi
-          </button>
+          <div className="mt-6 border-t border-stone-200/60 pt-5 dark:border-stone-700/40">
+            <button
+              type="button"
+              onClick={() => setShowPreview(false)}
+              className="w-full rounded-2xl bg-[linear-gradient(135deg,#0d9488,#6366f1)] px-6 py-4 text-lg font-bold tracking-wide text-white shadow-lg transition hover:shadow-xl hover:brightness-110 active:scale-[0.98] dark:bg-[linear-gradient(135deg,#0f766e,#4f46e5)] dark:text-white"
+            >
+              Mula Sesi &rarr;
+            </button>
+          </div>
         </section>
       ) : null}
 
@@ -1139,7 +1141,7 @@ export function FahamWorkspace({
             Barisan ulang kaji sedang disusun ikut pendedahan dan kad yang due.
           </p>
         </section>
-      ) : (
+      ) : showPreview ? null : (
         <section className="animate-fade-in-up rounded-3xl border border-stone-200/90 bg-white/88 p-8 text-center shadow-[0_25px_70px_-48px_rgba(28,25,23,0.55)] backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/80">
           <p className="text-2xl font-medium text-stone-900 dark:text-stone-100">
             Belum ada kad Faham buat masa ini.

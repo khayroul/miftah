@@ -1,11 +1,12 @@
 import { unstable_cache } from "next/cache";
 import type { MushafAyahDetail } from "@/components/MushafPageView";
-import { getPageImageClientSrc, loadPageManifest, pageImageExists } from "@/lib/mushafAssets";
+import { loadMushafLayout, normalizeLayoutForRender } from "@/lib/mushafLayout";
+import type { MushafLayoutPage } from "@/types/mushafLayout";
 import { mapAyatToPageAudioTracks, type ReadAudioTrack } from "@/lib/pageAudioTracks";
 import { getAyatByPage, getSurah } from "@/lib/queries";
-import { getWordTranslationsByHitboxes } from "@/lib/wbwTranslations";
+import { getWordTranslationsByLocation } from "@/lib/wbwTranslations";
 import type { Ayah, Surah } from "@/types/database";
-import type { MushafPageManifest, MushafWordTranslationMap } from "@/types/mushaf";
+import type { MushafWordTranslationMap } from "@/types/mushaf";
 
 export interface ReadPageStaticData {
   audioTracks: ReadAudioTrack[];
@@ -13,21 +14,16 @@ export interface ReadPageStaticData {
   ayatOnPage: Ayah[];
   currentJuzNumber: number;
   currentSurahId: number;
-  fullImageSrc: string | null;
-  imageAvailable: boolean;
-  manifest: MushafPageManifest | null;
-  mobileImageSrc: string | null;
-  nextPageFullImageSrc: string | null;
-  nextPageMobileImageSrc: string | null;
+  layout: MushafLayoutPage;
   surahMeta: Surah | null;
   themeSurahId: number;
-  thumbnailSrc: string | null;
-  thumbnailAvailable: boolean;
   wordTranslations: MushafWordTranslationMap;
 }
 
 const DEFAULT_SURAH_ID = 1;
 const DEFAULT_JUZ_NUMBER = 1;
+
+const EMPTY_LAYOUT: MushafLayoutPage = { page: 0, lines: [] };
 
 function toAyahDetails(ayatOnPage: Ayah[]): MushafAyahDetail[] {
   return ayatOnPage.map((ayah) => ({
@@ -40,34 +36,76 @@ function toAyahDetails(ayatOnPage: Ayah[]): MushafAyahDetail[] {
   }));
 }
 
+function loadSurahMetaSync(): Record<number, { name_ar: string; name_en: string; ayas: number }> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require("node:fs");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const path = require("node:path");
+    const xmlPath = path.join(process.cwd(), "data", "qul", "quran-data.xml");
+    const xml = fs.readFileSync(xmlPath, "utf-8") as string;
+    const surahs: Record<number, { name_ar: string; name_en: string; ayas: number }> = {};
+    const matches = xml.matchAll(/<sura\s+([^>]+)\/>/g);
+    for (const m of matches) {
+      const attrs = m[1];
+      const idx = attrs.match(/index="(\d+)"/)?.[1];
+      const name = attrs.match(/name="([^"]+)"/)?.[1];
+      const tname = attrs.match(/tname="([^"]+)"/)?.[1];
+      const ayas = attrs.match(/ayas="(\d+)"/)?.[1];
+      if (idx) {
+        surahs[parseInt(idx)] = {
+          name_ar: name || "",
+          name_en: tname || "",
+          ayas: parseInt(ayas || "0"),
+        };
+      }
+    }
+    return surahs;
+  } catch {
+    return {};
+  }
+}
+
+let cachedSurahMeta: ReturnType<typeof loadSurahMetaSync> | null = null;
+
+function getSurahMetaForLayout() {
+  if (!cachedSurahMeta) {
+    cachedSurahMeta = loadSurahMetaSync();
+  }
+  return cachedSurahMeta;
+}
+
 const getCachedReadPageStaticData = unstable_cache(
   async (pageNumber: number): Promise<ReadPageStaticData> => {
-    const [
-      manifest,
-      imageAvailable,
-      thumbnailAvailable,
-      mobileImageAvailable,
-      nextPageMobileImageAvailable,
-      ayatOnPage,
-    ] =
-      await Promise.all([
-        loadPageManifest(pageNumber),
-        pageImageExists(pageNumber),
-        pageImageExists(pageNumber, "thumb"),
-        pageImageExists(pageNumber, "mobile").catch(() => false),
-        pageNumber < 604
-          ? pageImageExists(pageNumber + 1, "mobile").catch(() => false)
-          : Promise.resolve(false),
-        getAyatByPage(pageNumber).catch(() => [] as Ayah[]),
-      ]);
+    const [rawLayout, ayatOnPage] = await Promise.all([
+      loadMushafLayout(pageNumber),
+      getAyatByPage(pageNumber).catch(() => [] as Ayah[]),
+    ]);
+
+    const surahMetaForLayout = getSurahMetaForLayout();
+    const layout = rawLayout
+      ? normalizeLayoutForRender(rawLayout, surahMetaForLayout)
+      : EMPTY_LAYOUT;
 
     const ayahDetails = toAyahDetails(ayatOnPage);
     const currentSurahId = ayatOnPage[0]?.surah_id ?? DEFAULT_SURAH_ID;
     const currentJuzNumber = ayatOnPage[0]?.juz_number ?? DEFAULT_JUZ_NUMBER;
     const themeSurahId = ayatOnPage[0]?.surah_id ?? currentSurahId;
 
+    // Collect word locations from layout for translation lookup
+    const wordLocations: string[] = [];
+    for (const line of layout.lines) {
+      if (line.type === "text" && line.words) {
+        for (const word of line.words) {
+          wordLocations.push(word.location);
+        }
+      }
+    }
+
     const [wordTranslations, surahMeta] = await Promise.all([
-      manifest ? getWordTranslationsByHitboxes(manifest.words) : Promise.resolve({}),
+      wordLocations.length > 0
+        ? getWordTranslationsByLocation(wordLocations)
+        : Promise.resolve({}),
       getSurah(themeSurahId).catch(() => null),
     ]);
 
@@ -77,24 +115,9 @@ const getCachedReadPageStaticData = unstable_cache(
       ayatOnPage,
       currentJuzNumber,
       currentSurahId,
-      fullImageSrc: imageAvailable ? getPageImageClientSrc(pageNumber) : null,
-      imageAvailable,
-      manifest,
-      mobileImageSrc: mobileImageAvailable
-        ? getPageImageClientSrc(pageNumber, "mobile")
-        : null,
-      nextPageFullImageSrc:
-        pageNumber < 604 ? getPageImageClientSrc(pageNumber + 1) : null,
-      nextPageMobileImageSrc:
-        nextPageMobileImageAvailable && pageNumber < 604
-          ? getPageImageClientSrc(pageNumber + 1, "mobile")
-          : null,
+      layout,
       surahMeta,
       themeSurahId,
-      thumbnailSrc: thumbnailAvailable
-        ? getPageImageClientSrc(pageNumber, "thumb")
-        : null,
-      thumbnailAvailable,
       wordTranslations,
     };
   },
