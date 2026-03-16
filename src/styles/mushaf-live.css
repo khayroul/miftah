@@ -7,7 +7,6 @@
   --mushaf-page-num: #888;
   --mushaf-frame-invert: 0;
 
-  width: 100%;
   aspect-ratio: 768 / 1280;
   display: flex;
   flex-direction: column;

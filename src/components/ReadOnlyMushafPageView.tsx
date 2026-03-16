@@ -103,7 +103,7 @@ export function ReadOnlyMushafPageView({
       ) : null}
 
       <div
-        className="relative cursor-pointer overflow-hidden rounded-2xl dark:rounded-none"
+        className="relative w-full cursor-pointer overflow-hidden rounded-2xl dark:rounded-none"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={() => {

@@ -897,7 +897,7 @@ export function ReadPageWorkspace({
         )}
       </div>
 
-      <div className="relative">
+      <div className="relative w-full">
         {showTasmiOverlay && (
           <HifzTasmiOverlay
             totalLines={totalLineCount}

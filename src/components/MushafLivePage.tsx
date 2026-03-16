@@ -240,7 +240,7 @@ export function MushafLivePage({
 
   return (
     <div
-      className="mushaf-page"
+      className="mushaf-page w-full"
       dir="rtl"
       lang="ar"
     >
