@@ -820,7 +820,6 @@ export function FahamWorkspace({
 
       <section className="grid grid-cols-2 gap-2 sm:gap-3">
         <MotivationMetricCard
-          accent="sky"
           label="Ditemui"
           progress={foundShare}
           progressLabel={
@@ -831,7 +830,6 @@ export function FahamWorkspace({
           value={formatMetricValue(hasLiveStats ? foundCount : null)}
         />
         <MotivationMetricCard
-          accent="emerald"
           label="Dikuasai"
           progress={masteredShare}
           progressLabel={
@@ -993,11 +991,6 @@ export function FahamWorkspace({
               >
                 {currentCard.mcq.promptPrimary}
               </p>
-              {currentCard.mcq.promptSecondary ? (
-                <p className="mt-4 text-center text-base tracking-[0.08em] text-stone-500 dark:text-stone-400">
-                  {currentCard.mcq.promptSecondary}
-                </p>
-              ) : null}
             </div>
 
             <div className="space-y-3">
@@ -1045,160 +1038,85 @@ export function FahamWorkspace({
 
           {answerState ? (
             <div
-              className={`mt-6 rounded-[1.5rem] border p-5 ${
+              className={`mt-6 rounded-[1.5rem] border p-4 sm:p-5 ${
                 answerState.isCorrect
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-700/40 dark:bg-emerald-950/30 dark:text-emerald-50"
-                  : "border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-50"
+                  ? "border-emerald-200 bg-emerald-50 dark:border-emerald-700/40 dark:bg-emerald-950/30"
+                  : "border-rose-200 bg-rose-50 dark:border-rose-700/40 dark:bg-rose-950/30"
               }`}
             >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p
-                    className={`text-base font-semibold sm:text-lg ${
-                      answerState.isCorrect
-                        ? "text-emerald-800 dark:text-emerald-100"
-                        : "text-rose-800 dark:text-rose-100"
-                    }`}
-                  >
-                    {answerState.isCorrect
-                      ? "Betul. Kad ini akan dijarakkan."
-                      : "Kurang tepat. Perkataan ini ditanda untuk pengukuhan."}
-                  </p>
-                  
-                  {!answerState.isCorrect && (
-                    <div className="mt-4 rounded-xl border border-rose-200/50 bg-white/40 p-3 dark:border-rose-800/30 dark:bg-black/20">
-                      <p className="text-sm font-bold uppercase tracking-widest text-rose-600 sm:text-base dark:text-rose-400">
-                        Nota Pembelajaran
-                      </p>
-                      <div className="mt-2 text-base leading-relaxed text-stone-800 dark:text-stone-100">
-                        Perkataan <span className="font-arabic text-xl">{currentCard.word.textUthmani}</span> bermaksud <span className="font-bold text-emerald-700 dark:text-emerald-400">{currentCard.word.translationBm}</span>.
-                        {currentCard.word.transliteration && (
-                          <div className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                            Sebutan: {currentCard.word.transliteration}
-                          </div>
-                        )}
-                        <p className="mt-2 text-sm opacity-75">
-                          Tips: Fokus pada hubungan bunyi dan makna sebelum menukar kad.
-                        </p>
-                      </div>
-                    </div>
-                  )}
+              <p
+                className={`text-base font-semibold ${
+                  answerState.isCorrect
+                    ? "text-emerald-800 dark:text-emerald-200"
+                    : "text-rose-800 dark:text-rose-200"
+                }`}
+              >
+                {answerState.isCorrect ? "Betul!" : "Kurang tepat."}
+              </p>
 
-                  <p className="mt-3 text-base text-stone-800 dark:text-stone-100">
-                    {currentCard.mcq.answerLabel}:{" "}
-                    <span
-                      dir={currentCard.mcq.direction === "bm_to_arab" ? "rtl" : "ltr"}
-                      lang={currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms"}
-                      onClick={() => {
-                        const lang = currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms";
-                        handleManualAudio(lang, currentCard.mcq.answerPrimary, currentCard.mcq.answerAudioUrl);
-                      }}
-                      className={`cursor-pointer transition hover:opacity-75 ${
-                        currentCard.mcq.direction === "bm_to_arab"
-                          ? "font-arabic text-2xl"
-                          : "font-medium decoration-stone-400/30 underline-offset-4 hover:underline"
-                      }`}
-                      title="Tekan untuk dengar semula"
-                    >
-                      {currentCard.mcq.answerPrimary}
-                    </span>
-                  </p>
-                  {currentCard.mcq.answerSecondary ? (
-                    <p className="mt-1 text-base text-stone-700 dark:text-stone-200">
-                      {currentCard.mcq.direction === "bm_to_arab"
-                        ? `Transliterasi: ${currentCard.mcq.answerSecondary}`
-                        : `Bahasa Inggeris: ${currentCard.mcq.answerSecondary}`}
-                    </p>
-                  ) : null}
-                  {!answerState.isCorrect ? (
-                    <p className="mt-1 text-base text-rose-800 dark:text-rose-100">
-                      Tag pengukuhan ini akan kekal sehingga anda menjawabnya
-                      dengan betul.
-                    </p>
-                  ) : null}
-
-                  {currentCard.sourceContext?.primaryReference ||
-                  (currentCard.sourceContext?.sources.length ?? 0) > 0 ? (
-                    <div className="mt-4 rounded-2xl border border-stone-200/70 bg-white/70 p-4 dark:border-stone-700/60 dark:bg-stone-950/40">
-                      <p className="text-sm font-bold uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
-                        Jejak semula dalam Quran
-                      </p>
-
-                      {currentCard.sourceContext?.primaryReference ? (
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                          {currentCard.sourceContext.primaryReference.href ? (
-                            <Link
-                              href={currentCard.sourceContext.primaryReference.href}
-                              className="rounded-full border border-stone-300 bg-stone-100 px-3 py-1 text-sm font-medium text-stone-800 transition hover:bg-stone-200 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:hover:bg-stone-800"
-                            >
-                              Ayat {currentCard.sourceContext.primaryReference.label}
-                            </Link>
-                          ) : (
-                            <span className="rounded-full border border-stone-300 bg-stone-100 px-3 py-1 text-sm font-medium text-stone-800 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100">
-                              Ayat {currentCard.sourceContext.primaryReference.label}
-                            </span>
-                          )}
-                          {currentCard.sourceContext.primaryReference.pageNumber ? (
-                            <span className="text-sm text-stone-600 dark:text-stone-300">
-                              Halaman {currentCard.sourceContext.primaryReference.pageNumber}
-                            </span>
-                          ) : null}
-                        </div>
-                      ) : null}
-
-                      {(currentCard.sourceContext?.sources.length ?? 0) > 0 ? (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {currentCard.sourceContext?.sources.map((source) => (
-                            <Link
-                              key={`${currentCard.progressId}-${source.type}-${source.href}`}
-                              href={source.href}
-                              className="rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1 text-sm font-medium text-amber-900 transition hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-100 dark:hover:bg-amber-900/45"
-                              title={source.detail}
-                            >
-                              {source.label}
-                            </Link>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={handleContinue}
-                  className="rounded-xl bg-stone-900 px-5 py-2.5 text-base font-medium text-stone-50 transition hover:bg-stone-800 disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
+              <p className="mt-2 text-base text-stone-800 dark:text-stone-100">
+                {currentCard.mcq.answerLabel}:{" "}
+                <span
+                  dir={currentCard.mcq.direction === "bm_to_arab" ? "rtl" : "ltr"}
+                  lang={currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms"}
+                  onClick={() => {
+                    const lang = currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms";
+                    handleManualAudio(lang, currentCard.mcq.answerPrimary, currentCard.mcq.answerAudioUrl);
+                  }}
+                  className={`cursor-pointer transition hover:opacity-75 ${
+                    currentCard.mcq.direction === "bm_to_arab"
+                      ? "font-arabic text-2xl"
+                      : "font-medium"
+                  }`}
+                  title="Tekan untuk dengar"
                 >
-                  {isPending ? "Menyimpan..." : "Kad seterusnya"}
-                </button>
-              </div>
+                  {currentCard.mcq.answerPrimary}
+                </span>
+                {currentCard.mcq.answerSecondary && currentCard.mcq.direction !== "bm_to_arab" ? (
+                  <span className="ml-2 text-sm text-stone-500 dark:text-stone-400">
+                    ({currentCard.mcq.answerSecondary})
+                  </span>
+                ) : null}
+              </p>
 
-              {currentCard.exposure ? (
-                <div className="mt-4 flex flex-wrap gap-2 text-sm text-stone-600 sm:text-base dark:text-stone-300">
-                  <span className="rounded-full border border-stone-200 bg-white px-3 py-1 dark:border-stone-700 dark:bg-stone-900">
-                    {currentCard.exposure.exposureEventCount} pendedahan
-                  </span>
-                  <span className="rounded-full border border-stone-200 bg-white px-3 py-1 dark:border-stone-700 dark:bg-stone-900">
-                    {currentCard.exposure.distinctContextCount} konteks
-                  </span>
-                  {currentCard.exposure.readingOccurrenceWeight > 0 ? (
-                    <span className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-teal-800 dark:border-teal-700/40 dark:bg-teal-900/20 dark:text-teal-200">
-                      Baca {currentCard.exposure.readingOccurrenceWeight}
-                    </span>
+              {(currentCard.sourceContext?.primaryReference ||
+                (currentCard.sourceContext?.sources.length ?? 0) > 0) && (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {currentCard.sourceContext?.primaryReference ? (
+                    currentCard.sourceContext.primaryReference.href ? (
+                      <Link
+                        href={currentCard.sourceContext.primaryReference.href}
+                        className="rounded-full border border-stone-300/70 bg-stone-100/80 px-2.5 py-0.5 text-xs font-medium text-stone-700 transition hover:bg-stone-200 dark:border-stone-600/50 dark:bg-stone-800/60 dark:text-stone-200 dark:hover:bg-stone-700"
+                      >
+                        Ayat {currentCard.sourceContext.primaryReference.label}
+                      </Link>
+                    ) : (
+                      <span className="rounded-full border border-stone-300/70 bg-stone-100/80 px-2.5 py-0.5 text-xs font-medium text-stone-700 dark:border-stone-600/50 dark:bg-stone-800/60 dark:text-stone-200">
+                        Ayat {currentCard.sourceContext.primaryReference.label}
+                      </span>
+                    )
                   ) : null}
-                  {currentCard.exposure.themeOccurrenceWeight > 0 ? (
-                    <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-indigo-800 dark:border-indigo-700/40 dark:bg-indigo-900/20 dark:text-indigo-200">
-                      Tema {currentCard.exposure.themeOccurrenceWeight}
-                    </span>
-                  ) : null}
-                  {currentCard.exposure.hifzOccurrenceWeight > 0 ? (
-                    <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-200">
-                      Hafal {currentCard.exposure.hifzOccurrenceWeight}
-                    </span>
-                  ) : null}
+                  {currentCard.sourceContext?.sources.map((source) => (
+                    <Link
+                      key={`${currentCard.progressId}-${source.type}-${source.href}`}
+                      href={source.href}
+                      className="rounded-full border border-stone-300/70 bg-stone-100/80 px-2.5 py-0.5 text-xs font-medium text-stone-700 transition hover:bg-stone-200 dark:border-stone-600/50 dark:bg-stone-800/60 dark:text-stone-200 dark:hover:bg-stone-700"
+                      title={source.detail}
+                    >
+                      {source.label}
+                    </Link>
+                  ))}
                 </div>
-              ) : null}
+              )}
+
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={handleContinue}
+                className="mt-4 w-full rounded-xl bg-stone-900 py-2.5 text-base font-medium text-stone-50 transition hover:bg-stone-800 disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
+              >
+                {isPending ? "Menyimpan..." : "Kad seterusnya"}
+              </button>
             </div>
           ) : null}
         </section>
@@ -1368,42 +1286,25 @@ export function FahamWorkspace({
 }
 
 function MotivationMetricCard({
-  accent,
   label,
   progress,
   progressLabel,
   value,
 }: {
-  accent: "sky" | "emerald";
   label: string;
   progress: number;
   progressLabel: string;
   value: string;
 }) {
-  const palette =
-    accent === "sky"
-      ? {
-          badge:
-            "border-sky-300/80 bg-sky-100/80 text-sky-900 dark:border-sky-500/40 dark:bg-sky-900/35 dark:text-sky-100",
-          card:
-            "border-sky-200/80 bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.14),transparent_55%),linear-gradient(180deg,rgba(240,249,255,0.96),rgba(255,255,255,0.98))] dark:border-sky-500/30 dark:bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.18),transparent_55%),linear-gradient(180deg,rgba(8,47,73,0.45),rgba(28,25,23,0.92))]",
-          progressBadge:
-            "border-sky-300/80 bg-sky-100/85 text-sky-900 dark:border-sky-300/35 dark:bg-sky-200/15 dark:text-sky-50",
-          progressBar: "bg-sky-500 dark:bg-sky-400",
-          progressTrack: "bg-sky-100 dark:bg-sky-900/30",
-          value: "text-sky-950 dark:text-sky-50",
-        }
-      : {
-          badge:
-            "border-emerald-300/80 bg-emerald-100/80 text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-900/35 dark:text-emerald-100",
-          card:
-            "border-emerald-200/80 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.16),transparent_55%),linear-gradient(180deg,rgba(236,253,245,0.96),rgba(255,255,255,0.98))] dark:border-emerald-500/30 dark:bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.18),transparent_55%),linear-gradient(180deg,rgba(2,44,34,0.45),rgba(28,25,23,0.92))]",
-          progressBadge:
-            "border-emerald-300/80 bg-emerald-100/85 text-emerald-900 dark:border-emerald-300/35 dark:bg-emerald-200/15 dark:text-emerald-50",
-          progressBar: "bg-emerald-500 dark:bg-emerald-400",
-          progressTrack: "bg-emerald-100 dark:bg-emerald-900/30",
-          value: "text-emerald-950 dark:text-emerald-50",
-        };
+  const palette = {
+    card:
+      "border-emerald-300/70 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.18),transparent_55%),linear-gradient(180deg,rgba(236,253,245,0.95),rgba(255,255,255,0.98))] dark:border-emerald-500/35 dark:bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.22),transparent_55%),linear-gradient(180deg,rgba(2,44,34,0.50),rgba(28,25,23,0.92))]",
+    progressBadge:
+      "border-emerald-400/70 bg-emerald-100/90 text-emerald-900 dark:border-emerald-400/40 dark:bg-emerald-300/15 dark:text-emerald-50",
+    progressBar: "bg-emerald-500 dark:bg-emerald-400",
+    progressTrack: "bg-emerald-100 dark:bg-emerald-900/30",
+    value: "text-emerald-950 dark:text-emerald-50",
+  };
 
   return (
     <section className={`min-w-0 rounded-[1.5rem] border p-4 shadow-[0_20px_60px_-44px_rgba(41,37,36,0.55)] sm:p-5 ${palette.card}`}>

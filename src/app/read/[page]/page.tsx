@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { ReadPageWorkspace } from "@/components/ReadPageWorkspace";
-import { ReadPageVocabPreviewLazy } from "@/components/ReadPageVocabPreviewLazy";
 import { LightweightBreadcrumb } from "@/components/LightweightBreadcrumb";
 import { getReadPageStaticData } from "@/lib/readPageData";
 import { parseReadPage } from "@/lib/readNavigation";
@@ -146,14 +145,6 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
         nextPageMobileImageSrc={pageData.nextPageMobileImageSrc}
         personalizationPageNumber={pageNumber}
       />
-
-      {!hifzFlow ? (
-        <ReadPageVocabPreviewLazy
-          key={pageNumber}
-          ayahIds={pageData.ayatOnPage.map((ayah) => ayah.id)}
-          pageNumber={pageNumber}
-        />
-      ) : null}
     </main>
   );
 }
