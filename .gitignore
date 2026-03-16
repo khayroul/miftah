@@ -55,8 +55,9 @@ data/qul/mini_quran_dev.sql
 data/qul/*.zip
 data/qul/indonesian-word-by-word-translation.json.zip
 
-# External line-break data (clone from zonetecde/mushaf-layout)
-data/mushaf-layout/
+# External line-break data (originally from zonetecde/mushaf-layout)
+# Committed to repo for Vercel deployment
+# data/mushaf-layout/
 
 # Python cache
 __pycache__/
