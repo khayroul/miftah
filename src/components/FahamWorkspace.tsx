@@ -21,6 +21,7 @@ import {
 interface FahamWorkspaceProps {
   initialQueue: FahamQueueSnapshot;
   initialPreset?: FahamSourcePreset;
+  initialStats?: FahamStats | null;
   entryContext?: FahamWorkspaceEntryContext | null;
   setupMessage?: string | null;
   shouldHydrateInitialQueue?: boolean;
@@ -215,7 +216,7 @@ function optionButtonClassName(params: {
   return "border-stone-200 bg-stone-100/80 text-stone-500 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-400";
 }
 
-interface FahamStats {
+export interface FahamStats {
   wordBank: number;
   mastered: number;
   learning: number;
@@ -243,6 +244,7 @@ async function requestStats(): Promise<FahamStats> {
 export function FahamWorkspace({
   initialQueue,
   initialPreset = "mixed",
+  initialStats = null,
   entryContext = null,
   setupMessage = null,
   shouldHydrateInitialQueue = false,
@@ -252,7 +254,7 @@ export function FahamWorkspace({
   const [directionMode, setDirectionMode] = useState<FahamMcqDirectionMode>("arab_to_bm");
   const [isRevision, setIsRevision] = useState(false);
   const [snapshot, setSnapshot] = useState<FahamQueueSnapshot>(initialQueue);
-  const [stats, setStats] = useState<FahamStats | null>(null);
+  const [stats, setStats] = useState<FahamStats | null>(initialStats);
   const [showCelebration, setShowCelebration] = useState(false);
   const [sessionSummary, setSessionSummary] = useState<FahamSessionSummary | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);

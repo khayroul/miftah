@@ -1,7 +1,9 @@
-import { FahamWorkspace } from "@/components/FahamWorkspace";
+import { FahamWorkspace, type FahamStats } from "@/components/FahamWorkspace";
 import { ModeNavigator } from "@/components/ModeNavigator";
 import type { FahamQueueSnapshot } from "@/lib/faham/queue";
 import type { FahamLevelProgress } from "@/lib/faham/levels";
+import { buildFahamLevelProgress, getFahamLevelState } from "@/lib/faham/levels";
+import { getFahamStats } from "@/lib/faham/repository";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import {
@@ -99,6 +101,20 @@ export default async function FahamPage(props: FahamPageProps) {
     },
   };
   const shouldHydrateInitialQueue = Boolean(userId);
+
+  let initialStats: FahamStats | null = null;
+  if (userId) {
+    try {
+      const levelState = await getFahamLevelState(userId);
+      const rawStats = await getFahamStats(userId, levelState.activeWordLimit);
+      initialStats = {
+        ...rawStats,
+        levelProgress: buildFahamLevelProgress(levelState),
+      };
+    } catch {
+      // Graceful degradation — client will fetch on mount
+    }
+  }
 
   if (!userId) {
     setupMessage = "Akaun Diperlukan: Anda sedang menggunakan mod pratonton. Log masuk untuk menyimpan kemajuan anda.";
@@ -200,6 +216,7 @@ export default async function FahamPage(props: FahamPageProps) {
         <FahamWorkspace
           initialQueue={initialQueue}
           initialPreset={initialPreset}
+          initialStats={initialStats}
           entryContext={entryContext}
           setupMessage={setupMessage}
           shouldHydrateInitialQueue={shouldHydrateInitialQueue}
