@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { FahamWorkspace } from "@/components/FahamWorkspace";
 import { ModeNavigator } from "@/components/ModeNavigator";
 import type { FahamQueueSnapshot } from "@/lib/faham/queue";
@@ -48,14 +46,16 @@ function buildQuranWordAudioUrl(
   return `https://audio.qurancdn.com/wbw/${s}_${a}_${w}.mp3`;
 }
 
-export default async function FahamPage({ searchParams }: FahamPageProps) {
-  const user = await getOptionalAuthUser();
+export default async function FahamPage(props: FahamPageProps) {
+  const [user, resolvedSearchParams, jumpTargets] = await Promise.all([
+    getOptionalAuthUser(),
+    props.searchParams,
+    getReadJumpTargets(),
+  ]);
   const userId = user?.id;
-  const params = await searchParams;
-  const jumpTargets = await getReadJumpTargets();
-  const initialPreset = parseFahamSourcePreset(pickQueryValue(params.preset));
-  const sourceSurah = parsePositiveInt(pickQueryValue(params.surah));
-  const sourceChunk = parsePositiveInt(pickQueryValue(params.chunk));
+  const initialPreset = parseFahamSourcePreset(pickQueryValue(resolvedSearchParams.preset));
+  const sourceSurah = parsePositiveInt(pickQueryValue(resolvedSearchParams.surah));
+  const sourceChunk = parsePositiveInt(pickQueryValue(resolvedSearchParams.chunk));
   let setupMessage: string | null = null;
   const entryContext =
     initialPreset === "theme" && sourceSurah && sourceChunk
