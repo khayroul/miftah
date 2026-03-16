@@ -25,7 +25,6 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     const body = readingStateSchema.parse(rawBody);
     const state = await saveUserReadingState(user.id, body.page);
-    revalidateTag("home-dashboard", "max");
     await recordActivityEvent({
       activityType: "read_page_viewed",
       entityId: body.page,
@@ -36,6 +35,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       },
       userId: user.id,
     });
+    revalidateTag("home-dashboard", "max");
     return NextResponse.json({ ok: true, state });
   } catch (error) {
     if (error instanceof ZodError) {
