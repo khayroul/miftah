@@ -1,12 +1,15 @@
-export const dynamic = "force-dynamic";
-
 import { ModeNavigator } from "@/components/ModeNavigator";
 import { HifzOverview } from "@/components/HifzOverview";
 import { LightweightBreadcrumb } from "@/components/LightweightBreadcrumb";
 import { countUniquePlanItemPages } from "@/lib/hifz/queue";
-import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
-import { hasAnyHifzProgress } from "@/lib/hifz/study-progress";
-import { getHifzStats, getJuzProgress, getPageProgressGrid, emptyPageGrid } from "@/lib/hifz/stats";
+import {
+  getCachedDailyPlan,
+  getCachedHifzStats,
+  getCachedJuzProgress,
+  getCachedPageProgressGrid,
+  getCachedHasAnyHifzProgress,
+} from "@/lib/hifz/cached";
+import { emptyPageGrid } from "@/lib/hifz/stats";
 import type { PageGridEntry } from "@/lib/hifz/stats";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
@@ -15,8 +18,10 @@ import type { DailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import type { HifzStats, JuzStat } from "@/lib/hifz/stats";
 
 export default async function HifzPage() {
-  const user = await getOptionalAuthUser();
-  const userId = user?.id;
+  const userPromise = getOptionalAuthUser();
+  const jumpTargetsPromise = getReadJumpTargets();
+  const user = await userPromise;
+  const userId = user?.id ?? null;
 
   let plan: DailyPlanWithDetails;
   let stats: HifzStats;
@@ -24,20 +29,24 @@ export default async function HifzPage() {
   let pageGrid: PageGridEntry[] = [];
   let globalStreak = 0;
   let canStartFresh = false;
-  const jumpTargets = await getReadJumpTargets();
+
+  // jumpTargets, hasStarted, and streak are all independent of each other
+  const [jumpTargets, hasStarted, streak] = await Promise.all([
+    jumpTargetsPromise,
+    userId ? getCachedHasAnyHifzProgress(userId) : Promise.resolve(false),
+    userId ? getUserStreak(userId) : Promise.resolve(null),
+  ]);
 
   if (userId) {
-    const hasStarted = await hasAnyHifzProgress(userId);
     canStartFresh = !hasStarted;
-    const streak = await getUserStreak(userId);
     globalStreak = streak?.current_streak ?? 0;
 
     if (hasStarted) {
       [plan, stats, juzProgress, pageGrid] = await Promise.all([
-        buildDailyPlanWithDetails(userId),
-        getHifzStats(userId),
-        getJuzProgress(userId),
-        getPageProgressGrid(userId),
+        getCachedDailyPlan(userId),
+        getCachedHifzStats(userId),
+        getCachedJuzProgress(userId),
+        getCachedPageProgressGrid(userId),
       ]);
     } else {
       plan = { sabqi: [], sabak: [], manzil: [] } as DailyPlanWithDetails;
