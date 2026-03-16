@@ -9,7 +9,7 @@ export async function GET() {
 
     return NextResponse.json(snapshot, {
       headers: {
-        "Cache-Control": "private, no-store",
+        "Cache-Control": "private, max-age=15, stale-while-revalidate=30",
       },
     });
   } catch (error: unknown) {
