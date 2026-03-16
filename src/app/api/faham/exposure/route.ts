@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { ZodError } from "zod";
 import { recordVocabExposureEvents } from "@/lib/faham/repository";
 import { fahamExposureSchema } from "@/lib/faham/schemas";
@@ -22,6 +23,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     const result = await recordVocabExposureEvents(userId, body);
+    revalidateTag("home-dashboard", "max");
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     if (error instanceof ZodError) {

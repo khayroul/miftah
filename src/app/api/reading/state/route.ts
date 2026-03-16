@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { ZodError, z } from "zod";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { saveUserReadingState } from "@/lib/userReadingState";
@@ -24,6 +25,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     const body = readingStateSchema.parse(rawBody);
     const state = await saveUserReadingState(user.id, body.page);
+    revalidateTag("home-dashboard", "max");
     await recordActivityEvent({
       activityType: "read_page_viewed",
       entityId: body.page,

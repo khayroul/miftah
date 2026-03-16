@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { ZodError, z } from "zod";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { markThemeChunkProgress } from "@/lib/themeChunkProgress";
@@ -48,6 +49,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       userId: user.id,
     });
 
+    revalidateTag("home-dashboard", "max");
     return NextResponse.json({ ok: true, progress });
   } catch (error) {
     if (error instanceof ZodError) {

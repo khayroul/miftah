@@ -51,15 +51,15 @@
 .mushaf-opening-page .mushaf-text-line {
   justify-content: center;
   gap: 12px;
-  font-size: 7.542cqw;
+  font-size: 10.45cqw;
 }
 
 .mushaf-opening-page .mushaf-basmala {
-  font-size: 7.542cqw;
+  font-size: 10.45cqw;
 }
 
 .mushaf-opening-page .mushaf-surah-title {
-  font-size: 7.821cqw;
+  font-size: 10.84cqw;
 }
 
 /* Text line — flexbox RTL with space-between for mushaf justification */
@@ -68,7 +68,7 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 5.196cqw;
+  font-size: 7.2cqw;
   line-height: 1.0;
   padding: 0 2px;
   font-weight: 400;
@@ -77,7 +77,7 @@
 /* Last line of a surah — natural spacing, not stretched */
 .mushaf-last-line {
   justify-content: center;
-  gap: 1.955cqw;
+  gap: 2.71cqw;
 }
 
 /* Word groups */
@@ -129,7 +129,7 @@
 .mushaf-basmala {
   direction: rtl;
   text-align: center;
-  font-size: 5.196cqw;
+  font-size: 7.2cqw;
   line-height: 1.0;
   padding: 0 4px;
   font-weight: 400;
@@ -166,7 +166,7 @@
   align-items: center;
   justify-content: center;
   font-family: "surah_names", serif;
-  font-size: 6.704cqw;
+  font-size: 9.29cqw;
   font-weight: normal;
   line-height: 1;
   transform: translateY(-2px);
@@ -177,7 +177,7 @@
 .mushaf-page-number {
   text-align: center;
   padding: 6px 0 14px;
-  font-size: 2.514cqw;
+  font-size: 3.48cqw;
   font-family: -apple-system, "Helvetica Neue", sans-serif;
   color: var(--mushaf-page-num);
 }

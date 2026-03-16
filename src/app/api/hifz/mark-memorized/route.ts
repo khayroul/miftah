@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getOrCreateProgress, updateHifzStatus } from "@/lib/hifz/study-progress";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import type { HifzStatus } from "@/types/database";
@@ -63,6 +64,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       }),
     );
 
+    revalidateTag("hifz", "max");
+    revalidateTag("home-dashboard", "max");
     return NextResponse.json({
       ok: true,
       ayahIds,

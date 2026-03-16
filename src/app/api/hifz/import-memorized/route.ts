@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { supabaseServer } from "@/lib/supabase-server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { matureCardDbRow } from "@/lib/hifz/fsrs-bridge";
@@ -124,6 +125,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     const snapshot = buildHifzPlanSnapshot(plan);
     const count = toInsert.length + toUpdate.length;
 
+    revalidateTag("hifz", "max");
+    revalidateTag("home-dashboard", "max");
     return NextResponse.json({
       ok: true,
       count,
