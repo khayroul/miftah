@@ -750,7 +750,7 @@ export function ReadPageWorkspace({
   );
 
   return (
-    <div style={{ paddingBottom: contentBottomPadding }}>
+    <div className="mx-auto max-w-lg" style={{ paddingBottom: contentBottomPadding }}>
       {hifzFlow && hifzQueueTotalPages > 0 && !sessionComplete ? (
         <HifzSessionBar
           flow={hifzFlow}
