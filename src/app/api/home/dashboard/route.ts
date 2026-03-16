@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
-import { loadHomeDashboardSnapshot } from "@/lib/homeDashboard";
+import { loadDashboardWithDbCache } from "@/lib/homeDashboardDb";
 
 export async function GET() {
   try {
     const user = await getOptionalAuthUser();
-    const snapshot = await loadHomeDashboardSnapshot(user?.id ?? null);
+    const snapshot = await loadDashboardWithDbCache(user?.id ?? null);
 
     return NextResponse.json(snapshot, {
       headers: {

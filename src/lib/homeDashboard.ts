@@ -454,7 +454,7 @@ async function loadSafely<T>(
   }
 }
 
-async function loadHomeDashboardSnapshotUncached(
+export async function loadHomeDashboardSnapshotUncached(
   userId: string | null,
 ): Promise<HomeDashboardSnapshot> {
   if (!userId) {

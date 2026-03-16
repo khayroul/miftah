@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
+import { recomputeAndStoreSnapshot } from "@/lib/homeDashboardDb";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import {
   getUserDailyGoal,
@@ -38,6 +39,7 @@ export async function POST(): Promise<NextResponse> {
 
     revalidateTag("hifz", "max");
     revalidateTag("home-dashboard", "max");
+    after(() => recomputeAndStoreSnapshot(user.id));
     return NextResponse.json({
       ok: true,
       previousCount: currentGoal.count,

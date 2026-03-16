@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { sanitizeNextPath } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-auth-server";
+import { recomputeAndStoreSnapshot } from "@/lib/homeDashboardDb";
 
 export async function GET(request: Request): Promise<NextResponse> {
   const url = new URL(request.url);
@@ -13,6 +14,10 @@ export async function GET(request: Request): Promise<NextResponse> {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        after(() => recomputeAndStoreSnapshot(authUser.id));
+      }
       // Recovery flow: redirect to reset password page instead of nextPath
       if (type === "recovery") {
         return NextResponse.redirect(new URL("/auth/reset-password", url.origin));

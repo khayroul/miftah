@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
+import { recomputeAndStoreSnapshot } from "@/lib/homeDashboardDb";
 import type { Grade } from "@/lib/fsrs";
 import { applyRating } from "@/lib/fsrs";
 import { dbRowToCard, cardToDbRow } from "@/lib/hifz/fsrs-bridge";
@@ -74,6 +75,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
 
     revalidateTag("home-dashboard", "max");
+    after(() => recomputeAndStoreSnapshot(userId));
     return NextResponse.json({
       due: nextCard.due.toISOString(),
       ok: true,

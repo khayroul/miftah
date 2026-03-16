@@ -1,7 +1,7 @@
 import { FeedbackButton } from "@/components/FeedbackButton";
 import { HomeDashboardClient } from "@/components/HomeDashboardClient";
 import { ModeNavigator } from "@/components/ModeNavigator";
-import { loadHomeDashboardSnapshot } from "@/lib/homeDashboard";
+import { loadDashboardWithDbCache } from "@/lib/homeDashboardDb";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 
@@ -11,7 +11,7 @@ export default async function Home() {
   const user = await userPromise;
   const [jumpTargets, initialSnapshot] = await Promise.all([
     jumpTargetsPromise,
-    loadHomeDashboardSnapshot(user?.id ?? null),
+    loadDashboardWithDbCache(user?.id ?? null),
   ]);
 
   return (

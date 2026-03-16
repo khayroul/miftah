@@ -258,6 +258,8 @@ export interface Profile {
   locale: string;
   created_at: string;
   updated_at: string;
+  dashboard_snapshot: unknown | null;
+  snapshot_computed_at: string | null;
 }
 
 export interface UserReadingState {

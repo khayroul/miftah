@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
+import { recomputeAndStoreSnapshot } from "@/lib/homeDashboardDb";
 import { applyRating } from "@/lib/fsrs";
 import { dbRowToCard, cardToDbRow } from "@/lib/hifz/fsrs-bridge";
 import {
@@ -113,6 +114,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     revalidateTag("hifz", "max");
     revalidateTag("home-dashboard", "max");
+    after(() => recomputeAndStoreSnapshot(userId));
     return NextResponse.json({ ok: true, results });
   } catch (err) {
     console.error("[hifz/rate-batch] Error:", err);
