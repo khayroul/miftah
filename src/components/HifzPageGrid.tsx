@@ -10,6 +10,7 @@ interface HifzPageGridProps {
 const STATUS_COLORS: Record<PageGridStatus, string> = {
   "not-started": "bg-stone-200 dark:bg-stone-700",
   sabak: "bg-amber-400 dark:bg-amber-500",
+  sabqi: "bg-sky-400 dark:bg-sky-500",
   manzil: "bg-emerald-500 dark:bg-emerald-400",
   due: "bg-yellow-400 dark:bg-yellow-500",
   overdue: "bg-red-500 dark:bg-red-400",
@@ -18,6 +19,7 @@ const STATUS_COLORS: Record<PageGridStatus, string> = {
 const STATUS_LABELS: Record<PageGridStatus, string> = {
   "not-started": "Belum mula",
   sabak: "Sabak",
+  sabqi: "Sabqi",
   manzil: "Manzil",
   due: "Perlu ulang",
   overdue: "Tertunggak",

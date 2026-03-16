@@ -74,7 +74,8 @@ function getAudioUrlForKey(key: string | null): string | null {
 
 function getMalayAudioUrl(text: string): string {
   // Faham uses a male Malay guide voice to keep prompts sounding consistent.
-  return `/api/audio/tts?text=${encodeURIComponent(text)}&lang=ms&voice=male`;
+  // v=2 busts browser cache from prior female Google TTS responses.
+  return `/api/audio/tts?text=${encodeURIComponent(text)}&lang=ms&voice=male&v=2`;
 }
 
 export type FahamMcqDirection = "arab_to_bm" | "bm_to_arab";

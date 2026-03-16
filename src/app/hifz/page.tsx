@@ -6,7 +6,7 @@ import { LightweightBreadcrumb } from "@/components/LightweightBreadcrumb";
 import { countUniquePlanItemPages } from "@/lib/hifz/queue";
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { hasAnyHifzProgress } from "@/lib/hifz/study-progress";
-import { getHifzStats, getJuzProgress, getPageProgressGrid } from "@/lib/hifz/stats";
+import { getHifzStats, getJuzProgress, getPageProgressGrid, emptyPageGrid } from "@/lib/hifz/stats";
 import type { PageGridEntry } from "@/lib/hifz/stats";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
@@ -55,6 +55,7 @@ export default async function HifzPage() {
         notStartedPages: 20,
         manzilPagePct: 0,
       }));
+      pageGrid = emptyPageGrid();
     }
   } else {
     // Guest preview data — simplified counts only
@@ -73,6 +74,7 @@ export default async function HifzPage() {
       notStartedPages: 20,
       manzilPagePct: 0,
     }));
+    pageGrid = emptyPageGrid();
   }
 
   const newPageCount = userId ? countUniquePlanItemPages(plan.sabak) : 4;

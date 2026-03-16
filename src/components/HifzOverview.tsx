@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { JuzHeatmap } from "@/components/JuzHeatmap";
+import { HifzReportCard } from "@/components/HifzReportCard";
 import { saveQueue } from "@/lib/hifz/sessionQueue";
 import type {
   HifzFlowType,
@@ -12,7 +12,6 @@ import type { HifzQueueResponse } from "@/lib/hifz/queue";
 import type { JuzStat, HifzStats } from "@/lib/hifz/stats";
 import { getResumePoint, clearResumePoint, type HifzResumePoint } from "@/lib/hifz/resumePoint";
 import { getDifficultAyahCount } from "@/lib/hifz/difficultAyahs";
-import { HifzPageGrid } from "@/components/HifzPageGrid";
 import type { PageGridEntry } from "@/lib/hifz/stats";
 
 interface ImportSummary {
@@ -709,11 +708,10 @@ export function HifzOverview({
           ) : null}
         </div>
 
-        <JuzHeatmap juzProgress={effectiveJuzProgress} />
-
-        {pageGrid && pageGrid.length > 0 ? (
-          <HifzPageGrid entries={pageGrid} />
-        ) : null}
+        <HifzReportCard
+          juzProgress={effectiveJuzProgress}
+          pageGrid={pageGrid ?? []}
+        />
       </div>
     </>
   );

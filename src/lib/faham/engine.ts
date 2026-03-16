@@ -9,7 +9,7 @@ import type {
 export const DEFAULT_FAHAM_ENGINE_CONFIG: FahamEngineConfig = {
   candidatePoolSize: 240,
   dueLimit: 20,
-  sessionSize: 20,
+  sessionSize: 10,
   minDistinctContextCount: 1, // Available immediately
   minExposureEventCount: 1,   // Available immediately
   minOccurrenceWeight: 1,     // Available immediately

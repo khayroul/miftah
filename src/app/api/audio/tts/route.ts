@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
             return new NextResponse(stdout, {
               headers: {
                 "Content-Type": "audio/mpeg",
-                "Cache-Control": "public, max-age=31536000, immutable",
+                "Cache-Control": "public, max-age=604800",
               },
             });
           }
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(audioBuffer, {
       headers: {
         "Content-Type": "audio/mpeg",
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "public, max-age=604800",
       },
     });
   } catch (error) {

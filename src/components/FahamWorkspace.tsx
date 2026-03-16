@@ -97,8 +97,58 @@ const CORRECT_ADVANCE_CONFIGS: Record<
   },
 };
 
+function shuffleSegment(cards: SerializedFahamCard[]): SerializedFahamCard[] {
+  if (cards.length <= 1) return cards;
+  const today = new Date().toISOString().slice(0, 10);
+  return [...cards].sort((a, b) => {
+    const ha = hashForShuffle(`${today}:${a.word.id}`);
+    const hb = hashForShuffle(`${today}:${b.word.id}`);
+    return ha - hb;
+  });
+}
+
+function hashForShuffle(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+function cardKindConfig(kind: SerializedFahamCard["kind"]): {
+  label: string;
+  classes: string;
+  rowClasses: string;
+} {
+  switch (kind) {
+    case "mastered":
+      return {
+        label: "Mahir",
+        classes: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/25 dark:text-emerald-300",
+        rowClasses: "border-stone-100 bg-stone-50/80 dark:border-emerald-500/20 dark:bg-gradient-to-r dark:from-emerald-950/40 dark:to-stone-800/50",
+      };
+    case "due":
+      return {
+        label: "Ulang",
+        classes: "bg-sky-100 text-sky-700 dark:bg-sky-500/25 dark:text-sky-300",
+        rowClasses: "border-stone-100 bg-stone-50/80 dark:border-sky-500/20 dark:bg-gradient-to-r dark:from-sky-950/40 dark:to-stone-800/50",
+      };
+    case "new":
+      return {
+        label: "Baharu",
+        classes: "bg-violet-100 text-violet-700 dark:bg-violet-500/25 dark:text-violet-300",
+        rowClasses: "border-stone-100 bg-stone-50/80 dark:border-violet-500/20 dark:bg-gradient-to-r dark:from-violet-950/40 dark:to-stone-800/50",
+      };
+  }
+}
+
 function queueItems(snapshot: FahamQueueSnapshot): SerializedFahamCard[] {
-  return [...snapshot.due, ...snapshot.learning, ...snapshot.new, ...snapshot.mastered];
+  return [
+    ...shuffleSegment(snapshot.due),
+    ...shuffleSegment(snapshot.learning),
+    ...shuffleSegment(snapshot.new),
+    ...shuffleSegment(snapshot.mastered),
+  ];
 }
 
 function formatMetricValue(value: number | null): string {
@@ -205,6 +255,7 @@ export function FahamWorkspace({
   const [answerState, setAnswerState] = useState<AnswerState | null>(null);
   const [sessionDoneCount, setSessionDoneCount] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(() => {
     if (typeof window === "undefined") {
       return true;
@@ -365,6 +416,7 @@ export function FahamWorkspace({
           setAnswerState(null);
           setErrorMessage(null);
           setSessionSummary(null);
+          setShowPreview(true);
           resetSessionTracking();
         })
         .catch(() => {
@@ -425,6 +477,7 @@ export function FahamWorkspace({
     setCurrentIndex(0);
     setAnswerState(null);
     setErrorMessage(null);
+    setShowPreview(true);
     setSessionSummary({
       correctCount: completedSessionCorrect,
       foundCount: latestStats?.wordBank ?? foundCount,
@@ -499,7 +552,7 @@ export function FahamWorkspace({
       normalizedExplicitUrl.length > 0
         ? normalizedExplicitUrl
         : lang === "ms"
-          ? `/api/audio/tts?text=${encodeURIComponent(text)}&lang=ms&voice=male`
+          ? `/api/audio/tts?text=${encodeURIComponent(text)}&lang=ms&voice=male&v=2`
           : null;
     if (!url) {
       return;
@@ -825,7 +878,52 @@ export function FahamWorkspace({
         />
       </section>
 
-      {currentCard ? (
+      {showPreview && cards.length > 0 ? (
+        <section className="animate-fade-in-up rounded-[2rem] border border-stone-200/90 bg-white/88 p-5 shadow-[0_30px_80px_-52px_rgba(41,37,36,0.65)] backdrop-blur-sm sm:p-7 dark:border-stone-700 dark:bg-stone-900/80">
+          <h3 className="mb-4 text-lg font-semibold text-stone-800 dark:text-stone-100">
+            Kad Sesi Ini ({cards.length} kad)
+          </h3>
+          <div className="space-y-2.5">
+            {cards.map((card, index) => {
+              const statusConfig = cardKindConfig(card.kind);
+              return (
+                <div
+                  key={card.progressId}
+                  className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 ${statusConfig.rowClasses}`}
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+                    {index + 1}
+                  </span>
+                  <span dir="rtl" lang="ar" className="min-w-[3rem] font-arabic text-xl text-stone-900 dark:text-stone-50">
+                    {card.word.textUthmani}
+                  </span>
+                  <span className="text-stone-400 dark:text-stone-600">&mdash;</span>
+                  <span className="flex-1 text-sm text-stone-600 dark:text-stone-300">
+                    {card.word.translationBm}
+                    {card.word.transliteration ? (
+                      <span className="ml-1.5 text-xs text-stone-400 dark:text-stone-500">
+                        ({card.word.transliteration})
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider ${statusConfig.classes}`}>
+                    {statusConfig.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowPreview(false)}
+            className="mt-6 w-full rounded-2xl bg-[linear-gradient(135deg,#b45309,#0f766e)] px-6 py-3.5 text-base font-semibold text-white shadow-lg transition hover:shadow-xl active:scale-[0.98] dark:bg-[linear-gradient(135deg,#f59e0b,#14b8a6)] dark:text-stone-950"
+          >
+            Mula Sesi
+          </button>
+        </section>
+      ) : null}
+
+      {!showPreview && currentCard ? (
         <section className="animate-fade-in-up rounded-[2rem] border border-stone-200/90 bg-white/88 p-5 shadow-[0_30px_80px_-52px_rgba(41,37,36,0.65)] backdrop-blur-sm sm:p-7 dark:border-stone-700 dark:bg-stone-900/80">
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <button

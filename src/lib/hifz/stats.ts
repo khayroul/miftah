@@ -1,18 +1,5 @@
 import { supabaseServer } from "@/lib/supabase-server";
-
-const TOTAL_QURAN_PAGES = 604;
-const JUZ_BOUNDARY_PAGES = [
-  1, 22, 42, 62, 82, 102, 121, 142, 162, 182,
-  201, 222, 242, 262, 282, 302, 322, 342, 362, 382,
-  402, 422, 442, 462, 482, 502, 522, 542, 562, 582,
-] as const;
-
-const JUZ_PAGE_COUNTS: Record<number, number> = Object.fromEntries(
-  JUZ_BOUNDARY_PAGES.map((startPage, index) => {
-    const nextStartPage = JUZ_BOUNDARY_PAGES[index + 1] ?? (TOTAL_QURAN_PAGES + 1);
-    return [index + 1, nextStartPage - startPage];
-  }),
-);
+import { TOTAL_QURAN_PAGES, JUZ_BOUNDARY_PAGES, JUZ_PAGE_COUNTS, pageToJuz } from "@/lib/hifz/constants";
 
 export interface JuzStat {
   juz: number;
@@ -145,47 +132,73 @@ export async function getHifzStats(userId: string): Promise<HifzStats> {
   };
 }
 
-export type PageGridStatus = "not-started" | "sabak" | "manzil" | "due" | "overdue";
+export type PageGridStatus = "not-started" | "sabak" | "sabqi" | "manzil" | "due" | "overdue";
 
 export interface PageGridEntry {
   page: number;
+  juz: number;
   status: PageGridStatus;
+  lastReviewedAt: string | null;
 }
 
 export async function getPageProgressGrid(userId: string): Promise<PageGridEntry[]> {
-  const { data, error } = await supabaseServer
-    .from("v_hifz_page_progress")
-    .select("page_number, is_started, is_complete_manzil, is_due, sabak_ayat")
-    .eq("user_id", userId);
+  const [progressResult, reviewResult] = await Promise.all([
+    supabaseServer
+      .from("v_hifz_page_progress")
+      .select("page_number, juz_number, is_started, is_complete_manzil, is_due, sabak_ayat, sabqi_ayat")
+      .eq("user_id", userId),
+    supabaseServer.rpc("get_last_review_per_page", { p_user_id: userId }),
+  ]);
 
-  if (error) throw error;
+  if (progressResult.error) throw progressResult.error;
 
   const rowMap = new Map<number, HifzPageProgressRow>();
-  for (const row of (data ?? []) as HifzPageProgressRow[]) {
+  for (const row of (progressResult.data ?? []) as HifzPageProgressRow[]) {
     rowMap.set(row.page_number, row);
+  }
+
+  // Last review dates per page — gracefully handle missing RPC
+  const lastReviewMap = new Map<number, string>();
+  if (!reviewResult.error && reviewResult.data) {
+    for (const row of reviewResult.data as Array<{ page_number: number; last_reviewed: string }>) {
+      lastReviewMap.set(row.page_number, row.last_reviewed);
+    }
   }
 
   return Array.from({ length: TOTAL_QURAN_PAGES }, (_, i) => {
     const page = i + 1;
     const row = rowMap.get(page);
+    const juz = row?.juz_number ?? pageToJuz(page);
+    const lastReviewedAt = lastReviewMap.get(page) ?? null;
 
     if (!row || !row.is_started) {
-      return { page, status: "not-started" as const };
+      return { page, juz, status: "not-started" as const, lastReviewedAt };
     }
 
     if (row.is_due) {
-      return { page, status: "due" as const };
+      return { page, juz, status: "due" as const, lastReviewedAt };
     }
 
     if (row.is_complete_manzil) {
-      return { page, status: "manzil" as const };
+      return { page, juz, status: "manzil" as const, lastReviewedAt };
+    }
+
+    if ((row.sabqi_ayat ?? 0) > 0) {
+      return { page, juz, status: "sabqi" as const, lastReviewedAt };
     }
 
     if ((row.sabak_ayat ?? 0) > 0) {
-      return { page, status: "sabak" as const };
+      return { page, juz, status: "sabak" as const, lastReviewedAt };
     }
 
-    return { page, status: "not-started" as const };
+    return { page, juz, status: "not-started" as const, lastReviewedAt };
+  });
+}
+
+export function emptyPageGrid(): PageGridEntry[] {
+  return Array.from({ length: TOTAL_QURAN_PAGES }, (_, i) => {
+    const page = i + 1;
+    return { page, juz: pageToJuz(page), status: "not-started" as const, lastReviewedAt: null };
   });
 }
 
