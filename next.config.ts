@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     "/**": [
       "./data/bm_wbw_complete.json",
       "./data/qul/english-wbw-translation.json",
+      "./data/mushaf-layout/mushaf/**",
     ],
   },
 };
