@@ -28,9 +28,17 @@ interface MushafLivePageProps {
   onReady?: () => void;
 }
 
+function surahNumToBcd(n: number): number {
+  // surah_names font uses BCD encoding: surah 10 → 0x010, surah 114 → 0x114
+  const ones = n % 10;
+  const tens = Math.floor(n / 10) % 10;
+  const hundreds = Math.floor(n / 100) % 10;
+  return (hundreds << 8) | (tens << 4) | ones;
+}
+
 function SurahBanner({ surah }: { surah: string }) {
   const surahNum = parseInt(surah || "0", 10);
-  const char = String.fromCharCode(0xe000 + surahNum);
+  const char = String.fromCharCode(0xe000 + surahNumToBcd(surahNum));
 
   return (
     <div className="mushaf-surah-banner">
