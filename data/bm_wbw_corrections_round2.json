@@ -1,0 +1,111 @@
+[
+  {
+    "category": "sebagian→sebahagian",
+    "bm_old": "sebagian",
+    "bm_new": "sebahagian",
+    "positions_affected": 222,
+    "sample_keys": [
+      "2:3:6",
+      "2:36:10",
+      "2:36:11",
+      "2:73:3",
+      "2:76:9"
+    ]
+  },
+  {
+    "category": "afala-standardization",
+    "bm_old": "various afala renderings",
+    "bm_new": "tidakkah / maka tidakkah / maka adakah",
+    "positions_affected": 317,
+    "sample_keys": [
+      "2:3:6",
+      "2:36:10",
+      "2:36:11",
+      "2:73:3",
+      "2:76:9"
+    ]
+  },
+  {
+    "category": "segolongan→sekumpulan",
+    "bm_old": "segolongan",
+    "bm_new": "sekumpulan",
+    "positions_affected": 44,
+    "sample_keys": [
+      "2:75:7",
+      "2:85:7",
+      "2:100:5",
+      "2:101:11",
+      "2:146:9"
+    ]
+  },
+  {
+    "category": "padahal→sedangkan",
+    "bm_old": "padahal",
+    "bm_new": "sedangkan",
+    "positions_affected": 36,
+    "sample_keys": [
+      "2:204:15",
+      "2:214:6",
+      "2:216:11",
+      "2:267:19",
+      "3:165:4"
+    ]
+  },
+  {
+    "category": "jikalau→jika",
+    "bm_old": "jikalau",
+    "bm_new": "jika",
+    "positions_affected": 16,
+    "sample_keys": [
+      "2:220:19",
+      "4:64:9",
+      "4:83:10",
+      "6:148:4",
+      "6:157:3"
+    ]
+  },
+  {
+    "category": "kendatipun→walaupun",
+    "bm_old": "kendatipun",
+    "bm_new": "walaupun",
+    "positions_affected": 3,
+    "sample_keys": [
+      "4:53:6",
+      "4:78:5",
+      "9:80:7"
+    ]
+  },
+  {
+    "category": "lantaran→kerana",
+    "bm_old": "lantaran",
+    "bm_new": "kerana",
+    "positions_affected": 3,
+    "sample_keys": [
+      "5:59:7",
+      "22:22:6",
+      "67:8:4"
+    ]
+  },
+  {
+    "category": "bilamana→apabila",
+    "bm_old": "bilamana",
+    "bm_new": "apabila",
+    "positions_affected": 1,
+    "sample_keys": [
+      "27:65:13"
+    ]
+  },
+  {
+    "category": "sesaat→seketika",
+    "bm_old": "sesaat",
+    "bm_new": "seketika",
+    "positions_affected": 7,
+    "sample_keys": [
+      "7:34:9",
+      "10:45:7",
+      "10:49:20",
+      "16:61:21",
+      "30:55:9"
+    ]
+  }
+]

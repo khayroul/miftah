@@ -27,7 +27,7 @@ test("getWordTranslationsByHitboxes realigns noisy glyph positions for 2:7", asy
   assert.equal(translations["2:7:8"]?.bm, "dan atas");
   assert.equal(translations["2:7:10"]?.bm, "tutup/tabir");
   assert.equal(translations["2:7:12"]?.bm, "dan bagi mereka");
-  assert.equal(translations["2:7:13"]?.bm, "seksaan");
+  assert.equal(translations["2:7:13"]?.bm, "azab");
 });
 
 test("getWordTranslationsByLocation returns BM spelling-normalized WBW entries", async () => {
@@ -57,11 +57,11 @@ test("getWordTranslationsByLocation returns BM spelling-normalized WBW entries",
   ]);
 
   assert.equal(translations["2:3:7"]?.bm, "telah Kami beri rezeki kepada mereka");
-  assert.equal(translations["2:7:11"]?.bm, "seksaan");
+  assert.equal(translations["2:7:11"]?.bm, "azab");
   assert.equal(translations["2:25:8"]?.bm, "syurga-syurga");
   assert.equal(translations["2:35:18"]?.bm, "orang-orang yang zalim");
   assert.equal(translations["2:9:10"]?.bm, "mereka menyedari");
-  assert.equal(translations["2:10:8"]?.bm, "seksaan");
+  assert.equal(translations["2:10:8"]?.bm, "azab");
   assert.equal(translations["2:61:46"]?.bm, "kerana sesungguhnya mereka");
   assert.equal(translations["2:64:7"]?.bm, "kurnia");
   assert.equal(translations["2:102:42"]?.bm, "dan isterinya");
