@@ -84,7 +84,7 @@ export class TasmiSession {
     if (!this.isActive) return;
     this.chunkQueue = [...this.chunkQueue, audioBlob];
     if (!this.processing) {
-      void this.drainQueue();
+      await this.drainQueue();
     }
   }
 
@@ -132,7 +132,18 @@ export class TasmiSession {
           type: 'match',
           data: { matchResult, progress: this.matcher.progress },
         });
-      } else if (matchResult.errors.length > 0 || matchResult.wordsTotal > 0) {
+      } else if (matchResult.wordsTotal === 0 && matchResult.errors.length === 0) {
+        // Empty transcription (Whisper returned nothing) — count as error for talqin
+        this.consecutiveErrors++;
+        this.eventHandler({
+          type: 'error',
+          data: { matchResult, progress: this.matcher.progress },
+        });
+
+        if (this.consecutiveErrors >= this.config.errorThresholdCount) {
+          this.triggerTalqin();
+        }
+      } else {
         this.consecutiveErrors++;
         matchResult.errors.forEach(e => this.errorPositions.add(e.position));
 
@@ -152,6 +163,11 @@ export class TasmiSession {
       }
     } catch (err) {
       console.error('Tasmi transcription error:', err);
+      // Server failure still counts as error — prevents stuck session with no talqin
+      this.consecutiveErrors++;
+      if (this.consecutiveErrors >= this.config.errorThresholdCount) {
+        this.triggerTalqin();
+      }
     }
 
     if (this.isActive) {

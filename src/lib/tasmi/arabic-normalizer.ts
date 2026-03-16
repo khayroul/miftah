@@ -14,9 +14,10 @@ export function normalizeArabic(text: string): string {
     .replace(TASHKEEL_REGEX, '')     // 1. Strip tashkeel
     .replace(ALEF_REGEX, 'ا')        // 2. Normalize alef variants
     .replace(/ة/g, 'ه')             // 3. Taa marbuta → haa
-    .replace(/ـ/g, '')              // 4. Remove tatweel
-    .replace(/[.,;:!?،؛؟]/g, '')    // 5. Strip punctuation (Whisper adds these)
-    .replace(/\s+/g, ' ')           // 6. Collapse whitespace
+    .replace(/ى/g, 'ي')             // 4. Alef maqsura → yaa (Whisper may differ from text_simple)
+    .replace(/ـ/g, '')              // 5. Remove tatweel
+    .replace(/[.,;:!?،؛؟]/g, '')    // 6. Strip punctuation (Whisper adds these)
+    .replace(/\s+/g, ' ')           // 7. Collapse whitespace
     .trim();
 }
 

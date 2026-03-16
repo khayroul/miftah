@@ -16,6 +16,9 @@ _ALEF_RE = re.compile('[إأآٱ]')
 # Taa marbuta
 _TAA_MARBUTA_RE = re.compile('ة')
 
+# Alef maqsura → yaa (Whisper may differ from text_simple)
+_ALEF_MAQSURA_RE = re.compile('ى')
+
 # Tatweel (kashida)
 _TATWEEL_RE = re.compile('ـ')
 
@@ -30,7 +33,8 @@ def normalize_arabic(text: str) -> str:
     text = _TASHKEEL_RE.sub('', text)       # 1. Strip tashkeel
     text = _ALEF_RE.sub('ا', text)           # 2. Normalize alef variants
     text = _TAA_MARBUTA_RE.sub('ه', text)    # 3. Taa marbuta → haa
-    text = _TATWEEL_RE.sub('', text)         # 4. Remove tatweel
-    text = _PUNCTUATION_RE.sub('', text)     # 5. Strip punctuation
-    text = _WHITESPACE_RE.sub(' ', text)     # 6. Collapse whitespace
+    text = _ALEF_MAQSURA_RE.sub('ي', text)  # 4. Alef maqsura → yaa
+    text = _TATWEEL_RE.sub('', text)         # 5. Remove tatweel
+    text = _PUNCTUATION_RE.sub('', text)     # 6. Strip punctuation
+    text = _WHITESPACE_RE.sub(' ', text)     # 7. Collapse whitespace
     return text.strip()
