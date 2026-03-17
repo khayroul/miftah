@@ -182,10 +182,17 @@ export function MushafLivePage({
     if (pageNumber < 604) preloadMushafFont(pageNumber + 1);
   }, [pageNumber]);
 
+  const isOpeningPage = pageNumber === 1 || pageNumber === 2;
+
   // Auto-fit overflow: use scaleX() to compress overflowing lines
   // This keeps text height uniform while slightly narrowing dense lines
+  // Skip on opening pages (1-2) — they use centered layout, not justified
   useLayoutEffect(() => {
     if (!fontLoaded || !textAreaRef.current) return;
+    if (isOpeningPage) {
+      onReady?.();
+      return;
+    }
 
     const area = textAreaRef.current;
 
@@ -232,9 +239,8 @@ export function MushafLivePage({
       });
 
     onReady?.();
-  }, [fontLoaded, pageNumber, layout, onReady]);
+  }, [fontLoaded, pageNumber, layout, onReady, isOpeningPage]);
 
-  const isOpeningPage = pageNumber === 1 || pageNumber === 2;
   const isShortPage = !isOpeningPage && layout.lines.length < 15;
   const lastLineFlags = computeLastLineFlags(layout.lines);
 

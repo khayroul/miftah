@@ -45,22 +45,28 @@
 /* Opening pages (1-2): centered, larger font, oval arrangement */
 .mushaf-opening-page {
   justify-content: center;
-  gap: 22px;
-  padding: 0 48px;
+  gap: 32px;
+  padding: 0 12%;
 }
 
 .mushaf-opening-page .mushaf-text-line {
   justify-content: center;
-  gap: 10px;
-  font-size: 8.5cqw;
+  gap: 2.2cqw;
+  font-size: 8cqw;
+  transform: none !important; /* prevent scaleX overflow compression */
 }
 
 .mushaf-opening-page .mushaf-basmala {
-  font-size: 8.5cqw;
+  font-size: 8cqw;
+  transform: none !important;
 }
 
 .mushaf-opening-page .mushaf-surah-title {
   font-size: 9cqw;
+}
+
+.mushaf-opening-page .mushaf-surah-banner {
+  margin: 0 -4% 8px;
 }
 
 /* Text line — flexbox RTL with space-between for mushaf justification */
