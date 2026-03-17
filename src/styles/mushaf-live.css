@@ -108,12 +108,14 @@
   position: relative;
 }
 
-/* Audio playback highlight */
-.mushaf-word--playing {
+/* Audio playback highlight — applied to word-group so entire ayah glows */
+.mushaf-word-group--playing {
+  background-color: rgba(56, 189, 248, 0.15);
   border-radius: 4px;
-  outline: 2px solid rgba(14, 165, 233, 0.9);
-  outline-offset: 1px;
-  background-color: rgba(56, 189, 248, 0.1);
+}
+
+.dark .mushaf-word-group--playing {
+  background-color: rgba(56, 189, 248, 0.12);
 }
 
 /* Word selection highlight */

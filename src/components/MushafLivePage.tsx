@@ -117,7 +117,7 @@ function TextLine({
         };
 
         return (
-          <span key={`${word.location}-${i}`} className="mushaf-word-group">
+          <span key={`${word.location}-${i}`} className={`mushaf-word-group${isPlaying ? " mushaf-word-group--playing" : ""}`}>
             {split.prefix.map((ch, pi) => (
               <span key={`p-${pi}`} className="mushaf-sign">
                 {ch}
@@ -125,7 +125,7 @@ function TextLine({
             ))}
             {split.core.length > 0 && (
               <span
-                className={`mushaf-word${isPlaying ? " mushaf-word--playing" : ""}${isHighlighted ? " mushaf-word--highlighted" : ""}`}
+                className={`mushaf-word${isHighlighted ? " mushaf-word--highlighted" : ""}`}
                 data-loc={word.location}
                 onClick={(e) => {
                   e.stopPropagation();

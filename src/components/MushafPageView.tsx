@@ -510,7 +510,7 @@ export function MushafPageView({
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
             </svg>
-            Tip: Ketik halaman atau buka Audio untuk dengar bacaan
+            Tip: Klik halaman atau buka Audio untuk dengar bacaan
           </div>
         </div>
       )}
@@ -691,7 +691,7 @@ export function MushafPageView({
       {/* Status text */}
       {mode === "read" ? (
         <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
-          Mod Baca: Leret untuk tukar halaman. <strong>Ketik ayat untuk mula bacaan dari situ, atau gunakan butang Audio.</strong>
+          Mod Baca: Leret untuk tukar halaman. <strong>Klik ayat untuk mula bacaan dari situ, atau gunakan butang Audio.</strong>
         </p>
       ) : mode === "hifz" && hifzRevealContext && revealBoundaryLineIndex != null ? (
         <p className="text-[15px] text-teal-700 sm:text-base dark:text-teal-300">
@@ -704,7 +704,7 @@ export function MushafPageView({
         </p>
       ) : mode === "faham" ? (
         <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
-          Ketik perkataan untuk melihat makna segera.
+          Klik perkataan untuk melihat makna segera.
         </p>
       ) : null}
     </section>
