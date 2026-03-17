@@ -801,124 +801,132 @@ export function HifzMemorizeStepper({
 
   const stepInfo = STEPS[currentStep - 1];
   const restartLabel = currentStep === 3 ? "Semak Audio" : "Main Semula";
+  const [showChunkSize, setShowChunkSize] = useState(false);
 
   return (
     <div
       ref={setPanelElement}
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95"
       style={{ bottom: bottomOffsetPx }}
     >
       {autoAdvancing ? (
-        <div className="mb-3 flex items-center justify-center">
+        <div className="mb-2 flex items-center justify-center">
           <p className="animate-pulse text-sm font-medium text-amber-600 dark:text-amber-400">
             Seterusnya...
           </p>
         </div>
       ) : null}
 
-      <div className="mb-3 flex items-center justify-center gap-2">
-        {STEPS.map((step) => (
-          <div
-            key={step.step}
-            className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-              step.step < currentStep
-                ? "bg-amber-500 text-white"
-                : step.step === currentStep
-                  ? "bg-amber-100 text-amber-800 ring-2 ring-amber-400 dark:bg-amber-900/50 dark:text-amber-200 dark:ring-amber-500"
-                  : "bg-stone-100 text-stone-400 dark:bg-stone-800 dark:text-stone-500"
-            }`}
-          >
-            {step.step < currentStep ? (
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
-              step.step
-            )}
+      {/* Row 1: Step dots + chunk info — single compact row */}
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5">
+          {STEPS.map((step) => (
+            <div
+              key={step.step}
+              className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold transition-colors ${
+                step.step < currentStep
+                  ? "bg-amber-500 text-white"
+                  : step.step === currentStep
+                    ? "bg-amber-100 text-amber-800 ring-1.5 ring-amber-400 dark:bg-amber-900/50 dark:text-amber-200 dark:ring-amber-500"
+                    : "bg-stone-100 text-stone-400 dark:bg-stone-800 dark:text-stone-500"
+              }`}
+            >
+              {step.step < currentStep ? (
+                <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                step.step
+              )}
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowChunkSize((v) => !v)}
+          className="flex items-center gap-1.5 rounded-lg border border-amber-200/80 bg-amber-50/75 px-2.5 py-1 dark:border-amber-700/45 dark:bg-amber-900/20"
+        >
+          <span className="text-xs font-semibold text-amber-900/80 dark:text-amber-100/80">
+            Chunk {chunkCount > 0 ? currentChunkIndex + 1 : 0}/{chunkCount}
+          </span>
+          <span className="text-xs text-stone-600 dark:text-stone-300">
+            {describeChunk(currentChunk)}
+          </span>
+          <svg className={`h-3 w-3 text-stone-400 transition-transform ${showChunkSize ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Expandable: chunk size selector + suggestion */}
+      {showChunkSize ? (
+        <div className="mb-2">
+          <div className="flex items-center justify-center gap-1.5">
+            {CHUNK_SIZE_OPTIONS.map((option) => {
+              const selected = chunkSize === option.value;
+              return (
+                <button
+                  key={String(option.value)}
+                  type="button"
+                  onClick={() => handleChunkSizeChange(option.value)}
+                  className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
+                    selected
+                      ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+                      : "border border-stone-300 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
           </div>
-        ))}
-      </div>
-
-      <div className="mb-3 rounded-2xl border border-amber-200/80 bg-amber-50/75 px-4 py-3 text-center dark:border-amber-700/45 dark:bg-amber-900/20">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-900/80 dark:text-amber-100/80">
-          Chunk {chunkCount > 0 ? currentChunkIndex + 1 : 0} / {chunkCount}
-        </p>
-        <p className="mt-1 text-sm font-semibold text-stone-800 dark:text-stone-100">
-          {describeChunk(currentChunk)}
-        </p>
-        <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
-          {chunkAyahCount} ayat dalam chunk ini
-        </p>
-      </div>
-
-      {chunkSuggestion && !suggestionDismissed ? (
-        <div className="mb-3 flex items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 dark:border-amber-700/50 dark:bg-amber-900/20">
-          <p className="text-xs text-amber-800 dark:text-amber-200">
-            {chunkSuggestion === "smaller"
-              ? "Nampak susah — cuba chunk lebih kecil?"
-              : "Bagus! Cuba chunk lebih besar?"}
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              const current = resolveMemorizeChunkLength(pageItems.length, chunkSize);
-              const next = chunkSuggestion === "smaller"
-                ? Math.max(1, current - 1) as MemorizeChunkSizeOption
-                : Math.min(3, current + 1) as MemorizeChunkSizeOption;
-              handleChunkSizeChange(next);
-              setSuggestionDismissed(true);
-            }}
-            className="rounded-lg bg-amber-500 px-3 py-1 text-xs font-semibold text-white transition hover:bg-amber-600"
-          >
-            {chunkSuggestion === "smaller" ? "Kecilkan" : "Besarkan"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSuggestionDismissed(true)}
-            className="text-xs text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200"
-          >
-            Abaikan
-          </button>
+          {chunkSuggestion && !suggestionDismissed ? (
+            <div className="mt-1.5 flex items-center justify-center gap-2">
+              <p className="text-xs text-amber-800 dark:text-amber-200">
+                {chunkSuggestion === "smaller"
+                  ? "Susah? Cuba kecilkan"
+                  : "Bagus! Cuba besarkan"}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  const current = resolveMemorizeChunkLength(pageItems.length, chunkSize);
+                  const next = chunkSuggestion === "smaller"
+                    ? Math.max(1, current - 1) as MemorizeChunkSizeOption
+                    : Math.min(3, current + 1) as MemorizeChunkSizeOption;
+                  handleChunkSizeChange(next);
+                  setSuggestionDismissed(true);
+                }}
+                className="rounded-md bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white transition hover:bg-amber-600"
+              >
+                {chunkSuggestion === "smaller" ? "Kecilkan" : "Besarkan"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSuggestionDismissed(true)}
+                className="text-xs text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
+              >
+                ✕
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
-      <div className="mb-3">
-        <p className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
-          Saiz Chunk
-        </p>
-        <div className="mx-auto grid max-w-md grid-cols-4 gap-2">
-          {CHUNK_SIZE_OPTIONS.map((option) => {
-            const selected = chunkSize === option.value;
-            return (
-              <button
-                key={String(option.value)}
-                type="button"
-                onClick={() => handleChunkSizeChange(option.value)}
-                className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
-                  selected
-                    ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
-                    : "border border-stone-300 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-                }`}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="mb-3 text-center">
-        <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">
+      {/* Row 2: Step label + description */}
+      <div className="mb-2 text-center">
+        <span className="text-sm font-semibold text-stone-800 dark:text-stone-200">
           {stepInfo.label}
-        </p>
-        <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
+        </span>
+        <span className="mx-1.5 text-stone-300 dark:text-stone-600">·</span>
+        <span className="text-xs text-stone-500 dark:text-stone-400">
           {stepInfo.description}
-        </p>
+        </span>
       </div>
 
       {/* Tasmi' engine UI — shown when active on step 3 */}
       {tasmiActive && tasmiExpectedText ? (
-        <div className="mb-3">
+        <div className="mb-2">
           <TasmiSessionUI
             expectedText={tasmiExpectedText}
             surahNumber={tasmiSurahNumber}
@@ -930,58 +938,51 @@ export function HifzMemorizeStepper({
           />
         </div>
       ) : currentStep === 3 ? (
-        <div className="mb-3 flex justify-center">
+        <div className="mb-2 flex justify-center">
           <button
             type="button"
             disabled={tasmiLoading}
             onClick={startTasmi}
-            className="rounded-xl bg-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
+            className="rounded-xl bg-rose-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
           >
             {tasmiLoading ? "Menyediakan..." : "Mula Tasmi\u2019"}
           </button>
         </div>
       ) : null}
 
-      <div className="mb-3 flex flex-wrap items-center justify-center gap-2">
-        <button
-          type="button"
-          disabled={currentChunkIndex === 0}
-          onClick={() => jumpToChunk(currentChunkIndex - 1)}
-          className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-        >
-          Chunk Sebelum
-        </button>
-        <button
-          type="button"
-          onClick={onChunkListen}
-          className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
-        >
-          {restartLabel}
-        </button>
-        <button
-          type="button"
-          onClick={onChunkPause}
-          className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-        >
-          Jeda
-        </button>
-        <button
-          type="button"
-          disabled={currentChunkIndex >= chunkCount - 1}
-          onClick={() => jumpToChunk(currentChunkIndex + 1)}
-          className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-        >
-          Chunk Seterusnya
-        </button>
-      </div>
-
+      {/* Row 3: Combined navigation */}
       {currentStep < 4 ? (
-        <div className="flex justify-center gap-3">
+        <div className="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            disabled={currentChunkIndex === 0}
+            onClick={() => jumpToChunk(currentChunkIndex - 1)}
+            className="rounded-lg border border-stone-300 p-2 text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-30 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
+            title="Chunk sebelum"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={onChunkListen}
+            className="rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-700"
+          >
+            {restartLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onChunkPause}
+            className="rounded-lg border border-stone-300 px-3 py-2 text-xs font-medium text-stone-600 transition hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
+          >
+            Jeda
+          </button>
           {currentStep > 1 && (
             <button
               type="button"
               onClick={handleBack}
-              className="rounded-xl border border-stone-300 bg-white px-5 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+              className="rounded-lg border border-stone-300 px-3 py-2 text-xs font-medium text-stone-600 transition hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
             >
               Kembali
             </button>
@@ -989,13 +990,24 @@ export function HifzMemorizeStepper({
           <button
             type="button"
             onClick={handleNext}
-            className="rounded-xl bg-amber-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600"
+            className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-600"
           >
             Seterusnya
           </button>
+          <button
+            type="button"
+            disabled={currentChunkIndex >= chunkCount - 1}
+            onClick={() => jumpToChunk(currentChunkIndex + 1)}
+            className="rounded-lg border border-stone-300 p-2 text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-30 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
+            title="Chunk seterusnya"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
           <a
             href="/hifz"
-            className="rounded-xl border border-stone-300 bg-white px-5 py-2.5 text-sm font-medium text-stone-500 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-400 dark:hover:bg-stone-700"
+            className="ml-1 text-xs text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300"
           >
             Keluar
           </a>
@@ -1006,7 +1018,7 @@ export function HifzMemorizeStepper({
             type="button"
             disabled={submitting}
             onClick={() => handleRate(true)}
-            className="flex-1 max-w-[200px] rounded-xl bg-teal-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:opacity-50"
+            className="flex-1 max-w-[160px] rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:opacity-50"
           >
             Yakin
           </button>
@@ -1014,7 +1026,7 @@ export function HifzMemorizeStepper({
             type="button"
             disabled={submitting}
             onClick={() => handleRate(false)}
-            className="flex-1 max-w-[200px] rounded-xl border border-stone-300 bg-white px-6 py-3 text-base font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 disabled:opacity-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
+            className="flex-1 max-w-[160px] rounded-xl border border-stone-300 bg-white px-5 py-2.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 disabled:opacity-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
           >
             Belum Yakin
           </button>

@@ -181,21 +181,16 @@ export async function getFahamLevelState(userId: string): Promise<FahamLevelStat
     import("./repository"),
   ]);
 
-  const metricsInput: FahamLevelMetricsInput[] = [];
-
-  for (const wordLimit of FAHAM_LEVEL_WORD_LIMITS) {
-    const topWordIds = await getTopFahamWordIds(wordLimit);
-    const [foundCount, masteredCount] = await Promise.all([
-      countFoundWords(supabaseServer, userId, topWordIds),
-      countMasteredWords(supabaseServer, userId, topWordIds),
-    ]);
-
-    metricsInput.push({
-      foundCount,
-      masteredCount,
-      wordLimit,
-    });
-  }
+  const metricsInput = await Promise.all(
+    FAHAM_LEVEL_WORD_LIMITS.map(async (wordLimit) => {
+      const topWordIds = await getTopFahamWordIds(wordLimit);
+      const [foundCount, masteredCount] = await Promise.all([
+        countFoundWords(supabaseServer, userId, topWordIds),
+        countMasteredWords(supabaseServer, userId, topWordIds),
+      ]);
+      return { foundCount, masteredCount, wordLimit };
+    }),
+  );
 
   return deriveFahamLevelState(metricsInput);
 }
