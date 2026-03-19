@@ -47,6 +47,10 @@ export default function RootLayout({
             `,
           }}
         />
+        <meta name="theme-color" content="#1a1a2e" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body className={`${arabicText.variable} antialiased`}>
         <ServiceWorkerRegistrar />
