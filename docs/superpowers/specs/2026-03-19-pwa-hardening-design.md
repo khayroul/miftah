@@ -26,7 +26,7 @@ Turn Miftah from a Quran website into an installable PWA with offline reading. T
 | Offline font strategy | Image-only v1 | QCF V2 fonts are 340 MB. Image rendering preserves visual fidelity. Font caching deferred to v2. |
 | Rendering path | Separate online (RSC) / offline (client) | `readPageData.ts` is server-only. Offline uses a new client-side module. |
 | Cache invalidation | URL-based via `CDN_ASSET_VERSION` | Leverages existing `?v=N` pattern. No user prompts for rendering updates. |
-| Reading state sync | localStorage + sync-on-reconnect | Sufficient for page position + bookmarks. No IndexedDB queue needed. |
+| Reading state sync | localStorage + sync-on-reconnect | Sufficient for page position + bookmarks. No IndexedDB queue for reading state (IndexedDB still used for pack metadata). |
 | SW interception | URL allowlist | Only intercept known cacheable patterns. Everything else network-only. Never cache RSC data. |
 | Icons | Placeholder for now | Proper icons added before public release (KHA-186). |
 
@@ -87,14 +87,16 @@ public/translations/page-604.json  (~3.8 KB)
 
 Each file contains only the word translations needed for that page. The script runs as part of the build pipeline (`npm run build:translations`).
 
-Online: `getWordTranslationsByLocation()` fetches only the current page's file.
-Offline: the per-page file is cached alongside other page assets.
+Each per-page file contains **both BM and EN** translations merged together (sourced from `bm_wbw_complete.json` and `english-wbw-translation.json`). The split script must fail the build if any page produces zero translations (sanity check).
+
+**Server vs client boundary:** `wbwTranslations.ts` is a server-only module (uses `node:fs/promises`). It stays unchanged for the online RSC path. A new client-side module `src/lib/pwa/offlineTranslations.ts` fetches per-page JSON files via `fetch()` for offline use.
 
 ### File changes
 
-- New: `scripts/split-translations.ts`
+- New: `scripts/split-translations.ts` — merges BM + EN, splits per-page, fails build on zero-translation pages
 - New: `public/translations/` directory (604 files, gitignored, generated at build)
-- Modified: `src/lib/wbwTranslations.ts` — fetch per-page file instead of monolith
+- New: `src/lib/pwa/offlineTranslations.ts` — client-side per-page translation loader
+- Unchanged: `src/lib/wbwTranslations.ts` — stays server-only for RSC path
 - Modified: `next.config.ts` — add build step
 - Modified: `.gitignore` — exclude generated translation files
 
@@ -184,22 +186,22 @@ This is used for app shell cache naming and stale cache cleanup.
 | `/api/mushaf/*` (local image fallback) | Cache-first | `mushaf-images-v1` |
 | `everyayah.com/*` | Cache-first | `miftah-audio-v1` |
 | `/offline` | Cache-only | `app-shell-${BUILD_ID}` |
-| RSC data (`/_next/data/*`, flight payloads) | Network-only | — |
-| API routes (`/api/*` except mushaf) | Network-only | — |
-| All other requests | Network-only | — |
+| All other requests | **Network-only** | — |
 
-**Implementation rule:** The SW uses a URL allowlist. If a request does not match any pattern above, it passes through to the network untouched. This prevents breaking RSC streaming, client-side navigation, prefetching, and middleware redirects.
+**Implementation rule:** The SW uses a URL allowlist. If a request does not match any cacheable pattern above, it passes through to the network untouched. This includes RSC flight data (requests with `RSC: 1`, `Next-Router-State-Tree`, or `Next-Router-Prefetch` headers), API routes, and all navigation requests. Note: Next.js App Router does NOT use `/_next/data/*` paths (that is a Pages Router pattern). RSC payloads are fetched to the same page URL with special headers — the allowlist approach handles this correctly because those requests simply do not match any cached pattern.
 
 ### Offline fallback
 
-When a navigation request fails (network error + no cache hit), the SW serves `/offline` — a pre-rendered HTML shell that:
+When a navigation request fails (network error + no cache hit), the SW serves `/offline` — a static HTML file (`public/offline.html`) that:
 
-1. Loads the React runtime and minimal app CSS.
+1. Loads a pre-bundled offline module (~200 KB estimated: minimal React + offline UI logic, bundled separately from the main Next.js build).
 2. Checks IndexedDB for downloaded surah packs.
 3. If downloaded content exists: renders the last-read page from cache.
 4. If no downloaded content: shows a calm message — "Anda sedang luar talian. Muat turun surah untuk bacaan luar talian."
 
-The `/offline` page is pre-rendered at build time and cached during SW install.
+**Decision: `public/offline.html`, not a Next.js route.** A Next.js route would require the SW to cache RSC output, which contradicts the allowlist strategy. The static HTML file works independently of the Next.js server. A build step bundles the offline UI module (`scripts/build-offline.ts`) and inlines it into `offline.html`.
+
+**Estimated app shell size:** ~2-3 MB total (offline.html + bundled JS + CSS + placeholder icons). This is included in the storage budget.
 
 ### SW lifecycle
 
@@ -219,10 +221,12 @@ Refactor `src/lib/hifz/audioPreCache.ts`:
 ### File changes
 
 - Rewritten: `public/sw.js`
-- New: `public/offline.html` (or `src/app/offline/page.tsx` if using Next.js route)
+- New: `public/offline.html` — static offline app shell
 - New: `src/lib/pwa/swRegistration.ts`
 - New: `scripts/inject-build-id.ts` (build step)
+- New: `scripts/build-offline.ts` (bundles offline UI module into offline.html)
 - Modified: `src/lib/hifz/audioPreCache.ts` — delegates SW registration
+- Modified: `src/components/ServiceWorkerRegistrar.tsx` — imports from new `swRegistration.ts`
 - Modified: `src/app/layout.tsx` — uses new SW registration
 - Modified: `package.json` — build step for SW injection
 
@@ -238,17 +242,34 @@ One pack = one surah. Contains references to all cached assets for that surah's 
 |-------|----------|--------------------|
 | Mobile WebP image | 184 KB | `{SUPABASE}/mushaf-pages/page_NNN_mobile.webp?v={V}` |
 | Page manifest JSON | 16 KB | `{SUPABASE}/mushaf-manifests/page_NNN.manifest.json?v={V}` |
-| Layout JSON | 22 KB | `/data/mushaf-layout/page-NNN.json` (needs new public route) |
+| Layout JSON | 22 KB | `/layouts/page-NNN.json` (copied from `data/mushaf-layout/mushaf/` at build time) |
 | Translation JSON | 3.8 KB | `/translations/page-NNN.json` |
 | **Per-page total** | **~226 KB** | |
 
 ### Layout JSON access
 
-Layout JSONs are currently server-only files (`data/mushaf-layout/mushaf/page-NNN.json`). For offline, they need to be URL-accessible to the client.
+Layout JSONs are currently server-only files at `data/mushaf-layout/mushaf/page-NNN.json` (604 files, ~32 MB total). For offline, they need to be URL-accessible to the client.
 
-Solution: Add a new API route `/api/mushaf/layout/[page]` that serves the layout JSON. The SW caches it like other mushaf data. Alternatively, copy layout JSONs to `public/` at build time.
+**Solution:** Copy to `public/layouts/page-NNN.json` at build time (`scripts/copy-layouts.ts`). Simpler than an API route, CDN-cacheable, and the SW can intercept and cache them like other mushaf data.
 
-**Recommended:** Copy to `public/layouts/page-NNN.json` at build time (simpler, no API route needed, CDN-cacheable).
+**Prerequisite:** The 604 layout JSON files must exist at `data/mushaf-layout/mushaf/`. These are already present in the repo and traced into the Vercel bundle via `outputFileTracingIncludes`.
+
+### CDN asset version on the client
+
+`CDN_ASSET_VERSION` is currently hardcoded in `mushafAssets.ts` (a server-only module). The download flow runs client-side and needs this version to construct URLs with `?v={V}`.
+
+**Solution:** Inject `CDN_ASSET_VERSION` into `sw.js` alongside `BUILD_ID` during the build step. Also expose as `NEXT_PUBLIC_CDN_ASSET_VERSION` env var for client-side download logic. Alternatively, generate a `public/pwa-config.json` at build time:
+
+```json
+{
+  "cdnAssetVersion": "4",
+  "supabaseStorageBase": "https://xxx.supabase.co/storage/v1/object/public",
+  "pagesBucket": "mushaf-pages",
+  "manifestsBucket": "mushaf-manifests"
+}
+```
+
+The download module fetches this config once on init. This avoids hardcoding Supabase URLs in client code.
 
 ### IndexedDB schema
 
@@ -315,6 +336,13 @@ On resume: skip pages already in cache, continue from downloadedPages
 
 Same as per-surah but iterates surahs 1-114 sequentially. Shows overall progress (X/114 surahs, Y/604 pages).
 
+### Download concurrency guard
+
+Multiple tabs or rapid re-taps could trigger duplicate downloads of the same surah. Before starting a download, check `surahPacks` in IndexedDB:
+- If `status === "downloading"`, skip (already in progress in another tab).
+- Use `BroadcastChannel("miftah-downloads")` to coordinate progress updates across tabs.
+- If the downloading tab closes mid-download, the status remains "downloading" — on next app launch, detect stale "downloading" entries (check if downloadedPages < totalPages and no BroadcastChannel listener responds) and reset to allow retry.
+
 ### Dev-only download trigger
 
 For testing Layer 3 before the full download UX:
@@ -377,7 +405,12 @@ The existing `MushafPageView` component already supports image-based rendering w
 - `manifest.words` — hitbox coordinates for tap targets
 - `translations` — BM/EN word meanings for the tooltip
 
-No component changes needed if the data shape matches. If the online component expects server-specific props, create a thin `OfflineMushafPageView` wrapper that adapts the cached data shape.
+The offline path provides a subset of props. Props that are irrelevant offline are defaulted:
+- `memorizedAyahKeys` → `[]` (no Hifz state offline)
+- Audio callbacks → no-op (audio is online-only)
+- Hifz-related callbacks → omitted or no-op
+
+If `MushafPageView` requires props that cannot be defaulted, create a thin `OfflineMushafPageView` wrapper that adapts the cached data shape and omits online-only UI elements (audio controls, Hifz markers).
 
 ### Navigation
 
@@ -530,6 +563,7 @@ iOS install guidance uses a custom dismissible banner instead of the Chrome inst
 src/lib/pwa/
 ├── swRegistration.ts       # SW registration + update detection
 ├── offlinePageData.ts      # Client-side page data from cache
+├── offlineTranslations.ts  # Client-side per-page translation loader
 ├── contentPacks.ts         # IndexedDB pack management + download logic
 ├── surahPageMap.ts         # Generated surah-to-page mapping
 ├── readingStateSync.ts     # Sync localStorage state on reconnect
@@ -550,11 +584,16 @@ public/
 ├── layouts/                # Generated: 604 layout JSONs (build-time copy)
 └── translations/           # Generated: 604 translation JSONs
 
+src/app/api/reading/state/
+└── route.ts               # POST: upsert reading progress for authenticated user
+
 scripts/
-├── split-translations.ts   # Build: split bm_wbw_complete.json per-page
-├── copy-layouts.ts         # Build: copy layout JSONs to public/
-├── generate-surah-map.ts   # Build: generate surahPageMap.ts
-└── inject-build-id.ts      # Build: inject BUILD_ID into sw.js
+├── split-translations.ts   # Build: merge BM+EN, split per-page, fail on zero translations
+├── copy-layouts.ts         # Build: copy layout JSONs from data/mushaf-layout/mushaf/ to public/
+├── generate-surah-map.ts   # Build: generate surahPageMap.ts from quran-data.xml
+├── generate-pwa-config.ts  # Build: generate public/pwa-config.json with CDN URLs + version
+├── inject-build-id.ts      # Build: inject BUILD_ID + CDN_ASSET_VERSION into sw.js
+└── build-offline.ts        # Build: bundle offline UI module into offline.html
 ```
 
 ## 14. Modified files summary
@@ -563,11 +602,17 @@ scripts/
 |------|--------|
 | `public/sw.js` | Full rewrite — multi-cache router with URL allowlist |
 | `src/app/layout.tsx` | Add manifest link, theme-color, apple meta tags, new SW registration |
+| `src/components/ServiceWorkerRegistrar.tsx` | Import from new `swRegistration.ts` instead of `audioPreCache.ts` |
 | `src/lib/hifz/audioPreCache.ts` | Extract SW registration to shared module |
-| `src/lib/wbwTranslations.ts` | Fetch per-page translation file instead of monolith |
 | `next.config.ts` | Add build steps for translations, layouts, SW injection |
 | `package.json` | Add build scripts |
 | `.gitignore` | Exclude generated public/ files |
+
+### New API routes
+
+| Route | Purpose |
+|-------|---------|
+| `POST /api/reading/state` | Receives reading progress from sync-on-reconnect. Upserts `{ lastPage, lastReadAt, bookmarks }` to Supabase `reading_progress` table for the authenticated user. Returns `{ success: boolean }`. Unauthenticated requests return 401 (reading state stays local-only until user signs in). |
 
 ## 15. Testing strategy
 
