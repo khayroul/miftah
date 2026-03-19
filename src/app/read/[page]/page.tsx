@@ -16,6 +16,23 @@ interface ReadPageProps {
   }>;
 }
 
+function FontPreloadLinks({ pageNumber }: { pageNumber: number }) {
+  const prevPage = pageNumber > 1 ? pageNumber - 1 : null;
+  const nextPage = pageNumber < 604 ? pageNumber + 1 : null;
+
+  return (
+    <>
+      {/* Current page font — highest priority */}
+      <link rel="preload" href={`/fonts/qcf-v2-woff2/p${pageNumber}.woff2`} as="font" type="font/woff2" crossOrigin="anonymous" />
+      {/* Global mushaf fonts */}
+      <link rel="preload" href="/fonts/sura_names.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+      {/* Adjacent pages for instant swipe transitions */}
+      {nextPage ? <link rel="prefetch" href={`/fonts/qcf-v2-woff2/p${nextPage}.woff2`} as="font" type="font/woff2" crossOrigin="anonymous" /> : null}
+      {prevPage ? <link rel="prefetch" href={`/fonts/qcf-v2-woff2/p${prevPage}.woff2`} as="font" type="font/woff2" crossOrigin="anonymous" /> : null}
+    </>
+  );
+}
+
 export default async function ReadPage({ params, searchParams }: ReadPageProps) {
   const { page } = await params;
   const query = await searchParams;
@@ -68,6 +85,8 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
       ];
 
   return (
+    <>
+    <FontPreloadLinks pageNumber={pageNumber} />
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-8">
       <ReadPageWorkspace
         pageNumber={pageNumber}
@@ -139,5 +158,6 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
         personalizationPageNumber={pageNumber}
       />
     </main>
+    </>
   );
 }

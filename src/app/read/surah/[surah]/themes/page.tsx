@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ModeNavigator } from "@/components/ModeNavigator";
 import { ThemePageContentAsync } from "@/components/ThemePageContentAsync";
-import { getSurah } from "@/lib/queries";
+import { getSurah, getSurahs } from "@/lib/queries";
 import type { Surah } from "@/types/database";
 
 interface SurahThemeAppearancePageProps {
@@ -55,8 +55,12 @@ export default async function SurahThemeAppearancePage({
   }
 
   let surahMeta: Surah;
+  let allSurahs: Surah[];
   try {
-    surahMeta = await getSurah(surahNumber);
+    [surahMeta, allSurahs] = await Promise.all([
+      getSurah(surahNumber),
+      getSurahs(),
+    ]);
   } catch {
     notFound();
   }
@@ -93,6 +97,7 @@ export default async function SurahThemeAppearancePage({
           rawChunkParam={query.chunk}
           surahMeta={surahMeta}
           surahNumber={surahNumber}
+          allSurahs={allSurahs}
         />
       </Suspense>
     </main>

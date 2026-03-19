@@ -1,21 +1,20 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import { ThemeActionPanel } from "@/components/ThemeActionPanel";
-import { ThemeAyahMarker } from "@/components/ThemeAyahMarker";
-import { ThemeChunkAyahListAsync } from "@/components/ThemeChunkAyahListAsync";
+import { ThemeChunkAyahList } from "@/components/ThemeChunkAyahList";
 import { ThemeChunkProgressTracker } from "@/components/ThemeChunkProgressTracker";
 import { ThemeChunkSelect } from "@/components/ThemeChunkSelect";
 import { ThemeJumpControls } from "@/components/ThemeJumpControls";
-import { getSurahs, getThemeAppearanceChunksBySurah } from "@/lib/queries";
+import { getThemeAppearanceChunksBySurah, getWordByWordForAyahIds } from "@/lib/queries";
 import { resolveThemeChunkLabelBm } from "@/lib/themeLabels";
 import type { Surah } from "@/types/database";
-import type { ThemeAppearanceAyah, ThemeAppearanceChunk } from "@/lib/queries";
+import type { AyahWordByWordEntry, ThemeAppearanceChunk } from "@/lib/queries";
 
 interface ThemePageContentAsyncProps {
   rawChunkParam?: string | string[];
   surahMeta: Surah;
   surahNumber: number;
+  allSurahs: Surah[];
 }
 
 function buildThemeHref(surahNumber: number, chunkIndex: number): string {
@@ -42,45 +41,6 @@ function chunkTitleBm(chunk: ThemeAppearanceChunk): string {
     labelBm: chunk.label_bm,
     themeNameBm: chunk.theme?.name_bm ?? null,
   });
-}
-
-function ThemeChunkAyahListFallback({
-  ayat,
-}: {
-  ayat: ThemeAppearanceAyah[];
-}) {
-  return (
-    <div className="space-y-10 pb-8">
-      {ayat.map((ayah) => (
-        <div
-          key={ayah.id}
-          className="rounded-[1.9rem] border border-stone-200/80 bg-white/80 p-5 shadow-[0_28px_80px_-52px_rgba(28,25,23,0.16)] dark:border-stone-700/80 dark:bg-stone-900/55"
-        >
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <div className="h-3 w-28 rounded-full bg-stone-200 dark:bg-stone-800" />
-                <div className="mt-3 h-4 w-44 rounded-full bg-stone-200/90 dark:bg-stone-800/90" />
-              </div>
-              <ThemeAyahMarker
-                ayahNumber={ayah.ayah_number}
-                className="shrink-0"
-              />
-            </div>
-            <div className="h-28 rounded-[1.5rem] border border-stone-200/70 bg-stone-100/90 dark:border-stone-800/80 dark:bg-stone-800/70" />
-            <p className="text-sm text-stone-500 dark:text-stone-400">
-              Memuatkan paparan kata demi kata.
-            </p>
-            <div className="rounded-[1.4rem] border border-stone-100 bg-stone-50/50 p-4 dark:border-stone-800/80 dark:bg-stone-800/20 sm:p-5">
-              <p className="text-[15px] leading-relaxed text-stone-700 dark:text-stone-300">
-                {ayah.display_bm ?? "Terjemahan BM belum tersedia."}
-              </p>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
 }
 
 function truncateText(value: string, maxLength: number): string {
@@ -156,23 +116,16 @@ export async function ThemePageContentAsync({
   rawChunkParam,
   surahMeta,
   surahNumber,
+  allSurahs,
 }: ThemePageContentAsyncProps) {
-  const [chunksResult, surahsResult] = await Promise.allSettled([
-    getThemeAppearanceChunksBySurah(surahNumber),
-    getSurahs(),
-  ]);
-
   let chunks: ThemeAppearanceChunk[] = [];
   let loadError: string | null = null;
-  if (chunksResult.status === "fulfilled") {
-    chunks = chunksResult.value;
-  } else {
-    console.error("Failed to load theme chunks:", chunksResult.reason);
+  try {
+    chunks = await getThemeAppearanceChunksBySurah(surahNumber);
+  } catch (error) {
+    console.error("Failed to load theme chunks:", error);
     loadError = "Tema tidak dapat dimuatkan. Sila cuba lagi.";
   }
-
-  const allSurahs =
-    surahsResult.status === "fulfilled" ? surahsResult.value : [surahMeta];
 
   const surahOptions = allSurahs.map((item) => ({
     surah: item.id,
@@ -204,6 +157,19 @@ export async function ThemePageContentAsync({
   const selectedChunkSynopsis = selectedChunk
     ? buildThemeSynopsis(selectedChunk)
     : null;
+
+  // Pre-fetch word-by-word data for the selected chunk — eliminates waterfall
+  // from nested Suspense in the old ThemeChunkAyahListAsync component.
+  let wbwByAyahId: Record<number, AyahWordByWordEntry[]> = {};
+  if (selectedChunk) {
+    try {
+      wbwByAyahId = await getWordByWordForAyahIds(
+        selectedChunk.ayat.map((a) => a.id),
+      );
+    } catch {
+      wbwByAyahId = {};
+    }
+  }
 
   return (
     <>
@@ -281,11 +247,10 @@ export async function ThemePageContentAsync({
                   synopsis={selectedChunkSynopsis?.synopsis ?? ""}
                   themeTitle={chunkTitleBm(selectedChunk)}
                 />
-                <Suspense
-                  fallback={<ThemeChunkAyahListFallback ayat={selectedChunk.ayat} />}
-                >
-                  <ThemeChunkAyahListAsync ayat={selectedChunk.ayat} />
-                </Suspense>
+                <ThemeChunkAyahList
+                  ayat={selectedChunk.ayat}
+                  wbwByAyahId={wbwByAyahId}
+                />
               </article>
             ) : null}
           </section>
