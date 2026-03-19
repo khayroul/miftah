@@ -1,11 +1,11 @@
-import { SURAH_PAGE_MAP } from "./surahPageMap.ts";
+import { SURAH_PAGE_MAP } from "./surahPageMap";
 import {
   createEmptyPack,
   updatePackStatus,
   savePack,
   getPack,
   recordDownloadHistory,
-} from "./packDb.ts";
+} from "./packDb";
 
 // ---------------------------------------------------------------------------
 // Config
