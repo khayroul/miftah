@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
+import {
+  fetchSurahAudioTracks,
+  fetchJuzAudioTracks,
+} from "@/lib/fetchExpandedAudioTracks";
 import { trackReadAudioTelemetry } from "@/lib/readAudioTelemetry";
 import { resolveReadAudioLoopAction } from "@/lib/readAudioLoop";
 import { resolveReadAudioPageStartFromAyah } from "@/lib/readAudioStart";
@@ -168,6 +172,40 @@ export function ReadAudioDock({
     const parsed = Number.parseFloat(stored);
     return [0.75, 1, 1.25, 1.5].includes(parsed) ? parsed : 1;
   });
+  const [expandedTracks, setExpandedTracks] = useState<ReadAudioTrack[] | null>(
+    null,
+  );
+  const [expandedLoading, setExpandedLoading] = useState(false);
+  const expandedFetchRef = useRef(0);
+
+  const fetchExpandedTracks = useCallback(
+    async (preset: RangePreset, anchorTrack: ReadAudioTrack | null) => {
+      if (preset === "page" || !anchorTrack) {
+        setExpandedTracks(null);
+        return;
+      }
+      const fetchId = ++expandedFetchRef.current;
+      setExpandedLoading(true);
+      try {
+        const fetched =
+          preset === "surah"
+            ? await fetchSurahAudioTracks(anchorTrack.surahId)
+            : await fetchJuzAudioTracks(anchorTrack.juzNumber);
+        if (expandedFetchRef.current !== fetchId) return;
+        setExpandedTracks(fetched.length > 0 ? fetched : null);
+      } catch {
+        if (expandedFetchRef.current !== fetchId) return;
+        setExpandedTracks(null);
+      } finally {
+        if (expandedFetchRef.current === fetchId) {
+          setExpandedLoading(false);
+        }
+      }
+    },
+    [],
+  );
+
+  const activeTracks = expandedTracks ?? sourceTracks;
   const playableAyahKeySet = useMemo(() => {
     if (!playableAyahKeys || playableAyahKeys.length === 0) {
       return null;
@@ -176,12 +214,12 @@ export function ReadAudioDock({
   }, [playableAyahKeys]);
   const tracks = useMemo(() => {
     if (!playableAyahKeySet) {
-      return sourceTracks;
+      return activeTracks;
     }
-    return sourceTracks.filter((track) => playableAyahKeySet.has(track.key));
-  }, [playableAyahKeySet, sourceTracks]);
+    return activeTracks.filter((track) => playableAyahKeySet.has(track.key));
+  }, [playableAyahKeySet, activeTracks]);
   const hasPlaybackCap =
-    playableAyahKeySet !== null && tracks.length < sourceTracks.length;
+    playableAyahKeySet !== null && tracks.length < activeTracks.length;
 
   const maxIndex = Math.max(tracks.length - 1, 0);
   const clampedRangeStart = clamp(rangeStartIndex, 0, maxIndex);
@@ -221,6 +259,44 @@ export function ReadAudioDock({
     const audio = audioRef.current;
     audio?.pause();
   }, [tracks.length]);
+
+  // When expanded tracks arrive (surah/juz fetch complete), set range to cover all tracks
+  // and position the playhead at the ayah that was playing before the switch.
+  const prevExpandedRef = useRef(expandedTracks);
+  useEffect(() => {
+    if (expandedTracks === prevExpandedRef.current) return;
+    prevExpandedRef.current = expandedTracks;
+    if (!expandedTracks || expandedTracks.length === 0) return;
+
+    const lastMax = Math.max(expandedTracks.length - 1, 0);
+
+    // For Juz preset, start from the current page's first ayah instead of the
+    // beginning of the juz so playback flows from the visible page forward.
+    let startIdx = 0;
+    if (rangePreset === "juz" && sourceTracks.length > 0) {
+      const firstPageKey = sourceTracks[0]?.key;
+      if (firstPageKey) {
+        const pageIdx = expandedTracks.findIndex((t) => t.key === firstPageKey);
+        if (pageIdx >= 0) startIdx = pageIdx;
+      }
+    }
+
+    setRangeStartIndex(startIdx);
+    setRangeEndIndex(lastMax);
+
+    // Position playhead at the previously-playing track, or at the range start
+    const currentKey = currentTrack?.key;
+    if (currentKey) {
+      const matchIndex = expandedTracks.findIndex((t) => t.key === currentKey);
+      if (matchIndex >= 0) {
+        shouldAutoplayRef.current = isPlaying;
+        setCurrentIndex(matchIndex);
+        return;
+      }
+    }
+    shouldAutoplayRef.current = isPlaying;
+    setCurrentIndex(startIdx);
+  }, [expandedTracks, currentTrack?.key, isPlaying, rangePreset, sourceTracks]);
 
   useEffect(() => {
     onPanelOpenChange?.(panelVisible);
@@ -313,6 +389,7 @@ export function ReadAudioDock({
       }
 
       setRangePreset("page");
+      setExpandedTracks(null);
       setRangeStartIndex(selection.rangeStartIndex);
       setRangeEndIndex(selection.rangeEndIndex);
       setRepeatEachStep(0);
@@ -359,17 +436,41 @@ export function ReadAudioDock({
   }, [normalizedRangeEnd, normalizedRangeStart, tracks]);
 
   const applyRangePreset = (preset: RangePreset, startIndex: number) => {
-    const nextStart = clamp(startIndex, 0, maxIndex);
-    const nextEnd = resolvePresetEndIndex(tracks, nextStart, preset);
     setRangePreset(preset);
-    setRangeStartIndex(nextStart);
-    setRangeEndIndex(clamp(nextEnd, nextStart, maxIndex));
-    if (safeIndex < nextStart || safeIndex > nextEnd) {
-      shouldAutoplayRef.current = isPlaying;
-      setCurrentIndex(nextStart);
-    }
     setRepeatEachStep(0);
     setRepeatSetStep(0);
+
+    if (preset === "page") {
+      setExpandedTracks(null);
+      // Use sourceTracks (page-scoped) since expandedTracks won't clear until next render
+      const pageTracks = playableAyahKeySet
+        ? sourceTracks.filter((t) => playableAyahKeySet.has(t.key))
+        : sourceTracks;
+      const pageMax = Math.max(pageTracks.length - 1, 0);
+      const nextStart = clamp(startIndex, 0, pageMax);
+      const nextEnd = resolvePresetEndIndex(pageTracks, nextStart, preset);
+      setRangeStartIndex(nextStart);
+      setRangeEndIndex(clamp(nextEnd, nextStart, pageMax));
+
+      // Reposition playhead: find current ayah in page tracks
+      const currentKey = tracks[safeIndex]?.key;
+      if (currentKey) {
+        const pageIdx = pageTracks.findIndex((t) => t.key === currentKey);
+        if (pageIdx >= 0) {
+          shouldAutoplayRef.current = isPlaying;
+          setCurrentIndex(pageIdx);
+          return;
+        }
+      }
+      shouldAutoplayRef.current = isPlaying;
+      setCurrentIndex(nextStart);
+      return;
+    }
+
+    const anchorTrack = tracks[clamp(startIndex, 0, maxIndex)] ?? null;
+    fetchExpandedTracks(preset, anchorTrack).then(() => {
+      /* Range is applied via the expandedTracks useEffect once fetch resolves */
+    });
   };
 
   const goToTrack = (targetIndex: number) => {
@@ -549,7 +650,11 @@ export function ReadAudioDock({
         </label>
       </div>
 
-      {rangeSummary ? (
+      {expandedLoading ? (
+        <p className="mt-2 text-sm text-teal-600 dark:text-teal-400">
+          Memuatkan audio {rangePreset === "surah" ? "surah" : "juz"} penuh…
+        </p>
+      ) : rangeSummary ? (
         <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
           Sedang dimainkan: {rangeSummary}
         </p>
