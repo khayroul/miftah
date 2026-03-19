@@ -61,7 +61,7 @@ interface PageWord {
 function getPageWords(layout: MushafLayoutPage): PageWord[]
 ```
 
-Filters out `surah-header` and `basmala` line types. Returns only `text` lines' words.
+Filters out `surah-header` and `basmala` line types. Returns only `text` lines' words. Parses `surah`, `ayah`, `wordPosition` from each `MushafLayoutWord.location` string (format `"surah:ayah:wordPos"`, e.g. `"2:255:3"` → `{ surah: 2, ayah: 255, wordPosition: 3 }`).
 
 ---
 
@@ -260,32 +260,33 @@ function revealUpTo(
 
 SVG overlay positioned absolutely over the page image, same dimensions.
 
+All word rects are pre-rendered in the mask at `opacity="0"` (no effect — veil stays). When revealed, opacity transitions to `1` (punches through the veil). This avoids the DOM insertion problem where CSS transitions don't fire on newly added elements.
+
 ```
 <svg viewBox="0 0 {imageWidth} {imageHeight}">
   <defs>
+    <style>{`
+      .veil-word { transition: opacity 200ms ease-out; }
+      @keyframes veilFadeIn { from { opacity: 0 } to { opacity: 1 } }
+    `}</style>
     <mask id="page-veil">
       <!-- White = veiled (opaque), black = revealed (transparent) -->
       <rect fill="white" width="100%" height="100%" />
-      {revealedWords.map(word => (
+      {words.map(word => (
         <rect
           key={word.location}
+          className="veil-word"
           fill="black"
-          x={word.hitbox.x}
-          y={word.hitbox.y}
-          width={word.hitbox.width}
-          height={word.hitbox.height}
-          className="transition-opacity duration-200"
+          opacity={word.index <= revealedUpTo ? 1 : 0}
+          x={word.hitbox.x - 2}
+          y={word.hitbox.y - 2}
+          width={word.hitbox.width + 4}
+          height={word.hitbox.height + 4}
         />
       ))}
     </mask>
   </defs>
-  <!-- The veil rectangle, masked to reveal words -->
-  <rect
-    fill="#f5f0e8"
-    mask="url(#page-veil)"
-    width="100%"
-    height="100%"
-  />
+  <rect fill="#f5f0e8" mask="url(#page-veil)" width="100%" height="100%" />
 </svg>
 ```
 
@@ -351,7 +352,7 @@ export interface HifzExerciseResult {
   rounds: TebukRoundResult[] | null;  // Tebuk only
   unveilResult: TasmiSessionResult | null;  // Unveil only
   aggregateRating: FsrsRating;
-  ayahRatings: Array<{ ayahKey: string; rating: FsrsRating }>;
+  ayahRatings: Array<{ ayahKey: string; ayah: number; rating: FsrsRating; label: TasmiRatingLabel }>;
   durationSeconds: number;
 }
 ```
@@ -466,12 +467,13 @@ The existing Zod schemas on these routes already handle the required fields. No 
 | `src/lib/hifz/tebuk.test.ts` | ~100 | Unit tests for tebuk logic |
 | `src/lib/hifz/progressive-unveil.test.ts` | ~100 | Unit tests for unveil logic |
 
-### Modified Files (2)
+### Modified Files (3)
 
 | File | Change |
 |------|--------|
 | `src/lib/tasmi/talqin-player.ts` | Add `playRange()` method (~30 lines) |
-| `src/app/read/[page]/page.tsx` | Extend `HifzFlow` type to include `'tebuk' \| 'unveil'`, route to new components |
+| `src/app/read/[page]/page.tsx` | Extend flow parsing to recognize `'tebuk'` and `'unveil'` query params, route to new session components |
+| `src/lib/hifz/sessionQueue.ts` | Extend `HifzFlowType` union to include `'tebuk' \| 'unveil'` (existing type is `"memorize" \| "review"`) |
 
 ### No changes to
 
