@@ -182,45 +182,12 @@ function getPageStartSurah(layout) {
   return null;
 }
 
-function getPageEndVerse(layout) {
-  const lines = layout?.lines || [];
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const line = lines[i];
-    if (line.type !== 'text' || !line.verseRange) continue;
-    const parts = line.verseRange.split('-');
-    const endRef = parts[parts.length - 1];
-    const parsed = parseVerseRef(endRef);
-    if (parsed) return parsed;
-  }
-  return null;
-}
-
-function getTrailingSurah(layout, surahMeta) {
-  if (!layout || !Array.isArray(layout.lines)) return null;
-  if (layout.lines.length >= 15) return null;
-
-  const endVerse = getPageEndVerse(layout);
-  if (!endVerse) return null;
-
-  const ayahCount = surahMeta[endVerse.surah]?.ayas;
-  if (!Number.isFinite(ayahCount) || endVerse.ayah !== ayahCount) return null;
-
-  const nextSurah = endVerse.surah + 1;
-  if (!surahMeta[nextSurah]) return null;
-
-  const alreadyOnPage = layout.lines.some(line =>
-    line.type === 'surah-header' && parseInt(line.surah || '0', 10) === nextSurah
-  );
-  return alreadyOnPage ? null : nextSurah;
-}
-
 function normalizeLayoutForRender(layout, surahMeta) {
   if (!layout || !Array.isArray(layout.lines)) return layout;
   const lines = layout.lines.map(line => ({ ...line }));
 
-  const hasSurahHeader = lines.some(line => line.type === 'surah-header');
   const hasBasmala = lines.some(line => line.type === 'basmala');
-  
+
   // Find the first text line
   const firstTextLine = lines.find(
     line => line.type === 'text' && typeof line.verseRange === 'string'
@@ -231,8 +198,13 @@ function normalizeLayoutForRender(layout, surahMeta) {
   const startRef = firstTextLine.verseRange.split('-')[0];
   const startVerse = parseVerseRef(startRef);
 
-  // If it's a verse 1 start and missing a surah header, add it.
-  if (startVerse && startVerse.ayah === 1 && !hasSurahHeader) {
+  // If it's a verse 1 start and missing a surah header for THIS specific surah, add it.
+  // (The page may have a surah-header for a different surah later on the page.)
+  const hasHeaderForStartSurah = startVerse && lines.some(line =>
+    line.type === 'surah-header' && parseInt(line.surah || '0', 10) === startVerse.surah
+  );
+
+  if (startVerse && startVerse.ayah === 1 && !hasHeaderForStartSurah) {
     const prefix = [];
     prefix.push({
       type: 'surah-header',
@@ -327,8 +299,6 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
   const lineCount = (normalizedLayout.lines || []).length;
   const isOpeningPage = (pageNum === 1 || pageNum === 2); // Special circular layout
   const isShortPage = !isOpeningPage && lineCount < 15;
-  const trailingSurah = getTrailingSurah(normalizedLayout, surahMeta);
-
   // Pre-scan: identify "last lines" of each surah — these should NOT be
   // fully justified (space-between). A text line is a "last line" if:
   //   (a) the next non-text element is a surah-header, OR
@@ -424,10 +394,6 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
       linesHTML.push(`<div class="${cls}">${words.join(' ')}</div>`);
     }
   }
-
-  const trailingBannerHTML = trailingSurah
-    ? `<div class="surah-banner trailing"><div class="surah-frame"><span class="surah-title">${String.fromCharCode(0xE000 + trailingSurah)}</span></div></div>`
-    : '';
 
   return `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -635,9 +601,6 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
     /* Counter-invert the text if the parent is inverted */
     ${theme === 'dark' || theme === 'night' ? 'filter: invert(1) brightness(0.8);' : ''}
   }
-  .surah-banner.trailing {
-    margin: 20px 0 0;
-  }
 
   /* Page number */
   .page-number {
@@ -661,7 +624,6 @@ function buildPageHTML(pageNum, layout, surahMeta, theme = 'light') {
     <div class="text-area${isOpeningPage ? ' opening-page' : isShortPage ? ' short-page' : ''}">
       ${linesHTML.join('\n      ')}
     </div>
-    ${trailingBannerHTML ? `\n    ${trailingBannerHTML}` : ''}
     <div class="page-number">${pageNum}</div>
   </div>
 </body>
@@ -839,7 +801,7 @@ async function main() {
     } else if (pagesArg) {
       const [s, e] = pagesArg.split('-').map(Number);
       const end = e || s;
-      
+
       const tasks = [];
       for (let p = s; p <= end; p++) {
         const layout = loadLayout(p);
