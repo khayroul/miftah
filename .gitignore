@@ -72,6 +72,11 @@ next-env.d.ts
 supabase/.temp/
 .tmp/
 
+# PWA generated files (build-time)
+public/translations/
+public/layouts/
+public/pwa-config.json
+
 # Claude Code — track rules/settings, ignore personal data
 .claude/*
 !.claude/rules/
