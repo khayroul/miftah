@@ -32,8 +32,9 @@ async playRange(
 ```
 
 - Loads the ayah audio from EveryAyah
-- Seeks to `segments[startWordIdx].startMs`
-- Stops at `segments[endWordIdx].endMs`
+- Finds the start segment via `segments.find(s => startWordIdx >= s.startWord && startWordIdx < s.endWord)` (same pattern as existing `play()` method — segments can span multiple words)
+- Finds the end segment via `segments.find(s => endWordIdx >= s.startWord && endWordIdx < s.endWord)`
+- Seeks to `startSegment.startMs`, stops at `endSegment.endMs`
 - Fires `onPlaybackEnd` callback when range completes
 - Falls back to full ayah if timestamp data is missing
 
@@ -213,15 +214,17 @@ interface UnveilWord {
   index: number;
   /** Word location "2:255:3" */
   location: string;
+  /** Surah:ayah for reverse mapping */
+  surah: number;
+  ayah: number;
+  wordPosition: number;
   /** Hitbox from manifest for positioning the reveal */
   hitbox: MushafWordHitbox;
-  /** Whether this word has been revealed */
-  revealed: boolean;
 }
 
 interface UnveilState {
   words: UnveilWord[];
-  revealedUpTo: number;  // -1 = all veiled
+  revealedUpTo: number;  // -1 = all veiled. Derived: word is revealed if word.index <= revealedUpTo
   totalWords: number;
 }
 
@@ -250,7 +253,7 @@ function revealUpTo(
 - Builds `UnveilState` from both data sources
 - Creates `TasmiSession` with `expectedText` = all page words concatenated
 - On `TasmiSession` `match` event: reads `matchResult.lastCorrectIndex`, calls `revealUpTo(state, index)` to update state
-- On `TasmiSession` `talqin` event: pauses reveal, plays talqin audio
+- On `TasmiSession` `talqin` event: pauses reveal. Uses `talqinWordIndex` (flat index into concatenated page text) to reverse-map to surah:ayah:wordPosition via the `UnveilState.words` array — `words[talqinWordIndex]` gives `{surah, ayah, wordPosition}` which is passed to `TalqinPlayer.play(surah, ayah, wordPosition)`.
 - On `TasmiSession` `session-end`: shows score card
 
 **`src/components/hifz/VeilOverlay.tsx`** — The visual veil:
@@ -290,6 +293,8 @@ SVG overlay positioned absolutely over the page image, same dimensions.
 
 **Reveal animation:** Each word rect transitions from `opacity: 0` to `opacity: 1` over 200ms when added to the mask. Words reveal left-to-right within each line, top-to-bottom across lines — matching the reading flow.
 
+**Browser compatibility note:** CSS transitions on SVG mask children have inconsistent support on Safari/iOS. Fallback: if `prefers-reduced-motion` is set or animation doesn't fire, words appear instantly (no transition). The reveal still works visually — just without the fade effect.
+
 **Padding:** Each hitbox gets 2px padding on all sides to ensure the veil fully covers the glyph, accounting for minor manifest alignment variance.
 
 **`src/components/hifz/UnveilResultCard.tsx`** — Session result:
@@ -327,6 +332,18 @@ Per project rules (never crash on missing data):
 /** Supported hifz exercise flows */
 export type HifzFlow = 'tebuk' | 'unveil';
 
+/** Result of a single tebuk round */
+export interface TebukRoundResult {
+  /** The prompt that was played */
+  prompt: TebukPrompt;
+  /** Tasmi' session result for this round */
+  tasmiResult: TasmiSessionResult;
+  /** FSRS rating derived from tasmi' result */
+  rating: FsrsRating;
+  /** BM label */
+  label: TasmiRatingLabel;
+}
+
 /** Common session result shape for hifz exercises */
 export interface HifzExerciseResult {
   flow: HifzFlow;
@@ -338,6 +355,18 @@ export interface HifzExerciseResult {
   durationSeconds: number;
 }
 ```
+
+### Ayah Word Ranges Builder: `src/lib/hifz/page-words.ts`
+
+Both features need to map flat word indices back to per-ayah ranges for `getPerAyahRatings()`. The `getPageWords()` function returns words in order with `surah`/`ayah` fields. We derive ayah ranges by grouping consecutive words:
+
+```typescript
+function buildAyahWordRanges(
+  words: PageWord[],
+): Array<{ ayah: number; surah: number; ayahKey: string; startWordIndex: number; endWordIndex: number }>
+```
+
+Groups words by `surah:ayah`, preserving order. Each group's `startWordIndex`/`endWordIndex` maps to the flat concatenated text, which is exactly what `getPerAyahRatings()` expects.
 
 ---
 
@@ -419,27 +448,30 @@ The existing Zod schemas on these routes already handle the required fields. No 
 
 ## File Inventory
 
-### New Files (8)
+### New Files (13)
 
 | File | Lines (est.) | Purpose |
 |------|-------------|---------|
 | `src/lib/hifz/tebuk.ts` | ~120 | Prompt selection + continuation building |
 | `src/lib/hifz/progressive-unveil.ts` | ~80 | Unveil state management |
-| `src/lib/hifz/page-words.ts` | ~50 | Shared page word ordering utility |
-| `src/types/hifz-exercises.ts` | ~30 | Shared types for both features |
+| `src/lib/hifz/page-words.ts` | ~60 | Shared page word ordering + ayah range builder |
+| `src/types/hifz-exercises.ts` | ~40 | Shared types (HifzFlow, TebukRoundResult, HifzExerciseResult) |
 | `src/components/hifz/HifzTebukSession.tsx` | ~200 | Tebuk session orchestrator |
 | `src/components/hifz/TebukPromptCard.tsx` | ~80 | 4-word prompt display |
+| `src/components/hifz/TebukResultCard.tsx` | ~60 | Per-round result display |
+| `src/components/hifz/TebukSessionSummary.tsx` | ~80 | Final 3-round summary |
 | `src/components/hifz/HifzUnveilSession.tsx` | ~200 | Unveil session orchestrator |
 | `src/components/hifz/VeilOverlay.tsx` | ~100 | SVG veil with animated reveals |
+| `src/components/hifz/UnveilResultCard.tsx` | ~70 | Unveil session result display |
+| `src/lib/hifz/tebuk.test.ts` | ~100 | Unit tests for tebuk logic |
+| `src/lib/hifz/progressive-unveil.test.ts` | ~100 | Unit tests for unveil logic |
 
-### Modified Files (3)
+### Modified Files (2)
 
 | File | Change |
 |------|--------|
 | `src/lib/tasmi/talqin-player.ts` | Add `playRange()` method (~30 lines) |
-| `src/app/read/[page]/page.tsx` | Route `?flow=tebuk` and `?flow=unveil` to new components |
-| `src/lib/hifz/tebuk.test.ts` | New test file |
-| `src/lib/hifz/progressive-unveil.test.ts` | New test file |
+| `src/app/read/[page]/page.tsx` | Extend `HifzFlow` type to include `'tebuk' \| 'unveil'`, route to new components |
 
 ### No changes to
 
