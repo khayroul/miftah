@@ -14,6 +14,9 @@ function extractCdnVersion(): string {
 function main(): void {
   const cdnVersion = extractCdnVersion();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
+  if (!supabaseUrl) {
+    console.warn("⚠️  NEXT_PUBLIC_SUPABASE_URL not set. Offline downloads will not work until configured.");
+  }
   const pagesBucket = process.env.MUSHAF_PAGES_BUCKET?.trim() || "mushaf-pages";
   const manifestsBucket = process.env.MUSHAF_MANIFESTS_BUCKET?.trim() || "mushaf-manifests";
   const storageBase = supabaseUrl

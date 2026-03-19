@@ -32,6 +32,11 @@ export async function loadPwaConfig(): Promise<PwaConfig> {
   if (!isPwaConfig(data)) {
     throw new Error("Invalid pwa-config.json: missing required fields");
   }
+  if (!data.supabaseStorageBase) {
+    throw new Error(
+      "pwa-config.json has an empty supabaseStorageBase. Set NEXT_PUBLIC_SUPABASE_URL and rebuild."
+    );
+  }
 
   cachedConfig = data;
   return data;

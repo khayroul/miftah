@@ -9,13 +9,16 @@ async function flushReadingState(): Promise<void> {
   if (!state.lastPage) return;
 
   try {
-    await fetch("/api/reading/state", {
+    const response = await fetch("/api/reading/state", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(state),
     });
-  } catch {
-    // Will retry on next online event
+    if (!response.ok) {
+      console.warn(`[Reading Sync] Server returned ${response.status} — will retry on next reconnect`);
+    }
+  } catch (error) {
+    console.warn("[Reading Sync] Network error — will retry on next reconnect", error);
   }
 }
 

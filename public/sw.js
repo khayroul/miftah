@@ -1,7 +1,7 @@
 // Miftah PWA Service Worker — multi-cache router with URL allowlist
 // BUILD_ID and CDN_ASSET_VERSION injected at prebuild time
-const BUILD_ID = "__BUILD_ID__";
-const CDN_ASSET_VERSION = "__CDN_ASSET_VERSION__";
+const BUILD_ID = "c59008e";
+const CDN_ASSET_VERSION = "4";
 
 const APP_SHELL_CACHE = `app-shell-${BUILD_ID}`;
 const MUSHAF_IMAGES_CACHE = "mushaf-images-v1";
@@ -72,7 +72,7 @@ async function cacheFirstStrategy(cacheName, request) {
   try {
     const response = await fetch(request);
     if (response.ok) {
-      cache.put(request, response.clone());
+      await cache.put(request, response.clone());
     }
     return response;
   } catch (error) {

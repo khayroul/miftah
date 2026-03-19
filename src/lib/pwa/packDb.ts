@@ -67,6 +67,9 @@ export function updatePackStatus(
 // IndexedDB operations (browser-only)
 
 function openDb(): Promise<IDBDatabase> {
+  if (typeof indexedDB === "undefined") {
+    throw new Error("IndexedDB is not available (server-side or unsupported browser)");
+  }
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
