@@ -18,6 +18,9 @@ export const metadata: Metadata = {
 import { ReadAudioProvider } from "@/components/ReadAudioProvider";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { ReadingStateSync } from "@/components/ReadingStateSync";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { UpdateBanner } from "@/components/UpdateBanner";
+import { PwaDebugLoader } from "@/components/PwaDebugLoader";
 
 export default function RootLayout({
   children,
@@ -56,6 +59,9 @@ export default function RootLayout({
       <body className={`${arabicText.variable} antialiased`}>
         <ServiceWorkerRegistrar />
         <ReadingStateSync />
+        <OfflineIndicator />
+        <UpdateBanner />
+        <PwaDebugLoader />
         <ReadAudioProvider>{children}</ReadAudioProvider>
       </body>
     </html>
