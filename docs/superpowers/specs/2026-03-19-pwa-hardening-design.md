@@ -66,7 +66,7 @@ Each layer is independently testable. Layer 2 includes a dev-only download trigg
 - Online reading path (`readPageData.ts`) — untouched.
 - Hifz, Faham, auth — remain online-only. Get calm offline messages, not new capabilities.
 - Audio caching — existing `miftah-audio-v1` cache stays as-is.
-- Database schema — no Supabase migrations needed.
+- Database schema — one small migration needed: `reading_progress` table for server-side reading state sync (section 10). No changes to existing tables.
 
 ## 4. Prereq: translation file split
 
@@ -84,6 +84,8 @@ public/translations/page-002.json  (~3.8 KB)
 ...
 public/translations/page-604.json  (~3.8 KB)
 ```
+
+**Filename format:** 3-digit zero-padded page number with dash separator: `page-001.json` through `page-604.json`. This matches the layout JSON naming convention.
 
 Each file contains only the word translations needed for that page. The script runs as part of the build pipeline (`npm run build:translations`).
 
@@ -158,13 +160,13 @@ With a small Safari share icon illustration. Dismissal saved to localStorage. Sh
 
 ### Build-time injection
 
-A build script replaces a placeholder in `sw.js` with the current build ID:
+A prebuild script replaces a placeholder in `sw.js` with a unique build identifier:
 
 ```javascript
-const BUILD_ID = "__BUILD_ID__"; // replaced at build time
+const BUILD_ID = "__BUILD_ID__"; // replaced at prebuild time
 ```
 
-This is used for app shell cache naming and stale cache cleanup.
+**BUILD_ID is NOT the Next.js build ID.** The Next.js `.next/BUILD_ID` is generated during `next build`, but `public/sw.js` is copied into the build output during that same step — creating a chicken-and-egg problem. Instead, `inject-build-id.ts` generates a unique ID (short git SHA or `Date.now().toString(36)`) and runs as a **prebuild** step before `next build`. This ID is used for app shell cache naming and stale cache cleanup.
 
 ### Cache buckets
 
@@ -185,6 +187,7 @@ This is used for app shell cache naming and stale cache cleanup.
 | `/translations/page-*.json` | Cache-first | `mushaf-data-v1` |
 | `/api/mushaf/*` (local image fallback) | Cache-first | `mushaf-images-v1` |
 | `everyayah.com/*` | Cache-first | `miftah-audio-v1` |
+| `/layouts/page-*.json` | Cache-first | `mushaf-data-v1` |
 | `/offline` | Cache-only | `app-shell-${BUILD_ID}` |
 | All other requests | **Network-only** | — |
 
@@ -206,10 +209,13 @@ When a navigation request fails (network error + no cache hit), the SW serves `/
 ### SW lifecycle
 
 ```
-install → cache app shell assets + /offline page → skipWaiting()
+install → cache app shell assets + /offline page (do NOT call skipWaiting here)
+message("skipWaiting") → self.skipWaiting() (triggered by user clicking "Kemas kini")
 activate → delete old app-shell-${OLD_BUILD_ID} caches → clients.claim()
 fetch → match against interception matrix
 ```
+
+**Note:** The current `sw.js` calls `skipWaiting()` unconditionally in the install handler. The rewrite removes this — the new SW waits for user consent via the update banner (section 11) before activating. This prevents silent mid-session cache swaps.
 
 ### SW registration
 
@@ -230,6 +236,44 @@ Refactor `src/lib/hifz/audioPreCache.ts`:
 - Modified: `src/app/layout.tsx` — uses new SW registration
 - Modified: `package.json` — build step for SW injection
 
+### Offline bundle build (`scripts/build-offline.ts`)
+
+The offline shell (`public/offline.html`) needs a standalone JS bundle that runs without the Next.js server. This is the most complex build script:
+
+- **Bundler:** esbuild (fast, zero-config, already a transitive dependency via Next.js)
+- **Entry point:** `src/lib/pwa/offlineApp.tsx` — imports `offlinePageData.ts`, `contentPacks.ts`, `offlineDetection.ts`
+- **React strategy:** Bundle full React (react + react-dom, ~40 KB gzipped). Preact is smaller but risks compatibility issues with existing components.
+- **CSS strategy:** Inline a minimal CSS subset extracted from Tailwind build. Only styles needed for the offline reading UI (mushaf page layout, tooltips, offline banner). Estimated ~10 KB.
+- **Output:** A single `offline-bundle.js` file (~150-200 KB) inlined into `offline.html` via a `<script>` tag.
+- **Types/components:** The offline bundle imports from `src/lib/pwa/` and `src/types/` only. It does NOT import from `src/components/` to avoid pulling in the full component tree. The offline renderer is a simplified version of `MushafPageView`.
+
+### Build pipeline ordering
+
+All prebuild scripts run before `next build`. Order matters:
+
+```
+npm run prebuild (sequential):
+  1. generate-surah-map.ts    → src/lib/pwa/surahPageMap.ts (TypeScript source, must exist before next build)
+  2. split-translations.ts    → public/translations/*.json (604 files)
+  3. copy-layouts.ts           → public/layouts/*.json (604 files)
+  4. generate-pwa-config.ts    → public/pwa-config.json
+  5. inject-build-id.ts        → modifies public/sw.js (BUILD_ID = git SHA or timestamp)
+  6. build-offline.ts          → public/offline.html (bundles offline React app)
+
+npm run build:
+  7. next build               → production build (includes all public/ files in output)
+```
+
+In `package.json`:
+```json
+{
+  "scripts": {
+    "prebuild": "tsx scripts/generate-surah-map.ts && tsx scripts/split-translations.ts && tsx scripts/copy-layouts.ts && tsx scripts/generate-pwa-config.ts && tsx scripts/inject-build-id.ts && tsx scripts/build-offline.ts",
+    "build": "npm run prebuild && next build"
+  }
+}
+```
+
 ## 7. Layer 2: Content Packs + Storage (KHA-29)
 
 ### Pack unit
@@ -248,7 +292,7 @@ One pack = one surah. Contains references to all cached assets for that surah's 
 
 ### Layout JSON access
 
-Layout JSONs are currently server-only files at `data/mushaf-layout/mushaf/page-NNN.json` (604 files, ~32 MB total). For offline, they need to be URL-accessible to the client.
+Layout JSONs are currently server-only files at `data/mushaf-layout/mushaf/page-NNN.json` (604 files, ~13 MB total, ~22 KB avg per page). For offline, they need to be URL-accessible to the client.
 
 **Solution:** Copy to `public/layouts/page-NNN.json` at build time (`scripts/copy-layouts.ts`). Simpler than an API route, CDN-cacheable, and the SW can intercept and cache them like other mushaf data.
 
@@ -258,7 +302,7 @@ Layout JSONs are currently server-only files at `data/mushaf-layout/mushaf/page-
 
 `CDN_ASSET_VERSION` is currently hardcoded in `mushafAssets.ts` (a server-only module). The download flow runs client-side and needs this version to construct URLs with `?v={V}`.
 
-**Solution:** Inject `CDN_ASSET_VERSION` into `sw.js` alongside `BUILD_ID` during the build step. Also expose as `NEXT_PUBLIC_CDN_ASSET_VERSION` env var for client-side download logic. Alternatively, generate a `public/pwa-config.json` at build time:
+**Solution:** Generate a `public/pwa-config.json` at build time containing all CDN configuration the client needs:
 
 ```json
 {
@@ -269,7 +313,7 @@ Layout JSONs are currently server-only files at `data/mushaf-layout/mushaf/page-
 }
 ```
 
-The download module fetches this config once on init. This avoids hardcoding Supabase URLs in client code.
+The download module fetches this config once on init. The `CDN_ASSET_VERSION` is also injected into `sw.js` alongside `BUILD_ID` by the same prebuild script, so the SW can construct versioned URLs for cache matching.
 
 ### IndexedDB schema
 
@@ -393,19 +437,22 @@ interface OfflinePageResult {
 ```
 
 This module:
-1. Checks `surahPacks` in IndexedDB — is this page's surah downloaded?
+1. **Checks Cache API directly** for the required assets (WebP, manifest, layout, translation JSON) by page number. This avoids cross-surah page ownership ambiguity — a page is available offline if its assets are cached, regardless of which surah triggered the download. (IndexedDB `surahPacks` is used for UI display — showing download status per surah — not as a gate for offline availability.)
 2. Reads WebP image, manifest, layout, and translations from Cache API.
 3. Assembles a data object compatible with `MushafPageView` props.
 4. Returns `{ available: false }` if any required asset is missing.
 
 ### Offline MushafPageView
 
-The existing `MushafPageView` component already supports image-based rendering with hitbox overlays. The offline path provides:
-- `imageUrl` — the cached mobile WebP
-- `manifest.words` — hitbox coordinates for tap targets
-- `translations` — BM/EN word meanings for the tooltip
+The offline reading experience requires two distinct data sources working together:
 
-The offline path provides a subset of props. Props that are irrelevant offline are defaulted:
+- **Manifest JSON** (`page_NNN.manifest.json`) — provides word **hitbox coordinates in image pixel space** (x, y, width, height relative to the WebP image dimensions). Used for tap targets on the rendered image.
+- **Layout JSON** (`page-NNN.json`) — provides word `location` strings (e.g., `1:1:1` = surah:ayah:word) and line structure. Used for translation lookups — the location string maps into the per-page translation JSON to find BM/EN meanings.
+- **Translation JSON** (`page-NNN.json` in `/translations/`) — provides BM/EN word meanings keyed by location string.
+
+Both manifest and layout are required for the full offline experience: manifest for "where to tap", layout for "what does the tap mean".
+
+The offline path provides a subset of `MushafPageView` props. Props irrelevant offline are defaulted:
 - `memorizedAyahKeys` → `[]` (no Hifz state offline)
 - Audio callbacks → no-op (audio is online-only)
 - Hifz-related callbacks → omitted or no-op
@@ -570,6 +617,9 @@ src/lib/pwa/
 ├── storageAccounting.ts    # Storage usage calculation
 └── offlineDetection.ts     # Online/offline state + UI helpers
 
+src/app/
+└── manifest.ts             # Next.js dynamic PWA manifest
+
 src/components/
 ├── OfflineIndicator.tsx    # Global offline banner
 ├── InstallPrompt.tsx       # iOS install guidance + Android prompt
@@ -579,7 +629,7 @@ src/components/
 
 public/
 ├── sw.js                   # Rewritten service worker
-├── offline.html            # Offline app shell (or Next.js route)
+├── offline.html            # Offline app shell (static HTML, not a Next.js route)
 ├── icons/                  # Placeholder PWA icons
 ├── layouts/                # Generated: 604 layout JSONs (build-time copy)
 └── translations/           # Generated: 604 translation JSONs
