@@ -1,0 +1,29 @@
+import { writeFileSync, readFileSync, mkdirSync } from "node:fs";
+import path from "node:path";
+
+const OUTPUT_PATH = path.join(process.cwd(), "public", "pwa-config.json");
+
+function extractCdnVersion(): string {
+  const assetsPath = path.join(process.cwd(), "src", "lib", "mushafAssets.ts");
+  const content = readFileSync(assetsPath, "utf-8");
+  const match = content.match(/CDN_ASSET_VERSION\s*=\s*"(\d+)"/);
+  if (!match) throw new Error("Could not find CDN_ASSET_VERSION in mushafAssets.ts");
+  return match[1];
+}
+
+function main(): void {
+  const cdnVersion = extractCdnVersion();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
+  const pagesBucket = process.env.MUSHAF_PAGES_BUCKET?.trim() || "mushaf-pages";
+  const manifestsBucket = process.env.MUSHAF_MANIFESTS_BUCKET?.trim() || "mushaf-manifests";
+  const storageBase = supabaseUrl
+    ? `${supabaseUrl.replace(/\/+$/, "")}/storage/v1/object/public`
+    : "";
+
+  const config = { cdnAssetVersion: cdnVersion, supabaseStorageBase: storageBase, pagesBucket, manifestsBucket };
+  mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
+  writeFileSync(OUTPUT_PATH, JSON.stringify(config, null, 2), "utf-8");
+  console.log(`Generated ${OUTPUT_PATH} (version: ${cdnVersion})`);
+}
+
+main();
