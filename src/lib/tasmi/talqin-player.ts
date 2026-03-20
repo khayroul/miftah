@@ -147,6 +147,60 @@ export class TalqinPlayer {
   }
 
   /**
+   * Play a specific word range within an ayah.
+   * Used by tebuk (prompt audio) and unveil (initial prompt).
+   */
+  async playRange(
+    surah: number,
+    ayah: number,
+    startWordIdx: number,
+    endWordIdx: number,
+  ): Promise<void> {
+    const key = `${surah}:${ayah}`;
+    const segments = this.timestampMap.get(key);
+
+    if (!segments || segments.length === 0) {
+      await this.playFullAyah(surah, ayah);
+      return;
+    }
+
+    const startSeg = segments.find(
+      s => startWordIdx >= s.startWord && startWordIdx < s.endWord
+    );
+    const endSeg = segments.find(
+      s => endWordIdx >= s.startWord && endWordIdx < s.endWord
+    );
+
+    if (!startSeg || !endSeg) {
+      await this.playFullAyah(surah, ayah);
+      return;
+    }
+
+    const audioUrl = buildAudioUrl(surah, ayah);
+    const startTime = startSeg.startMs / 1000;
+    const endTime = endSeg.endMs / 1000;
+
+    this.stop();
+
+    this.audio = new Audio(audioUrl);
+    this.audio.currentTime = startTime;
+
+    this.timeUpdateHandler = () => {
+      if (this.audio && this.audio.currentTime >= endTime) {
+        this.stop();
+        this.config.onPlaybackEnd();
+      }
+    };
+
+    this.audio.addEventListener('timeupdate', this.timeUpdateHandler);
+    this.audio.addEventListener('ended', () => {
+      this.config.onPlaybackEnd();
+    }, { once: true });
+
+    await this.audio.play();
+  }
+
+  /**
    * Fallback: play full ayah audio without seeking.
    */
   private async playFullAyah(surah: number, ayah: number): Promise<void> {
