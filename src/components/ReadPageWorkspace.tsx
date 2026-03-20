@@ -119,6 +119,17 @@ const HifzSessionComplete = dynamic(
   },
 );
 
+const HifzTebukSession = dynamic(
+  () =>
+    import("@/components/hifz/HifzTebukSession").then(
+      (module) => module.HifzTebukSession,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
 interface ReadPageWorkspaceProps {
   pageNumber: number;
   layout: MushafLayoutPage;
@@ -1010,6 +1021,20 @@ export function ReadPageWorkspace({
             onPageComplete={() => setSessionPagesCompleted((n) => n + 1)}
           />
         )
+      )}
+
+      {hifzExercise === "tebuk" && (
+        <HifzTebukSession
+          layout={layout}
+          pageNumber={pageNumber}
+          tasmiServerUrl={process.env.NEXT_PUBLIC_TASMI_SERVER_URL ?? ""}
+          tasmiApiKey={process.env.NEXT_PUBLIC_TASMI_API_KEY ?? ""}
+          alignData={[]}
+          onComplete={(_rounds) => {
+            // Will wire FSRS rate-batch in Task 11
+          }}
+          onExit={() => router.push(`/read/${pageNumber}`)}
+        />
       )}
     </div>
   );
