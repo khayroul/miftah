@@ -45,26 +45,30 @@ export function ReadJumpControls({
 
   useEffect(() => {
     if (initialSurahOptions) {
-      setSurahOptions(initialSurahOptions);
+      setTimeout(() => setSurahOptions(initialSurahOptions), 0);
     }
   }, [initialSurahOptions]);
 
   useEffect(() => {
     if (initialJuzOptions) {
-      setJuzOptions(initialJuzOptions);
+      setTimeout(() => setJuzOptions(initialJuzOptions), 0);
     }
   }, [initialJuzOptions]);
 
   useEffect(() => {
     if (initialSurahOptions && initialJuzOptions) {
-      setIsLoadingTargets(false);
-      setLoadError(null);
+      setTimeout(() => {
+        setIsLoadingTargets(false);
+        setLoadError(null);
+      }, 0);
       return;
     }
 
     const abortController = new AbortController();
-    setIsLoadingTargets(true);
-    setLoadError(null);
+    setTimeout(() => {
+      setIsLoadingTargets(true);
+      setLoadError(null);
+    }, 0);
 
     void fetch("/api/read/jump-targets", {
       signal: abortController.signal,

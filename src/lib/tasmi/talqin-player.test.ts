@@ -3,15 +3,15 @@ import { TalqinPlayer } from './talqin-player';
 
 // Mock HTMLAudioElement
 function mockAudio() {
-  const listeners: Record<string, Function[]> = {};
+  const listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
   const audio = {
     currentTime: 0,
     play: vi.fn().mockResolvedValue(undefined),
     pause: vi.fn(),
-    addEventListener: vi.fn((event: string, handler: Function, opts?: any) => {
+    addEventListener: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
       listeners[event] = [...(listeners[event] ?? []), handler];
     }),
-    removeEventListener: vi.fn((event: string, handler: Function) => {
+    removeEventListener: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
       listeners[event] = (listeners[event] ?? []).filter(h => h !== handler);
     }),
     _fireTimeUpdate: () => listeners['timeupdate']?.forEach(h => h()),
@@ -19,9 +19,9 @@ function mockAudio() {
   };
   // Ensure Audio exists on globalThis before spying (node env doesn't have it)
   if (!('Audio' in globalThis)) {
-    (globalThis as any).Audio = function AudioStub() {};
+    (globalThis as unknown as Record<string, unknown>).Audio = function AudioStub() {};
   }
-  vi.spyOn(globalThis, 'Audio').mockImplementation(function () { return audio; } as any);
+  vi.spyOn(globalThis, 'Audio').mockImplementation(function () { return audio; } as unknown as typeof Audio);
   return audio;
 }
 

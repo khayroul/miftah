@@ -177,6 +177,7 @@ export function HifzInlineRating({
     setTasmiExpectedText(null);
   }, []);
 
+  /* eslint-disable react-hooks/preserve-manual-memoization */
   const handleRate = useCallback(
     async (rating: 1 | 3) => {
       setSubmitting(true);
@@ -284,6 +285,7 @@ export function HifzInlineRating({
     },
     [buildAlreadyRatedState, flowType, pageNumber, router],
   );
+  /* eslint-enable react-hooks/preserve-manual-memoization */
 
   const handleTasmiEnd = useCallback(
     async (_result: TasmiSessionResult, label: TasmiRatingLabel) => {
