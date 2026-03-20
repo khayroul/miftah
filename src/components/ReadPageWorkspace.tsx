@@ -130,6 +130,17 @@ const HifzTebukSession = dynamic(
   },
 );
 
+const HifzUnveilSession = dynamic(
+  () =>
+    import("@/components/hifz/HifzUnveilSession").then(
+      (module) => module.HifzUnveilSession,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
 interface ReadPageWorkspaceProps {
   pageNumber: number;
   layout: MushafLayoutPage;
@@ -1035,6 +1046,30 @@ export function ReadPageWorkspace({
           }}
           onExit={() => router.push(`/read/${pageNumber}`)}
         />
+      )}
+
+      {hifzExercise === "unveil" && (
+        <HifzUnveilSession
+          layout={layout}
+          manifest={/* will be wired in Task 11 */ {
+            page: pageNumber,
+            schema_version: "1",
+            image_width: 0,
+            image_height: 0,
+            words: [],
+          }}
+          pageNumber={pageNumber}
+          tasmiServerUrl={process.env.NEXT_PUBLIC_TASMI_SERVER_URL ?? ""}
+          tasmiApiKey={process.env.NEXT_PUBLIC_TASMI_API_KEY ?? ""}
+          alignData={[]}
+          onComplete={() => {
+            // Will wire FSRS rate-batch in Task 11
+          }}
+          onExit={() => router.push(`/read/${pageNumber}`)}
+        >
+          {/* Page image placeholder — will be wired in Task 11 */}
+          <div />
+        </HifzUnveilSession>
       )}
     </div>
   );
