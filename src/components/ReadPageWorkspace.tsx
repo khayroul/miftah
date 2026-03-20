@@ -41,6 +41,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { preCacheAudioUrls } from "@/lib/hifz/audioPreCache";
 import type { HifzExerciseFlow } from "@/types/hifz-exercises";
+import type { MushafPageManifest } from "@/types/mushaf";
 
 const FahamExposureTracker = dynamic(
   () =>
@@ -326,6 +327,8 @@ export function ReadPageWorkspace({
   }, [searchParams]);
   const [isCurrentPageImageReady, setIsCurrentPageImageReady] = useState(false);
   const [memorizeViewportInset, setMemorizeViewportInset] = useState(0);
+  const [alignData, setAlignData] = useState<unknown[]>([]);
+  const [pageManifest, setPageManifest] = useState<MushafPageManifest | null>(null);
   const contentBottomPadding =
     hifzFlow === "memorize" && memorizeViewportInset > 0
       ? memorizeViewportInset + 16
@@ -577,6 +580,90 @@ export function ReadPageWorkspace({
     const urls = audioTracks.map((t) => t.audioUrl);
     void preCacheAudioUrls(urls);
   }, [hifzFlow, audioTracks]);
+
+  // Load quran-align timestamp data for tebuk and unveil exercises
+  useEffect(() => {
+    if (hifzExercise !== "tebuk" && hifzExercise !== "unveil") {
+      setAlignData([]);
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    void fetch("/data/quran-align-alafasy.json", { signal: abortController.signal })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Failed to load align data");
+        }
+        return (await response.json()) as Array<{
+          surah: number;
+          ayah: number;
+          segments: [number, number, number, number][];
+        }>;
+      })
+      .then((allData) => {
+        // Collect the set of ayah keys present on this page
+        const pageAyahKeys = new Set<string>();
+        for (const line of layout.lines) {
+          if (line.type !== "text") continue;
+          for (const word of line.words ?? []) {
+            const parts = word.location.split(":");
+            if (parts.length >= 2) {
+              pageAyahKeys.add(`${parts[0]}:${parts[1]}`);
+            }
+          }
+        }
+
+        const filtered = allData.filter((entry) =>
+          pageAyahKeys.has(`${entry.surah}:${entry.ayah}`),
+        );
+
+        setAlignData(filtered);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        console.error("[ReadPageWorkspace] Failed to load align data", error);
+        setAlignData([]);
+      });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [hifzExercise, pageNumber, layout]);
+
+  // Load page manifest for unveil exercise
+  useEffect(() => {
+    if (hifzExercise !== "unveil") {
+      setPageManifest(null);
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    void fetch(`/api/mushaf/manifest/${pageNumber}`, { signal: abortController.signal })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Failed to load page manifest");
+        }
+        return (await response.json()) as MushafPageManifest;
+      })
+      .then((manifest) => {
+        setPageManifest(manifest);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        console.error("[ReadPageWorkspace] Failed to load page manifest", error);
+        setPageManifest(null);
+      });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [hifzExercise, pageNumber]);
 
   useEffect(() => {
     if (!personalizationPageNumber || hifzFlow === null) {
@@ -1040,35 +1127,46 @@ export function ReadPageWorkspace({
           pageNumber={pageNumber}
           tasmiServerUrl={process.env.NEXT_PUBLIC_TASMI_SERVER_URL ?? ""}
           tasmiApiKey={process.env.NEXT_PUBLIC_TASMI_API_KEY ?? ""}
-          alignData={[]}
-          onComplete={(_rounds) => {
-            // Will wire FSRS rate-batch in Task 11
+          alignData={alignData}
+          onComplete={(rounds) => {
+            // TODO(Task 12): Wire progressIds from hifz queue items so rate-batch
+            // can update FSRS state. The exercise components don't receive the queue
+            // state, so progressIds are unavailable here. Log ratings for now.
+            console.info(
+              "[ReadPageWorkspace] tebuk complete — ratings logged (no progressIds):",
+              rounds.map((r) => ({ rating: r.rating, label: r.label })),
+            );
           }}
           onExit={() => router.push(`/read/${pageNumber}`)}
         />
       )}
 
-      {hifzExercise === "unveil" && (
+      {hifzExercise === "unveil" && pageManifest && (
         <HifzUnveilSession
           layout={layout}
-          manifest={/* will be wired in Task 11 */ {
-            page: pageNumber,
-            schema_version: "1",
-            image_width: 0,
-            image_height: 0,
-            words: [],
-          }}
+          manifest={pageManifest}
           pageNumber={pageNumber}
           tasmiServerUrl={process.env.NEXT_PUBLIC_TASMI_SERVER_URL ?? ""}
           tasmiApiKey={process.env.NEXT_PUBLIC_TASMI_API_KEY ?? ""}
-          alignData={[]}
+          alignData={alignData}
           onComplete={() => {
-            // Will wire FSRS rate-batch in Task 11
+            // TODO(Task 12): Wire progressIds from hifz queue items so rate-batch
+            // can update FSRS state. The exercise components don't receive the queue
+            // state, so progressIds are unavailable here.
+            console.info(
+              "[ReadPageWorkspace] unveil complete — FSRS rate-batch pending progressId wiring",
+            );
           }}
           onExit={() => router.push(`/read/${pageNumber}`)}
         >
-          {/* Page image placeholder — will be wired in Task 11 */}
-          <div />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/api/mushaf/page/${pageNumber}?v=qcfv2`}
+            alt={`Mushaf halaman ${pageNumber}`}
+            width={pageManifest.image_width}
+            height={pageManifest.image_height}
+            className="w-full"
+          />
         </HifzUnveilSession>
       )}
     </div>
