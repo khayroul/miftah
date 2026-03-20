@@ -40,6 +40,7 @@ import type { MushafLayoutPage } from "@/types/mushafLayout";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { preCacheAudioUrls } from "@/lib/hifz/audioPreCache";
+import type { HifzExerciseFlow } from "@/types/hifz-exercises";
 
 const FahamExposureTracker = dynamic(
   () =>
@@ -133,6 +134,7 @@ interface ReadPageWorkspaceProps {
   initialReadMode?: ReadMode | null;
   forceHifzRevealByThirds?: boolean;
   hifzFlow?: HifzFlowType | null;
+  hifzExercise?: HifzExerciseFlow | null;
   hifzNavigationSearch?: string | null;
   personalizationPageNumber?: number | null;
 }
@@ -228,6 +230,7 @@ export function ReadPageWorkspace({
   initialReadMode = null,
   forceHifzRevealByThirds = false,
   hifzFlow = null,
+  hifzExercise = null,
   hifzNavigationSearch = null,
   personalizationPageNumber = null,
 }: ReadPageWorkspaceProps) {
