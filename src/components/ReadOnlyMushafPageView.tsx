@@ -36,16 +36,16 @@ export function ReadOnlyMushafPageView({
   activePlaybackAyahKey = null,
 }: ReadOnlyMushafPageViewProps) {
   const [isReady, setIsReady] = useState(false);
-  const [showDiscoveryHint, setShowDiscoveryHint] = useState(!audioDiscovered);
+  const [hintDismissed, setHintDismissed] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
 
-  useEffect(() => {
-    setShowDiscoveryHint(!audioDiscovered);
-  }, [audioDiscovered]);
+  // Derived: show the hint when audio hasn't been discovered yet and the user
+  // hasn't dismissed it manually. No setState-in-effect needed.
+  const showDiscoveryHint = !audioDiscovered && !hintDismissed;
 
   useEffect(() => {
     if (!showDiscoveryHint || !isReady) return;
-    const timer = window.setTimeout(() => setShowDiscoveryHint(false), 2600);
+    const timer = window.setTimeout(() => setHintDismissed(true), 2600);
     return () => window.clearTimeout(timer);
   }, [isReady, showDiscoveryHint]);
 
@@ -56,7 +56,7 @@ export function ReadOnlyMushafPageView({
   const handleWordClick = useCallback(
     (wordRef: MushafLiveWordRef) => {
       onAudioDiscovered?.();
-      setShowDiscoveryHint(false);
+      setHintDismissed(true);
       if (wordRef.ayahKey) {
         onAyahAudioTap?.(wordRef.ayahKey);
       }
@@ -108,7 +108,7 @@ export function ReadOnlyMushafPageView({
         onTouchEnd={handleTouchEnd}
         onClick={() => {
           onAudioDiscovered?.();
-          setShowDiscoveryHint(false);
+          setHintDismissed(true);
           onCanvasTap?.();
         }}
       >

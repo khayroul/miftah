@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 
 function getFontUrl(pageNumber: number): string {
   return `/fonts/qcf-v2-woff2/p${pageNumber}.woff2`;
@@ -68,22 +68,22 @@ export function useMushafFont(pageNumber: number): {
   const fontFamily = getFontFamily(pageNumber);
   const [loaded, setLoaded] = useState(() => loadedFonts.has(pageNumber));
 
-  const checkReady = useCallback(() => {
-    if (loadedFonts.has(pageNumber) || isFontReady(pageNumber)) {
-      loadedFonts.add(pageNumber);
-      setLoaded(true);
-      return true;
-    }
-    return false;
-  }, [pageNumber]);
-
   useEffect(() => {
     // Inject @font-face immediately — browser blocks rendering natively
     injectFontFaceRule(pageNumber);
 
-    if (checkReady()) return;
+    // If font is already loaded (e.g. cached from a previous page visit),
+    // mark it ready without triggering an async load. Defer setState so it
+    // is not synchronous within the effect body.
+    if (loadedFonts.has(pageNumber) || isFontReady(pageNumber)) {
+      loadedFonts.add(pageNumber);
+      const t = setTimeout(() => setLoaded(true), 0);
+      return () => clearTimeout(t);
+    }
 
-    setLoaded(false);
+    // Font is not yet available — kick off an async load. `ensureFontLoaded`
+    // resolves once the browser has loaded the @font-face, so setState inside
+    // `.then` / `.catch` is safe (runs asynchronously, not in effect body).
     ensureFontLoaded(pageNumber)
       .then(() => setLoaded(true))
       .catch(() => {
@@ -94,13 +94,16 @@ export function useMushafFont(pageNumber: number): {
 
     // Safety net: listen for font loading completion
     const onLoadingDone = () => {
-      checkReady();
+      if (loadedFonts.has(pageNumber) || isFontReady(pageNumber)) {
+        loadedFonts.add(pageNumber);
+        setLoaded(true);
+      }
     };
     document.fonts.addEventListener("loadingdone", onLoadingDone);
     return () => {
       document.fonts.removeEventListener("loadingdone", onLoadingDone);
     };
-  }, [pageNumber, checkReady]);
+  }, [pageNumber]);
 
   return { loaded, fontFamily };
 }

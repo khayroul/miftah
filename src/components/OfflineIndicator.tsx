@@ -1,25 +1,30 @@
 "use client";
 
 import { useOnlineStatus } from "@/lib/pwa/offlineDetection";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function OfflineIndicator() {
   const isOnline = useOnlineStatus();
   const [showReconnected, setShowReconnected] = useState(false);
-  const [wasOffline, setWasOffline] = useState(false);
+  const wasOfflineRef = useRef(false);
 
   useEffect(() => {
     if (!isOnline) {
-      setWasOffline(true);
-    } else if (wasOffline) {
-      setShowReconnected(true);
-      const timer = setTimeout(() => {
-        setShowReconnected(false);
-        setWasOffline(false);
-      }, 3000);
-      return () => clearTimeout(timer);
+      wasOfflineRef.current = true;
+      return;
     }
-  }, [isOnline, wasOffline]);
+
+    if (!wasOfflineRef.current) return;
+
+    wasOfflineRef.current = false;
+    // Defer state updates into timers so they are not synchronous in the effect body.
+    const showTimer = setTimeout(() => setShowReconnected(true), 0);
+    const hideTimer = setTimeout(() => setShowReconnected(false), 3000);
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+    };
+  }, [isOnline]);
 
   if (isOnline && !showReconnected) return null;
 

@@ -270,6 +270,7 @@ export function ReadPageWorkspace({
   const [sessionStartTime] = useState(() => Date.now());
   const [sessionPagesCompleted, setSessionPagesCompleted] = useState(0);
   const [sessionComplete, setSessionComplete] = useState(false);
+  const [sessionElapsedMs, setSessionElapsedMs] = useState(0);
   const [resolvedMemorizedAyahKeys, setResolvedMemorizedAyahKeys] = useState(
     memorizedAyahKeys,
   );
@@ -764,7 +765,7 @@ export function ReadPageWorkspace({
         <HifzSessionComplete
           flow={hifzFlow}
           pagesCompleted={sessionPagesCompleted}
-          timeElapsedMs={Date.now() - sessionStartTime}
+          timeElapsedMs={sessionElapsedMs}
         />
       ) : null}
 
@@ -969,7 +970,7 @@ export function ReadPageWorkspace({
             queueIndex={hifzQueueIndex ?? 0}
             visible={tasmiAllRevealed}
             onTasmiSuccess={() => setTasmiRevealedLines(totalLineCount)}
-            onSessionComplete={() => setSessionComplete(true)}
+            onSessionComplete={() => { setSessionElapsedMs(Date.now() - sessionStartTime); setSessionComplete(true); }}
             onPageComplete={() => setSessionPagesCompleted((n) => n + 1)}
           />
         )
@@ -1002,7 +1003,7 @@ export function ReadPageWorkspace({
             onChunkPause={handleMemorizeChunkPause}
             onMushafHide={setMemorizeHideMushaf}
             onViewportInsetChange={setMemorizeViewportInset}
-            onSessionComplete={() => setSessionComplete(true)}
+            onSessionComplete={() => { setSessionElapsedMs(Date.now() - sessionStartTime); setSessionComplete(true); }}
             onPageComplete={() => setSessionPagesCompleted((n) => n + 1)}
           />
         )
