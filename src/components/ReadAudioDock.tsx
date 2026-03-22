@@ -153,6 +153,15 @@ export function ReadAudioDock({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const shouldAutoplayRef = useRef(false);
   const wasPanelVisibleRef = useRef(false);
+  const loopStateRef = useRef({
+    safeIndex: 0,
+    normalizedRangeStart: 0,
+    normalizedRangeEnd: 0,
+    repeatEachVerse: 1 as RepeatOption,
+    repeatSet: 1 as RepeatOption,
+    repeatEachStep: 0,
+    repeatSetStep: 0,
+  });
   const [panelOpen, setPanelOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -234,6 +243,17 @@ export function ReadAudioDock({
   const currentTrack = tracks[safeIndex] ?? null;
   const canPlay = currentTrack !== null;
   const panelVisible = panelOpen && visible !== false && tracks.length > 0;
+
+  // Keep loop state ref in sync so handleAudioEnded always reads the latest values
+  loopStateRef.current = {
+    safeIndex,
+    normalizedRangeStart,
+    normalizedRangeEnd,
+    repeatEachVerse,
+    repeatSet,
+    repeatEachStep,
+    repeatSetStep,
+  };
 
   useEffect(() => {
     if (!onPlaybackAyahChange) {
@@ -528,20 +548,23 @@ export function ReadAudioDock({
     }
   };
 
-  const handleAudioEnded = () => {
+  const handleAudioEnded = useCallback(() => {
     const audio = audioRef.current;
-    if (!audio || !currentTrack) {
+    if (!audio) {
       return;
     }
 
+    // Read from ref to avoid stale closure values when onEnded fires
+    // between a React render and commit
+    const state = loopStateRef.current;
     const nextAction = resolveReadAudioLoopAction({
-      currentIndex: safeIndex,
-      rangeStartIndex: normalizedRangeStart,
-      rangeEndIndex: normalizedRangeEnd,
-      repeatEachVerse,
-      repeatSet,
-      repeatEachStep,
-      repeatSetStep,
+      currentIndex: state.safeIndex,
+      rangeStartIndex: state.normalizedRangeStart,
+      rangeEndIndex: state.normalizedRangeEnd,
+      repeatEachVerse: state.repeatEachVerse,
+      repeatSet: state.repeatSet,
+      repeatEachStep: state.repeatEachStep,
+      repeatSetStep: state.repeatSetStep,
     });
 
     setRepeatEachStep(nextAction.nextRepeatEachStep);
@@ -561,7 +584,7 @@ export function ReadAudioDock({
 
     setIsPlaying(false);
     onAllTracksEnded?.();
-  };
+  }, [onAllTracksEnded]);
 
   const currentRangeTracks = tracks.slice(normalizedRangeStart, normalizedRangeEnd + 1);
   const panelContent = (
@@ -776,6 +799,17 @@ export function ReadAudioDock({
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onEnded={handleAudioEnded}
+          onError={() => {
+            // Audio failed to load — try advancing to the next track
+            // instead of getting stuck on a broken URL
+            const state = loopStateRef.current;
+            if (state.safeIndex < state.normalizedRangeEnd) {
+              shouldAutoplayRef.current = true;
+              setCurrentIndex(state.safeIndex + 1);
+            } else {
+              setIsPlaying(false);
+            }
+          }}
         />
 
         <div className="mx-auto w-full max-w-[30rem] px-2 pb-[calc(12px+env(safe-area-inset-bottom))] sm:max-w-4xl sm:px-4">
