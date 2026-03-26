@@ -17,6 +17,7 @@ data/*
 !data/bm_wbw_complete.json
 !data/qul/
 !data/seed/
+!data/mushaf-layout/
 
 data/seed/*
 !data/seed/ayat.json
@@ -25,8 +26,13 @@ data/seed/*
 data/qul/*
 !data/qul/english-wbw-translation.json
 
-# Dev/ops artifacts
-scripts/
+# Dev/ops artifacts (keep prebuild scripts for Vercel build)
+scripts/*
+!scripts/generate-surah-map.ts
+!scripts/split-translations.ts
+!scripts/copy-layouts.ts
+!scripts/generate-pwa-config.ts
+!scripts/inject-build-id.ts
 supabase/
 ops/
 n8n-exports/

@@ -128,9 +128,10 @@ export function HifzMemorizeStepper({
   const [tasmiLoading, setTasmiLoading] = useState(false);
   const [chunkSuggestion, setChunkSuggestion] = useState<ChunkSizeSuggestion>(null);
   const [suggestionDismissed, setSuggestionDismissed] = useState(false);
+  const [showChunkSize, setShowChunkSize] = useState(false);
 
   useEffect(() => {
-    setChunkSuggestion(getChunkSizeSuggestion());
+    setTimeout(() => setChunkSuggestion(getChunkSizeSuggestion()), 0);
   }, []);
 
   const buildAlreadyRatedState = useCallback(
@@ -240,10 +241,12 @@ export function HifzMemorizeStepper({
   }, [currentChunk?.ayahKeys, onChunkAyahKeysChange]);
 
   useEffect(() => {
-    setCurrentChunkIndex((current) =>
-      current === recoveredChunkIndex ? current : recoveredChunkIndex,
-    );
-    setCurrentStep(1);
+    setTimeout(() => {
+      setCurrentChunkIndex((current) =>
+        current === recoveredChunkIndex ? current : recoveredChunkIndex,
+      );
+      setCurrentStep(1);
+    }, 0);
   }, [recoveredChunkIndex]);
 
   useEffect(() => {
@@ -315,21 +318,25 @@ export function HifzMemorizeStepper({
     if (currentStep === 1) {
       listenCountRef.current += 1;
       if (listenCountRef.current >= 1) {
-        setAutoAdvancing(true);
         const timer = setTimeout(() => {
-          setAutoAdvancing(false);
-          goToStep(2);
-        }, 1500);
+          setAutoAdvancing(true);
+          setTimeout(() => {
+            setAutoAdvancing(false);
+            goToStep(2);
+          }, 1500);
+        }, 0);
         return () => clearTimeout(timer);
       }
     } else if (currentStep === 2) {
       listenCountRef.current += 1;
       if (listenCountRef.current >= 2) {
-        setAutoAdvancing(true);
         const timer = setTimeout(() => {
-          setAutoAdvancing(false);
-          goToStep(3);
-        }, 1500);
+          setAutoAdvancing(true);
+          setTimeout(() => {
+            setAutoAdvancing(false);
+            goToStep(3);
+          }, 1500);
+        }, 0);
         return () => clearTimeout(timer);
       }
     }
@@ -409,6 +416,7 @@ export function HifzMemorizeStepper({
     setTasmiLoading(false);
   }, [currentChunk, onChunkPause]);
 
+  /* eslint-disable react-hooks/preserve-manual-memoization */
   const handleTasmiEnd = useCallback(
     async (result: TasmiSessionResult, label: TasmiRatingLabel) => {
       setTasmiActive(false);
@@ -515,6 +523,7 @@ export function HifzMemorizeStepper({
       router,
     ],
   );
+  /* eslint-enable react-hooks/preserve-manual-memoization */
 
   const handleTasmiCancel = useCallback(() => {
     setTasmiActive(false);
@@ -548,6 +557,7 @@ export function HifzMemorizeStepper({
     [currentChunkIndex, effectiveChunkLength, goToStep, pageItems.length],
   );
 
+  /* eslint-disable react-hooks/preserve-manual-memoization */
   const handleRate = useCallback(
     async (confident: boolean) => {
       const chunkItems = currentChunk?.items ?? [];
@@ -734,6 +744,7 @@ export function HifzMemorizeStepper({
       router,
     ],
   );
+  /* eslint-enable react-hooks/preserve-manual-memoization */
 
   if (complete) {
     return (
@@ -801,7 +812,6 @@ export function HifzMemorizeStepper({
 
   const stepInfo = STEPS[currentStep - 1];
   const restartLabel = currentStep === 3 ? "Semak Audio" : "Main Semula";
-  const [showChunkSize, setShowChunkSize] = useState(false);
 
   return (
     <div

@@ -60,6 +60,12 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
       : query.flow === "review"
         ? ("review" as const)
         : null;
+  const hifzExercise =
+    query.flow === "tebuk"
+      ? ("tebuk" as const)
+      : query.flow === "unveil"
+        ? ("unveil" as const)
+        : null;
   const preservedHifzParams = new URLSearchParams();
   if (query.mode === "hifz") {
     preservedHifzParams.set("mode", "hifz");
@@ -100,6 +106,14 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
             ) : hifzFlow === "review" ? (
               <div className="inline-flex items-center rounded-full border border-teal-300 bg-teal-50 px-3 py-1 text-xs font-semibold tracking-wide text-teal-900 dark:border-teal-700/50 dark:bg-teal-900/30 dark:text-teal-100">
                 Uji Hafalan
+              </div>
+            ) : hifzExercise === "tebuk" ? (
+              <div className="inline-flex items-center rounded-full border border-purple-300 bg-purple-50 px-3 py-1 text-xs font-semibold tracking-wide text-purple-900 dark:border-purple-700/50 dark:bg-purple-900/30 dark:text-purple-100">
+                Tebuk
+              </div>
+            ) : hifzExercise === "unveil" ? (
+              <div className="inline-flex items-center rounded-full border border-rose-300 bg-rose-50 px-3 py-1 text-xs font-semibold tracking-wide text-rose-900 dark:border-rose-700/50 dark:bg-rose-900/30 dark:text-rose-100">
+                Buka Tabir
               </div>
             ) : hifzIntent === "new" ? (
               <div className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold tracking-wide text-amber-900 dark:border-amber-700/50 dark:bg-amber-900/30 dark:text-amber-100">
@@ -151,9 +165,10 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
         ayahDetails={pageData.ayahDetails}
         memorizedAyahKeys={[]}
         readingAyahIds={pageData.ayatOnPage.map((ayah) => ayah.id)}
-        initialReadMode={hifzFlow ? "hifz" : initialReadMode}
+        initialReadMode={hifzFlow || hifzExercise ? "hifz" : initialReadMode}
         forceHifzRevealByThirds={!hifzFlow && forceHifzRevealByThirds}
         hifzFlow={hifzFlow}
+        hifzExercise={hifzExercise}
         hifzNavigationSearch={hifzNavigationSearch}
         personalizationPageNumber={pageNumber}
       />

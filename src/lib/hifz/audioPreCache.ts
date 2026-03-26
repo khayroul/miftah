@@ -32,16 +32,3 @@ export async function clearAudioCache(): Promise<void> {
     // Ignore
   }
 }
-
-export function registerServiceWorker(): void {
-  if (
-    typeof window === "undefined" ||
-    !("serviceWorker" in navigator)
-  ) {
-    return;
-  }
-
-  navigator.serviceWorker.register("/sw.js").catch(() => {
-    // SW registration failed — offline audio won't work, but app continues
-  });
-}

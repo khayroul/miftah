@@ -1,33 +1,124 @@
-// Minimal service worker for offline audio caching (hifz feature).
-// Strategy: cache-first for everyayah.com audio files.
+// Miftah PWA Service Worker — multi-cache router with URL allowlist
+// BUILD_ID and CDN_ASSET_VERSION injected at prebuild time
+const BUILD_ID = "c59008e";
+const CDN_ASSET_VERSION = "4";
 
-const CACHE_NAME = "miftah-audio-v1";
-const AUDIO_HOST = "everyayah.com";
+const APP_SHELL_CACHE = `app-shell-${BUILD_ID}`;
+const MUSHAF_IMAGES_CACHE = "mushaf-images-v1";
+const MUSHAF_DATA_CACHE = "mushaf-data-v1";
+const AUDIO_CACHE = "miftah-audio-v1";
 
-self.addEventListener("install", () => {
-  self.skipWaiting();
+const APP_SHELL_PRECACHE = ["/offline.html"];
+
+// --- Install ---
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(APP_SHELL_CACHE).then((cache) => cache.addAll(APP_SHELL_PRECACHE))
+  );
+  // Do NOT call skipWaiting() — wait for user consent via update banner
 });
 
+// --- Activate ---
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key.startsWith("app-shell-") && key !== APP_SHELL_CACHE)
+          .map((key) => caches.delete(key))
+      )
+    ).then(() => self.clients.claim())
+  );
 });
 
+// --- Message ---
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
+// --- Fetch helpers ---
+function isNavigationRequest(request) {
+  return request.mode === "navigate";
+}
+
+function matchesMushafImage(url) {
+  if (url.pathname.startsWith("/api/mushaf/")) return true;
+  if (url.hostname !== self.location.hostname && url.pathname.endsWith(".webp")) return true;
+  return false;
+}
+
+function matchesMushafData(url) {
+  if (url.hostname !== self.location.hostname && url.pathname.endsWith(".manifest.json")) return true;
+  if (url.pathname.startsWith("/translations/page-") && url.pathname.endsWith(".json")) return true;
+  if (url.pathname.startsWith("/layouts/page-") && url.pathname.endsWith(".json")) return true;
+  return false;
+}
+
+function matchesAppShell(url) {
+  return url.pathname.startsWith("/_next/static/");
+}
+
+function matchesAudio(url) {
+  return url.hostname.includes("everyayah.com");
+}
+
+async function cacheFirstStrategy(cacheName, request) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      await cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    return new Response("Network error", { status: 503 });
+  }
+}
+
+// --- Fetch ---
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Only intercept audio requests from everyayah.com
-  if (!url.hostname.includes(AUDIO_HOST)) return;
+  // Navigation: try network, fallback to offline shell
+  if (isNavigationRequest(event.request)) {
+    event.respondWith(
+      fetch(event.request).catch(() =>
+        caches.match("/offline.html").then(
+          (cached) => cached || new Response("Offline", { status: 503 })
+        )
+      )
+    );
+    return;
+  }
 
-  event.respondWith(
-    caches.open(CACHE_NAME).then(async (cache) => {
-      const cached = await cache.match(event.request);
-      if (cached) return cached;
+  // Mushaf images (WebP, page API)
+  if (matchesMushafImage(url)) {
+    event.respondWith(cacheFirstStrategy(MUSHAF_IMAGES_CACHE, event.request));
+    return;
+  }
 
-      const response = await fetch(event.request);
-      if (response.ok) {
-        cache.put(event.request, response.clone());
-      }
-      return response;
-    })
-  );
+  // Mushaf data (manifests, layouts, translations)
+  if (matchesMushafData(url)) {
+    event.respondWith(cacheFirstStrategy(MUSHAF_DATA_CACHE, event.request));
+    return;
+  }
+
+  // App shell static assets
+  if (matchesAppShell(url)) {
+    event.respondWith(cacheFirstStrategy(APP_SHELL_CACHE, event.request));
+    return;
+  }
+
+  // Audio
+  if (matchesAudio(url)) {
+    event.respondWith(cacheFirstStrategy(AUDIO_CACHE, event.request));
+    return;
+  }
+
+  // Everything else: network-only (RSC, API routes, etc.)
 });

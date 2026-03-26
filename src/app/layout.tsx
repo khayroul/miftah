@@ -17,6 +17,10 @@ export const metadata: Metadata = {
 
 import { ReadAudioProvider } from "@/components/ReadAudioProvider";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { ReadingStateSync } from "@/components/ReadingStateSync";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { UpdateBanner } from "@/components/UpdateBanner";
+import { PwaDebugLoader } from "@/components/PwaDebugLoader";
 
 export default function RootLayout({
   children,
@@ -47,9 +51,17 @@ export default function RootLayout({
             `,
           }}
         />
+        <meta name="theme-color" content="#1a1a2e" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body className={`${arabicText.variable} antialiased`}>
         <ServiceWorkerRegistrar />
+        <ReadingStateSync />
+        <OfflineIndicator />
+        <UpdateBanner />
+        <PwaDebugLoader />
         <ReadAudioProvider>{children}</ReadAudioProvider>
       </body>
     </html>

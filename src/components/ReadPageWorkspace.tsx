@@ -40,6 +40,7 @@ import type { MushafLayoutPage } from "@/types/mushafLayout";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { preCacheAudioUrls } from "@/lib/hifz/audioPreCache";
+import type { HifzExerciseFlow } from "@/types/hifz-exercises";
 
 const FahamExposureTracker = dynamic(
   () =>
@@ -118,6 +119,28 @@ const HifzSessionComplete = dynamic(
   },
 );
 
+const HifzTebukSession = dynamic(
+  () =>
+    import("@/components/hifz/HifzTebukSession").then(
+      (module) => module.HifzTebukSession,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
+const HifzUnveilSession = dynamic(
+  () =>
+    import("@/components/hifz/HifzUnveilSession").then(
+      (module) => module.HifzUnveilSession,
+    ),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
 interface ReadPageWorkspaceProps {
   pageNumber: number;
   layout: MushafLayoutPage;
@@ -133,6 +156,7 @@ interface ReadPageWorkspaceProps {
   initialReadMode?: ReadMode | null;
   forceHifzRevealByThirds?: boolean;
   hifzFlow?: HifzFlowType | null;
+  hifzExercise?: HifzExerciseFlow | null;
   hifzNavigationSearch?: string | null;
   personalizationPageNumber?: number | null;
 }
@@ -228,6 +252,7 @@ export function ReadPageWorkspace({
   initialReadMode = null,
   forceHifzRevealByThirds = false,
   hifzFlow = null,
+  hifzExercise = null,
   hifzNavigationSearch = null,
   personalizationPageNumber = null,
 }: ReadPageWorkspaceProps) {
@@ -270,6 +295,7 @@ export function ReadPageWorkspace({
   const [sessionStartTime] = useState(() => Date.now());
   const [sessionPagesCompleted, setSessionPagesCompleted] = useState(0);
   const [sessionComplete, setSessionComplete] = useState(false);
+  const [sessionElapsedMs, setSessionElapsedMs] = useState(0);
   const [resolvedMemorizedAyahKeys, setResolvedMemorizedAyahKeys] = useState(
     memorizedAyahKeys,
   );
@@ -764,7 +790,7 @@ export function ReadPageWorkspace({
         <HifzSessionComplete
           flow={hifzFlow}
           pagesCompleted={sessionPagesCompleted}
-          timeElapsedMs={Date.now() - sessionStartTime}
+          timeElapsedMs={sessionElapsedMs}
         />
       ) : null}
 
@@ -969,7 +995,7 @@ export function ReadPageWorkspace({
             queueIndex={hifzQueueIndex ?? 0}
             visible={tasmiAllRevealed}
             onTasmiSuccess={() => setTasmiRevealedLines(totalLineCount)}
-            onSessionComplete={() => setSessionComplete(true)}
+            onSessionComplete={() => { setSessionElapsedMs(Date.now() - sessionStartTime); setSessionComplete(true); }}
             onPageComplete={() => setSessionPagesCompleted((n) => n + 1)}
           />
         )
@@ -1002,10 +1028,48 @@ export function ReadPageWorkspace({
             onChunkPause={handleMemorizeChunkPause}
             onMushafHide={setMemorizeHideMushaf}
             onViewportInsetChange={setMemorizeViewportInset}
-            onSessionComplete={() => setSessionComplete(true)}
+            onSessionComplete={() => { setSessionElapsedMs(Date.now() - sessionStartTime); setSessionComplete(true); }}
             onPageComplete={() => setSessionPagesCompleted((n) => n + 1)}
           />
         )
+      )}
+
+      {hifzExercise === "tebuk" && (
+        <HifzTebukSession
+          layout={layout}
+          pageNumber={pageNumber}
+          tasmiServerUrl={process.env.NEXT_PUBLIC_TASMI_SERVER_URL ?? ""}
+          tasmiApiKey={process.env.NEXT_PUBLIC_TASMI_API_KEY ?? ""}
+          alignData={[]}
+          onComplete={(_rounds) => {
+            // Will wire FSRS rate-batch in Task 11
+          }}
+          onExit={() => router.push(`/read/${pageNumber}`)}
+        />
+      )}
+
+      {hifzExercise === "unveil" && (
+        <HifzUnveilSession
+          layout={layout}
+          manifest={/* will be wired in Task 11 */ {
+            page: pageNumber,
+            schema_version: "1",
+            image_width: 0,
+            image_height: 0,
+            words: [],
+          }}
+          pageNumber={pageNumber}
+          tasmiServerUrl={process.env.NEXT_PUBLIC_TASMI_SERVER_URL ?? ""}
+          tasmiApiKey={process.env.NEXT_PUBLIC_TASMI_API_KEY ?? ""}
+          alignData={[]}
+          onComplete={() => {
+            // Will wire FSRS rate-batch in Task 11
+          }}
+          onExit={() => router.push(`/read/${pageNumber}`)}
+        >
+          {/* Page image placeholder — will be wired in Task 11 */}
+          <div />
+        </HifzUnveilSession>
       )}
     </div>
   );
