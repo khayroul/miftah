@@ -153,6 +153,9 @@ export function ReadAudioDock({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const shouldAutoplayRef = useRef(false);
   const wasPanelVisibleRef = useRef(false);
+  const processedAutoplayRef = useRef(0);
+  const processedRestartRef = useRef(0);
+  const processedStartFromAyahRef = useRef(0);
   const loopStateRef = useRef({
     safeIndex: 0,
     normalizedRangeStart: 0,
@@ -351,9 +354,15 @@ export function ReadAudioDock({
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !canPlay || autoplayRequestKey === 0) {
+    if (
+      !audio ||
+      !canPlay ||
+      autoplayRequestKey === 0 ||
+      processedAutoplayRef.current >= autoplayRequestKey
+    ) {
       return;
     }
+    processedAutoplayRef.current = autoplayRequestKey;
 
     shouldAutoplayRef.current = false;
     audio.play().then(() => {
@@ -361,7 +370,7 @@ export function ReadAudioDock({
     }).catch(() => {
       setIsPlaying(false);
     });
-  }, [autoplayRequestKey, canPlay, currentTrack?.audioUrl]);
+  }, [autoplayRequestKey, canPlay]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -374,9 +383,15 @@ export function ReadAudioDock({
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !canPlay || restartRequestKey === 0) {
+    if (
+      !audio ||
+      !canPlay ||
+      restartRequestKey === 0 ||
+      processedRestartRef.current >= restartRequestKey
+    ) {
       return;
     }
+    processedRestartRef.current = restartRequestKey;
 
     const restartIndex = normalizedRangeStart;
     if (safeIndex !== restartIndex) {
@@ -398,11 +413,19 @@ export function ReadAudioDock({
   }, [canPlay, normalizedRangeStart, restartRequestKey, safeIndex]);
 
   useEffect(() => {
-    if (startFromAyahRequestKey === 0 || !startFromAyahKey || tracks.length === 0) {
+    if (
+      startFromAyahRequestKey === 0 ||
+      !startFromAyahKey ||
+      tracks.length === 0 ||
+      processedStartFromAyahRef.current >= startFromAyahRequestKey
+    ) {
       return;
     }
 
+    const capturedRequestKey = startFromAyahRequestKey;
     const frame = window.requestAnimationFrame(() => {
+      processedStartFromAyahRef.current = capturedRequestKey;
+
       const selection = resolveReadAudioPageStartFromAyah(tracks, startFromAyahKey);
       if (!selection) {
         return;
@@ -416,8 +439,10 @@ export function ReadAudioDock({
       setRepeatSetStep(0);
 
       const audio = audioRef.current;
+      const state = loopStateRef.current;
+      const currentKey = tracks[state.safeIndex]?.key;
       const isSameTrack =
-        safeIndex === selection.currentIndex && currentTrack?.key === startFromAyahKey;
+        state.safeIndex === selection.currentIndex && currentKey === startFromAyahKey;
 
       if (isSameTrack && audio) {
         audio.currentTime = 0;
@@ -437,13 +462,7 @@ export function ReadAudioDock({
     return () => {
       window.cancelAnimationFrame(frame);
     };
-  }, [
-    currentTrack?.key,
-    safeIndex,
-    startFromAyahKey,
-    startFromAyahRequestKey,
-    tracks,
-  ]);
+  }, [startFromAyahKey, startFromAyahRequestKey, tracks]);
 
   const rangeSummary = useMemo(() => {
     const startTrack = tracks[normalizedRangeStart];
@@ -582,6 +601,40 @@ export function ReadAudioDock({
       return;
     }
 
+    setIsPlaying(false);
+    onAllTracksEnded?.();
+  }, [onAllTracksEnded]);
+
+  const handleAudioError = useCallback(() => {
+    const state = loopStateRef.current;
+
+    // Broken URLs cannot be replayed, so move forward through the range and
+    // still signal completion when the range is effectively done.
+    if (state.safeIndex < state.normalizedRangeEnd) {
+      shouldAutoplayRef.current = true;
+      setRepeatEachStep(0);
+      setCurrentIndex(state.safeIndex + 1);
+      return;
+    }
+
+    const canRepeatSet =
+      state.repeatSet === -1 ||
+      state.repeatSetStep < state.repeatSet - 1;
+
+    if (canRepeatSet && state.normalizedRangeStart < state.normalizedRangeEnd) {
+      shouldAutoplayRef.current = true;
+      setRepeatEachStep(0);
+      setRepeatSetStep(
+        state.repeatSet === -1
+          ? state.repeatSetStep
+          : state.repeatSetStep + 1,
+      );
+      setCurrentIndex(state.normalizedRangeStart);
+      return;
+    }
+
+    setRepeatEachStep(0);
+    setRepeatSetStep(0);
     setIsPlaying(false);
     onAllTracksEnded?.();
   }, [onAllTracksEnded]);
@@ -799,17 +852,7 @@ export function ReadAudioDock({
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onEnded={handleAudioEnded}
-          onError={() => {
-            // Audio failed to load — try advancing to the next track
-            // instead of getting stuck on a broken URL
-            const state = loopStateRef.current;
-            if (state.safeIndex < state.normalizedRangeEnd) {
-              shouldAutoplayRef.current = true;
-              setCurrentIndex(state.safeIndex + 1);
-            } else {
-              setIsPlaying(false);
-            }
-          }}
+          onError={handleAudioError}
         />
 
         <div className="mx-auto w-full max-w-[30rem] px-2 pb-[calc(12px+env(safe-area-inset-bottom))] sm:max-w-4xl sm:px-4">
