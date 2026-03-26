@@ -82,10 +82,11 @@ export function ReadOnlyMushafPageView({
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
     if (elapsedMs > 900 || absDx < 60 || absDy > 120 || absDx < absDy * 1.3) return;
+    // RTL mushaf: swipe right = next page (advance reading), swipe left = prev page
     if (dx > 0) {
-      onNavigatePrevPage?.();
-    } else {
       onNavigateNextPage?.();
+    } else {
+      onNavigatePrevPage?.();
     }
   };
 

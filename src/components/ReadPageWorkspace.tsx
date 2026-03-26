@@ -968,12 +968,13 @@ export function ReadPageWorkspace({
 
       {mushafHeader}
 
+      {/* RTL mushaf: next page (advance reading) on left, prev page on right */}
       <div className="mb-1 flex w-full justify-end gap-2">
-        {previousPageHref ? (
+        {nextPageHref ? (
           <Link
-            href={previousPageHref}
-            title="Halaman Sebelum"
-            aria-label="Halaman Sebelum"
+            href={nextPageHref}
+            title="Halaman Seterusnya"
+            aria-label="Halaman Seterusnya"
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 bg-white text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
           >
             {"<"}
@@ -982,18 +983,18 @@ export function ReadPageWorkspace({
           <button
             type="button"
             disabled
-            aria-label="Halaman Sebelum"
+            aria-label="Halaman Seterusnya"
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 bg-stone-100 text-sm font-medium text-stone-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-600"
           >
             {"<"}
           </button>
         )}
 
-        {nextPageHref ? (
+        {previousPageHref ? (
           <Link
-            href={nextPageHref}
-            title="Halaman Seterusnya"
-            aria-label="Halaman Seterusnya"
+            href={previousPageHref}
+            title="Halaman Sebelum"
+            aria-label="Halaman Sebelum"
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 bg-white text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
           >
             {">"}
@@ -1002,7 +1003,7 @@ export function ReadPageWorkspace({
           <button
             type="button"
             disabled
-            aria-label="Halaman Seterusnya"
+            aria-label="Halaman Sebelum"
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 bg-stone-100 text-sm font-medium text-stone-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-600"
           >
             {">"}
