@@ -84,14 +84,26 @@ async function cacheFirstStrategy(cacheName, request) {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Navigation: try network, fallback to offline shell
+  // Navigation: network-first, cache HTML for offline, fallback to offline shell
   if (isNavigationRequest(event.request)) {
     event.respondWith(
-      fetch(event.request).catch(() =>
-        caches.match("/offline.html").then(
-          (cached) => cached || new Response("Offline", { status: 503 })
-        )
-      )
+      (async () => {
+        try {
+          const response = await fetch(event.request);
+          if (response.ok) {
+            const cache = await caches.open(APP_SHELL_CACHE);
+            await cache.put(event.request, response.clone());
+          }
+          return response;
+        } catch {
+          // Network failed — try cached HTML, then offline.html
+          const cache = await caches.open(APP_SHELL_CACHE);
+          const cached = await cache.match(event.request);
+          if (cached) return cached;
+          const offline = await caches.match("/offline.html");
+          return offline || new Response("Offline", { status: 503 });
+        }
+      })()
     );
     return;
   }
