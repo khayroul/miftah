@@ -1,20 +1,23 @@
 import Link from "next/link";
+
 import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import { ThemeActionPanel } from "@/components/ThemeActionPanel";
 import { ThemeChunkAyahList } from "@/components/ThemeChunkAyahList";
 import { ThemeChunkProgressTracker } from "@/components/ThemeChunkProgressTracker";
 import { ThemeChunkSelect } from "@/components/ThemeChunkSelect";
 import { ThemeJumpControls } from "@/components/ThemeJumpControls";
-import { getThemeAppearanceChunksBySurah, getWordByWordForAyahIds } from "@/lib/queries";
 import { resolveThemeChunkLabelBm } from "@/lib/themeLabels";
-import type { Surah } from "@/types/database";
 import type { AyahWordByWordEntry, ThemeAppearanceChunk } from "@/lib/queries";
+import type { Surah } from "@/types/database";
 
-interface ThemePageContentAsyncProps {
-  rawChunkParam?: string | string[];
-  surahMeta: Surah;
-  surahNumber: number;
-  allSurahs: Surah[];
+export interface ThemePageContentProps {
+  readonly surahNumber: number;
+  readonly surahMeta: Surah;
+  readonly allSurahs: Surah[];
+  readonly chunks: ThemeAppearanceChunk[];
+  readonly wbw: Record<number, AyahWordByWordEntry[]>;
+  readonly selectedChunkIndex: number;
+  readonly prevSurahChunkCount: number | null;
 }
 
 function buildThemeHref(surahNumber: number, chunkIndex: number): string {
@@ -112,20 +115,18 @@ function buildThemeSynopsis(chunk: ThemeAppearanceChunk): {
   };
 }
 
-export async function ThemePageContentAsync({
-  rawChunkParam,
-  surahMeta,
+export function ThemePageContent({
   surahNumber,
+  surahMeta,
   allSurahs,
-}: ThemePageContentAsyncProps) {
-  let chunks: ThemeAppearanceChunk[] = [];
-  let loadError: string | null = null;
-  try {
-    chunks = await getThemeAppearanceChunksBySurah(surahNumber);
-  } catch (error) {
-    console.error("Failed to load theme chunks:", error);
-    loadError = "Tema tidak dapat dimuatkan. Sila cuba lagi.";
-  }
+  chunks,
+  wbw,
+  selectedChunkIndex,
+  prevSurahChunkCount,
+}: ThemePageContentProps) {
+  const selectedChunk = chunks[selectedChunkIndex - 1] ?? null;
+  const hasNextThemeInSurah = selectedChunkIndex < chunks.length;
+  const isFirstChunkInSurah = selectedChunkIndex <= 1;
 
   const surahOptions = allSurahs.map((item) => ({
     surah: item.id,
@@ -133,48 +134,21 @@ export async function ThemePageContentAsync({
     nameEn: item.name_en,
   }));
 
-  const chunkParamValue = Array.isArray(rawChunkParam)
-    ? rawChunkParam[0]
-    : rawChunkParam;
-  const parsedChunkParam = chunkParamValue
-    ? Number.parseInt(chunkParamValue, 10)
-    : 1;
-  const selectedChunkIndex =
-    chunks.length > 0
-      ? Number.isInteger(parsedChunkParam)
-        ? Math.min(Math.max(parsedChunkParam, 1), chunks.length)
-        : 1
-      : 1;
-  const selectedChunk = chunks[selectedChunkIndex - 1] ?? null;
-  const hasNextThemeInSurah = selectedChunkIndex < chunks.length;
-  const isFirstChunkInSurah = selectedChunkIndex <= 1;
-
-  // Cross-surah navigation: connect last tema → first tema of next surah
+  // Cross-surah navigation: connect last tema -> first tema of next surah
   const nextSurah =
     !hasNextThemeInSurah && surahNumber < 114
       ? allSurahs.find((s) => s.id === surahNumber + 1)
       : null;
 
-  // Cross-surah navigation: connect first tema → last tema of previous surah
+  // Cross-surah navigation: connect first tema -> last tema of previous surah
   const prevSurahNumber =
     isFirstChunkInSurah && surahNumber > 1 ? surahNumber - 1 : null;
-  let prevSurahLastChunkCount: number | null = null;
-  if (prevSurahNumber !== null) {
-    try {
-      const prevChunks =
-        await getThemeAppearanceChunksBySurah(prevSurahNumber);
-      prevSurahLastChunkCount =
-        prevChunks.length > 0 ? prevChunks.length : null;
-    } catch {
-      // Silently fall back to no cross-surah prev link
-    }
-  }
 
   const previousThemeHref =
     chunks.length > 0 && selectedChunkIndex > 1
       ? buildThemeHref(surahNumber, selectedChunkIndex - 1)
-      : prevSurahLastChunkCount !== null && prevSurahNumber !== null
-        ? buildThemeHref(prevSurahNumber, prevSurahLastChunkCount)
+      : prevSurahChunkCount !== null && prevSurahNumber !== null
+        ? buildThemeHref(prevSurahNumber, prevSurahChunkCount)
         : null;
   const nextThemeHref = hasNextThemeInSurah
     ? buildThemeHref(surahNumber, selectedChunkIndex + 1)
@@ -185,43 +159,34 @@ export async function ThemePageContentAsync({
     ? buildThemeSynopsis(selectedChunk)
     : null;
 
-  // Pre-fetch word-by-word data for the selected chunk — eliminates waterfall
-  // from nested Suspense in the old ThemeChunkAyahListAsync component.
-  let wbwByAyahId: Record<number, AyahWordByWordEntry[]> = {};
-  if (selectedChunk) {
-    try {
-      wbwByAyahId = await getWordByWordForAyahIds(
-        selectedChunk.ayat.map((a) => a.id),
-      );
-    } catch {
-      wbwByAyahId = {};
+  // Extract wbw entries only for the selected chunk's ayah IDs
+  const selectedAyahIds = selectedChunk
+    ? selectedChunk.ayat.map((ayah) => ayah.id)
+    : [];
+  const wbwByAyahId: Record<number, AyahWordByWordEntry[]> = {};
+  for (const ayahId of selectedAyahIds) {
+    const entries = wbw[ayahId];
+    if (entries) {
+      wbwByAyahId[ayahId] = entries;
     }
   }
 
   return (
     <>
-      {loadError ? (
-        <section className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400">
-          {loadError}
-        </section>
-      ) : null}
-
-      {!loadError && chunks.length === 0 ? (
+      {chunks.length === 0 ? (
         <section className="rounded-2xl border border-amber-100 bg-amber-50 p-6 text-center text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-400">
           Tema untuk surah ini belum tersedia lagi.
         </section>
       ) : null}
 
-      {!loadError ? (
-        <ThemeJumpControls
-          currentSurahNumber={surahNumber}
-          currentChunkIndex={selectedChunkIndex}
-          currentChunkCount={chunks.length}
-          surahOptions={surahOptions}
-        />
-      ) : null}
+      <ThemeJumpControls
+        currentSurahNumber={surahNumber}
+        currentChunkIndex={selectedChunkIndex}
+        currentChunkCount={chunks.length}
+        surahOptions={surahOptions}
+      />
 
-      {!loadError && chunks.length > 0 ? (
+      {chunks.length > 0 ? (
         <div className="flex flex-col gap-8">
           {selectedChunk ? (
             <FahamExposureTracker
