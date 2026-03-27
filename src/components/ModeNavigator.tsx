@@ -48,8 +48,8 @@ const MODE_ITEMS: Array<{
   value: ReadMode;
 }> = [
   { label: "Baca", value: "read" },
-  { label: "Faham", value: "faham" },
   { label: "Tema", value: "tema" },
+  { label: "Faham", value: "faham" },
   { label: "Hafal", value: "hifz" },
 ];
 
