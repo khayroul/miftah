@@ -1,11 +1,9 @@
-import { SURAH_PAGE_MAP } from "./surahPageMap";
 import {
-  createEmptyPack,
-  updatePackStatus,
-  savePack,
-  getPack,
-  recordDownloadHistory,
-} from "./packDb";
+  TOTAL_PAGES,
+  LS_KEY_DOWNLOADED,
+  markMushafDownloaded,
+  clearMushafDownloaded,
+} from "./mushafStatus";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -34,7 +32,7 @@ export async function loadPwaConfig(): Promise<PwaConfig> {
   }
   if (!data.supabaseStorageBase) {
     throw new Error(
-      "pwa-config.json has an empty supabaseStorageBase. Set NEXT_PUBLIC_SUPABASE_URL and rebuild."
+      "pwa-config.json has an empty supabaseStorageBase. Set NEXT_PUBLIC_SUPABASE_URL and rebuild.",
     );
   }
 
@@ -68,7 +66,10 @@ function zeroPad(n: number, digits = 3): string {
   return String(n).padStart(digits, "0");
 }
 
-export function buildPageAssetUrls(pageNumber: number, config: PwaConfig): PageAssetUrls {
+export function buildPageAssetUrls(
+  pageNumber: number,
+  config: PwaConfig,
+): PageAssetUrls {
   const padded = zeroPad(pageNumber);
   const base = config.supabaseStorageBase;
   const v = config.cdnAssetVersion;
@@ -82,18 +83,15 @@ export function buildPageAssetUrls(pageNumber: number, config: PwaConfig): PageA
 }
 
 // ---------------------------------------------------------------------------
-// Download progress
+// Progress
 // ---------------------------------------------------------------------------
 
-export type DownloadProgress = {
-  readonly surahId: number;
-  readonly status: "downloading" | "complete" | "error";
+export type MushafDownloadProgress = {
   readonly downloadedPages: number;
   readonly totalPages: number;
-  readonly errorMessage?: string;
 };
 
-type ProgressCallback = (progress: DownloadProgress) => void;
+type ProgressCallback = (progress: MushafDownloadProgress) => void;
 
 // ---------------------------------------------------------------------------
 // Cache names
@@ -116,13 +114,19 @@ export function cancelDownload(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Download engine
+// Concurrency guard
+// ---------------------------------------------------------------------------
+
+let isDownloading = false;
+
+// ---------------------------------------------------------------------------
+// Fetch with retry
 // ---------------------------------------------------------------------------
 
 async function fetchAndCache(
   url: string,
   cacheName: string,
-  controller: AbortController
+  controller: AbortController,
 ): Promise<void> {
   const cache = await caches.open(cacheName);
   const existing = await cache.match(url);
@@ -135,81 +139,140 @@ async function fetchAndCache(
   await cache.put(url, response);
 }
 
-export async function downloadSurah(
-  surahId: number,
-  config: PwaConfig,
-  onProgress?: ProgressCallback
+async function fetchAndCacheWithRetry(
+  url: string,
+  cacheName: string,
+  controller: AbortController,
+  maxRetries = 2,
 ): Promise<void> {
-  const entry = SURAH_PAGE_MAP[surahId];
-  if (entry === undefined) {
-    throw new Error(`Unknown surah ID: ${surahId}`);
+  const delays = [1000, 3000]; // exponential backoff
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      await fetchAndCache(url, cacheName, controller);
+      return;
+    } catch (error) {
+      if (controller.signal.aborted) throw error;
+      if (attempt === maxRetries) throw error;
+      await new Promise((resolve) => setTimeout(resolve, delays[attempt]));
+    }
   }
+}
 
-  const { startPage, endPage } = entry;
-  const totalPages = endPage - startPage + 1;
+// ---------------------------------------------------------------------------
+// Version migration
+// ---------------------------------------------------------------------------
 
-  // Concurrency guard — bail if already downloading
-  const existingPack = await getPack(surahId);
-  if (existingPack?.status === "downloading") return;
+async function migrateIfVersionChanged(
+  currentVersion: string,
+): Promise<void> {
+  const stored = localStorage.getItem(LS_KEY_DOWNLOADED);
+  if (stored !== null && stored !== currentVersion) {
+    // Version mismatch — clear old caches
+    await caches.delete(CACHE_IMAGES);
+    await caches.delete(CACHE_DATA);
+    clearMushafDownloaded();
+  }
+}
 
-  // Initialise pack in IndexedDB
-  let pack = createEmptyPack(surahId, [startPage, endPage]);
-  pack = updatePackStatus(pack, { status: "downloading", assetVersion: config.cdnAssetVersion });
-  await savePack(pack);
+// ---------------------------------------------------------------------------
+// Storage quota check
+// ---------------------------------------------------------------------------
+
+const REQUIRED_BYTES = 150_000_000; // ~150 MB
+
+async function checkStorageQuota(): Promise<boolean> {
+  if (!navigator.storage?.estimate) return true; // can't check, proceed optimistically
+  const estimate = await navigator.storage.estimate();
+  const available = (estimate.quota ?? 0) - (estimate.usage ?? 0);
+  return available >= REQUIRED_BYTES;
+}
+
+async function requestPersistentStorage(): Promise<void> {
+  if (navigator.storage?.persist) {
+    await navigator.storage.persist();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Download engine
+// ---------------------------------------------------------------------------
+
+async function downloadPage(
+  page: number,
+  config: PwaConfig,
+  controller: AbortController,
+): Promise<void> {
+  const urls = buildPageAssetUrls(page, config);
+  await Promise.all([
+    fetchAndCacheWithRetry(urls.webp, CACHE_IMAGES, controller),
+    fetchAndCacheWithRetry(urls.manifest, CACHE_DATA, controller),
+    fetchAndCacheWithRetry(urls.layout, CACHE_DATA, controller),
+    fetchAndCacheWithRetry(urls.translation, CACHE_DATA, controller),
+  ]);
+}
+
+export async function downloadMushaf(
+  config: PwaConfig,
+  onProgress?: ProgressCallback,
+): Promise<void> {
+  if (isDownloading) return; // concurrency guard
+  isDownloading = true;
 
   const controller = new AbortController();
   activeController = controller;
 
   try {
-    for (let page = startPage; page <= endPage; page++) {
+    // Version migration
+    await migrateIfVersionChanged(config.cdnAssetVersion);
+
+    // Storage checks
+    const hasQuota = await checkStorageQuota();
+    if (!hasQuota) {
+      throw new Error(
+        "Ruang storan tidak mencukupi (~150 MB diperlukan)",
+      );
+    }
+    await requestPersistentStorage();
+
+    // Download pages in batches of 2
+    let completedPages = 0;
+
+    for (let page = 1; page <= TOTAL_PAGES; page += 2) {
       if (controller.signal.aborted) break;
 
-      const urls = buildPageAssetUrls(page, config);
+      const batch: Promise<void>[] = [
+        downloadPage(page, config, controller),
+      ];
+      if (page + 1 <= TOTAL_PAGES) {
+        batch.push(downloadPage(page + 1, config, controller));
+      }
 
-      await fetchAndCache(urls.webp, CACHE_IMAGES, controller);
-      await fetchAndCache(urls.manifest, CACHE_DATA, controller);
-      await fetchAndCache(urls.layout, CACHE_DATA, controller);
-      await fetchAndCache(urls.translation, CACHE_DATA, controller);
+      await Promise.all(batch);
 
-      const downloadedPages = page - startPage + 1;
-      pack = updatePackStatus(pack, { downloadedPages });
-      await savePack(pack);
+      const pagesInBatch = page + 1 <= TOTAL_PAGES ? 2 : 1;
+      completedPages += pagesInBatch;
 
       onProgress?.({
-        surahId,
-        status: "downloading",
-        downloadedPages,
-        totalPages,
+        downloadedPages: completedPages,
+        totalPages: TOTAL_PAGES,
       });
     }
 
     if (!controller.signal.aborted) {
-      pack = updatePackStatus(pack, { status: "complete" });
-      await savePack(pack);
-      await recordDownloadHistory(surahId);
-
-      onProgress?.({
-        surahId,
-        status: "complete",
-        downloadedPages: totalPages,
-        totalPages,
-      });
+      markMushafDownloaded(config.cdnAssetVersion);
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Download failed";
-    pack = updatePackStatus(pack, { status: "error", errorMessage });
-    await savePack(pack);
-
-    onProgress?.({
-      surahId,
-      status: "error",
-      downloadedPages: pack.downloadedPages,
-      totalPages,
-      errorMessage,
-    });
-
+    if (
+      error instanceof DOMException &&
+      error.name === "QuotaExceededError"
+    ) {
+      throw new Error(
+        "Ruang storan tidak mencukupi (~150 MB diperlukan)",
+      );
+    }
     throw error;
   } finally {
+    isDownloading = false;
     if (activeController === controller) {
       activeController = null;
     }

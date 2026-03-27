@@ -15,11 +15,11 @@ describe("buildPageAssetUrls", () => {
 
     assert.equal(
       urls.webp,
-      "https://cdn.example.com/storage/v1/object/public/mushaf-pages/page_001_mobile.webp?v=4"
+      "https://cdn.example.com/storage/v1/object/public/mushaf-pages/page_001_mobile.webp?v=4",
     );
     assert.equal(
       urls.manifest,
-      "https://cdn.example.com/storage/v1/object/public/mushaf-manifests/page_001.manifest.json?v=4"
+      "https://cdn.example.com/storage/v1/object/public/mushaf-manifests/page_001.manifest.json?v=4",
     );
     assert.equal(urls.layout, "/layouts/page-001.json");
     assert.equal(urls.translation, "/translations/page-001.json");
@@ -30,11 +30,11 @@ describe("buildPageAssetUrls", () => {
 
     assert.ok(
       urls.webp.includes("page_042_mobile.webp?v=4"),
-      `webp should include page_042_mobile.webp?v=4, got: ${urls.webp}`
+      `webp should include page_042_mobile.webp?v=4, got: ${urls.webp}`,
     );
     assert.ok(
       urls.manifest.includes("page_042.manifest.json?v=4"),
-      `manifest should include page_042.manifest.json?v=4, got: ${urls.manifest}`
+      `manifest should include page_042.manifest.json?v=4, got: ${urls.manifest}`,
     );
     assert.equal(urls.layout, "/layouts/page-042.json");
     assert.equal(urls.translation, "/translations/page-042.json");
@@ -47,6 +47,15 @@ describe("buildPageAssetUrls", () => {
     assert.ok(urls.manifest.includes("page_100.manifest.json"));
     assert.equal(urls.layout, "/layouts/page-100.json");
     assert.equal(urls.translation, "/translations/page-100.json");
+  });
+
+  it("page 604 — last page of mushaf", () => {
+    const urls = buildPageAssetUrls(604, TEST_CONFIG);
+
+    assert.ok(urls.webp.includes("page_604_mobile.webp"));
+    assert.ok(urls.manifest.includes("page_604.manifest.json"));
+    assert.equal(urls.layout, "/layouts/page-604.json");
+    assert.equal(urls.translation, "/translations/page-604.json");
   });
 
   it("webp and manifest use underscore separator, layout and translation use dash", () => {
@@ -66,12 +75,12 @@ describe("buildPageAssetUrls", () => {
     assert.equal(
       urls.layout.includes("?v="),
       false,
-      "layout (local) must NOT have version param"
+      "layout (local) must NOT have version param",
     );
     assert.equal(
       urls.translation.includes("?v="),
       false,
-      "translation (local) must NOT have version param"
+      "translation (local) must NOT have version param",
     );
   });
 });
