@@ -10,7 +10,7 @@ const TOTAL_DATA_ENTRIES = TOTAL_PAGES * 3; // manifest + layout + translation p
 
 const TOTAL_TEMA_ENTRIES = 114;
 export const TOTAL_ITEMS = TOTAL_PAGES + TOTAL_TEMA_ENTRIES; // 718
-const CACHE_TEMA = "tema-data-v1";
+export const CACHE_TEMA = "tema-data-v1";
 
 export type MushafStatus =
   | { readonly state: "complete" }

@@ -2,6 +2,7 @@
 
 import { downloadMushaf, loadPwaConfig, cancelDownload } from "./downloadEngine";
 import {
+  CACHE_TEMA,
   isMushafDownloaded,
   clearMushafDownloaded,
 } from "./mushafStatus";
@@ -25,7 +26,7 @@ export function installDebugTools(): void {
       const config = await loadPwaConfig();
       const status = await isMushafDownloaded(
         config.cdnAssetVersion,
-        config.temaDataVersion ?? "1",
+        config.temaDataVersion ?? "",
       );
       console.log("[PWA Debug] Mushaf status:", status);
       return status;
@@ -34,7 +35,7 @@ export function installDebugTools(): void {
       clearMushafDownloaded();
       await caches.delete("mushaf-images-v1");
       await caches.delete("mushaf-data-v1");
-      await caches.delete("tema-data-v1");
+      await caches.delete(CACHE_TEMA);
       console.log("[PWA Debug] Download cleared (localStorage + caches).");
     },
   };

@@ -1,6 +1,7 @@
 import {
   TOTAL_PAGES,
   TOTAL_ITEMS,
+  CACHE_TEMA,
   LS_KEY_DOWNLOADED,
   markMushafDownloaded,
   clearMushafDownloaded,
@@ -101,7 +102,6 @@ type ProgressCallback = (progress: MushafDownloadProgress) => void;
 
 const CACHE_IMAGES = "mushaf-images-v1";
 const CACHE_DATA = "mushaf-data-v1";
-const CACHE_TEMA = "tema-data-v1";
 
 // ---------------------------------------------------------------------------
 // Cancellation
@@ -167,29 +167,27 @@ async function fetchAndCacheWithRetry(
 
 async function migrateIfVersionChanged(
   cdnAssetVersion: string,
-  temaDataVersion: string,
+  temaDataVersion: string | undefined,
 ): Promise<void> {
   const stored = localStorage.getItem(LS_KEY_DOWNLOADED);
   if (stored === null) return;
 
-  const compositeVersion = `${cdnAssetVersion}:${temaDataVersion}`;
-  if (stored === compositeVersion) return;
-
   // Parse stored value
   const colonIndex = stored.indexOf(":");
   const storedCdn = colonIndex >= 0 ? stored.slice(0, colonIndex) : stored;
-  const storedTema = colonIndex >= 0 ? stored.slice(colonIndex + 1) : "";
+  const storedTema = colonIndex >= 0 ? stored.slice(colonIndex + 1) : undefined;
 
   if (storedCdn !== cdnAssetVersion) {
     await caches.delete(CACHE_IMAGES);
     await caches.delete(CACHE_DATA);
+    clearMushafDownloaded();
+    return;
   }
 
-  if (storedTema !== temaDataVersion) {
+  if (temaDataVersion !== undefined && storedTema !== temaDataVersion) {
     await caches.delete(CACHE_TEMA);
+    clearMushafDownloaded();
   }
-
-  clearMushafDownloaded();
 }
 
 // ---------------------------------------------------------------------------
@@ -239,7 +237,7 @@ export async function downloadMushaf(
   const controller = new AbortController();
   activeController = controller;
 
-  const temaDataVersion = config.temaDataVersion ?? "1";
+  const temaDataVersion = config.temaDataVersion;
 
   try {
     // Version migration
@@ -325,7 +323,7 @@ export async function downloadMushaf(
       }
     }
 
-    if (!controller.signal.aborted) {
+    if (!controller.signal.aborted && temaDataVersion !== undefined) {
       markMushafDownloaded(config.cdnAssetVersion, temaDataVersion);
     }
   } catch (error) {
