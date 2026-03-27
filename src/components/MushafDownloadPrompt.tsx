@@ -9,7 +9,7 @@ import {
   setDownloadStarted,
   isPromptDismissed,
   dismissPrompt,
-  TOTAL_PAGES,
+  TOTAL_ITEMS,
 } from "@/lib/pwa/mushafStatus";
 import {
   downloadMushaf,
@@ -20,7 +20,7 @@ import {
 type UIState =
   | { readonly kind: "loading" }
   | { readonly kind: "prompt" }
-  | { readonly kind: "downloading"; readonly downloadedPages: number }
+  | { readonly kind: "downloading"; readonly completedItems: number }
   | { readonly kind: "complete" }
   | { readonly kind: "error"; readonly message: string }
   | { readonly kind: "hidden" };
@@ -46,7 +46,7 @@ export function MushafDownloadPrompt() {
         await downloadMushaf(config, (progress: MushafDownloadProgress) => {
           setUi({
             kind: "downloading",
-            downloadedPages: progress.downloadedPages,
+            completedItems: progress.completedItems,
           });
         });
 
@@ -72,6 +72,7 @@ export function MushafDownloadPrompt() {
         const config = await loadPwaConfig();
         const status: MushafStatus = await isMushafDownloaded(
           config.cdnAssetVersion,
+          config.temaDataVersion ?? "1",
         );
         if (cancelled) return;
 
@@ -86,7 +87,7 @@ export function MushafDownloadPrompt() {
           // Auto-resume
           setUi({
             kind: "downloading",
-            downloadedPages: status.downloadedPages,
+            completedItems: status.completedItems,
           });
           startDownload(config);
           return;
@@ -112,7 +113,7 @@ export function MushafDownloadPrompt() {
 
   const handleStart = useCallback(async () => {
     setDownloadStarted();
-    setUi({ kind: "downloading", downloadedPages: 0 });
+    setUi({ kind: "downloading", completedItems: 0 });
     try {
       const config = await loadPwaConfig();
       await startDownload(config);
@@ -129,7 +130,7 @@ export function MushafDownloadPrompt() {
   }, []);
 
   const handleRetry = useCallback(async () => {
-    setUi({ kind: "downloading", downloadedPages: 0 });
+    setUi({ kind: "downloading", completedItems: 0 });
     try {
       const config = await loadPwaConfig();
       await startDownload(config);
@@ -157,7 +158,7 @@ export function MushafDownloadPrompt() {
     return (
       <div className="mx-auto mt-4 max-w-md rounded-xl border border-amber-200/50 bg-amber-50/80 p-4 text-center shadow-sm dark:border-amber-800/30 dark:bg-amber-950/30">
         <p className="mb-3 text-sm text-amber-900 dark:text-amber-100">
-          Muat turun Mushaf untuk bacaan luar talian (~120 MB)
+          Muat turun Mushaf dan Tema untuk bacaan luar talian (~170 MB)
         </p>
         <div className="flex justify-center gap-3">
           <button
@@ -187,22 +188,22 @@ export function MushafDownloadPrompt() {
           aria-label="Tunjukkan kemajuan muat turun"
         >
           <span className="text-xs font-bold">
-            {Math.round((ui.downloadedPages / TOTAL_PAGES) * 100)}%
+            {Math.round((ui.completedItems / TOTAL_ITEMS) * 100)}%
           </span>
         </button>
       );
     }
 
-    const percentage = (ui.downloadedPages / TOTAL_PAGES) * 100;
+    const percentage = (ui.completedItems / TOTAL_ITEMS) * 100;
 
     return (
       <div
         className="fixed inset-x-0 bottom-[env(safe-area-inset-bottom,0px)] z-50 border-t border-gray-200 bg-white/95 px-4 py-2 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/95"
         role="progressbar"
         aria-valuemin={0}
-        aria-valuenow={ui.downloadedPages}
-        aria-valuemax={TOTAL_PAGES}
-        aria-label="Memuat turun Mushaf"
+        aria-valuenow={ui.completedItems}
+        aria-valuemax={TOTAL_ITEMS}
+        aria-label="Memuat turun data Miftah"
       >
         <div className="mx-auto flex max-w-md items-center gap-3">
           <div className="flex-1">
@@ -214,7 +215,7 @@ export function MushafDownloadPrompt() {
             </div>
           </div>
           <span className="whitespace-nowrap text-xs text-gray-600 dark:text-gray-300">
-            {ui.downloadedPages}/{TOTAL_PAGES} halaman
+            {Math.round(percentage)}%
           </span>
           <button
             onClick={handleMinimize}
@@ -232,7 +233,7 @@ export function MushafDownloadPrompt() {
     return (
       <div className="fixed inset-x-0 bottom-[env(safe-area-inset-bottom,0px)] z-50 border-t border-teal-200 bg-teal-50/95 px-4 py-2 text-center backdrop-blur-sm dark:border-teal-800 dark:bg-teal-950/95">
         <span className="text-sm text-teal-700 dark:text-teal-300">
-          Mushaf sedia luar talian ✓
+          Mushaf dan Tema sedia luar talian ✓
         </span>
       </div>
     );
