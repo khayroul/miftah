@@ -38,7 +38,7 @@ GET /api/tema/42
 interface TemaApiResponse {
   readonly surahId: number;
   readonly chunks: ThemeAppearanceChunk[];
-  readonly wbw: Record<number, AyahWordByWordEntry[]>; // keyed by ayah ID
+  readonly wbw: Record<number, AyahWordByWordEntry[]>; // keyed by ayah database ID (not ayah_number)
   readonly prevSurahChunkCount: number | null; // null for surah 1
 }
 ```
@@ -81,7 +81,7 @@ Replace the existing `migrateIfVersionChanged()` with a single function that und
 - Parse the stored composite value into its two parts
 - If `cdnAssetVersion` changed: delete mushaf image + data caches
 - If `temaDataVersion` changed: delete tema cache only
-- If either changed: clear the downloaded flag (triggers re-download of affected data)
+- If either changed: call `clearMushafDownloaded()` which removes the localStorage key entirely (do NOT write a partial composite value). The slow path in `isMushafDownloaded()` then determines actual state from cache counts and returns the correct partial status.
 - Old format stored values (e.g., `"4"` without colon) are treated as `cdnAssetVersion` only with no tema version, triggering tema download
 
 ### Service worker routing
@@ -216,10 +216,28 @@ Client: TemaDataFetcher → fetch /api/tema/[surah]
 ### ThemePageContentAsync refactor
 
 Split into:
-- `ThemePageContent.tsx` — pure rendering component (receives chunks + wbw as props)
-- `TemaDataFetcher.tsx` — client component ("use client") that fetches `/api/tema/[surah]`, manages loading/error states, passes data to `ThemePageContent`
+- `ThemePageContent.tsx` — pure rendering component (receives chunks, wbw, selectedChunkIndex, allSurahs, prevSurahChunkCount as props). Contains chunk display, navigation links, synopsis, `ThemeChunkAyahList`.
+- `TemaDataFetcher.tsx` — client component ("use client") that fetches `/api/tema/[surah]`, manages loading/error states, computes selectedChunkIndex, and passes data to `ThemePageContent`.
 
 The existing `getThemeAppearanceChunksBySurah()` and `getWordByWordForAyahIds()` in `queries.ts` are still used — by the API route handler, not the client component.
+
+### Props boundary between server shell and client component
+
+**Server shell (page.tsx) provides:**
+- `surahNumber: number` — from route param
+- `allSurahs: SurahMeta[]` — from `getSurahs()` server-side query (small, stable data)
+- `rawChunkParam: string | undefined` — from `searchParams.chunk`
+
+**TemaDataFetcher computes internally:**
+- Fetches `/api/tema/[surah]` → gets `chunks`, `wbw`, `prevSurahChunkCount`
+- Derives `selectedChunkIndex` from `rawChunkParam` (or uses `useSearchParams().get("chunk")`)
+- Builds navigation hrefs for prev/next chunk and cross-surah links
+
+### Chunk selection model
+
+Chunk selection remains URL-driven via `?chunk=N`. `TemaDataFetcher` reads the chunk param via `useSearchParams().get("chunk")`. `ThemeChunkSelect` links remain standard `<Link>` elements — Next.js client-side navigation updates the URL, which triggers a re-render of `TemaDataFetcher` with the new param. The data is already fetched per-surah (all chunks in one response), so switching chunks is just indexing into the cached array — no re-fetch needed.
+
+`TemaDataFetcher` should cache the fetched response in a `useRef` keyed by surahNumber, so chunk navigation within the same surah does not re-fetch.
 
 ## Storage Estimate
 
