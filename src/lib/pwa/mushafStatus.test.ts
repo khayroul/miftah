@@ -50,12 +50,12 @@ describe("markMushafDownloaded / clearMushafDownloaded", () => {
   });
 
   it("sets and reads the downloaded version", () => {
-    markMushafDownloaded("5");
-    assert.equal(store["miftah:mushaf-downloaded"], "5");
+    markMushafDownloaded("5", "1");
+    assert.equal(store["miftah:mushaf-downloaded"], "5:1");
   });
 
   it("clearMushafDownloaded removes downloaded flag and started flag", () => {
-    markMushafDownloaded("5");
+    markMushafDownloaded("5", "1");
     setDownloadStarted();
     clearMushafDownloaded();
     assert.equal(store["miftah:mushaf-downloaded"], undefined);
@@ -101,6 +101,17 @@ describe("isPromptDismissed / dismissPrompt", () => {
   it("returns false for invalid timestamp", () => {
     store["miftah:mushaf-dismissed"] = "not-a-number";
     assert.equal(isPromptDismissed(), false);
+  });
+});
+
+describe("markMushafDownloaded with composite version", () => {
+  beforeEach(() => {
+    mockLocalStorage.clear();
+  });
+
+  it("stores composite format cdnVersion:temaVersion", () => {
+    markMushafDownloaded("4", "1");
+    assert.equal(store["miftah:mushaf-downloaded"], "4:1");
   });
 });
 

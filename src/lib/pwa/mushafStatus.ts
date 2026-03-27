@@ -8,9 +8,13 @@ const CACHE_DATA = "mushaf-data-v1";
 export const TOTAL_PAGES = 604;
 const TOTAL_DATA_ENTRIES = TOTAL_PAGES * 3; // manifest + layout + translation per page
 
+const TOTAL_TEMA_ENTRIES = 114;
+export const TOTAL_ITEMS = TOTAL_PAGES + TOTAL_TEMA_ENTRIES; // 718
+export const CACHE_TEMA = "tema-data-v1";
+
 export type MushafStatus =
   | { readonly state: "complete" }
-  | { readonly state: "partial"; readonly downloadedPages: number }
+  | { readonly state: "partial"; readonly completedItems: number }
   | { readonly state: "none" };
 
 /**
@@ -20,11 +24,14 @@ export type MushafStatus =
  * Slow path: count WebP entries in image cache + data entries in data cache.
  */
 export async function isMushafDownloaded(
-  currentVersion: string,
+  cdnAssetVersion: string,
+  temaDataVersion: string,
 ): Promise<MushafStatus> {
+  const compositeVersion = `${cdnAssetVersion}:${temaDataVersion}`;
+
   // Fast path
   const stored = localStorage.getItem(LS_KEY_DOWNLOADED);
-  if (stored === currentVersion) {
+  if (stored === compositeVersion) {
     return { state: "complete" };
   }
 
@@ -36,30 +43,39 @@ export async function isMushafDownloaded(
       r.url.includes("_mobile.webp"),
     ).length;
 
-    if (webpCount === 0) {
+    // Count tema cache entries
+    const temaCache = await caches.open(CACHE_TEMA);
+    const temaKeys = await temaCache.keys();
+    const temaCount = temaKeys.length;
+
+    if (webpCount === 0 && temaCount === 0) {
       return { state: "none" };
     }
 
-    if (webpCount >= TOTAL_PAGES) {
+    if (webpCount >= TOTAL_PAGES && temaCount >= TOTAL_TEMA_ENTRIES) {
       const dataCache = await caches.open(CACHE_DATA);
       const dataKeys = await dataCache.keys();
       if (dataKeys.length >= TOTAL_DATA_ENTRIES) {
-        // Cache is complete — set localStorage so we never run slow path again
-        markMushafDownloaded(currentVersion);
+        markMushafDownloaded(cdnAssetVersion, temaDataVersion);
         return { state: "complete" };
       }
     }
 
-    return { state: "partial", downloadedPages: webpCount };
+    return { state: "partial", completedItems: webpCount + temaCount };
   } catch {
-    // Cache API unavailable (SSR, unsupported browser)
     return { state: "none" };
   }
 }
 
 /** Mark the mushaf as fully downloaded for the given asset version. */
-export function markMushafDownloaded(version: string): void {
-  localStorage.setItem(LS_KEY_DOWNLOADED, version);
+export function markMushafDownloaded(
+  cdnAssetVersion: string,
+  temaDataVersion: string,
+): void {
+  localStorage.setItem(
+    LS_KEY_DOWNLOADED,
+    `${cdnAssetVersion}:${temaDataVersion}`,
+  );
 }
 
 /** Clear the downloaded flag (for version migration or debug). */

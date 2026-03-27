@@ -7,6 +7,7 @@ const APP_SHELL_CACHE = `app-shell-${BUILD_ID}`;
 const MUSHAF_IMAGES_CACHE = "mushaf-images-v1";
 const MUSHAF_DATA_CACHE = "mushaf-data-v1";
 const AUDIO_CACHE = "miftah-audio-v1";
+const TEMA_DATA_CACHE = "tema-data-v1";
 
 const APP_SHELL_PRECACHE = ["/offline.html"];
 
@@ -24,7 +25,11 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key.startsWith("app-shell-") && key !== APP_SHELL_CACHE)
+          .filter(
+            (key) =>
+              (key.startsWith("app-shell-") && key !== APP_SHELL_CACHE) ||
+              (key.startsWith("tema-data-") && key !== TEMA_DATA_CACHE)
+          )
           .map((key) => caches.delete(key))
       )
     ).then(() => self.clients.claim())
@@ -64,6 +69,10 @@ function matchesAudio(url) {
   return url.hostname.includes("everyayah.com");
 }
 
+function matchesTemaData(url) {
+  return url.pathname.startsWith("/api/tema/");
+}
+
 async function cacheFirstStrategy(cacheName, request) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
@@ -77,6 +86,25 @@ async function cacheFirstStrategy(cacheName, request) {
     return response;
   } catch (error) {
     return new Response("Network error", { status: 503 });
+  }
+}
+
+async function cacheFirstTema(request) {
+  const cache = await caches.open(TEMA_DATA_CACHE);
+  const cached = await cache.match(request, { ignoreVary: true });
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      await cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    return new Response(JSON.stringify({ error: "Offline" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
 
@@ -129,6 +157,12 @@ self.addEventListener("fetch", (event) => {
   // Audio
   if (matchesAudio(url)) {
     event.respondWith(cacheFirstStrategy(AUDIO_CACHE, event.request));
+    return;
+  }
+
+  // Tema data
+  if (matchesTemaData(url)) {
+    event.respondWith(cacheFirstTema(event.request));
     return;
   }
 
