@@ -147,13 +147,40 @@ export async function ThemePageContentAsync({
       : 1;
   const selectedChunk = chunks[selectedChunkIndex - 1] ?? null;
   const hasNextThemeInSurah = selectedChunkIndex < chunks.length;
+  const isFirstChunkInSurah = selectedChunkIndex <= 1;
+
+  // Cross-surah navigation: connect last tema → first tema of next surah
+  const nextSurah =
+    !hasNextThemeInSurah && surahNumber < 114
+      ? allSurahs.find((s) => s.id === surahNumber + 1)
+      : null;
+
+  // Cross-surah navigation: connect first tema → last tema of previous surah
+  const prevSurahNumber =
+    isFirstChunkInSurah && surahNumber > 1 ? surahNumber - 1 : null;
+  let prevSurahLastChunkCount: number | null = null;
+  if (prevSurahNumber !== null) {
+    try {
+      const prevChunks =
+        await getThemeAppearanceChunksBySurah(prevSurahNumber);
+      prevSurahLastChunkCount =
+        prevChunks.length > 0 ? prevChunks.length : null;
+    } catch {
+      // Silently fall back to no cross-surah prev link
+    }
+  }
+
   const previousThemeHref =
     chunks.length > 0 && selectedChunkIndex > 1
       ? buildThemeHref(surahNumber, selectedChunkIndex - 1)
-      : null;
+      : prevSurahLastChunkCount !== null && prevSurahNumber !== null
+        ? buildThemeHref(prevSurahNumber, prevSurahLastChunkCount)
+        : null;
   const nextThemeHref = hasNextThemeInSurah
     ? buildThemeHref(surahNumber, selectedChunkIndex + 1)
-    : null;
+    : nextSurah
+      ? buildThemeHref(nextSurah.id, 1)
+      : null;
   const selectedChunkSynopsis = selectedChunk
     ? buildThemeSynopsis(selectedChunk)
     : null;
@@ -261,7 +288,9 @@ export async function ThemePageContentAsync({
                 href={previousThemeHref}
                 className="flex h-10 items-center justify-center whitespace-nowrap rounded-full border border-stone-200 bg-stone-50 px-4 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700 sm:text-sm"
               >
-                &larr; Tema
+                {isFirstChunkInSurah && prevSurahNumber !== null
+                  ? `\u2190 ${allSurahs.find((s) => s.id === prevSurahNumber)?.name_bm ?? "Surah"}`
+                  : "\u2190 Tema"}
               </Link>
             ) : (
               <span className="flex h-10 items-center justify-center whitespace-nowrap rounded-full border border-stone-100 bg-stone-50/50 px-4 text-xs font-medium text-stone-400 dark:border-stone-800 dark:bg-stone-800/30 dark:text-stone-600 sm:text-sm">
@@ -285,11 +314,13 @@ export async function ThemePageContentAsync({
                 href={nextThemeHref}
                 className="flex h-10 items-center justify-center whitespace-nowrap rounded-full bg-stone-900 px-4 text-xs font-medium text-white shadow-sm transition hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white sm:text-sm"
               >
-                Tema &rarr;
+                {nextSurah
+                  ? `${nextSurah.name_bm} \u2192`
+                  : "Tema \u2192"}
               </Link>
             ) : (
               <span className="flex h-10 items-center justify-center whitespace-nowrap rounded-full bg-stone-100 px-4 text-xs font-medium text-stone-400 dark:bg-stone-800 dark:text-stone-600 sm:text-sm">
-                Tamat Surah
+                Tamat Quran
               </span>
             )}
           </nav>
