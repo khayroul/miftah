@@ -1,34 +1,45 @@
 "use client";
 
-import { downloadSurah, loadPwaConfig, cancelDownload } from "./downloadEngine";
-import { getAllPacks } from "./packDb";
+import { downloadMushaf, loadPwaConfig, cancelDownload } from "./downloadEngine";
+import {
+  isMushafDownloaded,
+  clearMushafDownloaded,
+} from "./mushafStatus";
 
 export function installDebugTools(): void {
   if (typeof window === "undefined") return;
 
   const debug = {
-    async downloadSurah(surahId: number) {
+    async downloadMushaf() {
       const config = await loadPwaConfig();
-      console.log(`[PWA Debug] Downloading surah ${surahId}...`);
-      await downloadSurah(surahId, config, (progress) => {
+      console.log("[PWA Debug] Downloading full mushaf...");
+      await downloadMushaf(config, (progress) => {
         console.log(
-          `[PWA Debug] Surah ${progress.surahId}: ${progress.downloadedPages}/${progress.totalPages} (${progress.status})`,
+          `[PWA Debug] ${progress.downloadedPages}/${progress.totalPages} pages`,
         );
       });
-      console.log(`[PWA Debug] Done.`);
+      console.log("[PWA Debug] Done.");
     },
     cancelDownload,
-    async listPacks() {
-      const packs = await getAllPacks();
-      console.table(packs.map((p) => ({
-        surah: p.surahId,
-        status: p.status,
-        pages: `${p.downloadedPages}/${p.totalPages}`,
-        size: `${(p.totalSizeBytes / 1024).toFixed(0)} KB`,
-      })));
+    async mushafStatus() {
+      const config = await loadPwaConfig();
+      const status = await isMushafDownloaded(config.cdnAssetVersion);
+      console.log("[PWA Debug] Mushaf status:", status);
+      return status;
+    },
+    async clearDownload() {
+      clearMushafDownloaded();
+      await caches.delete("mushaf-images-v1");
+      await caches.delete("mushaf-data-v1");
+      console.log("[PWA Debug] Download cleared (localStorage + caches).");
     },
   };
 
   (window as unknown as Record<string, unknown>).__miftahDebug = debug;
-  console.log("[PWA Debug] Tools available: window.__miftahDebug.downloadSurah(id), .cancelDownload(), .listPacks()");
+  if (process.env.NODE_ENV === "development") {
+    // Intentional: debug announcement only in dev builds
+    console.log(
+      "[PWA Debug] Tools: window.__miftahDebug.downloadMushaf(), .mushafStatus(), .cancelDownload(), .clearDownload()",
+    );
+  }
 }

@@ -21,6 +21,7 @@ import { ReadingStateSync } from "@/components/ReadingStateSync";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { PwaDebugLoader } from "@/components/PwaDebugLoader";
+import { MushafDownloadPrompt } from "@/components/MushafDownloadPrompt";
 
 export default function RootLayout({
   children,
@@ -62,6 +63,7 @@ export default function RootLayout({
         <OfflineIndicator />
         <UpdateBanner />
         <PwaDebugLoader />
+        <MushafDownloadPrompt />
         <ReadAudioProvider>{children}</ReadAudioProvider>
       </body>
     </html>
