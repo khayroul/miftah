@@ -12,10 +12,10 @@ export function installDebugTools(): void {
   const debug = {
     async downloadMushaf() {
       const config = await loadPwaConfig();
-      console.log("[PWA Debug] Downloading full mushaf...");
+      console.log("[PWA Debug] Downloading full mushaf + tema...");
       await downloadMushaf(config, (progress) => {
         console.log(
-          `[PWA Debug] ${progress.downloadedPages}/${progress.totalPages} pages`,
+          `[PWA Debug] ${progress.completedItems}/${progress.totalItems} items`,
         );
       });
       console.log("[PWA Debug] Done.");
@@ -23,7 +23,10 @@ export function installDebugTools(): void {
     cancelDownload,
     async mushafStatus() {
       const config = await loadPwaConfig();
-      const status = await isMushafDownloaded(config.cdnAssetVersion);
+      const status = await isMushafDownloaded(
+        config.cdnAssetVersion,
+        config.temaDataVersion ?? "1",
+      );
       console.log("[PWA Debug] Mushaf status:", status);
       return status;
     },
@@ -31,6 +34,7 @@ export function installDebugTools(): void {
       clearMushafDownloaded();
       await caches.delete("mushaf-images-v1");
       await caches.delete("mushaf-data-v1");
+      await caches.delete("tema-data-v1");
       console.log("[PWA Debug] Download cleared (localStorage + caches).");
     },
   };
