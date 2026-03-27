@@ -40,7 +40,7 @@
 ```typescript
 // src/lib/pwa/mushafStatus.ts
 
-const LS_KEY_DOWNLOADED = "miftah:mushaf-downloaded";
+export const LS_KEY_DOWNLOADED = "miftah:mushaf-downloaded";
 const LS_KEY_DISMISSED = "miftah:mushaf-dismissed";
 const LS_KEY_STARTED = "miftah:mushaf-download-started";
 
@@ -181,6 +181,7 @@ const mockLocalStorage = {
 
 import {
   TOTAL_PAGES,
+  LS_KEY_DOWNLOADED,
   markMushafDownloaded,
   clearMushafDownloaded,
   hasUserStartedDownload,
@@ -291,6 +292,7 @@ Replace the entire file with:
 
 import {
   TOTAL_PAGES,
+  LS_KEY_DOWNLOADED,
   markMushafDownloaded,
   clearMushafDownloaded,
 } from "./mushafStatus";
@@ -455,7 +457,7 @@ async function fetchAndCacheWithRetry(
 async function migrateIfVersionChanged(
   currentVersion: string,
 ): Promise<void> {
-  const stored = localStorage.getItem("miftah:mushaf-downloaded");
+  const stored = localStorage.getItem(LS_KEY_DOWNLOADED);
   if (stored !== null && stored !== currentVersion) {
     // Version mismatch — clear old caches
     await caches.delete(CACHE_IMAGES);
@@ -721,7 +723,6 @@ import {
 import {
   downloadMushaf,
   loadPwaConfig,
-  cancelDownload,
   type MushafDownloadProgress,
 } from "@/lib/pwa/downloadEngine";
 
