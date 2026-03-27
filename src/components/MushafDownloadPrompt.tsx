@@ -102,6 +102,7 @@ export function MushafDownloadPrompt() {
     return isMushafDownloaded(
       config.cdnAssetVersion,
       config.temaDataVersion ?? "1",
+      config.appBuildId ?? "unknown",
     );
   }, []);
 
@@ -118,6 +119,7 @@ export function MushafDownloadPrompt() {
         const status = await isMushafDownloaded(
           config.cdnAssetVersion,
           config.temaDataVersion ?? "1",
+          config.appBuildId ?? "unknown",
         );
 
         if (status.state !== "complete") {
@@ -152,6 +154,7 @@ export function MushafDownloadPrompt() {
         const status = await isMushafDownloaded(
           config.cdnAssetVersion,
           config.temaDataVersion ?? "1",
+          config.appBuildId ?? "unknown",
         );
         if (cancelled) return;
 

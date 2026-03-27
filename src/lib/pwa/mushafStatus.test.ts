@@ -51,7 +51,7 @@ describe("markMushafDownloaded / clearMushafDownloaded", () => {
 
   it("sets and reads the downloaded version", () => {
     markMushafDownloaded("5", "1");
-    assert.equal(store["miftah:mushaf-downloaded"], "5:1:2");
+    assert.equal(store["miftah:mushaf-downloaded"], "5:1:2:unknown");
   });
 
   it("clearMushafDownloaded removes downloaded flag and started flag", () => {
@@ -109,9 +109,14 @@ describe("markMushafDownloaded with composite version", () => {
     mockLocalStorage.clear();
   });
 
-  it("stores composite format cdnVersion:temaVersion:schema", () => {
+  it("stores composite format cdnVersion:temaVersion:schema:build", () => {
     markMushafDownloaded("4", "1");
-    assert.equal(store["miftah:mushaf-downloaded"], "4:1:2");
+    assert.equal(store["miftah:mushaf-downloaded"], "4:1:2:unknown");
+  });
+
+  it("stores app build id when provided", () => {
+    markMushafDownloaded("4", "1", "abc1234");
+    assert.equal(store["miftah:mushaf-downloaded"], "4:1:2:abc1234");
   });
 });
 

@@ -1,4 +1,5 @@
 import { writeFileSync, readFileSync, mkdirSync } from "node:fs";
+import { execSync } from "node:child_process";
 import path from "node:path";
 
 const OUTPUT_PATH = path.join(process.cwd(), "public", "pwa-config.json");
@@ -11,8 +12,17 @@ function extractCdnVersion(): string {
   return match[1];
 }
 
+function getBuildId(): string {
+  try {
+    return execSync("git rev-parse --short HEAD", { encoding: "utf-8" }).trim();
+  } catch {
+    return "unknown";
+  }
+}
+
 function main(): void {
   const cdnVersion = extractCdnVersion();
+  const appBuildId = getBuildId();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
   if (!supabaseUrl) {
     console.warn("⚠️  NEXT_PUBLIC_SUPABASE_URL not set. Offline downloads will not work until configured.");
@@ -24,10 +34,19 @@ function main(): void {
     ? `${supabaseUrl.replace(/\/+$/, "")}/storage/v1/object/public`
     : "";
 
-  const config = { cdnAssetVersion: cdnVersion, temaDataVersion, supabaseStorageBase: storageBase, pagesBucket, manifestsBucket };
+  const config = {
+    cdnAssetVersion: cdnVersion,
+    temaDataVersion,
+    supabaseStorageBase: storageBase,
+    pagesBucket,
+    manifestsBucket,
+    appBuildId,
+  };
   mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
   writeFileSync(OUTPUT_PATH, JSON.stringify(config, null, 2), "utf-8");
-  console.log(`Generated ${OUTPUT_PATH} (version: ${cdnVersion}, tema: ${temaDataVersion})`);
+  console.log(
+    `Generated ${OUTPUT_PATH} (version: ${cdnVersion}, tema: ${temaDataVersion}, build: ${appBuildId})`,
+  );
 }
 
 main();

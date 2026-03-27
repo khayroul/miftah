@@ -1,7 +1,7 @@
 // Miftah PWA Service Worker — multi-cache router with URL allowlist
 // BUILD_ID and CDN_ASSET_VERSION injected at prebuild time
-const BUILD_ID = "c59008e";
-const CDN_ASSET_VERSION = "4";
+const BUILD_ID = "__BUILD_ID__";
+const CDN_ASSET_VERSION = "__CDN_ASSET_VERSION__";
 
 const APP_SHELL_CACHE = `app-shell-${BUILD_ID}`;
 const OFFLINE_BUNDLE_CACHE = "miftah-offline-bundle-v1";
@@ -62,12 +62,17 @@ function isNavigationRequest(request) {
 }
 
 function matchesMushafImage(url) {
-  if (url.pathname.startsWith("/api/mushaf/")) return true;
+  if (
+    /^\/api\/mushaf\/(page\/\d+|ayah\/\d+\/\d+|word\/\d+)$/.test(url.pathname)
+  ) {
+    return true;
+  }
   if (url.hostname !== self.location.hostname && url.pathname.endsWith(".webp")) return true;
   return false;
 }
 
 function matchesMushafData(url) {
+  if (/^\/api\/mushaf\/manifest\/\d+$/.test(url.pathname)) return true;
   if (url.hostname !== self.location.hostname && url.pathname.endsWith(".manifest.json")) return true;
   if (url.pathname.startsWith("/translations/page-") && url.pathname.endsWith(".json")) return true;
   if (url.pathname.startsWith("/layouts/page-") && url.pathname.endsWith(".json")) return true;

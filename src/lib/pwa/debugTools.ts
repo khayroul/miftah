@@ -27,7 +27,8 @@ export function installDebugTools(): void {
       const config = await loadPwaConfig();
       const status = await isMushafDownloaded(
         config.cdnAssetVersion,
-        config.temaDataVersion ?? "",
+        config.temaDataVersion ?? "1",
+        config.appBuildId ?? "unknown",
       );
       console.log("[PWA Debug] Mushaf status:", status);
       return status;

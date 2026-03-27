@@ -28,6 +28,7 @@ export interface PwaConfig {
   readonly supabaseStorageBase: string;
   readonly pagesBucket: string;
   readonly manifestsBucket: string;
+  readonly appBuildId?: string;
 }
 
 let cachedConfig: PwaConfig | null = null;
@@ -44,11 +45,6 @@ export async function loadPwaConfig(): Promise<PwaConfig> {
   if (!isPwaConfig(data)) {
     throw new Error("Invalid pwa-config.json: missing required fields");
   }
-  if (!data.supabaseStorageBase) {
-    throw new Error(
-      "pwa-config.json has an empty supabaseStorageBase. Set NEXT_PUBLIC_SUPABASE_URL and rebuild.",
-    );
-  }
 
   cachedConfig = data;
   return data;
@@ -61,7 +57,8 @@ function isPwaConfig(value: unknown): value is PwaConfig {
     typeof v.cdnAssetVersion === "string" &&
     typeof v.supabaseStorageBase === "string" &&
     typeof v.pagesBucket === "string" &&
-    typeof v.manifestsBucket === "string"
+    typeof v.manifestsBucket === "string" &&
+    (typeof v.appBuildId === "string" || typeof v.appBuildId === "undefined")
   );
 }
 
@@ -85,8 +82,17 @@ export function buildPageAssetUrls(
   config: PwaConfig,
 ): PageAssetUrls {
   const padded = zeroPad(pageNumber);
-  const base = config.supabaseStorageBase;
+  const base = config.supabaseStorageBase.trim();
   const v = config.cdnAssetVersion;
+
+  if (!base) {
+    return {
+      webp: `/api/mushaf/page/${pageNumber}?variant=mobile`,
+      manifest: `/api/mushaf/manifest/${pageNumber}`,
+      layout: `/layouts/page-${padded}.json`,
+      translation: `/translations/page-${padded}.json`,
+    };
+  }
 
   return {
     webp: `${base}/${config.pagesBucket}/page_${padded}_mobile.webp?v=${v}`,
@@ -248,6 +254,7 @@ async function cacheGlobalFonts(
 async function migrateIfVersionChanged(
   cdnAssetVersion: string,
   temaDataVersion: string | undefined,
+  appBuildId: string,
 ): Promise<void> {
   const stored = localStorage.getItem(LS_KEY_DOWNLOADED);
   if (stored === null) return;
@@ -277,6 +284,11 @@ async function migrateIfVersionChanged(
   }
 
   if (parsed.schemaVersion !== "2") {
+    clearMushafDownloaded();
+  }
+
+  if (parsed.appBuildId !== appBuildId) {
+    await caches.delete(CACHE_BUNDLE);
     clearMushafDownloaded();
   }
 }
@@ -345,13 +357,19 @@ export async function downloadMushaf(
   activeController = controller;
 
   const temaDataVersion = config.temaDataVersion;
+  const appBuildId = config.appBuildId ?? "unknown";
 
   try {
     // Version migration
-    await migrateIfVersionChanged(config.cdnAssetVersion, temaDataVersion);
+    await migrateIfVersionChanged(
+      config.cdnAssetVersion,
+      temaDataVersion,
+      appBuildId,
+    );
     const baselineStatus = await isMushafDownloaded(
       config.cdnAssetVersion,
       temaDataVersion ?? "1",
+      appBuildId,
     );
 
     // Storage checks
@@ -428,6 +446,7 @@ export async function downloadMushaf(
       const finalStatus = await isMushafDownloaded(
         config.cdnAssetVersion,
         temaDataVersion,
+        appBuildId,
       );
 
       if (finalStatus.state !== "complete") {
@@ -436,7 +455,7 @@ export async function downloadMushaf(
         );
       }
 
-      markMushafDownloaded(config.cdnAssetVersion, temaDataVersion);
+      markMushafDownloaded(config.cdnAssetVersion, temaDataVersion, appBuildId);
     }
   } catch (error) {
     if (

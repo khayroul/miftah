@@ -9,6 +9,13 @@ const TEST_CONFIG: PwaConfig = {
   manifestsBucket: "mushaf-manifests",
 };
 
+const FALLBACK_CONFIG: PwaConfig = {
+  cdnAssetVersion: "4",
+  supabaseStorageBase: "",
+  pagesBucket: "mushaf-pages",
+  manifestsBucket: "mushaf-manifests",
+};
+
 describe("buildPageAssetUrls", () => {
   it("page 1 — correct URLs with zero-padded page number", () => {
     const urls = buildPageAssetUrls(1, TEST_CONFIG);
@@ -82,5 +89,14 @@ describe("buildPageAssetUrls", () => {
       false,
       "translation (local) must NOT have version param",
     );
+  });
+
+  it("falls back to local API routes when supabaseStorageBase is empty", () => {
+    const urls = buildPageAssetUrls(7, FALLBACK_CONFIG);
+
+    assert.equal(urls.webp, "/api/mushaf/page/7?variant=mobile");
+    assert.equal(urls.manifest, "/api/mushaf/manifest/7");
+    assert.equal(urls.layout, "/layouts/page-007.json");
+    assert.equal(urls.translation, "/translations/page-007.json");
   });
 });

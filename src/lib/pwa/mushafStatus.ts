@@ -41,6 +41,7 @@ interface DownloadMarker {
   readonly cdnAssetVersion: string;
   readonly temaDataVersion: string;
   readonly schemaVersion: string;
+  readonly appBuildId: string;
 }
 
 function buildEmptyProgress(): OfflineBundleProgress {
@@ -55,21 +56,6 @@ function buildEmptyProgress(): OfflineBundleProgress {
     completedItems: 0,
     totalItems: TOTAL_ITEMS,
     appShellReady: false,
-  };
-}
-
-function buildCompleteProgress(): OfflineBundleProgress {
-  return {
-    images: TOTAL_PAGES,
-    data: TOTAL_DATA_ENTRIES,
-    tema: TOTAL_TEMA_ENTRIES,
-    routes: TOTAL_ROUTE_ENTRIES,
-    fonts: TOTAL_FONT_ENTRIES,
-    shell: TOTAL_SHELL_ENTRIES,
-    staticAssets: 1,
-    completedItems: TOTAL_ITEMS,
-    totalItems: TOTAL_ITEMS,
-    appShellReady: true,
   };
 }
 
@@ -103,12 +89,21 @@ async function getOfflineBundleProgress(): Promise<OfflineBundleProgress> {
       await Promise.all([
         countCacheEntries(
           CACHE_IMAGES,
-          (_pathname, requestUrl) => requestUrl.includes("_mobile.webp"),
+          (pathname, requestUrl) => {
+            if (requestUrl.includes("_mobile.webp")) {
+              return true;
+            }
+            if (!/^\/api\/mushaf\/page\/\d+$/.test(pathname)) {
+              return false;
+            }
+            return new URL(requestUrl).searchParams.get("variant") === "mobile";
+          },
         ),
         countCacheEntries(
           CACHE_DATA,
           (pathname) =>
             /(^|\/)page_\d{3}\.manifest\.json$/.test(pathname) ||
+            /^\/api\/mushaf\/manifest\/\d+$/.test(pathname) ||
             /^\/layouts\/page-\d{3}\.json$/.test(pathname) ||
             /^\/translations\/page-\d{3}\.json$/.test(pathname),
         ),
@@ -142,41 +137,42 @@ async function getOfflineBundleProgress(): Promise<OfflineBundleProgress> {
 export function buildDownloadedMarker(
   cdnAssetVersion: string,
   temaDataVersion: string,
+  appBuildId = "unknown",
 ): string {
-  return `${cdnAssetVersion}:${temaDataVersion}:${DOWNLOAD_SCHEMA_VERSION}`;
+  return `${cdnAssetVersion}:${temaDataVersion}:${DOWNLOAD_SCHEMA_VERSION}:${appBuildId}`;
 }
 
 export function parseDownloadedMarker(value: string): DownloadMarker | null {
-  const [cdnAssetVersion, temaDataVersion, schemaVersion = "1"] = value.split(":");
+  const [cdnAssetVersion, temaDataVersion, schemaVersion = "1", appBuildId = "unknown"] =
+    value.split(":");
 
   if (!cdnAssetVersion || !temaDataVersion) {
     return null;
   }
 
-  return { cdnAssetVersion, temaDataVersion, schemaVersion };
+  return { cdnAssetVersion, temaDataVersion, schemaVersion, appBuildId };
 }
 
 /**
  * Checks whether the full mushaf has been downloaded.
  *
- * Fast path: localStorage flag matches the current composite version and bundle
- * schema → complete.
- * Slow path: count every required offline bucket directly from Cache Storage.
+ * Counts every required offline bucket directly from Cache Storage.
+ * localStorage marker is used only for stale-version cleanup hints.
  */
 export async function isMushafDownloaded(
   cdnAssetVersion: string,
   temaDataVersion: string,
+  appBuildId = "unknown",
 ): Promise<MushafStatus> {
-  const expectedMarker = buildDownloadedMarker(cdnAssetVersion, temaDataVersion);
-
-  // Fast path
   const stored = localStorage.getItem(LS_KEY_DOWNLOADED);
-  if (stored === expectedMarker) {
-    return {
-      state: "complete",
-      progress: buildCompleteProgress(),
-    };
-  }
+  const parsedStored = stored ? parseDownloadedMarker(stored) : null;
+  const hasCurrentVersionMarker =
+    parsedStored !== null &&
+    parsedStored.cdnAssetVersion === cdnAssetVersion &&
+    parsedStored.temaDataVersion === temaDataVersion &&
+    parsedStored.schemaVersion === DOWNLOAD_SCHEMA_VERSION;
+  const hasCurrentBuildMarker =
+    hasCurrentVersionMarker && parsedStored.appBuildId === appBuildId;
 
   const progress = await getOfflineBundleProgress();
 
@@ -189,8 +185,16 @@ export async function isMushafDownloaded(
     progress.shell >= TOTAL_SHELL_ENTRIES &&
     progress.appShellReady
   ) {
-    markMushafDownloaded(cdnAssetVersion, temaDataVersion);
+    if (!hasCurrentBuildMarker) {
+      markMushafDownloaded(cdnAssetVersion, temaDataVersion, appBuildId);
+    }
     return { state: "complete", progress };
+  }
+
+  if (hasCurrentVersionMarker) {
+    // Marker says complete but cache check failed; clear stale marker so UI
+    // correctly reflects partial/none state.
+    clearMushafDownloaded();
   }
 
   if (progress.completedItems === 0 && !progress.appShellReady) {
@@ -204,10 +208,11 @@ export async function isMushafDownloaded(
 export function markMushafDownloaded(
   cdnAssetVersion: string,
   temaDataVersion: string,
+  appBuildId = "unknown",
 ): void {
   localStorage.setItem(
     LS_KEY_DOWNLOADED,
-    buildDownloadedMarker(cdnAssetVersion, temaDataVersion),
+    buildDownloadedMarker(cdnAssetVersion, temaDataVersion, appBuildId),
   );
 }
 
