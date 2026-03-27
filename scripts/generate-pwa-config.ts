@@ -19,14 +19,15 @@ function main(): void {
   }
   const pagesBucket = process.env.MUSHAF_PAGES_BUCKET?.trim() || "mushaf-pages";
   const manifestsBucket = process.env.MUSHAF_MANIFESTS_BUCKET?.trim() || "mushaf-manifests";
+  const temaDataVersion = process.env.TEMA_DATA_VERSION?.trim() || "1";
   const storageBase = supabaseUrl
     ? `${supabaseUrl.replace(/\/+$/, "")}/storage/v1/object/public`
     : "";
 
-  const config = { cdnAssetVersion: cdnVersion, supabaseStorageBase: storageBase, pagesBucket, manifestsBucket };
+  const config = { cdnAssetVersion: cdnVersion, temaDataVersion, supabaseStorageBase: storageBase, pagesBucket, manifestsBucket };
   mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
   writeFileSync(OUTPUT_PATH, JSON.stringify(config, null, 2), "utf-8");
-  console.log(`Generated ${OUTPUT_PATH} (version: ${cdnVersion})`);
+  console.log(`Generated ${OUTPUT_PATH} (version: ${cdnVersion}, tema: ${temaDataVersion})`);
 }
 
 main();

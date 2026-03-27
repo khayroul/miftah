@@ -11,6 +11,7 @@ import {
 
 export interface PwaConfig {
   readonly cdnAssetVersion: string;
+  readonly temaDataVersion?: string;
   readonly supabaseStorageBase: string;
   readonly pagesBucket: string;
   readonly manifestsBucket: string;
