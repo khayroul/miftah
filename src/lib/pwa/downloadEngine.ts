@@ -1,11 +1,22 @@
 import {
-  TOTAL_PAGES,
-  TOTAL_ITEMS,
+  CACHE_BUNDLE,
   CACHE_TEMA,
   LS_KEY_DOWNLOADED,
-  markMushafDownloaded,
   clearMushafDownloaded,
+  isMushafDownloaded,
+  markMushafDownloaded,
+  parseDownloadedMarker,
 } from "./mushafStatus";
+import {
+  CACHE_DATA,
+  CACHE_IMAGES,
+  OFFLINE_SHELL_PATHS,
+  TOTAL_ITEMS,
+  TOTAL_PAGES,
+  buildPageFontPath,
+  buildReadRoutePath,
+  buildTemaRoutePath,
+} from "./offlineBundle";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -97,13 +108,6 @@ export type MushafDownloadProgress = {
 type ProgressCallback = (progress: MushafDownloadProgress) => void;
 
 // ---------------------------------------------------------------------------
-// Cache names
-// ---------------------------------------------------------------------------
-
-const CACHE_IMAGES = "mushaf-images-v1";
-const CACHE_DATA = "mushaf-data-v1";
-
-// ---------------------------------------------------------------------------
 // Cancellation
 // ---------------------------------------------------------------------------
 
@@ -130,16 +134,17 @@ async function fetchAndCache(
   url: string,
   cacheName: string,
   controller: AbortController,
-): Promise<void> {
+): Promise<boolean> {
   const cache = await caches.open(cacheName);
   const existing = await cache.match(url);
-  if (existing !== undefined) return; // already cached — skip
+  if (existing !== undefined) return false;
 
   const response = await fetch(url, { signal: controller.signal });
   if (!response.ok) {
     throw new Error(`Failed to fetch ${url}: ${response.status}`);
   }
   await cache.put(url, response);
+  return true;
 }
 
 async function fetchAndCacheWithRetry(
@@ -147,18 +152,93 @@ async function fetchAndCacheWithRetry(
   cacheName: string,
   controller: AbortController,
   maxRetries = 2,
-): Promise<void> {
+): Promise<boolean> {
   const delays = [1000, 3000]; // exponential backoff
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      await fetchAndCache(url, cacheName, controller);
-      return;
+      return await fetchAndCache(url, cacheName, controller);
     } catch (error) {
       if (controller.signal.aborted) throw error;
       if (attempt === maxRetries) throw error;
       await new Promise((resolve) => setTimeout(resolve, delays[attempt]));
     }
   }
+
+  return false;
+}
+
+function extractNextStaticAssetUrls(html: string): string[] {
+  const matches = html.matchAll(
+    /(?:href|src)=["'](\/_next\/static\/[^"'?#]+(?:\?[^"']*)?)["']/g,
+  );
+
+  return Array.from(new Set(Array.from(matches, ([, url]) => url)));
+}
+
+async function cacheExtractedStaticAssets(
+  html: string,
+  controller: AbortController,
+): Promise<void> {
+  for (const assetUrl of extractNextStaticAssetUrls(html)) {
+    await fetchAndCacheWithRetry(assetUrl, CACHE_BUNDLE, controller);
+  }
+}
+
+async function cacheRouteDocument(
+  url: string,
+  controller: AbortController,
+): Promise<boolean> {
+  const cache = await caches.open(CACHE_BUNDLE);
+  const normalizedUrl = new URL(url, window.location.origin);
+  const cacheKey = `${normalizedUrl.origin}${normalizedUrl.pathname}`;
+  let response = await cache.match(cacheKey, { ignoreSearch: true });
+  let inserted = false;
+
+  if (!response) {
+    const fetched = await fetch(url, { signal: controller.signal });
+    if (!fetched.ok) {
+      throw new Error(`Failed to fetch ${url}: ${fetched.status}`);
+    }
+    await cache.put(cacheKey, fetched.clone());
+    response = fetched;
+    inserted = true;
+  }
+
+  const html = await response.clone().text();
+  await cacheExtractedStaticAssets(html, controller);
+  return inserted;
+}
+
+async function cacheOfflineShellAssets(
+  controller: AbortController,
+): Promise<number> {
+  let insertedCount = 0;
+
+  for (const path of OFFLINE_SHELL_PATHS) {
+    if (await fetchAndCacheWithRetry(path, CACHE_BUNDLE, controller)) {
+      insertedCount += 1;
+    }
+  }
+
+  if (await cacheRouteDocument("/", controller)) {
+    insertedCount += 1;
+  }
+
+  return insertedCount;
+}
+
+async function cacheGlobalFonts(
+  controller: AbortController,
+): Promise<number> {
+  let insertedCount = 0;
+
+  for (const path of ["/fonts/sura_names.woff2", "/fonts/QCF_BSML.ttf"]) {
+    if (await fetchAndCacheWithRetry(path, CACHE_BUNDLE, controller)) {
+      insertedCount += 1;
+    }
+  }
+
+  return insertedCount;
 }
 
 // ---------------------------------------------------------------------------
@@ -172,20 +252,31 @@ async function migrateIfVersionChanged(
   const stored = localStorage.getItem(LS_KEY_DOWNLOADED);
   if (stored === null) return;
 
-  // Parse stored value
-  const colonIndex = stored.indexOf(":");
-  const storedCdn = colonIndex >= 0 ? stored.slice(0, colonIndex) : stored;
-  const storedTema = colonIndex >= 0 ? stored.slice(colonIndex + 1) : undefined;
+  const parsed = parseDownloadedMarker(stored);
+  if (!parsed) {
+    clearMushafDownloaded();
+    return;
+  }
+
+  const storedCdn = parsed.cdnAssetVersion;
+  const storedTema = parsed.temaDataVersion;
 
   if (storedCdn !== cdnAssetVersion) {
     await caches.delete(CACHE_IMAGES);
     await caches.delete(CACHE_DATA);
+    await caches.delete(CACHE_BUNDLE);
     clearMushafDownloaded();
     return;
   }
 
   if (temaDataVersion !== undefined && storedTema !== temaDataVersion) {
     await caches.delete(CACHE_TEMA);
+    clearMushafDownloaded();
+    await caches.delete(CACHE_BUNDLE);
+    return;
+  }
+
+  if (parsed.schemaVersion !== "2") {
     clearMushafDownloaded();
   }
 }
@@ -194,7 +285,7 @@ async function migrateIfVersionChanged(
 // Storage quota check
 // ---------------------------------------------------------------------------
 
-const REQUIRED_BYTES = 200_000_000; // ~200 MB (mushaf + tema + WBW)
+const REQUIRED_BYTES = 260_000_000; // ~260 MB (mushaf + tema + routes + fonts)
 
 async function checkStorageQuota(): Promise<boolean> {
   if (!navigator.storage?.estimate) return true; // can't check, proceed optimistically
@@ -217,14 +308,30 @@ async function downloadPage(
   page: number,
   config: PwaConfig,
   controller: AbortController,
-): Promise<void> {
+): Promise<number> {
   const urls = buildPageAssetUrls(page, config);
-  await Promise.all([
+  const results = await Promise.all([
     fetchAndCacheWithRetry(urls.webp, CACHE_IMAGES, controller),
     fetchAndCacheWithRetry(urls.manifest, CACHE_DATA, controller),
     fetchAndCacheWithRetry(urls.layout, CACHE_DATA, controller),
     fetchAndCacheWithRetry(urls.translation, CACHE_DATA, controller),
+    fetchAndCacheWithRetry(buildPageFontPath(page), CACHE_BUNDLE, controller),
+    cacheRouteDocument(buildReadRoutePath(page), controller),
   ]);
+
+  return results.filter(Boolean).length;
+}
+
+async function downloadTemaBundle(
+  surah: number,
+  controller: AbortController,
+): Promise<number> {
+  const results = await Promise.all([
+    fetchAndCacheWithRetry(`/api/tema/${surah}`, CACHE_TEMA, controller),
+    cacheRouteDocument(buildTemaRoutePath(surah), controller),
+  ]);
+
+  return results.filter(Boolean).length;
 }
 
 export async function downloadMushaf(
@@ -242,79 +349,73 @@ export async function downloadMushaf(
   try {
     // Version migration
     await migrateIfVersionChanged(config.cdnAssetVersion, temaDataVersion);
+    const baselineStatus = await isMushafDownloaded(
+      config.cdnAssetVersion,
+      temaDataVersion ?? "1",
+    );
 
     // Storage checks
     const hasQuota = await checkStorageQuota();
     if (!hasQuota) {
       throw new Error(
-        "Ruang storan tidak mencukupi (~200 MB diperlukan)",
+        "Ruang storan tidak mencukupi (~260 MB diperlukan)",
       );
     }
     await requestPersistentStorage();
 
-    let completedItems = 0;
+    let completedItems = baselineStatus.progress.completedItems;
+    onProgress?.({
+      completedItems,
+      totalItems: TOTAL_ITEMS,
+    });
 
-    // Phase 1: Download mushaf pages
-    // Fast-skip: if image cache already has all pages, skip phase 1
-    const imageCache = await caches.open(CACHE_IMAGES);
-    const imageKeys = await imageCache.keys();
-    const existingWebpCount = imageKeys.filter((r) =>
-      r.url.includes("_mobile.webp"),
-    ).length;
+    completedItems += await cacheOfflineShellAssets(controller);
+    onProgress?.({
+      completedItems,
+      totalItems: TOTAL_ITEMS,
+    });
 
-    if (existingWebpCount >= TOTAL_PAGES) {
-      // All pages already cached — skip phase 1
-      completedItems = TOTAL_PAGES;
+    // Phase 1: Download mushaf pages, page data, page fonts, and cached
+    // reader documents so offline navigation can render a full page.
+    for (let page = 1; page <= TOTAL_PAGES; page += 2) {
+      if (controller.signal.aborted) break;
+
+      const batch: Promise<number>[] = [
+        downloadPage(page, config, controller),
+      ];
+      if (page + 1 <= TOTAL_PAGES) {
+        batch.push(downloadPage(page + 1, config, controller));
+      }
+
+      const batchInserted = await Promise.all(batch);
+      completedItems += batchInserted.reduce((sum, value) => sum + value, 0);
+
       onProgress?.({
         completedItems,
         totalItems: TOTAL_ITEMS,
       });
-    } else {
-      // Download pages in batches of 2
-      for (let page = 1; page <= TOTAL_PAGES; page += 2) {
-        if (controller.signal.aborted) break;
-
-        const batch: Promise<void>[] = [
-          downloadPage(page, config, controller),
-        ];
-        if (page + 1 <= TOTAL_PAGES) {
-          batch.push(downloadPage(page + 1, config, controller));
-        }
-
-        await Promise.all(batch);
-
-        const pagesInBatch = page + 1 <= TOTAL_PAGES ? 2 : 1;
-        completedItems += pagesInBatch;
-
-        onProgress?.({
-          completedItems,
-          totalItems: TOTAL_ITEMS,
-        });
-      }
     }
+
+    completedItems += await cacheGlobalFonts(controller);
+    onProgress?.({
+      completedItems,
+      totalItems: TOTAL_ITEMS,
+    });
 
     // Phase 2: Download tema data (114 surahs)
     if (config.temaDataVersion !== undefined) {
       for (let surah = 1; surah <= 114; surah += 2) {
         if (controller.signal.aborted) break;
 
-        const batch: Promise<void>[] = [
-          fetchAndCacheWithRetry(`/api/tema/${surah}`, CACHE_TEMA, controller),
+        const batch: Promise<number>[] = [
+          downloadTemaBundle(surah, controller),
         ];
         if (surah + 1 <= 114) {
-          batch.push(
-            fetchAndCacheWithRetry(
-              `/api/tema/${surah + 1}`,
-              CACHE_TEMA,
-              controller,
-            ),
-          );
+          batch.push(downloadTemaBundle(surah + 1, controller));
         }
 
-        await Promise.all(batch);
-
-        const itemsInBatch = surah + 1 <= 114 ? 2 : 1;
-        completedItems += itemsInBatch;
+        const batchInserted = await Promise.all(batch);
+        completedItems += batchInserted.reduce((sum, value) => sum + value, 0);
 
         onProgress?.({
           completedItems,
@@ -324,6 +425,17 @@ export async function downloadMushaf(
     }
 
     if (!controller.signal.aborted && temaDataVersion !== undefined) {
+      const finalStatus = await isMushafDownloaded(
+        config.cdnAssetVersion,
+        temaDataVersion,
+      );
+
+      if (finalStatus.state !== "complete") {
+        throw new Error(
+          "Muat turun belum lengkap. Cuba semula semasa sambungan stabil.",
+        );
+      }
+
       markMushafDownloaded(config.cdnAssetVersion, temaDataVersion);
     }
   } catch (error) {
@@ -332,7 +444,7 @@ export async function downloadMushaf(
       error.name === "QuotaExceededError"
     ) {
       throw new Error(
-        "Ruang storan tidak mencukupi (~200 MB diperlukan)",
+        "Ruang storan tidak mencukupi (~260 MB diperlukan)",
       );
     }
     throw error;

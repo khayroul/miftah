@@ -4,12 +4,25 @@ const BUILD_ID = "c59008e";
 const CDN_ASSET_VERSION = "4";
 
 const APP_SHELL_CACHE = `app-shell-${BUILD_ID}`;
+const OFFLINE_BUNDLE_CACHE = "miftah-offline-bundle-v1";
 const MUSHAF_IMAGES_CACHE = "mushaf-images-v1";
 const MUSHAF_DATA_CACHE = "mushaf-data-v1";
 const AUDIO_CACHE = "miftah-audio-v1";
 const TEMA_DATA_CACHE = "tema-data-v1";
 
-const APP_SHELL_PRECACHE = ["/offline.html"];
+const APP_SHELL_PRECACHE = [
+  "/",
+  "/offline.html",
+  "/manifest.webmanifest",
+  "/pwa-config.json",
+  "/icons/apple-touch-icon.png",
+  "/icons/icon-192.png",
+  "/icons/icon-192-maskable.png",
+  "/icons/icon-512.png",
+  "/icons/icon-512-maskable.png",
+  "/images/surah-frame-ios.png",
+  "/mushaf/ayah-end-marker-quran-ios.png",
+];
 
 // --- Install ---
 self.addEventListener("install", (event) => {
@@ -62,7 +75,15 @@ function matchesMushafData(url) {
 }
 
 function matchesAppShell(url) {
-  return url.pathname.startsWith("/_next/static/");
+  if (url.pathname.startsWith("/_next/static/")) return true;
+  if (url.pathname.startsWith("/fonts/")) return true;
+  if (url.pathname.startsWith("/icons/")) return true;
+  if (url.pathname.startsWith("/images/")) return true;
+  if (url.pathname.startsWith("/mushaf/")) return true;
+  return (
+    url.pathname === "/manifest.webmanifest" ||
+    url.pathname === "/pwa-config.json"
+  );
 }
 
 function matchesAudio(url) {
@@ -73,14 +94,28 @@ function matchesTemaData(url) {
   return url.pathname.startsWith("/api/tema/");
 }
 
-async function cacheFirstStrategy(cacheName, request) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
+function normalizeNavigationCacheKey(requestUrl) {
+  const url = new URL(requestUrl);
+  return `${url.origin}${url.pathname}`;
+}
+
+async function matchAcrossCaches(cacheNames, request, options) {
+  for (const cacheName of cacheNames) {
+    const cache = await caches.open(cacheName);
+    const cached = await cache.match(request, options);
+    if (cached) return cached;
+  }
+  return undefined;
+}
+
+async function cacheFirstStrategy(cacheNames, targetCacheName, request, options) {
+  const cached = await matchAcrossCaches(cacheNames, request, options);
   if (cached) return cached;
 
   try {
     const response = await fetch(request);
     if (response.ok) {
+      const cache = await caches.open(targetCacheName);
       await cache.put(request, response.clone());
     }
     return response;
@@ -116,17 +151,21 @@ self.addEventListener("fetch", (event) => {
   if (isNavigationRequest(event.request)) {
     event.respondWith(
       (async () => {
+        const navigationKey = normalizeNavigationCacheKey(event.request.url);
         try {
           const response = await fetch(event.request);
           if (response.ok) {
             const cache = await caches.open(APP_SHELL_CACHE);
-            await cache.put(event.request, response.clone());
+            await cache.put(navigationKey, response.clone());
           }
           return response;
         } catch {
           // Network failed — try cached HTML, then offline.html
-          const cache = await caches.open(APP_SHELL_CACHE);
-          const cached = await cache.match(event.request);
+          const cached = await matchAcrossCaches(
+            [APP_SHELL_CACHE, OFFLINE_BUNDLE_CACHE],
+            navigationKey,
+            { ignoreSearch: true },
+          );
           if (cached) return cached;
           const offline = await caches.match("/offline.html");
           return offline || new Response("Offline", { status: 503 });
@@ -138,25 +177,37 @@ self.addEventListener("fetch", (event) => {
 
   // Mushaf images (WebP, page API)
   if (matchesMushafImage(url)) {
-    event.respondWith(cacheFirstStrategy(MUSHAF_IMAGES_CACHE, event.request));
+    event.respondWith(
+      cacheFirstStrategy([MUSHAF_IMAGES_CACHE], MUSHAF_IMAGES_CACHE, event.request),
+    );
     return;
   }
 
   // Mushaf data (manifests, layouts, translations)
   if (matchesMushafData(url)) {
-    event.respondWith(cacheFirstStrategy(MUSHAF_DATA_CACHE, event.request));
+    event.respondWith(
+      cacheFirstStrategy([MUSHAF_DATA_CACHE], MUSHAF_DATA_CACHE, event.request),
+    );
     return;
   }
 
   // App shell static assets
   if (matchesAppShell(url)) {
-    event.respondWith(cacheFirstStrategy(APP_SHELL_CACHE, event.request));
+    event.respondWith(
+      cacheFirstStrategy(
+        [APP_SHELL_CACHE, OFFLINE_BUNDLE_CACHE],
+        APP_SHELL_CACHE,
+        event.request,
+      ),
+    );
     return;
   }
 
   // Audio
   if (matchesAudio(url)) {
-    event.respondWith(cacheFirstStrategy(AUDIO_CACHE, event.request));
+    event.respondWith(
+      cacheFirstStrategy([AUDIO_CACHE], AUDIO_CACHE, event.request),
+    );
     return;
   }
 

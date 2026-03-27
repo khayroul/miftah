@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useReadingProgressState } from "@/lib/useReadingProgressState";
+import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 
 export function ContinueReadingCard() {
   const state = useReadingProgressState();
@@ -19,13 +19,13 @@ export function ContinueReadingCard() {
           : "Belum ada rekod bacaan. Mulakan dari halaman 1."}
       </p>
 
-      <Link
+      <OfflineAwareLink
         href={`/read/${continuePage}`}
         prefetch={false}
         className="mt-3 inline-flex rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-stone-50 transition hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
       >
         Sambung Baca
-      </Link>
+      </OfflineAwareLink>
     </section>
   );
 }

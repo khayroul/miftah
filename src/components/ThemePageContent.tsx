@@ -1,6 +1,5 @@
-import Link from "next/link";
-
 import { FahamExposureTracker } from "@/components/FahamExposureTracker";
+import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 import { ThemeActionPanel } from "@/components/ThemeActionPanel";
 import { ThemeChunkAyahList } from "@/components/ThemeChunkAyahList";
 import { ThemeChunkProgressTracker } from "@/components/ThemeChunkProgressTracker";
@@ -117,7 +116,6 @@ function buildThemeSynopsis(chunk: ThemeAppearanceChunk): {
 
 export function ThemePageContent({
   surahNumber,
-  surahMeta,
   allSurahs,
   chunks,
   wbw,
@@ -249,14 +247,14 @@ export function ThemePageContent({
 
           <nav className="sticky bottom-6 z-10 mx-auto mt-4 flex w-fit items-center justify-center gap-1 rounded-full border border-stone-200/80 bg-white/90 p-2 shadow-xl shadow-black/5 backdrop-blur-xl dark:border-stone-700/80 dark:bg-stone-900/90 sm:gap-2">
             {previousThemeHref ? (
-              <Link
+              <OfflineAwareLink
                 href={previousThemeHref}
                 className="flex h-10 items-center justify-center whitespace-nowrap rounded-full border border-stone-200 bg-stone-50 px-4 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700 sm:text-sm"
               >
                 {isFirstChunkInSurah && prevSurahNumber !== null
                   ? `\u2190 ${allSurahs.find((s) => s.id === prevSurahNumber)?.name_bm ?? "Surah"}`
                   : "\u2190 Tema"}
-              </Link>
+              </OfflineAwareLink>
             ) : (
               <span className="flex h-10 items-center justify-center whitespace-nowrap rounded-full border border-stone-100 bg-stone-50/50 px-4 text-xs font-medium text-stone-400 dark:border-stone-800 dark:bg-stone-800/30 dark:text-stone-600 sm:text-sm">
                 &larr; Tema
@@ -275,14 +273,14 @@ export function ThemePageContent({
             </div>
 
             {nextThemeHref ? (
-              <Link
+              <OfflineAwareLink
                 href={nextThemeHref}
                 className="flex h-10 items-center justify-center whitespace-nowrap rounded-full bg-stone-900 px-4 text-xs font-medium text-white shadow-sm transition hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white sm:text-sm"
               >
                 {nextSurah
                   ? `${nextSurah.name_bm} \u2192`
                   : "Tema \u2192"}
-              </Link>
+              </OfflineAwareLink>
             ) : (
               <span className="flex h-10 items-center justify-center whitespace-nowrap rounded-full bg-stone-100 px-4 text-xs font-medium text-stone-400 dark:bg-stone-800 dark:text-stone-600 sm:text-sm">
                 Tamat Quran

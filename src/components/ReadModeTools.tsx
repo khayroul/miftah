@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useReadMode } from "@/lib/useReadMode";
 import type { ReadMode } from "@/lib/readMode";
 import { ModeNavigator } from "./ModeNavigator";
+import { navigateWithOfflineSupport } from "@/lib/pwa/navigation";
 
 interface ReadModeToolsProps {
   themeSurahId: number;
@@ -38,19 +39,19 @@ export function ReadModeTools({
 
     if (nextMode === "faham") {
       e.preventDefault();
-      router.push("/faham");
+      navigateWithOfflineSupport(router, "/faham");
       return;
     }
 
     if (nextMode === "tema") {
       e.preventDefault();
-      router.push(`/read/surah/${themeSurahId}/themes`);
+      navigateWithOfflineSupport(router, `/read/surah/${themeSurahId}/themes`);
       return;
     }
 
     if (nextMode === "hifz") {
       e.preventDefault();
-      router.push("/hifz");
+      navigateWithOfflineSupport(router, "/hifz");
     }
   };
 

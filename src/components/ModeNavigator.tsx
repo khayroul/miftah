@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo } from "react";
 import { saveReadMode, type ReadMode } from "@/lib/readMode";
 import { findMarkerForPage } from "@/lib/readNavigationUtils";
 import { useReadingProgressState } from "@/lib/useReadingProgressState";
+import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 
 const AuthStatusButton = dynamic(
   () =>
@@ -110,7 +110,7 @@ export function ModeNavigator({
 
   const navigator = (
     <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-[26px] border border-stone-200 bg-white/92 p-1 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
-      <Link
+      <OfflineAwareLink
         href="/"
         aria-current={highlightHome ? "page" : undefined}
         className={`mr-0.5 flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-medium transition sm:mr-1 sm:px-3 sm:py-2 sm:text-base ${
@@ -129,7 +129,7 @@ export function ModeNavigator({
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
-      </Link>
+      </OfflineAwareLink>
       {MODE_ITEMS.map((item) => {
         const active = !highlightHome && item.value === activeMode;
         const href = modeHref({
@@ -139,7 +139,7 @@ export function ModeNavigator({
         });
 
         return (
-          <Link
+          <OfflineAwareLink
             key={item.value}
             href={href}
             onClick={(e) => {
@@ -155,7 +155,7 @@ export function ModeNavigator({
             }`}
           >
             {item.label}
-          </Link>
+          </OfflineAwareLink>
         );
       })}
       {utilityThemeToggle}

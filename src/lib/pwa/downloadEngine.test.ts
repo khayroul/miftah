@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { buildPageAssetUrls, type PwaConfig } from "./downloadEngine.ts";
+import { buildPageAssetUrls, type PwaConfig } from "./downloadEngine";
 
 const TEST_CONFIG: PwaConfig = {
   cdnAssetVersion: "4",

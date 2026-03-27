@@ -11,6 +11,7 @@ import {
   getMarkerPageById,
   parseBoundedIntegerInput,
 } from "@/lib/readNavigationUtils";
+import { navigateWithOfflineSupport } from "@/lib/pwa/navigation";
 
 interface ReadJumpControlsProps {
   currentPage: number;
@@ -122,7 +123,7 @@ export function ReadJumpControls({
 
   function jumpToPage(page: number) {
     setErrorMessage(null);
-    router.push(`/read/${page}`);
+    navigateWithOfflineSupport(router, `/read/${page}`);
   }
 
   return (

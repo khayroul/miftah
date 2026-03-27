@@ -30,7 +30,7 @@ import {
   setDownloadStarted,
   isPromptDismissed,
   dismissPrompt,
-} from "./mushafStatus.ts";
+} from "./mushafStatus";
 
 describe("TOTAL_PAGES", () => {
   it("equals 604", () => {
@@ -51,7 +51,7 @@ describe("markMushafDownloaded / clearMushafDownloaded", () => {
 
   it("sets and reads the downloaded version", () => {
     markMushafDownloaded("5", "1");
-    assert.equal(store["miftah:mushaf-downloaded"], "5:1");
+    assert.equal(store["miftah:mushaf-downloaded"], "5:1:2");
   });
 
   it("clearMushafDownloaded removes downloaded flag and started flag", () => {
@@ -109,9 +109,9 @@ describe("markMushafDownloaded with composite version", () => {
     mockLocalStorage.clear();
   });
 
-  it("stores composite format cdnVersion:temaVersion", () => {
+  it("stores composite format cdnVersion:temaVersion:schema", () => {
     markMushafDownloaded("4", "1");
-    assert.equal(store["miftah:mushaf-downloaded"], "4:1");
+    assert.equal(store["miftah:mushaf-downloaded"], "4:1:2");
   });
 });
 

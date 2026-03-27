@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { navigateWithOfflineSupport } from "@/lib/pwa/navigation";
 
 interface ThemeSurahOption {
   surah: number;
@@ -39,7 +40,10 @@ export function ThemeJumpControls({
               const nextValue = event.target.value;
               setSelectedSurah(nextValue);
               const params = new URLSearchParams({ chunk: "1" });
-              router.push(`/read/surah/${nextValue}/themes?${params.toString()}`);
+              navigateWithOfflineSupport(
+                router,
+                `/read/surah/${nextValue}/themes?${params.toString()}`,
+              );
             }}
             className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-stone-500 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
           >

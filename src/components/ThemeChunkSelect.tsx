@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { navigateWithOfflineSupport } from "@/lib/pwa/navigation";
 
 interface ThemeChunkSelectProps {
   surahNumber: number;
@@ -22,7 +23,10 @@ export function ThemeChunkSelect({
       onChange={(e) => {
         const value = e.target.value;
         const params = new URLSearchParams({ chunk: value });
-        router.push(`/read/surah/${surahNumber}/themes?${params.toString()}`);
+        navigateWithOfflineSupport(
+          router,
+          `/read/surah/${surahNumber}/themes?${params.toString()}`,
+        );
       }}
       className="max-w-[12rem] h-10 truncate rounded-full border border-stone-200 bg-white px-3 pr-8 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 cursor-pointer"
     >

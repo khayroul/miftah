@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { SurahJumpTarget } from "@/lib/readNavigation";
@@ -15,6 +14,7 @@ import {
   saveHomeDashboardSnapshotCache,
 } from "@/lib/homeDashboardStorage";
 import { useReadingProgressState } from "@/lib/useReadingProgressState";
+import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 
 const TOTAL_QURAN_PAGES = 604;
 
@@ -214,7 +214,7 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
       </div>
 
       <div className="mt-6">
-        <Link
+        <OfflineAwareLink
           href={card.href}
           prefetch={shouldPrefetch(card.href)}
           onClick={card.onClick}
@@ -229,16 +229,16 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
           }`}
         >
           {card.buttonLabel}
-        </Link>
+        </OfflineAwareLink>
         {card.secondaryHref && card.secondaryLabel ? (
-          <Link
+          <OfflineAwareLink
             href={card.secondaryHref}
             prefetch={shouldPrefetch(card.secondaryHref)}
             onClick={card.secondaryOnClick}
             className="mt-2 block w-full rounded-xl border border-stone-300/80 bg-white/65 py-2.5 text-center text-sm font-medium text-stone-800 transition hover:bg-white/90 dark:border-stone-600 dark:bg-stone-900/55 dark:text-stone-100 dark:hover:bg-stone-800"
           >
             {card.secondaryLabel}
-          </Link>
+          </OfflineAwareLink>
         ) : null}
       </div>
     </article>
@@ -664,7 +664,7 @@ export function HomeDashboardClient({
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link
+              <OfflineAwareLink
                 href={homeHero.primaryHref}
                 prefetch={shouldPrefetch(homeHero.primaryHref)}
                 onClick={() => {
@@ -673,9 +673,9 @@ export function HomeDashboardClient({
                 className={`inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold transition ${heroClasses.primaryButton}`}
               >
                 {homeHero.primaryLabel}
-              </Link>
+              </OfflineAwareLink>
               {homeHero.secondaryHref && homeHero.secondaryLabel ? (
-                <Link
+                <OfflineAwareLink
                   href={homeHero.secondaryHref}
                   prefetch={shouldPrefetch(homeHero.secondaryHref)}
                   onClick={() => {
@@ -686,7 +686,7 @@ export function HomeDashboardClient({
                   className="inline-flex items-center justify-center rounded-2xl border border-stone-300/80 bg-white/75 px-6 py-3 text-sm font-medium text-stone-800 transition hover:bg-white dark:border-stone-600 dark:bg-stone-900/60 dark:text-stone-100 dark:hover:bg-stone-800"
                 >
                   {homeHero.secondaryLabel}
-                </Link>
+                </OfflineAwareLink>
               ) : null}
             </div>
           </div>

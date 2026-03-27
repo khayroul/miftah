@@ -38,10 +38,14 @@ import type { ReadMode } from "@/lib/readMode";
 import type { MushafWordTranslationMap } from "@/types/mushaf";
 import type { MushafLayoutPage } from "@/types/mushafLayout";
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { preCacheAudioUrls } from "@/lib/hifz/audioPreCache";
 import type { HifzExerciseFlow } from "@/types/hifz-exercises";
 import type { MushafPageManifest } from "@/types/mushaf";
+import { OfflineAwareLink } from "@/components/OfflineAwareLink";
+import {
+  navigateWithOfflineSupport,
+  prefetchWithOfflineSupport,
+} from "@/lib/pwa/navigation";
 
 const FahamExposureTracker = dynamic(
   () =>
@@ -710,7 +714,8 @@ export function ReadPageWorkspace({
   useEffect(() => {
     if (hifzFlow !== null) {
       if (previousQueuePage) {
-        router.prefetch(
+        prefetchWithOfflineSupport(
+          router,
           buildQueuePageHref(
             hifzFlow,
             previousQueuePage.pageNumber,
@@ -719,7 +724,8 @@ export function ReadPageWorkspace({
         );
       }
       if (nextQueuePage) {
-        router.prefetch(
+        prefetchWithOfflineSupport(
+          router,
           buildQueuePageHref(hifzFlow, nextQueuePage.pageNumber, nextQueuePage.index),
         );
       }
@@ -736,10 +742,10 @@ export function ReadPageWorkspace({
       pageNumber < 604 ? `/read/${pageNumber + 1}?${hifzNavigationSearch}` : null;
 
     if (previousHref) {
-      router.prefetch(previousHref);
+      prefetchWithOfflineSupport(router, previousHref);
     }
     if (nextHref) {
-      router.prefetch(nextHref);
+      prefetchWithOfflineSupport(router, nextHref);
     }
   }, [
     hifzFlow,
@@ -790,13 +796,13 @@ export function ReadPageWorkspace({
     if (!previousPageHref) {
       return;
     }
-    router.push(previousPageHref);
+    navigateWithOfflineSupport(router, previousPageHref);
   }, [previousPageHref, router]);
   const handleNavigateNextPage = useCallback(() => {
     if (!nextPageHref) {
       return;
     }
-    router.push(nextPageHref);
+    navigateWithOfflineSupport(router, nextPageHref);
   }, [nextPageHref, router]);
   const handleMushafTap = useCallback(() => {
     if (!audioEnabledForMode) {
@@ -971,14 +977,14 @@ export function ReadPageWorkspace({
       {/* RTL mushaf: next page (advance reading) on left, prev page on right */}
       <div className="mb-1 flex w-full justify-end gap-2">
         {nextPageHref ? (
-          <Link
+          <OfflineAwareLink
             href={nextPageHref}
             title="Halaman Seterusnya"
             aria-label="Halaman Seterusnya"
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 bg-white text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
           >
             {"<"}
-          </Link>
+          </OfflineAwareLink>
         ) : (
           <button
             type="button"
@@ -991,14 +997,14 @@ export function ReadPageWorkspace({
         )}
 
         {previousPageHref ? (
-          <Link
+          <OfflineAwareLink
             href={previousPageHref}
             title="Halaman Sebelum"
             aria-label="Halaman Sebelum"
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 bg-white text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
           >
             {">"}
-          </Link>
+          </OfflineAwareLink>
         ) : (
           <button
             type="button"
@@ -1138,7 +1144,7 @@ export function ReadPageWorkspace({
               rounds.map((r) => ({ rating: r.rating, label: r.label })),
             );
           }}
-          onExit={() => router.push(`/read/${pageNumber}`)}
+          onExit={() => navigateWithOfflineSupport(router, `/read/${pageNumber}`)}
         />
       )}
 
@@ -1158,7 +1164,7 @@ export function ReadPageWorkspace({
               "[ReadPageWorkspace] unveil complete — FSRS rate-batch pending progressId wiring",
             );
           }}
-          onExit={() => router.push(`/read/${pageNumber}`)}
+          onExit={() => navigateWithOfflineSupport(router, `/read/${pageNumber}`)}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
