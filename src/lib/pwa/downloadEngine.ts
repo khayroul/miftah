@@ -1,5 +1,6 @@
 import {
   TOTAL_PAGES,
+  TOTAL_ITEMS,
   LS_KEY_DOWNLOADED,
   markMushafDownloaded,
   clearMushafDownloaded,
@@ -88,8 +89,8 @@ export function buildPageAssetUrls(
 // ---------------------------------------------------------------------------
 
 export type MushafDownloadProgress = {
-  readonly downloadedPages: number;
-  readonly totalPages: number;
+  readonly completedItems: number;
+  readonly totalItems: number;
 };
 
 type ProgressCallback = (progress: MushafDownloadProgress) => void;
@@ -100,6 +101,7 @@ type ProgressCallback = (progress: MushafDownloadProgress) => void;
 
 const CACHE_IMAGES = "mushaf-images-v1";
 const CACHE_DATA = "mushaf-data-v1";
+const CACHE_TEMA = "tema-data-v1";
 
 // ---------------------------------------------------------------------------
 // Cancellation
@@ -164,22 +166,37 @@ async function fetchAndCacheWithRetry(
 // ---------------------------------------------------------------------------
 
 async function migrateIfVersionChanged(
-  currentVersion: string,
+  cdnAssetVersion: string,
+  temaDataVersion: string,
 ): Promise<void> {
   const stored = localStorage.getItem(LS_KEY_DOWNLOADED);
-  if (stored !== null && stored !== currentVersion) {
-    // Version mismatch — clear old caches
+  if (stored === null) return;
+
+  const compositeVersion = `${cdnAssetVersion}:${temaDataVersion}`;
+  if (stored === compositeVersion) return;
+
+  // Parse stored value
+  const colonIndex = stored.indexOf(":");
+  const storedCdn = colonIndex >= 0 ? stored.slice(0, colonIndex) : stored;
+  const storedTema = colonIndex >= 0 ? stored.slice(colonIndex + 1) : "";
+
+  if (storedCdn !== cdnAssetVersion) {
     await caches.delete(CACHE_IMAGES);
     await caches.delete(CACHE_DATA);
-    clearMushafDownloaded();
   }
+
+  if (storedTema !== temaDataVersion) {
+    await caches.delete(CACHE_TEMA);
+  }
+
+  clearMushafDownloaded();
 }
 
 // ---------------------------------------------------------------------------
 // Storage quota check
 // ---------------------------------------------------------------------------
 
-const REQUIRED_BYTES = 150_000_000; // ~150 MB
+const REQUIRED_BYTES = 200_000_000; // ~200 MB (mushaf + tema + WBW)
 
 async function checkStorageQuota(): Promise<boolean> {
   if (!navigator.storage?.estimate) return true; // can't check, proceed optimistically
@@ -222,45 +239,94 @@ export async function downloadMushaf(
   const controller = new AbortController();
   activeController = controller;
 
+  const temaDataVersion = config.temaDataVersion ?? "1";
+
   try {
     // Version migration
-    await migrateIfVersionChanged(config.cdnAssetVersion);
+    await migrateIfVersionChanged(config.cdnAssetVersion, temaDataVersion);
 
     // Storage checks
     const hasQuota = await checkStorageQuota();
     if (!hasQuota) {
       throw new Error(
-        "Ruang storan tidak mencukupi (~150 MB diperlukan)",
+        "Ruang storan tidak mencukupi (~200 MB diperlukan)",
       );
     }
     await requestPersistentStorage();
 
-    // Download pages in batches of 2
-    let completedPages = 0;
+    let completedItems = 0;
 
-    for (let page = 1; page <= TOTAL_PAGES; page += 2) {
-      if (controller.signal.aborted) break;
+    // Phase 1: Download mushaf pages
+    // Fast-skip: if image cache already has all pages, skip phase 1
+    const imageCache = await caches.open(CACHE_IMAGES);
+    const imageKeys = await imageCache.keys();
+    const existingWebpCount = imageKeys.filter((r) =>
+      r.url.includes("_mobile.webp"),
+    ).length;
 
-      const batch: Promise<void>[] = [
-        downloadPage(page, config, controller),
-      ];
-      if (page + 1 <= TOTAL_PAGES) {
-        batch.push(downloadPage(page + 1, config, controller));
-      }
-
-      await Promise.all(batch);
-
-      const pagesInBatch = page + 1 <= TOTAL_PAGES ? 2 : 1;
-      completedPages += pagesInBatch;
-
+    if (existingWebpCount >= TOTAL_PAGES) {
+      // All pages already cached — skip phase 1
+      completedItems = TOTAL_PAGES;
       onProgress?.({
-        downloadedPages: completedPages,
-        totalPages: TOTAL_PAGES,
+        completedItems,
+        totalItems: TOTAL_ITEMS,
       });
+    } else {
+      // Download pages in batches of 2
+      for (let page = 1; page <= TOTAL_PAGES; page += 2) {
+        if (controller.signal.aborted) break;
+
+        const batch: Promise<void>[] = [
+          downloadPage(page, config, controller),
+        ];
+        if (page + 1 <= TOTAL_PAGES) {
+          batch.push(downloadPage(page + 1, config, controller));
+        }
+
+        await Promise.all(batch);
+
+        const pagesInBatch = page + 1 <= TOTAL_PAGES ? 2 : 1;
+        completedItems += pagesInBatch;
+
+        onProgress?.({
+          completedItems,
+          totalItems: TOTAL_ITEMS,
+        });
+      }
+    }
+
+    // Phase 2: Download tema data (114 surahs)
+    if (config.temaDataVersion !== undefined) {
+      for (let surah = 1; surah <= 114; surah += 2) {
+        if (controller.signal.aborted) break;
+
+        const batch: Promise<void>[] = [
+          fetchAndCacheWithRetry(`/api/tema/${surah}`, CACHE_TEMA, controller),
+        ];
+        if (surah + 1 <= 114) {
+          batch.push(
+            fetchAndCacheWithRetry(
+              `/api/tema/${surah + 1}`,
+              CACHE_TEMA,
+              controller,
+            ),
+          );
+        }
+
+        await Promise.all(batch);
+
+        const itemsInBatch = surah + 1 <= 114 ? 2 : 1;
+        completedItems += itemsInBatch;
+
+        onProgress?.({
+          completedItems,
+          totalItems: TOTAL_ITEMS,
+        });
+      }
     }
 
     if (!controller.signal.aborted) {
-      markMushafDownloaded(config.cdnAssetVersion);
+      markMushafDownloaded(config.cdnAssetVersion, temaDataVersion);
     }
   } catch (error) {
     if (
@@ -268,7 +334,7 @@ export async function downloadMushaf(
       error.name === "QuotaExceededError"
     ) {
       throw new Error(
-        "Ruang storan tidak mencukupi (~150 MB diperlukan)",
+        "Ruang storan tidak mencukupi (~200 MB diperlukan)",
       );
     }
     throw error;
