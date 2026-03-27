@@ -39,10 +39,13 @@ interface TemaApiResponse {
   readonly surahId: number;
   readonly chunks: ThemeAppearanceChunk[];
   readonly wbw: Record<number, AyahWordByWordEntry[]>; // keyed by ayah ID
+  readonly prevSurahChunkCount: number | null; // null for surah 1
 }
 ```
 
 Calls existing `getThemeAppearanceChunksBySurah()` and `getWordByWordForAyahIds()`. No new database logic.
+
+The response also includes `prevSurahChunkCount: number | null` — the chunk count of the previous surah (null for surah 1). This allows cross-surah "back" navigation without a second fetch.
 
 ### Error handling
 
@@ -69,7 +72,7 @@ Add `temaDataVersion` field (optional during rollout, required after first deplo
 }
 ```
 
-The `PwaConfig` interface adds `temaDataVersion?: string`. The `isPwaConfig()` guard treats it as optional for backward compatibility. The download engine skips tema phase if `temaDataVersion` is absent.
+The `PwaConfig` interface adds `temaDataVersion?: string`. The `isPwaConfig()` guard treats it as optional for backward compatibility. The download engine skips tema phase if `temaDataVersion` is absent. The `loadPwaConfig()` function returns the extended config; callers access `config.temaDataVersion` to build the composite version string and decide whether to run phase 2.
 
 ### Version migration
 
@@ -83,11 +86,13 @@ Replace the existing `migrateIfVersionChanged()` with a single function that und
 
 ### Service worker routing
 
-Add cache-first handler for `/api/tema/*` in `sw.js`, matching the existing pattern for mushaf data:
+Add `TEMA_DATA_CACHE = "tema-data-v1"` constant in `sw.js` alongside the existing cache name constants. Add a `matchesTemaData(url)` helper and cache-first handler for `/api/tema/*`, matching the existing pattern for mushaf data:
 
 ```
 /api/tema/* → cache-first (tema-data-v1) → network fallback
 ```
+
+The activate handler should also clean old tema caches (e.g., `tema-data-v0`) on version change, same pattern as `app-shell-*` cleanup.
 
 ## Download Engine Changes
 
@@ -100,13 +105,22 @@ Add cache-first handler for `/api/tema/*` in `sw.js`, matching the existing patt
 
 Same batch concurrency (2 concurrent requests), same retry-with-backoff.
 
-Phase 1 pages that are already cached are skipped (existing `fetchAndCache` checks). For existing users who already have all 604 pages, phase 1 completes instantly and phase 2 downloads the 114 tema endpoints.
+Phase 1 pages that are already cached are skipped (existing `fetchAndCache` checks). For existing users who already have all 604 pages, add a fast-skip: before starting phase 1, check image cache entry count — if ≥604, skip phase 1 entirely rather than checking each URL individually (avoids 2,416 serial cache lookups). Phase 2 then downloads the 114 tema endpoints.
 
 ### Progress tracking
 
 Total download units: 604 pages + 114 tema = 718 total.
 
-Progress callback reports `{ downloadedPages, totalPages: 718 }` across both phases. The UI shows a single unified progress bar with percentage display (not "X/Y halaman" which would be misleading when tema endpoints are included).
+Rename the progress fields from `downloadedPages`/`totalPages` to `completedItems`/`totalItems` to reflect that the units now include both pages and tema endpoints:
+
+```typescript
+type MushafDownloadProgress = {
+  readonly completedItems: number;
+  readonly totalItems: number; // 718
+};
+```
+
+The UI shows a single unified progress bar with percentage display (not "X/Y halaman" which would be misleading when tema endpoints are included).
 
 Update `MushafDownloadPrompt`:
 - Replace `{downloadedPages}/{TOTAL_PAGES} halaman` with `{percentage}%` display
@@ -115,7 +129,7 @@ Update `MushafDownloadPrompt`:
 
 ### Storage quota
 
-Update `REQUIRED_BYTES` from 150 MB to 200 MB to account for tema + WBW data.
+Update `REQUIRED_BYTES` from 150 MB to 200 MB to account for tema + WBW data. Also update the hardcoded error message string from "~150 MB diperlukan" to "~200 MB diperlukan".
 
 ## Status Tracking Changes
 
@@ -132,6 +146,19 @@ This ensures bumping either version invalidates the fast path.
 
 ### `isMushafDownloaded()` updates
 
+**Signature change:** `isMushafDownloaded()` now takes both versions: `isMushafDownloaded(cdnAssetVersion: string, temaDataVersion: string)`. All callers (`MushafDownloadPrompt`, `debugTools`) must be updated.
+
+**`MushafStatus` type update:** Rename `downloadedPages` to `completedItems` in the partial state to match the progress type:
+
+```typescript
+export type MushafStatus =
+  | { readonly state: "complete" }
+  | { readonly state: "partial"; readonly completedItems: number }
+  | { readonly state: "none" };
+```
+
+**`markMushafDownloaded()` update:** Signature changes to `markMushafDownloaded(cdnAssetVersion: string, temaDataVersion: string)`. Writes the composite format `"${cdnAssetVersion}:${temaDataVersion}"` to localStorage. The download engine calls this after both phases complete.
+
 **Fast path:** Compare stored value against `"${cdnAssetVersion}:${temaDataVersion}"`. Only returns "complete" if both versions match.
 
 **Slow path** checks all three caches:
@@ -147,7 +174,7 @@ The `downloadedPages` field in partial state reflects total progress across both
 
 Users with `miftah:mushaf-downloaded = "4"` (old format, no tema version):
 1. Fast path: stored `"4"` does not match expected `"4:1"` → falls through to slow path
-2. Slow path: pages complete (604 images + 1812 data), tema cache empty (0 entries) → returns `{ state: "partial", downloadedPages: 604 }`
+2. Slow path: pages complete (604 images + 1812 data), tema cache empty (0 entries) → returns `{ state: "partial", completedItems: 604 }`
 3. `hasUserStartedDownload()` returns true
 4. `MushafDownloadPrompt` auto-resumes → download engine skips phase 1 (pages already cached) → downloads phase 2 (tema)
 5. Progress bar shows tema download progress starting from ~84% (604/718)
@@ -212,10 +239,11 @@ The existing `getThemeAppearanceChunksBySurah()` and `getWordByWordForAyahIds()`
 | `src/components/ThemePageContent.tsx` | New: pure rendering component (props-driven) |
 | `src/components/TemaDataFetcher.tsx` | New: client component, fetches `/api/tema/[surah]` |
 | `src/app/read/surah/[surah]/themes/page.tsx` | Mount `TemaDataFetcher` instead of `ThemePageContentAsync` |
-| `src/lib/pwa/downloadEngine.ts` | Phase 2: download 114 tema endpoints; tema version migration; update `REQUIRED_BYTES` |
-| `src/lib/pwa/mushafStatus.ts` | Composite version format; check tema cache in slow path |
-| `src/components/MushafDownloadPrompt.tsx` | Percentage display; updated aria labels |
-| `public/sw.js` | Cache-first routing for `/api/tema/*` |
+| `src/lib/pwa/downloadEngine.ts` | Phase 2: download 114 tema endpoints; tema version migration; fast-skip phase 1; rename progress fields; update `REQUIRED_BYTES` |
+| `src/lib/pwa/mushafStatus.ts` | Composite version format; dual-version signature; check tema cache in slow path |
+| `src/components/MushafDownloadPrompt.tsx` | Percentage display; updated aria labels; updated prompt copy; adapt to renamed progress fields |
+| `src/lib/pwa/debugTools.ts` | Update `mushafStatus()` for dual-version signature; `clearDownload()` must also delete `tema-data-v1` cache |
+| `public/sw.js` | Add `TEMA_DATA_CACHE` constant; `matchesTemaData()` helper; cache-first routing; activate cleanup |
 | `scripts/generate-pwa-config.ts` | Add `temaDataVersion` field |
 
 ## Not in scope
@@ -233,7 +261,7 @@ The API response includes WBW for all ayahs in the surah. `TemaDataFetcher` pass
 
 ### Cross-surah navigation
 
-The existing tema page fetches the previous surah's chunk count for "back" navigation. In the client model, `TemaDataFetcher` makes a second fetch to `/api/tema/[prevSurah]` — this hits SW cache if already downloaded. Acceptable overhead.
+The API response includes `prevSurahChunkCount` so `TemaDataFetcher` does not need a second fetch for cross-surah "back" navigation. The server shell passes the surah list as a prop (from `getSurahs()`) for forward navigation links.
 
 ### Error UI in TemaDataFetcher
 
@@ -247,4 +275,4 @@ Update user-facing prompt copy in `MushafDownloadPrompt`:
 
 ### SW cache matching
 
-The API route should set `Cache-Control: no-transform` and avoid `Vary` headers that could cause cache misses. The SW should use `ignoreVary: true` when matching `/api/tema/*` requests.
+The API route should set `Cache-Control: no-transform` and avoid `Vary` headers that could cause cache misses. Add a `cacheFirstTema()` strategy function (or parameterize the existing `cacheFirstStrategy`) that passes `{ ignoreVary: true }` to `cache.match()` for `/api/tema/*` requests, since API routes may set `Vary` headers that differ between the download engine fetch and the browser fetch.
