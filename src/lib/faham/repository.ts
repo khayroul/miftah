@@ -54,6 +54,16 @@ export interface FahamRecentExposureSource {
   wordId: number;
 }
 
+export interface FahamTierVocabWord {
+  frequency: number;
+  id: number;
+  textSimple: string;
+  textUthmani: string;
+  translationBm: string | null;
+  translationEn: string | null;
+  transliteration: string | null;
+}
+
 
 function firstRelation<T>(value: T | T[] | null): T | null {
   if (Array.isArray(value)) {
@@ -679,4 +689,53 @@ export async function getFahamMcqWordPool(
   }
 
   return pool;
+}
+
+export async function getFahamTierVocabWords(
+  wordLimit: number,
+): Promise<FahamTierVocabWord[]> {
+  const topWordIds = await getTopFahamWordIds(wordLimit);
+  if (topWordIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabaseServer
+    .from("words")
+    .select(
+      "id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, frequency",
+    )
+    .in("id", topWordIds)
+    .order("frequency", { ascending: false })
+    .limit(topWordIds.length);
+  if (error) {
+    throw error;
+  }
+
+  const words: FahamTierVocabWord[] = [];
+  for (const row of (data ?? []) as Array<{
+    id: number;
+    text_uthmani: string;
+    text_simple: string;
+    translation_bm: string | null;
+    translation_en: string | null;
+    transliteration: string | null;
+    frequency: number;
+  }>) {
+    const textUthmani = row.text_uthmani.trim();
+    if (!textUthmani) {
+      continue;
+    }
+
+    words.push({
+      frequency: row.frequency,
+      id: row.id,
+      textSimple: row.text_simple,
+      textUthmani,
+      translationBm: normalizeMalayMeaning(row.translation_bm),
+      translationEn: row.translation_en,
+      transliteration: row.transliteration,
+    });
+  }
+
+  return words;
 }

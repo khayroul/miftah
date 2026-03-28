@@ -30,6 +30,7 @@ function main(): void {
   const pagesBucket = process.env.MUSHAF_PAGES_BUCKET?.trim() || "mushaf-pages";
   const manifestsBucket = process.env.MUSHAF_MANIFESTS_BUCKET?.trim() || "mushaf-manifests";
   const temaDataVersion = process.env.TEMA_DATA_VERSION?.trim() || "1";
+  const fahamDataVersion = process.env.FAHAM_DATA_VERSION?.trim() || "1";
   const storageBase = supabaseUrl
     ? `${supabaseUrl.replace(/\/+$/, "")}/storage/v1/object/public`
     : "";
@@ -37,6 +38,7 @@ function main(): void {
   const config = {
     cdnAssetVersion: cdnVersion,
     temaDataVersion,
+    fahamDataVersion,
     supabaseStorageBase: storageBase,
     pagesBucket,
     manifestsBucket,
@@ -45,7 +47,7 @@ function main(): void {
   mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
   writeFileSync(OUTPUT_PATH, JSON.stringify(config, null, 2), "utf-8");
   console.log(
-    `Generated ${OUTPUT_PATH} (version: ${cdnVersion}, tema: ${temaDataVersion}, build: ${appBuildId})`,
+    `Generated ${OUTPUT_PATH} (version: ${cdnVersion}, tema: ${temaDataVersion}, faham: ${fahamDataVersion}, build: ${appBuildId})`,
   );
 }
 

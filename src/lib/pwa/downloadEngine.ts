@@ -9,6 +9,11 @@ import {
   parseDownloadedMarker,
 } from "./mushafStatus";
 import {
+  clearCachedFahamTierVocabPackage,
+  getFahamTierVocabPackageMarker,
+  prefetchFahamTierVocabPackage,
+} from "@/lib/faham/tierVocabPackage";
+import {
   CACHE_DATA,
   CACHE_IMAGES,
   OFFLINE_SHELL_PATHS,
@@ -32,6 +37,7 @@ import {
 export interface PwaConfig {
   readonly cdnAssetVersion: string;
   readonly temaDataVersion?: string;
+  readonly fahamDataVersion?: string;
   readonly supabaseStorageBase: string;
   readonly pagesBucket: string;
   readonly manifestsBucket: string;
@@ -65,6 +71,7 @@ function isPwaConfig(value: unknown): value is PwaConfig {
     typeof v.supabaseStorageBase === "string" &&
     typeof v.pagesBucket === "string" &&
     typeof v.manifestsBucket === "string" &&
+    (typeof v.fahamDataVersion === "string" || typeof v.fahamDataVersion === "undefined") &&
     (typeof v.appBuildId === "string" || typeof v.appBuildId === "undefined")
   );
 }
@@ -482,6 +489,7 @@ async function cacheGlobalFonts(
 async function migrateIfVersionChanged(
   cdnAssetVersion: string,
   temaDataVersion: string,
+  fahamDataVersion: string,
   appBuildId: string,
 ): Promise<void> {
   const stored = localStorage.getItem(LS_KEY_DOWNLOADED);
@@ -501,6 +509,7 @@ async function migrateIfVersionChanged(
     await caches.delete(CACHE_IMAGES);
     await caches.delete(CACHE_DATA);
     await caches.delete(CACHE_BUNDLE);
+    await clearCachedFahamTierVocabPackage();
     clearMushafDownloaded();
     clearDownloadCheckpoint();
     return;
@@ -508,6 +517,7 @@ async function migrateIfVersionChanged(
 
   if (storedTema !== temaDataVersion) {
     await caches.delete(CACHE_TEMA);
+    await clearCachedFahamTierVocabPackage();
     clearMushafDownloaded();
     clearDownloadCheckpoint();
     await caches.delete(CACHE_BUNDLE);
@@ -515,14 +525,25 @@ async function migrateIfVersionChanged(
   }
 
   if (parsed.schemaVersion !== "2") {
+    await clearCachedFahamTierVocabPackage();
     clearMushafDownloaded();
     clearDownloadCheckpoint();
   }
 
   if (parsed.appBuildId !== appBuildId) {
+    await clearCachedFahamTierVocabPackage();
     await caches.delete(CACHE_BUNDLE);
     clearMushafDownloaded();
     clearDownloadCheckpoint();
+  }
+
+  const tierMarker = getFahamTierVocabPackageMarker();
+  if (
+    tierMarker !== null &&
+    (tierMarker.dataVersion !== fahamDataVersion ||
+      tierMarker.appBuildId !== appBuildId)
+  ) {
+    await clearCachedFahamTierVocabPackage();
   }
 }
 
@@ -626,6 +647,7 @@ export async function downloadMushaf(
   activeController = controller;
 
   const temaDataVersion = config.temaDataVersion ?? "1";
+  const fahamDataVersion = config.fahamDataVersion ?? "1";
   const appBuildId = config.appBuildId ?? "unknown";
 
   try {
@@ -633,6 +655,7 @@ export async function downloadMushaf(
     await migrateIfVersionChanged(
       config.cdnAssetVersion,
       temaDataVersion,
+      fahamDataVersion,
       appBuildId,
     );
     const baselineStatus = await isMushafDownloaded(
@@ -759,6 +782,14 @@ export async function downloadMushaf(
 
       markMushafDownloaded(config.cdnAssetVersion, temaDataVersion, appBuildId);
       clearDownloadCheckpoint();
+
+      // Optional package: prefetch current Faham tier vocab metadata so
+      // future offline queue construction can bootstrap from local cache.
+      void prefetchFahamTierVocabPackage({
+        appBuildId,
+        controller,
+        dataVersion: fahamDataVersion,
+      }).catch(() => undefined);
     }
   } catch (error) {
     if (

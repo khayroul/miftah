@@ -27,6 +27,8 @@ import {
   FAHAM_PRESET_CONFIGS,
   type FahamSourcePreset,
 } from "@/lib/faham/presets";
+import { prefetchFahamTierVocabPackage } from "@/lib/faham/tierVocabPackage";
+import { loadPwaConfig } from "@/lib/pwa/downloadEngine";
 
 interface FahamWorkspaceProps {
   initialQueue: FahamQueueSnapshot;
@@ -312,6 +314,7 @@ export function FahamWorkspace({
   const prevMasteredRef = useRef<number | null>(null);
   const sessionCorrectCountRef = useRef(0);
   const isSyncingRef = useRef(false);
+  const prefetchedTierWordLimitRef = useRef<number>(0);
   const cards = useMemo(() => queueItems(snapshot), [snapshot]);
   const currentCard = cards[currentIndex] ?? null;
   const levelProgress = stats?.levelProgress ?? snapshot.levelProgress;
@@ -467,6 +470,30 @@ export function FahamWorkspace({
     }
   }, [applyStats]);
 
+  const prefetchTierVocabForWordLimit = useCallback(async (wordLimit: number) => {
+    if (!Number.isInteger(wordLimit) || wordLimit <= 0) {
+      return;
+    }
+
+    if (prefetchedTierWordLimitRef.current >= wordLimit) {
+      return;
+    }
+
+    try {
+      const config = await loadPwaConfig();
+      const result = await prefetchFahamTierVocabPackage({
+        appBuildId: config.appBuildId ?? "unknown",
+        dataVersion: config.fahamDataVersion ?? "1",
+        requestedWordLimit: wordLimit,
+      });
+      if (result.status !== "skipped" && (result.wordLimit ?? 0) >= wordLimit) {
+        prefetchedTierWordLimitRef.current = result.wordLimit ?? wordLimit;
+      }
+    } catch {
+      // Keep UI uninterrupted; package prefetch is best-effort.
+    }
+  }, []);
+
   const restoreCachedQueue = useCallback(
     (
       message: string,
@@ -596,6 +623,7 @@ export function FahamWorkspace({
           setSessionSummary(null);
           setShowPreview(true);
           resetSessionTracking();
+          void prefetchTierVocabForWordLimit(nextSnapshot.levelProgress.activeWordLimit);
         })
         .catch(() => {
           const restored = restoreCachedQueue(
@@ -635,6 +663,7 @@ export function FahamWorkspace({
           setErrorMessage(null);
           setSessionSummary(null);
           resetSessionTracking();
+          void prefetchTierVocabForWordLimit(nextSnapshot.levelProgress.activeWordLimit);
         })
         .catch(() => {
           const restored = restoreCachedQueue(
@@ -651,6 +680,7 @@ export function FahamWorkspace({
     });
   }, [
     initialPreset,
+    prefetchTierVocabForWordLimit,
     resetSessionTracking,
     restoreCachedQueue,
     shouldHydrateInitialQueue,
@@ -836,7 +866,8 @@ export function FahamWorkspace({
       return;
     }
     saveCachedFahamStats(stats);
-  }, [stats]);
+    void prefetchTierVocabForWordLimit(stats.levelProgress?.activeWordLimit ?? levelProgress.activeWordLimit);
+  }, [levelProgress.activeWordLimit, prefetchTierVocabForWordLimit, stats]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
