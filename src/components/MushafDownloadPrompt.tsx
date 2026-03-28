@@ -116,6 +116,7 @@ export function MushafDownloadPrompt() {
   const pathname = usePathname();
   const [ui, setUi] = useState<UIState>({ kind: "loading" });
   const [minimized, setMinimized] = useState(false);
+  const [readyExpanded, setReadyExpanded] = useState(false);
   const completeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -125,6 +126,12 @@ export function MushafDownloadPrompt() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (ui.kind === "ready") {
+      setReadyExpanded(false);
+    }
+  }, [ui.kind]);
 
   const resolveReadyUi = useCallback(
     (status: MushafStatus): UIState => {
@@ -424,25 +431,40 @@ export function MushafDownloadPrompt() {
     }
 
     return (
-      <div className="mx-auto mt-4 max-w-2xl rounded-2xl border border-teal-200/70 bg-teal-50/95 p-4 shadow-sm dark:border-teal-800/35 dark:bg-teal-950/25">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="max-w-xl">
-            <p className="text-sm font-semibold text-teal-950 dark:text-teal-100">
-              Bacaan luar talian sedia digunakan
-            </p>
-            <p className="mt-1 text-sm text-teal-900/90 dark:text-teal-200/90">
-              Semakan ini pastikan fail Mushaf, tema, font, dan laluan PWA sudah ada dalam cache.
-            </p>
-          </div>
-          <button
-            onClick={handleRefreshStatus}
-            className="rounded-lg border border-teal-300 bg-white/80 px-4 py-2 text-sm font-medium text-teal-900 transition hover:bg-white dark:border-teal-700 dark:bg-teal-900/35 dark:text-teal-100 dark:hover:bg-teal-900/50"
-          >
-            Semak semula
-          </button>
-        </div>
+      <div className="mx-auto mt-4 max-w-2xl">
+        <button
+          onClick={() => setReadyExpanded((prev) => !prev)}
+          className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white/95 px-4 py-2 text-sm font-medium text-stone-700 shadow-sm backdrop-blur transition hover:bg-white dark:border-stone-700 dark:bg-stone-900/92 dark:text-stone-100 dark:hover:bg-stone-900"
+          aria-expanded={readyExpanded}
+          aria-label="Buka atau tutup status luar talian"
+        >
+          <span
+            className="inline-flex h-2.5 w-2.5 rounded-full bg-teal-500"
+            aria-hidden
+          />
+          <span>Bacaan luar talian sedia digunakan</span>
+          <span className="text-xs text-stone-500 dark:text-stone-400">
+            {readyExpanded ? "Tutup" : "Buka"}
+          </span>
+        </button>
 
-        <ProgressSummary progress={ui.progress} />
+        {readyExpanded ? (
+          <div className="mt-3 rounded-2xl border border-stone-200/80 bg-white/88 p-4 shadow-sm backdrop-blur-sm dark:border-stone-700/50 dark:bg-stone-900/65">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <p className="max-w-xl text-sm text-stone-700 dark:text-stone-200">
+                Semakan ini pastikan fail Mushaf, tema, font, dan laluan PWA sudah ada dalam cache.
+              </p>
+              <button
+                onClick={handleRefreshStatus}
+                className="inline-flex items-center rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+              >
+                Semak semula
+              </button>
+            </div>
+
+            <ProgressSummary progress={ui.progress} compact />
+          </div>
+        ) : null}
       </div>
     );
   }
