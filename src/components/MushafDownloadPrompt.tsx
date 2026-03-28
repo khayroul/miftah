@@ -11,19 +11,68 @@ import {
   setDownloadStarted,
 } from "@/lib/pwa/mushafStatus";
 import {
+  DOWNLOAD_PACKAGES,
   downloadMushaf,
+  getDownloadCheckpointPackage,
   loadPwaConfig,
+  type DownloadPackageId,
   type MushafDownloadProgress,
 } from "@/lib/pwa/downloadEngine";
 
 type UIState =
   | { readonly kind: "loading" }
   | { readonly kind: "prompt"; readonly progress: OfflineBundleProgress | null }
-  | { readonly kind: "downloading"; readonly completedItems: number }
+  | { readonly kind: "downloading"; readonly progress: MushafDownloadProgress }
   | { readonly kind: "complete" }
   | { readonly kind: "ready"; readonly progress: OfflineBundleProgress }
   | { readonly kind: "error"; readonly message: string }
   | { readonly kind: "hidden" };
+
+const TEMA_PACKAGE = DOWNLOAD_PACKAGES[0];
+const MUSHAF_PACKAGE = DOWNLOAD_PACKAGES[1];
+const TOTAL_TEMA_ITEMS = 114;
+const TOTAL_TEMA_ROUTES = 114;
+
+function buildInitialDownloadProgress(
+  completedItems: number,
+  packageId: DownloadPackageId,
+): MushafDownloadProgress {
+  const pkg = packageId === "tema" ? TEMA_PACKAGE : MUSHAF_PACKAGE;
+  return {
+    completedItems,
+    totalItems: TOTAL_ITEMS,
+    packageId,
+    packageLabel: pkg.label,
+    packageIndex: pkg.index,
+    packageCount: pkg.count,
+    packageCompletedItems: 0,
+    packageTotalItems: pkg.totalItems,
+  };
+}
+
+function buildResumeDownloadProgress(
+  progress: OfflineBundleProgress,
+  packageId: DownloadPackageId,
+): MushafDownloadProgress {
+  const temaRouteGuess = Math.min(progress.routes, TOTAL_TEMA_ROUTES);
+  const temaCompletedItems = Math.min(
+    TEMA_PACKAGE.totalItems,
+    progress.tema + temaRouteGuess,
+  );
+  const mushafCompletedItems = Math.max(
+    0,
+    progress.completedItems - temaCompletedItems,
+  );
+  const packageCompletedItems =
+    packageId === "tema"
+      ? temaCompletedItems
+      : Math.min(MUSHAF_PACKAGE.totalItems, mushafCompletedItems);
+
+  return {
+    ...buildInitialDownloadProgress(progress.completedItems, packageId),
+    packageCompletedItems,
+  };
+}
 
 function formatProgressLine(
   label: string,
@@ -112,7 +161,7 @@ export function MushafDownloadPrompt() {
         await downloadMushaf(config, (progress: MushafDownloadProgress) => {
           setUi({
             kind: "downloading",
-            completedItems: progress.completedItems,
+            progress,
           });
         });
 
@@ -165,9 +214,12 @@ export function MushafDownloadPrompt() {
 
         const started = hasUserStartedDownload();
         if (status.state === "partial" && started) {
+          const checkpointPackage =
+            getDownloadCheckpointPackage(config) ??
+            (status.progress.tema >= TOTAL_TEMA_ITEMS ? "mushaf" : "tema");
           setUi({
             kind: "downloading",
-            completedItems: status.progress.completedItems,
+            progress: buildResumeDownloadProgress(status.progress, checkpointPackage),
           });
           void startDownload(config);
           return;
@@ -198,7 +250,10 @@ export function MushafDownloadPrompt() {
 
   const handleStart = useCallback(async () => {
     setDownloadStarted();
-    setUi({ kind: "downloading", completedItems: 0 });
+    setUi({
+      kind: "downloading",
+      progress: buildInitialDownloadProgress(0, "tema"),
+    });
     try {
       const config = await loadPwaConfig();
       await startDownload(config);
@@ -224,7 +279,10 @@ export function MushafDownloadPrompt() {
       // Fall through to a fresh download attempt.
     }
 
-    setUi({ kind: "downloading", completedItems: 0 });
+    setUi({
+      kind: "downloading",
+      progress: buildInitialDownloadProgress(0, "tema"),
+    });
     try {
       const config = await loadPwaConfig();
       await startDownload(config);
@@ -299,42 +357,52 @@ export function MushafDownloadPrompt() {
           aria-label="Tunjukkan kemajuan muat turun"
         >
           <span className="text-xs font-bold">
-            {Math.round((ui.completedItems / TOTAL_ITEMS) * 100)}%
+            {Math.round((ui.progress.completedItems / TOTAL_ITEMS) * 100)}%
           </span>
         </button>
       );
     }
 
-    const percentage = (ui.completedItems / TOTAL_ITEMS) * 100;
+    const percentage = (ui.progress.completedItems / TOTAL_ITEMS) * 100;
 
     return (
       <div
         className="fixed inset-x-0 bottom-[env(safe-area-inset-bottom,0px)] z-50 border-t border-stone-200 bg-white/95 px-4 py-2 backdrop-blur-sm dark:border-stone-700 dark:bg-gray-900/95"
         role="progressbar"
         aria-valuemin={0}
-        aria-valuenow={ui.completedItems}
+        aria-valuenow={ui.progress.completedItems}
         aria-valuemax={TOTAL_ITEMS}
         aria-label="Memuat turun data Miftah"
       >
-        <div className="mx-auto flex max-w-md items-center gap-3">
-          <div className="flex-1">
-            <div className="h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
-              <div
-                className="h-full rounded-full bg-teal-500 transition-all duration-300"
-                style={{ width: `${percentage}%` }}
-              />
-            </div>
+        <div className="mx-auto max-w-md">
+          <div className="mb-1 flex items-center justify-between text-[11px] text-stone-600 dark:text-stone-300">
+            <span className="font-medium">
+              Pakej {ui.progress.packageIndex}/{ui.progress.packageCount}: {ui.progress.packageLabel}
+            </span>
+            <span>
+              {ui.progress.packageCompletedItems}/{ui.progress.packageTotalItems}
+            </span>
           </div>
-          <span className="whitespace-nowrap text-xs text-stone-600 dark:text-stone-300">
-            {Math.round(percentage)}%
-          </span>
-          <button
-            onClick={handleMinimize}
-            className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
-            aria-label="Kecilkan bar kemajuan"
-          >
-            ×
-          </button>
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <div className="h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
+                <div
+                  className="h-full rounded-full bg-teal-500 transition-all duration-300"
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+            </div>
+            <span className="whitespace-nowrap text-xs text-stone-600 dark:text-stone-300">
+              {Math.round(percentage)}%
+            </span>
+            <button
+              onClick={handleMinimize}
+              className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
+              aria-label="Kecilkan bar kemajuan"
+            >
+              ×
+            </button>
+          </div>
         </div>
       </div>
     );

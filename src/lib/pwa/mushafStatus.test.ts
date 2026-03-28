@@ -24,6 +24,7 @@ const mockLocalStorage = {
 import {
   TOTAL_PAGES,
   LS_KEY_DOWNLOADED,
+  LS_KEY_PACKAGE_CHECKPOINT,
   markMushafDownloaded,
   clearMushafDownloaded,
   hasUserStartedDownload,
@@ -57,8 +58,10 @@ describe("markMushafDownloaded / clearMushafDownloaded", () => {
   it("clearMushafDownloaded removes downloaded flag and started flag", () => {
     markMushafDownloaded("5", "1");
     setDownloadStarted();
+    store[LS_KEY_PACKAGE_CHECKPOINT] = "checkpoint";
     clearMushafDownloaded();
     assert.equal(store["miftah:mushaf-downloaded"], undefined);
+    assert.equal(store["miftah:mushaf-download-package"], undefined);
     assert.equal(store["miftah:mushaf-download-started"], undefined);
   });
 });

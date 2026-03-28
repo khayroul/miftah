@@ -2,6 +2,7 @@ import {
   CACHE_BUNDLE,
   CACHE_TEMA,
   LS_KEY_DOWNLOADED,
+  LS_KEY_PACKAGE_CHECKPOINT,
   clearMushafDownloaded,
   isMushafDownloaded,
   markMushafDownloaded,
@@ -11,11 +12,17 @@ import {
   CACHE_DATA,
   CACHE_IMAGES,
   OFFLINE_SHELL_PATHS,
+  TOTAL_DATA_ENTRIES,
+  TOTAL_FONT_ENTRIES,
   TOTAL_ITEMS,
   TOTAL_PAGES,
+  TOTAL_ROUTE_ENTRIES,
+  TOTAL_SHELL_ENTRIES,
+  TOTAL_TEMA_ENTRIES,
   buildPageFontPath,
   buildReadRoutePath,
   buildTemaRoutePath,
+  isTemaRoutePath,
 } from "./offlineBundle";
 
 // ---------------------------------------------------------------------------
@@ -103,15 +110,236 @@ export function buildPageAssetUrls(
 }
 
 // ---------------------------------------------------------------------------
-// Progress
+// Packages + Progress
 // ---------------------------------------------------------------------------
+
+export type DownloadPackageId = "tema" | "mushaf";
+
+export interface DownloadPackageDefinition {
+  readonly id: DownloadPackageId;
+  readonly label: string;
+  readonly index: number;
+  readonly count: number;
+  readonly totalItems: number;
+}
+
+const TEMA_PACKAGE_TOTAL_ITEMS = TOTAL_TEMA_ENTRIES * 2;
+const MUSHAF_ROUTE_TOTAL_ITEMS = TOTAL_ROUTE_ENTRIES - TOTAL_TEMA_ENTRIES;
+const MUSHAF_PACKAGE_TOTAL_ITEMS =
+  TOTAL_PAGES +
+  TOTAL_DATA_ENTRIES +
+  TOTAL_FONT_ENTRIES +
+  TOTAL_SHELL_ENTRIES +
+  MUSHAF_ROUTE_TOTAL_ITEMS;
+
+export const DOWNLOAD_PACKAGES: readonly DownloadPackageDefinition[] = [
+  {
+    id: "tema",
+    label: "Tema",
+    index: 1,
+    count: 2,
+    totalItems: TEMA_PACKAGE_TOTAL_ITEMS,
+  },
+  {
+    id: "mushaf",
+    label: "Mushaf",
+    index: 2,
+    count: 2,
+    totalItems: MUSHAF_PACKAGE_TOTAL_ITEMS,
+  },
+] as const;
+
+const DOWNLOAD_PACKAGE_MAP: Readonly<Record<DownloadPackageId, DownloadPackageDefinition>> = {
+  tema: DOWNLOAD_PACKAGES[0],
+  mushaf: DOWNLOAD_PACKAGES[1],
+};
+
+interface PackageProgressState {
+  readonly temaCompletedItems: number;
+  readonly mushafCompletedItems: number;
+}
 
 export type MushafDownloadProgress = {
   readonly completedItems: number;
   readonly totalItems: number;
+  readonly packageId: DownloadPackageId;
+  readonly packageLabel: string;
+  readonly packageIndex: number;
+  readonly packageCount: number;
+  readonly packageCompletedItems: number;
+  readonly packageTotalItems: number;
 };
 
 type ProgressCallback = (progress: MushafDownloadProgress) => void;
+
+function clampCount(value: number, max: number): number {
+  return Math.max(0, Math.min(value, max));
+}
+
+function getPackageDefinition(packageId: DownloadPackageId): DownloadPackageDefinition {
+  return DOWNLOAD_PACKAGE_MAP[packageId];
+}
+
+function buildProgressPayload(
+  completedItems: number,
+  packageId: DownloadPackageId,
+  packageProgress: PackageProgressState,
+): MushafDownloadProgress {
+  const pkg = getPackageDefinition(packageId);
+  const rawPackageCompleted =
+    packageId === "tema"
+      ? packageProgress.temaCompletedItems
+      : packageProgress.mushafCompletedItems;
+
+  return {
+    completedItems: clampCount(completedItems, TOTAL_ITEMS),
+    totalItems: TOTAL_ITEMS,
+    packageId,
+    packageLabel: pkg.label,
+    packageIndex: pkg.index,
+    packageCount: pkg.count,
+    packageCompletedItems: clampCount(rawPackageCompleted, pkg.totalItems),
+    packageTotalItems: pkg.totalItems,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Download checkpoint
+// ---------------------------------------------------------------------------
+
+interface DownloadCheckpoint {
+  readonly packageId: DownloadPackageId;
+  readonly cdnAssetVersion: string;
+  readonly temaDataVersion: string;
+  readonly appBuildId: string;
+}
+
+function clearDownloadCheckpoint(): void {
+  localStorage.removeItem(LS_KEY_PACKAGE_CHECKPOINT);
+}
+
+function parseDownloadCheckpoint(raw: string): DownloadCheckpoint | null {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) return null;
+    const record = parsed as Record<string, unknown>;
+
+    const packageId = record.packageId;
+    const cdnAssetVersion = record.cdnAssetVersion;
+    const temaDataVersion = record.temaDataVersion;
+    const appBuildId = record.appBuildId;
+
+    if (packageId !== "tema" && packageId !== "mushaf") return null;
+    if (typeof cdnAssetVersion !== "string") return null;
+    if (typeof temaDataVersion !== "string") return null;
+    if (typeof appBuildId !== "string") return null;
+
+    return {
+      packageId,
+      cdnAssetVersion,
+      temaDataVersion,
+      appBuildId,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function readDownloadCheckpoint(
+  cdnAssetVersion: string,
+  temaDataVersion: string,
+  appBuildId: string,
+): DownloadCheckpoint | null {
+  const raw = localStorage.getItem(LS_KEY_PACKAGE_CHECKPOINT);
+  if (raw === null) return null;
+
+  const parsed = parseDownloadCheckpoint(raw);
+  if (parsed === null) {
+    clearDownloadCheckpoint();
+    return null;
+  }
+
+  if (
+    parsed.cdnAssetVersion !== cdnAssetVersion ||
+    parsed.temaDataVersion !== temaDataVersion ||
+    parsed.appBuildId !== appBuildId
+  ) {
+    clearDownloadCheckpoint();
+    return null;
+  }
+
+  return parsed;
+}
+
+export function getDownloadCheckpointPackage(
+  config: Pick<PwaConfig, "cdnAssetVersion" | "temaDataVersion" | "appBuildId">,
+): DownloadPackageId | null {
+  const parsed = readDownloadCheckpoint(
+    config.cdnAssetVersion,
+    config.temaDataVersion ?? "1",
+    config.appBuildId ?? "unknown",
+  );
+  return parsed?.packageId ?? null;
+}
+
+function writeDownloadCheckpoint(
+  packageId: DownloadPackageId,
+  cdnAssetVersion: string,
+  temaDataVersion: string,
+  appBuildId: string,
+): void {
+  const checkpoint: DownloadCheckpoint = {
+    packageId,
+    cdnAssetVersion,
+    temaDataVersion,
+    appBuildId,
+  };
+
+  localStorage.setItem(LS_KEY_PACKAGE_CHECKPOINT, JSON.stringify(checkpoint));
+}
+
+async function countTemaRouteEntries(): Promise<number> {
+  const cache = await caches.open(CACHE_BUNDLE);
+  const keys = await cache.keys();
+
+  return keys.reduce((count, request) => {
+    const pathname = new URL(request.url).pathname;
+    return isTemaRoutePath(pathname) ? count + 1 : count;
+  }, 0);
+}
+
+async function resolveInitialPackageState(
+  completedItems: number,
+  temaCompletedItems: number,
+): Promise<{ packageId: DownloadPackageId; packageProgress: PackageProgressState }> {
+  const temaRouteEntries = await countTemaRouteEntries();
+  const temaProgress = clampCount(
+    temaCompletedItems + temaRouteEntries,
+    TEMA_PACKAGE_TOTAL_ITEMS,
+  );
+  const mushafProgress = clampCount(
+    completedItems - temaProgress,
+    MUSHAF_PACKAGE_TOTAL_ITEMS,
+  );
+
+  if (temaProgress < TEMA_PACKAGE_TOTAL_ITEMS) {
+    return {
+      packageId: "tema",
+      packageProgress: {
+        temaCompletedItems: temaProgress,
+        mushafCompletedItems: mushafProgress,
+      },
+    };
+  }
+
+  return {
+    packageId: "mushaf",
+    packageProgress: {
+      temaCompletedItems: temaProgress,
+      mushafCompletedItems: mushafProgress,
+    },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Cancellation
@@ -253,7 +481,7 @@ async function cacheGlobalFonts(
 
 async function migrateIfVersionChanged(
   cdnAssetVersion: string,
-  temaDataVersion: string | undefined,
+  temaDataVersion: string,
   appBuildId: string,
 ): Promise<void> {
   const stored = localStorage.getItem(LS_KEY_DOWNLOADED);
@@ -262,6 +490,7 @@ async function migrateIfVersionChanged(
   const parsed = parseDownloadedMarker(stored);
   if (!parsed) {
     clearMushafDownloaded();
+    clearDownloadCheckpoint();
     return;
   }
 
@@ -273,23 +502,27 @@ async function migrateIfVersionChanged(
     await caches.delete(CACHE_DATA);
     await caches.delete(CACHE_BUNDLE);
     clearMushafDownloaded();
+    clearDownloadCheckpoint();
     return;
   }
 
-  if (temaDataVersion !== undefined && storedTema !== temaDataVersion) {
+  if (storedTema !== temaDataVersion) {
     await caches.delete(CACHE_TEMA);
     clearMushafDownloaded();
+    clearDownloadCheckpoint();
     await caches.delete(CACHE_BUNDLE);
     return;
   }
 
   if (parsed.schemaVersion !== "2") {
     clearMushafDownloaded();
+    clearDownloadCheckpoint();
   }
 
   if (parsed.appBuildId !== appBuildId) {
     await caches.delete(CACHE_BUNDLE);
     clearMushafDownloaded();
+    clearDownloadCheckpoint();
   }
 }
 
@@ -346,6 +579,42 @@ async function downloadTemaBundle(
   return results.filter(Boolean).length;
 }
 
+function emitProgress(
+  completedItems: number,
+  packageId: DownloadPackageId,
+  packageProgress: PackageProgressState,
+  onProgress?: ProgressCallback,
+): void {
+  if (onProgress === undefined) return;
+  onProgress(buildProgressPayload(completedItems, packageId, packageProgress));
+}
+
+function withTemaProgress(
+  progress: PackageProgressState,
+  increment: number,
+): PackageProgressState {
+  return {
+    ...progress,
+    temaCompletedItems: clampCount(
+      progress.temaCompletedItems + increment,
+      TEMA_PACKAGE_TOTAL_ITEMS,
+    ),
+  };
+}
+
+function withMushafProgress(
+  progress: PackageProgressState,
+  increment: number,
+): PackageProgressState {
+  return {
+    ...progress,
+    mushafCompletedItems: clampCount(
+      progress.mushafCompletedItems + increment,
+      MUSHAF_PACKAGE_TOTAL_ITEMS,
+    ),
+  };
+}
+
 export async function downloadMushaf(
   config: PwaConfig,
   onProgress?: ProgressCallback,
@@ -356,7 +625,7 @@ export async function downloadMushaf(
   const controller = new AbortController();
   activeController = controller;
 
-  const temaDataVersion = config.temaDataVersion;
+  const temaDataVersion = config.temaDataVersion ?? "1";
   const appBuildId = config.appBuildId ?? "unknown";
 
   try {
@@ -368,9 +637,14 @@ export async function downloadMushaf(
     );
     const baselineStatus = await isMushafDownloaded(
       config.cdnAssetVersion,
-      temaDataVersion ?? "1",
+      temaDataVersion,
       appBuildId,
     );
+
+    if (baselineStatus.state === "complete") {
+      clearDownloadCheckpoint();
+      return;
+    }
 
     // Storage checks
     const hasQuota = await checkStorageQuota();
@@ -382,67 +656,95 @@ export async function downloadMushaf(
     await requestPersistentStorage();
 
     let completedItems = baselineStatus.progress.completedItems;
-    onProgress?.({
+    void readDownloadCheckpoint(
+      config.cdnAssetVersion,
+      temaDataVersion,
+      appBuildId,
+    );
+    const initialState = await resolveInitialPackageState(
       completedItems,
-      totalItems: TOTAL_ITEMS,
-    });
+      baselineStatus.progress.tema,
+    );
 
-    completedItems += await cacheOfflineShellAssets(controller);
-    onProgress?.({
-      completedItems,
-      totalItems: TOTAL_ITEMS,
-    });
+    let activePackageId = initialState.packageId;
+    let packageProgress = initialState.packageProgress;
 
-    // Phase 1: Download mushaf pages, page data, page fonts, and cached
-    // reader documents so offline navigation can render a full page.
-    for (let page = 1; page <= TOTAL_PAGES; page += 2) {
-      if (controller.signal.aborted) break;
+    emitProgress(completedItems, activePackageId, packageProgress, onProgress);
 
-      const batch: Promise<number>[] = [
-        downloadPage(page, config, controller),
-      ];
-      if (page + 1 <= TOTAL_PAGES) {
-        batch.push(downloadPage(page + 1, config, controller));
-      }
+    if (packageProgress.temaCompletedItems < TEMA_PACKAGE_TOTAL_ITEMS) {
+      activePackageId = "tema";
+      writeDownloadCheckpoint(
+        activePackageId,
+        config.cdnAssetVersion,
+        temaDataVersion,
+        appBuildId,
+      );
+      emitProgress(completedItems, activePackageId, packageProgress, onProgress);
 
-      const batchInserted = await Promise.all(batch);
-      completedItems += batchInserted.reduce((sum, value) => sum + value, 0);
-
-      onProgress?.({
-        completedItems,
-        totalItems: TOTAL_ITEMS,
-      });
-    }
-
-    completedItems += await cacheGlobalFonts(controller);
-    onProgress?.({
-      completedItems,
-      totalItems: TOTAL_ITEMS,
-    });
-
-    // Phase 2: Download tema data (114 surahs)
-    if (config.temaDataVersion !== undefined) {
-      for (let surah = 1; surah <= 114; surah += 2) {
+      for (let surah = 1; surah <= TOTAL_TEMA_ENTRIES; surah += 2) {
         if (controller.signal.aborted) break;
 
         const batch: Promise<number>[] = [
           downloadTemaBundle(surah, controller),
         ];
-        if (surah + 1 <= 114) {
+        if (surah + 1 <= TOTAL_TEMA_ENTRIES) {
           batch.push(downloadTemaBundle(surah + 1, controller));
         }
 
         const batchInserted = await Promise.all(batch);
-        completedItems += batchInserted.reduce((sum, value) => sum + value, 0);
-
-        onProgress?.({
-          completedItems,
-          totalItems: TOTAL_ITEMS,
-        });
+        const insertedCount = batchInserted.reduce((sum, value) => sum + value, 0);
+        completedItems += insertedCount;
+        packageProgress = withTemaProgress(packageProgress, insertedCount);
+        emitProgress(completedItems, activePackageId, packageProgress, onProgress);
       }
     }
 
-    if (!controller.signal.aborted && temaDataVersion !== undefined) {
+    if (
+      !controller.signal.aborted &&
+      packageProgress.temaCompletedItems >= TEMA_PACKAGE_TOTAL_ITEMS &&
+      packageProgress.mushafCompletedItems < MUSHAF_PACKAGE_TOTAL_ITEMS
+    ) {
+      activePackageId = "mushaf";
+      writeDownloadCheckpoint(
+        activePackageId,
+        config.cdnAssetVersion,
+        temaDataVersion,
+        appBuildId,
+      );
+      emitProgress(completedItems, activePackageId, packageProgress, onProgress);
+
+      const insertedShell = await cacheOfflineShellAssets(controller);
+      completedItems += insertedShell;
+      packageProgress = withMushafProgress(packageProgress, insertedShell);
+      emitProgress(completedItems, activePackageId, packageProgress, onProgress);
+
+      // Download mushaf pages, page data, page fonts, and cached
+      // reader documents so offline navigation can render a full page.
+      for (let page = 1; page <= TOTAL_PAGES; page += 2) {
+        if (controller.signal.aborted) break;
+
+        const batch: Promise<number>[] = [
+          downloadPage(page, config, controller),
+        ];
+        if (page + 1 <= TOTAL_PAGES) {
+          batch.push(downloadPage(page + 1, config, controller));
+        }
+
+        const batchInserted = await Promise.all(batch);
+        const insertedCount = batchInserted.reduce((sum, value) => sum + value, 0);
+        completedItems += insertedCount;
+        packageProgress = withMushafProgress(packageProgress, insertedCount);
+
+        emitProgress(completedItems, activePackageId, packageProgress, onProgress);
+      }
+
+      const insertedFonts = await cacheGlobalFonts(controller);
+      completedItems += insertedFonts;
+      packageProgress = withMushafProgress(packageProgress, insertedFonts);
+      emitProgress(completedItems, activePackageId, packageProgress, onProgress);
+    }
+
+    if (!controller.signal.aborted) {
       const finalStatus = await isMushafDownloaded(
         config.cdnAssetVersion,
         temaDataVersion,
@@ -456,6 +758,7 @@ export async function downloadMushaf(
       }
 
       markMushafDownloaded(config.cdnAssetVersion, temaDataVersion, appBuildId);
+      clearDownloadCheckpoint();
     }
   } catch (error) {
     if (

@@ -21,6 +21,7 @@ import {
 export { CACHE_BUNDLE, CACHE_TEMA, TOTAL_ITEMS, TOTAL_PAGES };
 
 export const LS_KEY_DOWNLOADED = "miftah:mushaf-downloaded";
+export const LS_KEY_PACKAGE_CHECKPOINT = "miftah:mushaf-download-package";
 const LS_KEY_DISMISSED = "miftah:mushaf-dismissed";
 const LS_KEY_STARTED = "miftah:mushaf-download-started";
 
@@ -219,6 +220,7 @@ export function markMushafDownloaded(
 /** Clear the downloaded flag (for version migration or debug). */
 export function clearMushafDownloaded(): void {
   localStorage.removeItem(LS_KEY_DOWNLOADED);
+  localStorage.removeItem(LS_KEY_PACKAGE_CHECKPOINT);
   localStorage.removeItem(LS_KEY_STARTED);
 }
 
