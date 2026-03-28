@@ -12,6 +12,7 @@ import {
   parseBoundedIntegerInput,
 } from "@/lib/readNavigationUtils";
 import { navigateWithOfflineSupport } from "@/lib/pwa/navigation";
+import { FALLBACK_READ_JUMP_TARGETS } from "@/lib/readJumpTargetsFallback";
 
 interface ReadJumpControlsProps {
   currentPage: number;
@@ -29,47 +30,39 @@ export function ReadJumpControls({
   juzOptions: initialJuzOptions,
 }: ReadJumpControlsProps) {
   const router = useRouter();
+  const hasFallbackTargets =
+    FALLBACK_READ_JUMP_TARGETS.surahs.length > 0 &&
+    FALLBACK_READ_JUMP_TARGETS.juzs.length > 0;
   const [pageInput, setPageInput] = useState(String(currentPage));
   const [surahInput, setSurahInput] = useState(String(currentSurahId));
   const [juzInput, setJuzInput] = useState(String(currentJuzNumber));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [surahOptions, setSurahOptions] = useState<SurahJumpTarget[]>(
-    initialSurahOptions ?? [],
+    initialSurahOptions ?? FALLBACK_READ_JUMP_TARGETS.surahs,
   );
   const [juzOptions, setJuzOptions] = useState<JuzJumpTarget[]>(
-    initialJuzOptions ?? [],
+    initialJuzOptions ?? FALLBACK_READ_JUMP_TARGETS.juzs,
   );
   const [isLoadingTargets, setIsLoadingTargets] = useState(
-    !initialSurahOptions || !initialJuzOptions,
+    (!initialSurahOptions || !initialJuzOptions) && !hasFallbackTargets,
   );
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (initialSurahOptions) {
-      setTimeout(() => setSurahOptions(initialSurahOptions), 0);
-    }
-  }, [initialSurahOptions]);
-
-  useEffect(() => {
-    if (initialJuzOptions) {
-      setTimeout(() => setJuzOptions(initialJuzOptions), 0);
-    }
-  }, [initialJuzOptions]);
-
-  useEffect(() => {
     if (initialSurahOptions && initialJuzOptions) {
-      setTimeout(() => {
-        setIsLoadingTargets(false);
-        setLoadError(null);
-      }, 0);
+      return;
+    }
+
+    if (!navigator.onLine && hasFallbackTargets) {
       return;
     }
 
     const abortController = new AbortController();
-    setTimeout(() => {
-      setIsLoadingTargets(true);
-      setLoadError(null);
-    }, 0);
+
+    if (!hasFallbackTargets) {
+      setTimeout(() => setIsLoadingTargets(true), 0);
+    }
+    setTimeout(() => setLoadError(null), 0);
 
     void fetch("/api/read/jump-targets", {
       signal: abortController.signal,
@@ -91,6 +84,14 @@ export function ReadJumpControls({
         }
 
         console.error("[ReadJumpControls] Failed to load jump targets", error);
+
+        if (hasFallbackTargets) {
+          setSurahOptions(FALLBACK_READ_JUMP_TARGETS.surahs);
+          setJuzOptions(FALLBACK_READ_JUMP_TARGETS.juzs);
+          setLoadError(null);
+          return;
+        }
+
         setLoadError("Senarai surah dan juz belum dapat dimuatkan.");
       })
       .finally(() => {
@@ -102,7 +103,7 @@ export function ReadJumpControls({
     return () => {
       abortController.abort();
     };
-  }, [initialJuzOptions, initialSurahOptions]);
+  }, [hasFallbackTargets, initialJuzOptions, initialSurahOptions]);
 
   const surahMarkers = useMemo(
     () =>
