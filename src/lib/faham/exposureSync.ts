@@ -10,7 +10,7 @@ const EXPOSURE_RETRY_BASE_DELAY_MS = 5_000;
 const EXPOSURE_RETRY_MAX_DELAY_MS = 5 * 60 * 1000;
 const EXPOSURE_SYNC_BATCH_SIZE = 8;
 
-interface PendingFahamExposureEvent {
+export interface PendingFahamExposureEvent {
   ayahKey: string;
   id: string;
   lastErrorAt: number | null;
@@ -22,6 +22,16 @@ interface PendingFahamExposureEvent {
 }
 
 type ExposureSyncResult = "synced" | "drop" | "retry";
+
+export interface FahamExposureSignal {
+  ayahIds: number[];
+  pageNumber?: number;
+  queuedAt: number;
+  sourceKey: string;
+  sourceType: "reading_page" | "theme_chunk" | "hifz_ayah";
+  surahId?: number | null;
+  themeChunkIndex?: number;
+}
 
 let isExposureSyncSetup = false;
 let isExposureSyncRunning = false;
@@ -279,6 +289,44 @@ export function loadPendingFahamExposureQueue(): PendingFahamExposureEvent[] {
   }
 
   return sanitized;
+}
+
+export function loadFahamExposureSignals(limit = 24): FahamExposureSignal[] {
+  const queue = loadPendingFahamExposureQueue();
+  const recent = queue.slice(-Math.max(1, limit)).reverse();
+
+  return recent.map((event) => {
+    const payload = event.payload;
+    if (payload.sourceType === "reading_page") {
+      return {
+        ayahIds: payload.ayahIds,
+        pageNumber: payload.pageNumber,
+        queuedAt: event.queuedAt,
+        sourceKey: event.sourceKey,
+        sourceType: payload.sourceType,
+        surahId: payload.surahId ?? null,
+      };
+    }
+
+    if (payload.sourceType === "theme_chunk") {
+      return {
+        ayahIds: payload.ayahIds,
+        queuedAt: event.queuedAt,
+        sourceKey: event.sourceKey,
+        sourceType: payload.sourceType,
+        surahId: payload.surahId,
+        themeChunkIndex: payload.themeChunkIndex,
+      };
+    }
+
+    return {
+      ayahIds: payload.ayahIds,
+      queuedAt: event.queuedAt,
+      sourceKey: event.sourceKey,
+      sourceType: payload.sourceType,
+      surahId: payload.surahId ?? null,
+    };
+  });
 }
 
 function replacePendingFahamExposureQueue(

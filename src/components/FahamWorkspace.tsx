@@ -27,6 +27,7 @@ import {
   FAHAM_PRESET_CONFIGS,
   type FahamSourcePreset,
 } from "@/lib/faham/presets";
+import { buildOfflineFahamQueueSnapshot } from "@/lib/faham/offlineQueue";
 import { prefetchFahamTierVocabPackage } from "@/lib/faham/tierVocabPackage";
 import { loadPwaConfig } from "@/lib/pwa/downloadEngine";
 
@@ -200,6 +201,15 @@ async function requestQueue(
   return (await response.json()) as FahamQueueSnapshot;
 }
 
+function countQueueCards(snapshot: FahamQueueSnapshot): number {
+  return (
+    snapshot.due.length +
+    snapshot.learning.length +
+    snapshot.new.length +
+    snapshot.mastered.length
+  );
+}
+
 function optionButtonClassName(params: {
   answerState: AnswerState | null;
   index: number;
@@ -318,6 +328,7 @@ export function FahamWorkspace({
   const cards = useMemo(() => queueItems(snapshot), [snapshot]);
   const currentCard = cards[currentIndex] ?? null;
   const levelProgress = stats?.levelProgress ?? snapshot.levelProgress;
+  const levelProgressHint = stats?.levelProgress ?? snapshot.levelProgress;
   const foundCount = stats?.wordBank ?? 0;
   const masteredCount = stats?.mastered ?? 0;
   const hasLiveStats = stats !== null;
@@ -494,6 +505,38 @@ export function FahamWorkspace({
     }
   }, []);
 
+  const requestQueueWithFallback = useCallback(async (
+    nextPreset: FahamSourcePreset,
+    nextDirectionMode: FahamMcqDirectionMode,
+    nextIsRevision: boolean,
+  ): Promise<{ snapshot: FahamQueueSnapshot; source: "remote" | "tier-package" }> => {
+    try {
+      const remoteSnapshot = await requestQueue(
+        nextPreset,
+        nextDirectionMode,
+        nextIsRevision,
+      );
+      return {
+        snapshot: remoteSnapshot,
+        source: "remote",
+      };
+    } catch (error) {
+      const offlineSnapshot = await buildOfflineFahamQueueSnapshot({
+        directionMode: nextDirectionMode,
+        isRevision: nextIsRevision,
+        levelProgressHint,
+        preset: nextPreset,
+      });
+      if (offlineSnapshot && countQueueCards(offlineSnapshot) > 0) {
+        return {
+          snapshot: offlineSnapshot,
+          source: "tier-package",
+        };
+      }
+      throw error;
+    }
+  }, [levelProgressHint]);
+
   const restoreCachedQueue = useCallback(
     (
       message: string,
@@ -605,8 +648,8 @@ export function FahamWorkspace({
     nextIsRevision: boolean = false,
   ) => {
     startTransition(() => {
-      void requestQueue(nextPreset, nextDirectionMode, nextIsRevision)
-        .then((nextSnapshot) => {
+      void requestQueueWithFallback(nextPreset, nextDirectionMode, nextIsRevision)
+        .then(({ snapshot: nextSnapshot, source }) => {
           saveCachedFahamQueue({
             directionMode: nextDirectionMode,
             isRevision: nextIsRevision,
@@ -619,7 +662,11 @@ export function FahamWorkspace({
           setSnapshot(nextSnapshot);
           setCurrentIndex(0);
           setAnswerState(null);
-          setErrorMessage(null);
+          setErrorMessage(
+            source === "tier-package"
+              ? "Luar talian: sesi Faham dibina daripada pakej perkataan yang telah dimuat turun."
+              : null,
+          );
           setSessionSummary(null);
           setShowPreview(true);
           resetSessionTracking();
@@ -646,8 +693,8 @@ export function FahamWorkspace({
     }
 
     startTransition(() => {
-      void requestQueue(initialPreset, "arab_to_bm")
-        .then((nextSnapshot) => {
+      void requestQueueWithFallback(initialPreset, "arab_to_bm", false)
+        .then(({ snapshot: nextSnapshot, source }) => {
           saveCachedFahamQueue({
             directionMode: "arab_to_bm",
             isRevision: false,
@@ -660,7 +707,11 @@ export function FahamWorkspace({
           setSnapshot(nextSnapshot);
           setCurrentIndex(0);
           setAnswerState(null);
-          setErrorMessage(null);
+          setErrorMessage(
+            source === "tier-package"
+              ? "Luar talian: sesi Faham dibina daripada pakej perkataan yang telah dimuat turun."
+              : null,
+          );
           setSessionSummary(null);
           resetSessionTracking();
           void prefetchTierVocabForWordLimit(nextSnapshot.levelProgress.activeWordLimit);
@@ -681,6 +732,7 @@ export function FahamWorkspace({
   }, [
     initialPreset,
     prefetchTierVocabForWordLimit,
+    requestQueueWithFallback,
     resetSessionTracking,
     restoreCachedQueue,
     shouldHydrateInitialQueue,
@@ -716,7 +768,11 @@ export function FahamWorkspace({
     let hasRestoredCachedQueue = false;
 
     try {
-      const refreshed = await requestQueue(preset, directionMode, isRevision);
+      const { snapshot: refreshed, source } = await requestQueueWithFallback(
+        preset,
+        directionMode,
+        isRevision,
+      );
       saveCachedFahamQueue({
         directionMode,
         isRevision,
@@ -726,7 +782,11 @@ export function FahamWorkspace({
       setSnapshot(refreshed);
       setCurrentIndex(0);
       setAnswerState(null);
-      setErrorMessage(null);
+      setErrorMessage(
+        source === "tier-package"
+          ? "Luar talian: sesi seterusnya dibina daripada pakej perkataan tempatan."
+          : null,
+      );
       setShowPreview(true);
     } catch {
       hasRestoredCachedQueue = restoreCachedQueue(
@@ -761,6 +821,7 @@ export function FahamWorkspace({
     masteredCount,
     playFeedbackSound,
     preset,
+    requestQueueWithFallback,
     refreshStats,
     resetSessionTracking,
     restoreCachedQueue,

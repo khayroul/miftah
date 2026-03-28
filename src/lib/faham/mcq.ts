@@ -1,6 +1,6 @@
 import type { Word } from "@/types/database";
 import type { WordWithOccurrences } from "./types";
-import { getQuranWordAudioUrl } from "../mushafAssets";
+import { getQuranWordAudioUrl } from "../quranWordAudio";
 
 function getDirectAudioKey(word: WordWithOccurrences): string | null {
   const occs = word.word_occurrences;

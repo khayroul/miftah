@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { FahamQueueSnapshot } from "./queue";
+import type { FahamQueueSnapshot, SerializedFahamCard } from "./queue";
 import {
   enqueuePendingFahamRating,
   loadCachedFahamQueue,
@@ -41,13 +41,64 @@ Object.defineProperty(globalThis, "localStorage", {
   value: storage,
 });
 
-function buildSnapshot(): FahamQueueSnapshot {
+function buildCard(progressId: number): SerializedFahamCard {
+  return {
+    due: new Date().toISOString(),
+    fsrs: {
+      difficulty: 0,
+      elapsedDays: 0,
+      lapses: 0,
+      lastReview: null,
+      scheduledDays: 0,
+      stability: 0,
+    },
+    kind: "new",
+    mcq: {
+      answerAudioUrl: null,
+      answerLabel: "Makna BM",
+      answerPrimary: "Dengan nama",
+      answerSecondary: null,
+      correctIndex: 0,
+      direction: "arab_to_bm",
+      options: [
+        { dir: "ltr", lang: "ms", value: "Dengan nama" },
+        { dir: "ltr", lang: "ms", value: "Segala puji" },
+        { dir: "ltr", lang: "ms", value: "Rabb" },
+        { dir: "ltr", lang: "ms", value: "Hari pembalasan" },
+      ],
+      promptAudioUrl: null,
+      promptDir: "rtl",
+      promptHint: "Pilih makna BM yang tepat.",
+      promptLabel: "Perkataan Arab",
+      promptLang: "ar",
+      promptPrimary: "بِسْمِ",
+      promptSecondary: "bismi",
+      whyThisSet: [],
+    },
+    mistakeStreak: 0,
+    needsReinforcement: false,
+    progressId,
+    reps: 0,
+    state: 0,
+    word: {
+      frequency: 1000,
+      id: Math.abs(progressId),
+      textSimple: "bismi",
+      textUthmani: "بِسْمِ",
+      translationBm: "Dengan nama",
+      translationEn: "In the name",
+      transliteration: "bismi",
+    },
+  };
+}
+
+function buildSnapshot(newCards: SerializedFahamCard[] = []): FahamQueueSnapshot {
   return {
     blockedReason: null,
     due: [],
     learning: [],
     mastered: [],
-    new: [],
+    new: newCards,
     levelProgress: {
       activeLevel: 1,
       activeWordLimit: 1000,
@@ -122,6 +173,20 @@ test("saveCachedFahamQueue round-trips queue settings and snapshot", () => {
   assert.equal(cached?.isRevision, true);
   assert.equal(cached?.preset, "theme");
   assert.deepEqual(cached?.snapshot, snapshot);
+});
+
+test("saveCachedFahamQueue keeps synthetic offline cards with negative progress ids", () => {
+  const snapshot = buildSnapshot([buildCard(-1)]);
+  saveCachedFahamQueue({
+    directionMode: "arab_to_bm",
+    isRevision: false,
+    preset: "reading",
+    snapshot,
+  });
+
+  const cached = loadCachedFahamQueue();
+  assert.ok(cached);
+  assert.equal(cached?.snapshot.new[0]?.progressId, -1);
 });
 
 test("saveCachedFahamStats round-trips stats and ignores malformed payload", () => {

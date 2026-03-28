@@ -80,7 +80,8 @@ function isSerializedFahamCardLike(value: unknown): boolean {
 
   return (
     isFiniteNumber(value.progressId) &&
-    value.progressId > 0 &&
+    Number.isInteger(value.progressId) &&
+    value.progressId !== 0 &&
     isFiniteNumber(value.reps) &&
     isFiniteNumber(value.state) &&
     typeof value.due === "string" &&

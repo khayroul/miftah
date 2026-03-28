@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   enqueueFahamExposureEvent,
   flushQueuedFahamExposureEvents,
+  loadFahamExposureSignals,
   loadPendingFahamExposureQueue,
 } from "./exposureSync";
 import type { FahamExposureInput } from "./types";
@@ -46,6 +47,13 @@ const readingPayload: FahamExposureInput = {
   surahId: 1,
 };
 
+const themePayload: FahamExposureInput = {
+  ayahIds: [11, 12, 13],
+  sourceType: "theme_chunk",
+  surahId: 2,
+  themeChunkIndex: 3,
+};
+
 test.beforeEach(() => {
   storage.clear();
   Object.defineProperty(globalThis, "fetch", {
@@ -62,6 +70,19 @@ test("enqueueFahamExposureEvent stores payload and de-dupes same source event", 
   const queue = loadPendingFahamExposureQueue();
   assert.equal(queue.length, 1);
   assert.deepEqual(queue[0]?.payload, readingPayload);
+});
+
+test("loadFahamExposureSignals returns latest normalized source signals", () => {
+  enqueueFahamExposureEvent(readingPayload);
+  enqueueFahamExposureEvent(themePayload);
+
+  const signals = loadFahamExposureSignals(2);
+  assert.equal(signals.length, 2);
+  assert.equal(signals[0]?.sourceType, "theme_chunk");
+  assert.equal(signals[0]?.surahId, 2);
+  assert.equal(signals[0]?.themeChunkIndex, 3);
+  assert.equal(signals[1]?.sourceType, "reading_page");
+  assert.equal(signals[1]?.pageNumber, 1);
 });
 
 test("loadPendingFahamExposureQueue sanitizes malformed queue entries", () => {
