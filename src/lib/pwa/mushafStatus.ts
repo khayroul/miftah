@@ -63,12 +63,48 @@ function buildEmptyProgress(): OfflineBundleProgress {
 function toOfflineBundleProgress(
   counts: OfflineBundleCounts,
 ): OfflineBundleProgress {
-  return {
-    ...counts,
-    completedItems: getCompletedItems(counts),
-    totalItems: TOTAL_ITEMS,
-    appShellReady: counts.staticAssets > 0,
+  const normalizedCounts: OfflineBundleCounts = {
+    images: Math.min(counts.images, TOTAL_PAGES),
+    data: Math.min(counts.data, TOTAL_DATA_ENTRIES),
+    tema: Math.min(counts.tema, TOTAL_TEMA_ENTRIES),
+    routes: Math.min(counts.routes, TOTAL_ROUTE_ENTRIES),
+    fonts: Math.min(counts.fonts, TOTAL_FONT_ENTRIES),
+    shell: Math.min(counts.shell, TOTAL_SHELL_ENTRIES),
+    staticAssets: counts.staticAssets,
   };
+
+  return {
+    ...normalizedCounts,
+    completedItems: getCompletedItems(normalizedCounts),
+    totalItems: TOTAL_ITEMS,
+    appShellReady: normalizedCounts.staticAssets > 0,
+  };
+}
+
+function extractTemaSurahFromPath(pathname: string): number | null {
+  const match = pathname.match(/^\/api\/tema\/(\d+)$/);
+  if (!match) return null;
+
+  const surah = Number(match[1]);
+  if (!Number.isInteger(surah)) return null;
+  if (surah < 1 || surah > TOTAL_TEMA_ENTRIES) return null;
+
+  return surah;
+}
+
+function isTemaApiPath(pathname: string): boolean {
+  return extractTemaSurahFromPath(pathname) !== null;
+}
+
+function isTemaRoutePathInRange(pathname: string): boolean {
+  if (!isTemaRoutePath(pathname)) return false;
+
+  const match = pathname.match(/^\/read\/surah\/(\d+)\/themes$/);
+  if (!match) return false;
+
+  const surah = Number(match[1]);
+  if (!Number.isInteger(surah)) return false;
+  return surah >= 1 && surah <= TOTAL_TEMA_ENTRIES;
 }
 
 async function countCacheEntries(
@@ -108,13 +144,13 @@ async function getOfflineBundleProgress(): Promise<OfflineBundleProgress> {
             /^\/layouts\/page-\d{3}\.json$/.test(pathname) ||
             /^\/translations\/page-\d{3}\.json$/.test(pathname),
         ),
-        countCacheEntries(CACHE_TEMA, (pathname) => pathname.startsWith("/api/tema/")),
+        countCacheEntries(CACHE_TEMA, (pathname) => isTemaApiPath(pathname)),
         countCacheEntries(
           CACHE_BUNDLE,
           (pathname) =>
             pathname === "/" ||
             isReadRoutePath(pathname) ||
-            isTemaRoutePath(pathname),
+            isTemaRoutePathInRange(pathname),
         ),
         countCacheEntries(CACHE_BUNDLE, (pathname) => isBundleFontPath(pathname)),
         countCacheEntries(CACHE_BUNDLE, (pathname) => isOfflineShellPath(pathname)),
