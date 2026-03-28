@@ -176,6 +176,7 @@ export function HifzTebukSession({
         currentPrompt.continuationText,
         {
           serverUrl: TASMI_TRANSCRIBE_ENDPOINT,
+          apiKey: "",
           silenceThresholdSeconds: 6,
           errorThresholdCount: 2,
         },
