@@ -1132,8 +1132,6 @@ export function ReadPageWorkspace({
         <HifzTebukSession
           layout={layout}
           pageNumber={pageNumber}
-          tasmiServerUrl={process.env.NEXT_PUBLIC_TASMI_SERVER_URL ?? ""}
-          tasmiApiKey={process.env.NEXT_PUBLIC_TASMI_API_KEY ?? ""}
           alignData={alignData}
           onComplete={(rounds) => {
             // TODO(Task 12): Wire progressIds from hifz queue items so rate-batch
@@ -1153,8 +1151,6 @@ export function ReadPageWorkspace({
           layout={layout}
           manifest={pageManifest}
           pageNumber={pageNumber}
-          tasmiServerUrl={process.env.NEXT_PUBLIC_TASMI_SERVER_URL ?? ""}
-          tasmiApiKey={process.env.NEXT_PUBLIC_TASMI_API_KEY ?? ""}
           alignData={alignData}
           onComplete={() => {
             // TODO(Task 12): Wire progressIds from hifz queue items so rate-batch

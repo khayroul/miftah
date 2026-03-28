@@ -14,7 +14,6 @@ import type { UnveilState } from "@/lib/hifz/progressive-unveil";
 import { getPageWords, buildAyahWordRanges } from "@/lib/hifz/page-words";
 import {
   tasmiResultToLabel,
-  tasmiResultToFsrsRating,
   getPerAyahRatings,
 } from "@/lib/tasmi/fsrs-bridge";
 import { normalizeArabic } from "@/lib/tasmi/arabic-normalizer";
@@ -27,13 +26,13 @@ export interface HifzUnveilSessionProps {
   layout: MushafLayoutPage;
   manifest: MushafPageManifest;
   pageNumber: number;
-  tasmiServerUrl: string;
-  tasmiApiKey: string;
   alignData: unknown[];
   children: React.ReactNode;
   onComplete: () => void;
   onExit: () => void;
 }
+
+const TASMI_TRANSCRIBE_ENDPOINT = "/api/tasmi/transcribe";
 
 interface AyahRating {
   ayahKey: string;
@@ -45,8 +44,6 @@ export function HifzUnveilSession({
   layout,
   manifest,
   pageNumber,
-  tasmiServerUrl,
-  tasmiApiKey,
   alignData,
   children,
   onComplete,
@@ -148,44 +145,73 @@ export function HifzUnveilSession({
     if (recitingActiveRef.current) return;
     recitingActiveRef.current = true;
 
-    if (!tasmiServerUrl) {
-      setVadError("Pelayan tasmi' belum dikonfigurasi.");
-      return;
-    }
+    let disposed = false;
+    let recorder: TasmiRecorder | null = null;
 
-    const session = new TasmiSession(
-      pageExpectedText,
-      {
-        serverUrl: tasmiServerUrl,
-        apiKey: tasmiApiKey,
-        silenceThresholdSeconds: 6,
-        errorThresholdCount: 2,
-      },
-      handleTasmiEvent,
-    );
+    void (async () => {
+      try {
+        const configResponse = await fetch(TASMI_TRANSCRIBE_ENDPOINT, {
+          method: "GET",
+          cache: "no-store",
+        });
+        const configPayload = (await configResponse.json().catch(() => null)) as
+          | { configured?: boolean }
+          | null;
 
-    const recorder = new TasmiRecorder({
-      silenceTimeoutSeconds: 6,
-      onSpeechEnd: (audioBlob: Blob) => {
-        session.processAudioChunk(audioBlob);
-      },
-      onSilenceTimeout: () => {
-        session.onSilenceTimeout();
-      },
-      onError: (err: Error) => {
-        setVadError(err.message);
-      },
-    });
+        if (!configResponse.ok || configPayload?.configured !== true) {
+          if (!disposed) {
+            setVadError("Pelayan tasmi' belum dikonfigurasikan.");
+            recitingActiveRef.current = false;
+          }
+          return;
+        }
+      } catch {
+        if (!disposed) {
+          setVadError("Pelayan tasmi' tak dapat dihubungi sekarang.");
+          recitingActiveRef.current = false;
+        }
+        return;
+      }
 
-    sessionRef.current = session;
-    recorderRef.current = recorder;
+      if (disposed) {
+        recitingActiveRef.current = false;
+        return;
+      }
 
-    session.start();
-    void recorder.start();
+      const session = new TasmiSession(
+        pageExpectedText,
+        {
+          serverUrl: TASMI_TRANSCRIBE_ENDPOINT,
+          silenceThresholdSeconds: 6,
+          errorThresholdCount: 2,
+        },
+        handleTasmiEvent,
+      );
+
+      recorder = new TasmiRecorder({
+        silenceTimeoutSeconds: 6,
+        onSpeechEnd: (audioBlob: Blob) => {
+          session.processAudioChunk(audioBlob);
+        },
+        onSilenceTimeout: () => {
+          session.onSilenceTimeout();
+        },
+        onError: (err: Error) => {
+          setVadError(err.message);
+        },
+      });
+
+      sessionRef.current = session;
+      recorderRef.current = recorder;
+
+      session.start();
+      await recorder.start();
+    })();
 
     return () => {
+      disposed = true;
       recitingActiveRef.current = false;
-      recorder.stop();
+      recorder?.stop();
       sessionRef.current = null;
       recorderRef.current = null;
     };

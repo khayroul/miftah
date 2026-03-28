@@ -22,12 +22,12 @@ type TebukPhase = "prompt" | "playing" | "reciting" | "result" | "complete";
 export interface HifzTebukSessionProps {
   layout: MushafLayoutPage;
   pageNumber: number;
-  tasmiServerUrl: string;
-  tasmiApiKey: string;
   alignData: unknown[];
   onComplete: (rounds: TebukRoundResult[]) => void;
   onExit: () => void;
 }
+
+const TASMI_TRANSCRIBE_ENDPOINT = "/api/tasmi/transcribe";
 
 function buildAggregateLabel(rounds: TebukRoundResult[]): TasmiRatingLabel {
   if (rounds.length === 0) return "ulang";
@@ -44,8 +44,6 @@ function buildAggregateLabel(rounds: TebukRoundResult[]): TasmiRatingLabel {
 export function HifzTebukSession({
   layout,
   pageNumber,
-  tasmiServerUrl,
-  tasmiApiKey,
   alignData,
   onComplete,
   onExit,
@@ -141,44 +139,73 @@ export function HifzTebukSession({
     if (recitingActiveRef.current) return;
     recitingActiveRef.current = true;
 
-    if (!tasmiServerUrl) {
-      setVadError("Pelayan tasmi' belum dikonfigurasi.");
-      return;
-    }
+    let disposed = false;
+    let recorder: TasmiRecorder | null = null;
 
-    const session = new TasmiSession(
-      currentPrompt.continuationText,
-      {
-        serverUrl: tasmiServerUrl,
-        apiKey: tasmiApiKey,
-        silenceThresholdSeconds: 6,
-        errorThresholdCount: 2,
-      },
-      handleTasmiEvent,
-    );
+    void (async () => {
+      try {
+        const configResponse = await fetch(TASMI_TRANSCRIBE_ENDPOINT, {
+          method: "GET",
+          cache: "no-store",
+        });
+        const configPayload = (await configResponse.json().catch(() => null)) as
+          | { configured?: boolean }
+          | null;
 
-    const recorder = new TasmiRecorder({
-      silenceTimeoutSeconds: 6,
-      onSpeechEnd: (audioBlob: Blob) => {
-        session.processAudioChunk(audioBlob);
-      },
-      onSilenceTimeout: () => {
-        session.onSilenceTimeout();
-      },
-      onError: (err: Error) => {
-        setVadError(err.message);
-      },
-    });
+        if (!configResponse.ok || configPayload?.configured !== true) {
+          if (!disposed) {
+            setVadError("Pelayan tasmi' belum dikonfigurasikan.");
+            recitingActiveRef.current = false;
+          }
+          return;
+        }
+      } catch {
+        if (!disposed) {
+          setVadError("Pelayan tasmi' tak dapat dihubungi sekarang.");
+          recitingActiveRef.current = false;
+        }
+        return;
+      }
 
-    sessionRef.current = session;
-    recorderRef.current = recorder;
+      if (disposed) {
+        recitingActiveRef.current = false;
+        return;
+      }
 
-    session.start();
-    void recorder.start();
+      const session = new TasmiSession(
+        currentPrompt.continuationText,
+        {
+          serverUrl: TASMI_TRANSCRIBE_ENDPOINT,
+          silenceThresholdSeconds: 6,
+          errorThresholdCount: 2,
+        },
+        handleTasmiEvent,
+      );
+
+      recorder = new TasmiRecorder({
+        silenceTimeoutSeconds: 6,
+        onSpeechEnd: (audioBlob: Blob) => {
+          session.processAudioChunk(audioBlob);
+        },
+        onSilenceTimeout: () => {
+          session.onSilenceTimeout();
+        },
+        onError: (err: Error) => {
+          setVadError(err.message);
+        },
+      });
+
+      sessionRef.current = session;
+      recorderRef.current = recorder;
+
+      session.start();
+      await recorder.start();
+    })();
 
     return () => {
+      disposed = true;
       recitingActiveRef.current = false;
-      recorder.stop();
+      recorder?.stop();
       // session.end() is called in finalizeRound; only stop recorder on cleanup
       sessionRef.current = null;
       recorderRef.current = null;
