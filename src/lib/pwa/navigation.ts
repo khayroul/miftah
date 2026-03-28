@@ -3,8 +3,25 @@
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import type { MouseEvent } from "react";
 
-function canUseDocumentNavigation(): boolean {
-  return typeof window !== "undefined" && navigator.onLine === false;
+function isReadDocumentRoute(href: string): boolean {
+  return (
+    /^\/read\/\d+\/?(?:\?.*)?$/.test(href) ||
+    /^\/read\/surah\/\d+\/themes\/?(?:\?.*)?$/.test(href)
+  );
+}
+
+function canUseDocumentNavigation(href: string): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  if (navigator.onLine === false) {
+    return true;
+  }
+
+  // Reader routes perform better through document navigation because the
+  // service worker can serve cached HTML immediately while revalidating.
+  return isReadDocumentRoute(href);
 }
 
 function isModifiedClick(event: MouseEvent): boolean {
@@ -21,7 +38,7 @@ export function maybeHandleOfflineDocumentNavigation(
   event: MouseEvent,
   href: string,
 ): boolean {
-  if (!canUseDocumentNavigation() || isModifiedClick(event)) {
+  if (!canUseDocumentNavigation(href) || isModifiedClick(event)) {
     return false;
   }
 
@@ -34,7 +51,7 @@ export function navigateWithOfflineSupport(
   router: AppRouterInstance,
   href: string,
 ): void {
-  if (canUseDocumentNavigation()) {
+  if (canUseDocumentNavigation(href)) {
     window.location.assign(href);
     return;
   }
@@ -46,7 +63,7 @@ export function prefetchWithOfflineSupport(
   router: AppRouterInstance,
   href: string,
 ): void {
-  if (canUseDocumentNavigation()) {
+  if (canUseDocumentNavigation(href)) {
     return;
   }
 

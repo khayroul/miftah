@@ -91,11 +91,11 @@ export function getCompletedItems(counts: OfflineBundleCounts): number {
 }
 
 export function isReadRoutePath(pathname: string): boolean {
-  return /^\/read\/\d+$/.test(pathname);
+  return /^\/read\/\d+\/?$/.test(pathname);
 }
 
 export function isTemaRoutePath(pathname: string): boolean {
-  return /^\/read\/surah\/\d+\/themes$/.test(pathname);
+  return /^\/read\/surah\/\d+\/themes\/?$/.test(pathname);
 }
 
 export function isBundleFontPath(pathname: string): boolean {
