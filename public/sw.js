@@ -1,7 +1,9 @@
 // Miftah PWA Service Worker — multi-cache router with URL allowlist
 // BUILD_ID and CDN_ASSET_VERSION injected at prebuild time
-const BUILD_ID = "__BUILD_ID__";
-const CDN_ASSET_VERSION = "__CDN_ASSET_VERSION__";
+const BUILD_ID = "38d75eb";
+const CDN_ASSET_VERSION = "4";
+
+const NAVIGATION_NETWORK_TIMEOUT_MS = 2500;
 
 const APP_SHELL_CACHE = `app-shell-${BUILD_ID}`;
 const OFFLINE_BUNDLE_CACHE = "miftah-offline-bundle-v1";
@@ -99,16 +101,63 @@ function matchesTemaData(url) {
   return url.pathname.startsWith("/api/tema/");
 }
 
-function normalizeNavigationCacheKey(requestUrl) {
-  const url = new URL(requestUrl);
-  return `${url.origin}${url.pathname}`;
+function canonicalizePathname(pathname) {
+  if (pathname.length > 1) {
+    return pathname.replace(/\/+$/, "");
+  }
+
+  return pathname;
 }
 
-async function matchAcrossCaches(cacheNames, request, options) {
+function isReadRoutePath(pathname) {
+  return /^\/read\/\d+$/.test(canonicalizePathname(pathname));
+}
+
+function isTemaRoutePath(pathname) {
+  return /^\/read\/surah\/\d+\/themes$/.test(canonicalizePathname(pathname));
+}
+
+function shouldUseNavigationCacheFirst(url) {
+  return (
+    url.pathname === "/" ||
+    isReadRoutePath(url.pathname) ||
+    isTemaRoutePath(url.pathname)
+  );
+}
+
+function normalizeNavigationCacheKey(requestUrl) {
+  const url = new URL(requestUrl);
+  return `${url.origin}${canonicalizePathname(url.pathname)}`;
+}
+
+function buildNavigationCacheKeys(requestUrl) {
+  const url = new URL(requestUrl);
+  const canonicalKey = normalizeNavigationCacheKey(requestUrl);
+  const candidates = [canonicalKey];
+  const rawKey = `${url.origin}${url.pathname}`;
+
+  if (!candidates.includes(rawKey)) {
+    candidates.push(rawKey);
+  }
+
+  if (url.pathname.length > 1 && !url.pathname.endsWith("/")) {
+    const trailingSlashKey = `${url.origin}${url.pathname}/`;
+    if (!candidates.includes(trailingSlashKey)) {
+      candidates.push(trailingSlashKey);
+    }
+  }
+
+  return candidates;
+}
+
+async function matchAcrossCaches(cacheNames, requests, options) {
+  const candidates = Array.isArray(requests) ? requests : [requests];
   for (const cacheName of cacheNames) {
     const cache = await caches.open(cacheName);
-    const cached = await cache.match(request, options);
-    if (cached) return cached;
+    for (const request of candidates) {
+      const cached = await cache.match(request, options);
+      if (cached) return cached;
+    }
   }
   return undefined;
 }
@@ -124,7 +173,7 @@ async function cacheFirstStrategy(cacheNames, targetCacheName, request, options)
       await cache.put(request, response.clone());
     }
     return response;
-  } catch (error) {
+  } catch {
     return new Response("Network error", { status: 503 });
   }
 }
@@ -140,7 +189,7 @@ async function cacheFirstTema(request) {
       await cache.put(request, response.clone());
     }
     return response;
-  } catch (error) {
+  } catch {
     return new Response(JSON.stringify({ error: "Offline" }), {
       status: 503,
       headers: { "Content-Type": "application/json" },
@@ -148,33 +197,87 @@ async function cacheFirstTema(request) {
   }
 }
 
+async function fetchAndCacheNavigation(request, navigationKey) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    NAVIGATION_NETWORK_TIMEOUT_MS,
+  );
+
+  try {
+    const response = await fetch(request, {
+      signal: controller.signal,
+    });
+    if (response.ok) {
+      const cache = await caches.open(APP_SHELL_CACHE);
+      await cache.put(navigationKey, response.clone());
+    }
+    return response;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 // --- Fetch ---
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Navigation: network-first, cache HTML for offline, fallback to offline shell
+  // Navigation:
+  // - Reader routes: cache-first + background revalidation for instant page turns
+  // - Other routes: network-first with offline fallback
   if (isNavigationRequest(event.request)) {
     event.respondWith(
       (async () => {
-        const navigationKey = normalizeNavigationCacheKey(event.request.url);
-        try {
-          const response = await fetch(event.request);
-          if (response.ok) {
-            const cache = await caches.open(APP_SHELL_CACHE);
-            await cache.put(navigationKey, response.clone());
-          }
-          return response;
-        } catch {
-          // Network failed — try cached HTML, then offline.html
+        const navigationKeys = buildNavigationCacheKeys(event.request.url);
+        const navigationKey = navigationKeys[0];
+        const navigationCacheNames = [APP_SHELL_CACHE, OFFLINE_BUNDLE_CACHE];
+
+        if (shouldUseNavigationCacheFirst(url)) {
           const cached = await matchAcrossCaches(
-            [APP_SHELL_CACHE, OFFLINE_BUNDLE_CACHE],
-            navigationKey,
+            navigationCacheNames,
+            navigationKeys,
             { ignoreSearch: true },
           );
-          if (cached) return cached;
+          const networkPromise = fetchAndCacheNavigation(
+            event.request,
+            navigationKey,
+          );
+
+          if (cached) {
+            event.waitUntil(networkPromise.then(() => undefined));
+            return cached;
+          }
+
+          const networkResponse = await networkPromise;
+          if (networkResponse) {
+            return networkResponse;
+          }
+
           const offline = await caches.match("/offline.html");
           return offline || new Response("Offline", { status: 503 });
         }
+
+        const networkResponse = await fetchAndCacheNavigation(
+          event.request,
+          navigationKey,
+        );
+        if (networkResponse) {
+          return networkResponse;
+        }
+
+        const cached = await matchAcrossCaches(
+          navigationCacheNames,
+          navigationKeys,
+          { ignoreSearch: true },
+        );
+        if (cached) {
+          return cached;
+        }
+
+        const offline = await caches.match("/offline.html");
+        return offline || new Response("Offline", { status: 503 });
       })()
     );
     return;
