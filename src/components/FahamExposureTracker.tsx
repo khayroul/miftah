@@ -2,6 +2,11 @@
 
 import { useEffect } from "react";
 import { buildFahamSourceKey } from "@/lib/faham/source-key";
+import {
+  enqueueFahamExposureEvent,
+  flushQueuedFahamExposureEvents,
+  setupFahamExposureSync,
+} from "@/lib/faham/exposureSync";
 import type { FahamExposureInput } from "@/lib/faham/types";
 
 const SESSION_KEY_PREFIX = "miftah:faham:exposure:";
@@ -29,32 +34,38 @@ export function FahamExposureTracker({
       return;
     }
 
-    let completed = false;
-    void fetch("/api/faham/exposure", {
-      body: JSON.stringify(payload),
-      headers: {
-        "Content-Type": "application/json",
-      },
-      keepalive: true,
-      method: "POST",
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Exposure request failed");
-        }
-        completed = true;
+    const queued = enqueueFahamExposureEvent(payload);
+    setupFahamExposureSync();
+    if (queued.length === 0) {
+      let completed = false;
+      void fetch("/api/faham/exposure", {
+        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        keepalive: true,
+        method: "POST",
       })
-      .catch(() => {
-        if (completed) {
-          return;
-        }
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Exposure request failed");
+          }
+          completed = true;
+        })
+        .catch(() => {
+          if (completed) {
+            return;
+          }
 
-        try {
-          window.sessionStorage.removeItem(sessionKey);
-        } catch {
-          // Ignore storage failures; exposure logging must stay non-blocking.
-        }
-      });
+          try {
+            window.sessionStorage.removeItem(sessionKey);
+          } catch {
+            // Ignore storage failures; exposure logging must stay non-blocking.
+          }
+        });
+      return;
+    }
+    void flushQueuedFahamExposureEvents();
   }, [ayahKey, payload, sourceKey]);
 
   return null;
