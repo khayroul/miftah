@@ -7,6 +7,8 @@ import {
 } from "./exposureSync";
 import type { FahamExposureInput } from "./types";
 
+const PENDING_EXPOSURE_KEY = "miftah:faham:pending-exposure:v1";
+
 function createStorageMock(): Storage {
   const store = new Map<string, string>();
   return {
@@ -64,13 +66,16 @@ test("enqueueFahamExposureEvent stores payload and de-dupes same source event", 
 
 test("loadPendingFahamExposureQueue sanitizes malformed queue entries", () => {
   storage.setItem(
-    "miftah:faham:pending-exposure:v1",
+    PENDING_EXPOSURE_KEY,
     JSON.stringify([
       {
         ayahKey: "1,2,3",
         id: "valid",
+        lastErrorAt: null,
+        nextRetryAt: Date.now(),
         payload: readingPayload,
         queuedAt: Date.now(),
+        retryCount: 0,
         sourceKey: "reading-page:1",
       },
       {
@@ -86,6 +91,54 @@ test("loadPendingFahamExposureQueue sanitizes malformed queue entries", () => {
   const queue = loadPendingFahamExposureQueue();
   assert.equal(queue.length, 1);
   assert.equal(queue[0]?.sourceKey, "reading-page:1");
+});
+
+test("loadPendingFahamExposureQueue drops stale and duplicate pending entries", () => {
+  const now = Date.now();
+  storage.setItem(
+    PENDING_EXPOSURE_KEY,
+    JSON.stringify([
+      {
+        ayahKey: "1,2,3",
+        id: "older-valid",
+        lastErrorAt: null,
+        nextRetryAt: now,
+        payload: readingPayload,
+        queuedAt: now,
+        retryCount: 0,
+        sourceKey: "reading-page:1",
+      },
+      {
+        ayahKey: "1,2,3",
+        id: "newer-duplicate",
+        lastErrorAt: null,
+        nextRetryAt: now,
+        payload: readingPayload,
+        queuedAt: now + 10,
+        retryCount: 0,
+        sourceKey: "reading-page:1",
+      },
+      {
+        ayahKey: "4,5,6",
+        id: "stale-entry",
+        lastErrorAt: null,
+        nextRetryAt: now - 8 * 24 * 60 * 60 * 1000,
+        payload: {
+          ayahIds: [4, 5, 6],
+          pageNumber: 2,
+          sourceType: "reading_page",
+          surahId: 1,
+        },
+        queuedAt: now - 8 * 24 * 60 * 60 * 1000,
+        retryCount: 0,
+        sourceKey: "reading-page:2",
+      },
+    ]),
+  );
+
+  const queue = loadPendingFahamExposureQueue();
+  assert.equal(queue.length, 1);
+  assert.equal(queue[0]?.id, "older-valid");
 });
 
 test("flushQueuedFahamExposureEvents drains successful events", async () => {
@@ -104,7 +157,7 @@ test("flushQueuedFahamExposureEvents drains successful events", async () => {
   assert.equal(loadPendingFahamExposureQueue().length, 0);
 });
 
-test("flushQueuedFahamExposureEvents keeps event when server is unavailable", async () => {
+test("flushQueuedFahamExposureEvents schedules retry when server is unavailable", async () => {
   enqueueFahamExposureEvent(readingPayload);
   Object.defineProperty(globalThis, "fetch", {
     configurable: true,
@@ -114,5 +167,37 @@ test("flushQueuedFahamExposureEvents keeps event when server is unavailable", as
 
   const remaining = await flushQueuedFahamExposureEvents();
   assert.equal(remaining, 1);
-  assert.equal(loadPendingFahamExposureQueue().length, 1);
+  const queue = loadPendingFahamExposureQueue();
+  assert.equal(queue.length, 1);
+  assert.equal(queue[0]?.retryCount, 1);
+  assert.ok((queue[0]?.nextRetryAt ?? 0) > Date.now());
+});
+
+test("flushQueuedFahamExposureEvents drops event after max retries", async () => {
+  const now = Date.now();
+  storage.setItem(
+    PENDING_EXPOSURE_KEY,
+    JSON.stringify([
+      {
+        ayahKey: "1,2,3",
+        id: "max-retry",
+        lastErrorAt: now - 1_000,
+        nextRetryAt: now - 100,
+        payload: readingPayload,
+        queuedAt: now,
+        retryCount: 5,
+        sourceKey: "reading-page:1",
+      },
+    ]),
+  );
+
+  Object.defineProperty(globalThis, "fetch", {
+    configurable: true,
+    value: async () => new Response("error", { status: 503 }),
+    writable: true,
+  });
+
+  const remaining = await flushQueuedFahamExposureEvents();
+  assert.equal(remaining, 0);
+  assert.equal(loadPendingFahamExposureQueue().length, 0);
 });
