@@ -1,7 +1,7 @@
 // Miftah PWA Service Worker — multi-cache router with URL allowlist
 // BUILD_ID and CDN_ASSET_VERSION injected at prebuild time
-const BUILD_ID = "38d75eb";
-const CDN_ASSET_VERSION = "4";
+const BUILD_ID = "__BUILD_ID__";
+const CDN_ASSET_VERSION = "__CDN_ASSET_VERSION__";
 
 const NAVIGATION_NETWORK_TIMEOUT_MS = 2500;
 
