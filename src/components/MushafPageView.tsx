@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  type CSSProperties,
   useCallback,
   useEffect,
   useMemo,
@@ -105,7 +106,13 @@ export function MushafPageView({
   );
   const [difficultToast, setDifficultToast] = useState<string | null>(null);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const swipeSuppressTapRef = useRef(false);
+  const swipeNavigateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [swipeOffsetPx, setSwipeOffsetPx] = useState(0);
+  const [swipeIsDragging, setSwipeIsDragging] = useState(false);
+  const [swipePreviewPage, setSwipePreviewPage] = useState<number | null>(null);
+  const [swipeViewportWidth, setSwipeViewportWidth] = useState(0);
 
   const { mode } = useReadMode();
   const modeAllowsWordInteraction = mode === "faham";
@@ -333,6 +340,14 @@ export function MushafPageView({
     };
   }, [onPlayableAyahKeysChange]);
 
+  useEffect(() => {
+    return () => {
+      if (swipeNavigateTimerRef.current !== null) {
+        clearTimeout(swipeNavigateTimerRef.current);
+      }
+    };
+  }, []);
+
   // Word interaction handlers
   const handleWordClick = useCallback(
     (wordRef: MushafLiveWordRef, element: HTMLElement) => {
@@ -438,10 +453,68 @@ export function MushafPageView({
   };
 
   // Swipe navigation
+  const resetSwipeState = useCallback(() => {
+    setSwipeOffsetPx(0);
+    setSwipeIsDragging(false);
+    setSwipePreviewPage(null);
+    swipeSuppressTapRef.current = false;
+  }, []);
+
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
     const touch = event.touches[0];
     if (!touch) return;
+    setSwipeViewportWidth(containerRef.current?.clientWidth ?? 0);
     touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+  };
+
+  const handleTouchMove = (event: TouchEvent<HTMLDivElement>) => {
+    const start = touchStartRef.current;
+    if (!start) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    // Lock to horizontal swipes; keep vertical scroll behavior when mostly vertical.
+    if (!swipeIsDragging) {
+      if (absDx < 12 || absDx < absDy * 1.1) {
+        return;
+      }
+      setSwipeIsDragging(true);
+    }
+
+    if (absDx > 10) {
+      swipeSuppressTapRef.current = true;
+    }
+
+    event.preventDefault();
+
+    const width = Math.max(1, containerRef.current?.clientWidth ?? swipeViewportWidth);
+    const maxShift = width * 0.95;
+    let clampedDx = Math.max(-maxShift, Math.min(maxShift, dx));
+
+    const hasNextPage = pageNumber < 604;
+    const hasPrevPage = pageNumber > 1;
+    if (clampedDx > 0 && !hasNextPage) {
+      clampedDx = Math.min(clampedDx, 28);
+    }
+    if (clampedDx < 0 && !hasPrevPage) {
+      clampedDx = Math.max(clampedDx, -28);
+    }
+
+    setSwipeOffsetPx(clampedDx);
+    if (clampedDx > 0) {
+      setSwipePreviewPage(hasNextPage ? pageNumber + 1 : null);
+      return;
+    }
+    if (clampedDx < 0) {
+      setSwipePreviewPage(hasPrevPage ? pageNumber - 1 : null);
+      return;
+    }
+    setSwipePreviewPage(null);
   };
 
   const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
@@ -455,13 +528,71 @@ export function MushafPageView({
     const elapsedMs = Date.now() - start.time;
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
-    if (elapsedMs > 900 || absDx < 60 || absDy > 120 || absDx < absDy * 1.3) return;
-    // RTL mushaf: swipe right = next page (advance reading), swipe left = prev page
-    if (dx > 0) {
-      onNavigateNextPage?.();
-    } else {
-      onNavigatePrevPage?.();
+    const width = Math.max(1, containerRef.current?.clientWidth ?? swipeViewportWidth);
+    const absOffset = Math.abs(swipeOffsetPx);
+    const shouldNavigate =
+      elapsedMs <= 900 &&
+      absDy <= 120 &&
+      absDx >= absDy * 1.1 &&
+      (absOffset > width * 0.26 || (elapsedMs < 300 && absOffset > 48));
+
+    setSwipeIsDragging(false);
+
+    if (!shouldNavigate || swipePreviewPage === null) {
+      setSwipeOffsetPx(0);
+      setSwipePreviewPage(null);
+      return;
     }
+
+    const exitOffset = swipeOffsetPx > 0 ? width : -width;
+    setSwipeOffsetPx(exitOffset);
+
+    if (swipeNavigateTimerRef.current !== null) {
+      clearTimeout(swipeNavigateTimerRef.current);
+    }
+    swipeNavigateTimerRef.current = setTimeout(() => {
+      // RTL mushaf: swipe right = next page (advance reading), swipe left = prev page.
+      if (swipeOffsetPx > 0) {
+        onNavigateNextPage?.();
+      } else {
+        onNavigatePrevPage?.();
+      }
+      swipeNavigateTimerRef.current = null;
+      resetSwipeState();
+    }, 140);
+  };
+
+  const handleTouchCancel = () => {
+    touchStartRef.current = null;
+    resetSwipeState();
+  };
+
+  const swipeCurrentStyle: CSSProperties = {
+    transform: `translate3d(${swipeOffsetPx}px, 0, 0)`,
+    transition: swipeIsDragging ? "none" : "transform 180ms cubic-bezier(0.22, 0.61, 0.36, 1)",
+    willChange: "transform",
+  };
+
+  const hasSwipePreview = swipePreviewPage !== null && Math.abs(swipeOffsetPx) > 0;
+  const previewWidth = Math.max(1, swipeViewportWidth || containerRef.current?.clientWidth || 1);
+  const previewBase = swipeOffsetPx > 0 ? -previewWidth : previewWidth;
+  const swipePreviewStyle: CSSProperties = {
+    transform: `translate3d(${previewBase + swipeOffsetPx}px, 0, 0)`,
+    transition: swipeIsDragging ? "none" : "transform 180ms cubic-bezier(0.22, 0.61, 0.36, 1)",
+    willChange: "transform",
+  };
+
+  const handleCanvasClick = () => {
+    if (swipeSuppressTapRef.current) {
+      swipeSuppressTapRef.current = false;
+      return;
+    }
+    onAudioDiscovered?.();
+    setShowDiscoveryHint(false);
+    setSelectedWordLocation(null);
+    setSelectedWordElement(null);
+    setMarkMemorizedError(null);
+    onCanvasTap?.();
   };
 
   // Tooltip positioning
@@ -629,64 +760,78 @@ export function MushafPageView({
         ref={containerRef}
         className="relative w-full overflow-hidden cursor-pointer rounded-2xl dark:rounded-none"
         onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClick={() => {
-          onAudioDiscovered?.();
-          setShowDiscoveryHint(false);
-          setSelectedWordLocation(null);
-          setSelectedWordElement(null);
-          setMarkMemorizedError(null);
-          onCanvasTap?.();
-        }}
+        onTouchCancel={handleTouchCancel}
+        onClick={handleCanvasClick}
       >
-        <MushafLivePage
-          pageNumber={pageNumber}
-          layout={layout}
-          onWordClick={handleWordClick}
-          onWordLongPress={modeAllowsWordInteraction ? handleWordLongPress : undefined}
-          activePlaybackAyahKey={activePlaybackAyahKey}
-          highlightedWordLocation={modeAllowsWordInteraction ? selectedWordLocation : null}
-          revealBoundaryLineIndex={revealBoundaryLineIndex}
-          difficultAyahKeys={modeAllowsWordInteraction ? difficultAyahSet : undefined}
-          onReady={useCallback(() => setIsReady(true), [])}
-        />
-
-        {/* Word translation tooltip */}
-        {modeAllowsWordInteraction && selectedWordLocation && tooltipPlacement ? (
-          <article
-            data-testid="word-tooltip"
-            className="pointer-events-none absolute z-20 rounded-xl border border-stone-300 bg-white/96 px-3 py-2 text-sm text-stone-800 shadow-md dark:border-stone-700 dark:bg-stone-900/96 dark:text-stone-100"
-            style={{
-              left: tooltipPlacement.left,
-              top: tooltipPlacement.top,
-              width: tooltipPlacement.width,
-            }}
-          >
-            <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
-              {selectedTranslation?.bm ?? "Tiada terjemahan"}
-            </p>
-            <p className="text-sm text-stone-600 dark:text-stone-300">
-              {selectedTranslation?.en ?? "No translation"}
-            </p>
-            <p className="mt-1 text-xs text-stone-500 sm:text-sm dark:text-stone-400">
-              {selectedWordLocation}
-            </p>
-          </article>
-        ) : null}
-
-        {/* Difficult ayah toast */}
-        {difficultToast ? (
-          <div className="pointer-events-none absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-lg bg-stone-900/90 px-3 py-1.5 text-xs font-medium text-white shadow-lg">
-            {difficultToast}
+        {hasSwipePreview ? (
+          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-2xl bg-stone-100 dark:rounded-none dark:bg-stone-900" style={swipePreviewStyle}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/api/mushaf/page/${swipePreviewPage}?variant=mobile`}
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-contain"
+              draggable={false}
+            />
+            <div className="absolute inset-0 bg-stone-950/8 dark:bg-stone-950/25" />
+            <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-white/85 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-stone-700 shadow-sm dark:bg-stone-900/80 dark:text-stone-200">
+              Halaman {swipePreviewPage}
+            </div>
           </div>
         ) : null}
 
-        {/* Hifz reveal boundary label */}
-        {hifzRevealContext && revealBoundaryLineIndex != null && (
-          <div className="pointer-events-none absolute left-1/2 bottom-4 z-30 -translate-x-1/2 rounded-full border border-teal-500/40 bg-white/95 px-3 py-1 text-xs font-semibold tracking-wide text-teal-800 sm:text-sm dark:border-teal-300/40 dark:bg-stone-900/95 dark:text-teal-200">
-            HIFZ REVEAL · {revealStageLabel(hifzRevealContext.stage)}
-          </div>
-        )}
+        <div className="relative z-10" style={swipeCurrentStyle}>
+          <MushafLivePage
+            pageNumber={pageNumber}
+            layout={layout}
+            onWordClick={handleWordClick}
+            onWordLongPress={modeAllowsWordInteraction ? handleWordLongPress : undefined}
+            activePlaybackAyahKey={activePlaybackAyahKey}
+            highlightedWordLocation={modeAllowsWordInteraction ? selectedWordLocation : null}
+            revealBoundaryLineIndex={revealBoundaryLineIndex}
+            difficultAyahKeys={modeAllowsWordInteraction ? difficultAyahSet : undefined}
+            onReady={useCallback(() => setIsReady(true), [])}
+          />
+
+          {/* Word translation tooltip */}
+          {modeAllowsWordInteraction && selectedWordLocation && tooltipPlacement ? (
+            <article
+              data-testid="word-tooltip"
+              className="pointer-events-none absolute z-20 rounded-xl border border-stone-300 bg-white/96 px-3 py-2 text-sm text-stone-800 shadow-md dark:border-stone-700 dark:bg-stone-900/96 dark:text-stone-100"
+              style={{
+                left: tooltipPlacement.left,
+                top: tooltipPlacement.top,
+                width: tooltipPlacement.width,
+              }}
+            >
+              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+                {selectedTranslation?.bm ?? "Tiada terjemahan"}
+              </p>
+              <p className="text-sm text-stone-600 dark:text-stone-300">
+                {selectedTranslation?.en ?? "No translation"}
+              </p>
+              <p className="mt-1 text-xs text-stone-500 sm:text-sm dark:text-stone-400">
+                {selectedWordLocation}
+              </p>
+            </article>
+          ) : null}
+
+          {/* Difficult ayah toast */}
+          {difficultToast ? (
+            <div className="pointer-events-none absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-lg bg-stone-900/90 px-3 py-1.5 text-xs font-medium text-white shadow-lg">
+              {difficultToast}
+            </div>
+          ) : null}
+
+          {/* Hifz reveal boundary label */}
+          {hifzRevealContext && revealBoundaryLineIndex != null && (
+            <div className="pointer-events-none absolute left-1/2 bottom-4 z-30 -translate-x-1/2 rounded-full border border-teal-500/40 bg-white/95 px-3 py-1 text-xs font-semibold tracking-wide text-teal-800 sm:text-sm dark:border-teal-300/40 dark:bg-stone-900/95 dark:text-teal-200">
+              HIFZ REVEAL · {revealStageLabel(hifzRevealContext.stage)}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Status text */}
