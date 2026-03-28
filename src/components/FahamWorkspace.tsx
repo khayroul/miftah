@@ -10,6 +10,16 @@ import {
   useTransition,
 } from "react";
 import { createPortal } from "react-dom";
+import type { FsrsRating } from "@/types/database";
+import {
+  enqueuePendingFahamRating,
+  loadCachedFahamQueue,
+  loadCachedFahamStats,
+  loadPendingFahamRatings,
+  replacePendingFahamRatings,
+  saveCachedFahamQueue,
+  saveCachedFahamStats,
+} from "@/lib/faham/offlineSync";
 import type { FahamQueueSnapshot, SerializedFahamCard } from "@/lib/faham/queue";
 import type { FahamLevelProgress } from "@/lib/faham/levels";
 import type { FahamMcqDirectionMode } from "@/lib/faham/mcq";
@@ -232,6 +242,8 @@ interface FahamSessionSummary {
   totalCount: number;
 }
 
+type FahamSyncState = "idle" | "syncing" | "offline" | "error";
+
 async function requestStats(): Promise<FahamStats> {
   const response = await fetch("/api/faham/stats");
   if (!response.ok) {
@@ -288,10 +300,18 @@ export function FahamWorkspace({
   const [isHydratingInitialQueue, setIsHydratingInitialQueue] = useState(
     shouldHydrateInitialQueue,
   );
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const [syncState, setSyncState] = useState<FahamSyncState>(() => {
+    if (typeof navigator === "undefined") {
+      return "idle";
+    }
+    return navigator.onLine ? "idle" : "offline";
+  });
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
   const lastAutoplayKeyRef = useRef<string | null>(null);
   const prevMasteredRef = useRef<number | null>(null);
   const sessionCorrectCountRef = useRef(0);
+  const isSyncingRef = useRef(false);
   const cards = useMemo(() => queueItems(snapshot), [snapshot]);
   const currentCard = cards[currentIndex] ?? null;
   const levelProgress = stats?.levelProgress ?? snapshot.levelProgress;
@@ -302,6 +322,41 @@ export function FahamWorkspace({
   const progressPct = cards.length > 0 ? ((currentIndex + 1) / cards.length) * 100 : 0;
   const foundShare = foundCap > 0 ? Math.min(1, foundCount / foundCap) : 0;
   const masteredShare = foundCount > 0 ? Math.min(1, masteredCount / foundCount) : 0;
+  const syncBadge = useMemo(() => {
+    if (pendingSyncCount <= 0) {
+      return null;
+    }
+
+    if (syncState === "syncing") {
+      return {
+        className:
+          "border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-500/30 dark:bg-sky-900/30 dark:text-sky-200",
+        label: `Sync Faham ${pendingSyncCount}`,
+      };
+    }
+
+    if (syncState === "offline") {
+      return {
+        className:
+          "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-900/30 dark:text-amber-200",
+        label: `Luar talian ${pendingSyncCount}`,
+      };
+    }
+
+    if (syncState === "error") {
+      return {
+        className:
+          "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/30 dark:bg-rose-900/30 dark:text-rose-200",
+        label: `Sync tertangguh ${pendingSyncCount}`,
+      };
+    }
+
+    return {
+      className:
+        "border-teal-200 bg-teal-50 text-teal-800 dark:border-teal-500/30 dark:bg-teal-900/30 dark:text-teal-200",
+      label: `Menunggu sync ${pendingSyncCount}`,
+    };
+  }, [pendingSyncCount, syncState]);
 
   const stopActiveAudio = useCallback(() => {
     const activeAudio = activeAudioRef.current;
@@ -399,12 +454,123 @@ export function FahamWorkspace({
     try {
       const latestStats = await requestStats();
       applyStats(latestStats, celebrateMastered);
+      saveCachedFahamStats(latestStats);
       return latestStats;
     } catch (error) {
       console.error(error);
+      const cached = loadCachedFahamStats();
+      if (cached) {
+        applyStats(cached.stats, false);
+        return cached.stats;
+      }
       return null;
     }
   }, [applyStats]);
+
+  const restoreCachedQueue = useCallback(
+    (
+      message: string,
+      options: { clearSessionSummary?: boolean; resetSessionTracking?: boolean } = {},
+    ): boolean => {
+      const cachedQueue = loadCachedFahamQueue();
+      if (!cachedQueue) {
+        return false;
+      }
+
+      setPreset(cachedQueue.preset);
+      setDirectionMode(cachedQueue.directionMode);
+      setIsRevision(cachedQueue.isRevision);
+      setSnapshot(cachedQueue.snapshot);
+      setCurrentIndex(0);
+      setAnswerState(null);
+      setShowPreview(true);
+      if (options.clearSessionSummary) {
+        setSessionSummary(null);
+      }
+      if (options.resetSessionTracking) {
+        resetSessionTracking();
+      }
+
+      const cachedStats = loadCachedFahamStats();
+      if (cachedStats) {
+        applyStats(cachedStats.stats, false);
+      }
+
+      setErrorMessage(message);
+      return true;
+    },
+    [applyStats, resetSessionTracking],
+  );
+
+  const syncPendingRatings = useCallback(async () => {
+    if (isSyncingRef.current) {
+      return;
+    }
+
+    const pending = loadPendingFahamRatings();
+    setPendingSyncCount(pending.length);
+
+    if (pending.length === 0) {
+      setSyncState(
+        typeof navigator !== "undefined" && navigator.onLine === false
+          ? "offline"
+          : "idle",
+      );
+      return;
+    }
+
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      setSyncState("offline");
+      return;
+    }
+
+    isSyncingRef.current = true;
+    setSyncState("syncing");
+    let syncedAny = false;
+
+    try {
+      for (let index = 0; index < pending.length; index += 1) {
+        const entry = pending[index];
+        const response = await fetch("/api/faham/rate", {
+          body: JSON.stringify({
+            progressId: entry.progressId,
+            rating: entry.rating,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to sync Faham rating ${entry.progressId}`);
+        }
+
+        syncedAny = true;
+        const remaining = replacePendingFahamRatings(pending.slice(index + 1));
+        setPendingSyncCount(remaining.length);
+      }
+
+      setSyncState(
+        typeof navigator !== "undefined" && navigator.onLine === false
+          ? "offline"
+          : "idle",
+      );
+    } catch (error) {
+      console.error(error);
+      setSyncState(
+        typeof navigator !== "undefined" && navigator.onLine === false
+          ? "offline"
+          : "error",
+      );
+    } finally {
+      isSyncingRef.current = false;
+    }
+
+    if (syncedAny) {
+      await refreshStats(false);
+    }
+  }, [refreshStats]);
 
   const reloadQueue = (
     nextPreset: FahamSourcePreset,
@@ -414,6 +580,12 @@ export function FahamWorkspace({
     startTransition(() => {
       void requestQueue(nextPreset, nextDirectionMode, nextIsRevision)
         .then((nextSnapshot) => {
+          saveCachedFahamQueue({
+            directionMode: nextDirectionMode,
+            isRevision: nextIsRevision,
+            preset: nextPreset,
+            snapshot: nextSnapshot,
+          });
           setPreset(nextPreset);
           setDirectionMode(nextDirectionMode);
           setIsRevision(nextIsRevision);
@@ -426,7 +598,13 @@ export function FahamWorkspace({
           resetSessionTracking();
         })
         .catch(() => {
-          setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
+          const restored = restoreCachedQueue(
+            "Luar talian: guna barisan Faham terakhir yang tersimpan.",
+            { clearSessionSummary: true, resetSessionTracking: true },
+          );
+          if (!restored) {
+            setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
+          }
         })
         .finally(() => {
           setIsHydratingInitialQueue(false);
@@ -442,6 +620,12 @@ export function FahamWorkspace({
     startTransition(() => {
       void requestQueue(initialPreset, "arab_to_bm")
         .then((nextSnapshot) => {
+          saveCachedFahamQueue({
+            directionMode: "arab_to_bm",
+            isRevision: false,
+            preset: initialPreset,
+            snapshot: nextSnapshot,
+          });
           setPreset(initialPreset);
           setDirectionMode("arab_to_bm");
           setIsRevision(false);
@@ -453,13 +637,25 @@ export function FahamWorkspace({
           resetSessionTracking();
         })
         .catch(() => {
-          setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
+          const restored = restoreCachedQueue(
+            "Luar talian: guna barisan Faham terakhir yang tersimpan.",
+            { clearSessionSummary: true, resetSessionTracking: true },
+          );
+          if (!restored) {
+            setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
+          }
         })
         .finally(() => {
           setIsHydratingInitialQueue(false);
         });
     });
-  }, [initialPreset, resetSessionTracking, shouldHydrateInitialQueue, startTransition]);
+  }, [
+    initialPreset,
+    resetSessionTracking,
+    restoreCachedQueue,
+    shouldHydrateInitialQueue,
+    startTransition,
+  ]);
 
   const moveToNextCard = useCallback(async () => {
     const nextIndex = currentIndex + 1;
@@ -486,22 +682,45 @@ export function FahamWorkspace({
     resetSessionTracking();
     setSessionDoneCount((value) => value + 1);
 
-    // Load next queue and refresh stats in the background
-    const [latestStats, refreshed] = await Promise.all([
-      refreshStats(false),
-      requestQueue(preset, directionMode, isRevision),
-    ]);
-    setSnapshot(refreshed);
-    setCurrentIndex(0);
-    setAnswerState(null);
-    setErrorMessage(null);
-    setShowPreview(true);
+    const latestStatsPromise = refreshStats(false);
+    let hasRestoredCachedQueue = false;
+
+    try {
+      const refreshed = await requestQueue(preset, directionMode, isRevision);
+      saveCachedFahamQueue({
+        directionMode,
+        isRevision,
+        preset,
+        snapshot: refreshed,
+      });
+      setSnapshot(refreshed);
+      setCurrentIndex(0);
+      setAnswerState(null);
+      setErrorMessage(null);
+      setShowPreview(true);
+    } catch {
+      hasRestoredCachedQueue = restoreCachedQueue(
+        "Luar talian: sesi seterusnya guna barisan tersimpan.",
+      );
+      if (!hasRestoredCachedQueue) {
+        setCurrentIndex(0);
+        setAnswerState(null);
+        setShowPreview(true);
+        setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
+      }
+    }
+
+    const latestStats = await latestStatsPromise;
     if (latestStats) {
       setSessionSummary((prev) =>
         prev
           ? { ...prev, foundCount: latestStats.wordBank, masteredCount: latestStats.mastered }
           : prev,
       );
+    }
+
+    if (hasRestoredCachedQueue) {
+      void syncPendingRatings();
     }
   }, [
     cards.length,
@@ -514,6 +733,8 @@ export function FahamWorkspace({
     preset,
     refreshStats,
     resetSessionTracking,
+    restoreCachedQueue,
+    syncPendingRatings,
     stopActiveAudio,
   ]);
 
@@ -598,6 +819,50 @@ export function FahamWorkspace({
   }, [audioEnabled, stopActiveAudio]);
 
   useEffect(() => {
+    setPendingSyncCount(loadPendingFahamRatings().length);
+  }, []);
+
+  useEffect(() => {
+    saveCachedFahamQueue({
+      directionMode,
+      isRevision,
+      preset,
+      snapshot,
+    });
+  }, [directionMode, isRevision, preset, snapshot]);
+
+  useEffect(() => {
+    if (!stats) {
+      return;
+    }
+    saveCachedFahamStats(stats);
+  }, [stats]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleOnline = () => {
+      setSyncState("idle");
+      void syncPendingRatings();
+    };
+
+    const handleOffline = () => {
+      setSyncState("offline");
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    void syncPendingRatings();
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [syncPendingRatings]);
+
+  useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void refreshStats(true);
     }, 0);
@@ -640,30 +905,27 @@ export function FahamWorkspace({
       return;
     }
 
-    const rating = answerState.isCorrect ? 3 : 1;
-    startTransition(() => {
-      void fetch("/api/faham/rate", {
-        body: JSON.stringify({
-          progressId: currentCard.progressId,
-          rating,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-      })
-        .then(async (response) => {
-          if (!response.ok) {
-            throw new Error("Rating failed");
-          }
+    const rating: Extract<FsrsRating, 1 | 3> = answerState.isCorrect ? 3 : 1;
 
-          await moveToNextCard();
-        })
-        .catch(() => {
-          setErrorMessage("Jawapan tak dapat disimpan. Cuba sekali lagi.");
-        });
+    if (currentCard.progressId > 0) {
+      const pending = enqueuePendingFahamRating({
+        progressId: currentCard.progressId,
+        rating,
+      });
+      setPendingSyncCount(pending.length);
+      setSyncState(
+        typeof navigator !== "undefined" && navigator.onLine === false
+          ? "offline"
+          : "idle",
+      );
+    }
+
+    startTransition(() => {
+      void moveToNextCard().then(() => {
+        void syncPendingRatings();
+      });
     });
-  }, [answerState, currentCard, moveToNextCard, startTransition]);
+  }, [answerState, currentCard, moveToNextCard, startTransition, syncPendingRatings]);
 
   // Autoplay correct answer when selection result appears + Auto-continue
   useEffect(() => {
@@ -818,6 +1080,16 @@ export function FahamWorkspace({
           Selesaikan kad ulang kaji dahulu, kemudian enjin akan membuka kad
           baharu semula.
         </section>
+      ) : null}
+
+      {syncBadge ? (
+        <div className="flex items-center">
+          <span
+            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold tracking-wide ${syncBadge.className}`}
+          >
+            {syncBadge.label}
+          </span>
+        </div>
       ) : null}
 
       <section className="grid grid-cols-2 gap-2 sm:gap-3">

@@ -121,6 +121,14 @@ export default async function FahamPage(props: FahamPageProps) {
     initialQueue.new = [
       {
         due: new Date().toISOString(),
+        fsrs: {
+          difficulty: 0,
+          elapsedDays: 0,
+          lapses: 0,
+          lastReview: null,
+          scheduledDays: 0,
+          stability: 0,
+        },
         kind: "new",
         mcq: {
           answerLabel: "Makna BM",
@@ -161,6 +169,14 @@ export default async function FahamPage(props: FahamPageProps) {
       },
       {
         due: new Date().toISOString(),
+        fsrs: {
+          difficulty: 0,
+          elapsedDays: 0,
+          lapses: 0,
+          lastReview: null,
+          scheduledDays: 0,
+          stability: 0,
+        },
         kind: "new",
         mcq: {
           answerLabel: "Makna BM",

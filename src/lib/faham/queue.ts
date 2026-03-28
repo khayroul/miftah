@@ -48,6 +48,14 @@ export interface SerializedFahamCard {
     readingOccurrenceWeight: number;
     themeOccurrenceWeight: number;
   };
+  fsrs: {
+    difficulty: number;
+    elapsedDays: number;
+    lapses: number;
+    lastReview: string | null;
+    scheduledDays: number;
+    stability: number;
+  };
   kind: "due" | "new" | "mastered";
   mcq: FahamBuiltMcq;
   mistakeStreak: number;
@@ -248,6 +256,14 @@ function serializeCard(
 
   return {
     due: card.progress.due,
+    fsrs: {
+      difficulty: card.progress.difficulty,
+      elapsedDays: card.progress.elapsed_days,
+      lapses: card.progress.lapses,
+      lastReview: card.progress.last_review,
+      scheduledDays: card.progress.scheduled_days,
+      stability: card.progress.stability,
+    },
     kind,
     mcq,
     mistakeStreak: card.progress.mistake_streak,
