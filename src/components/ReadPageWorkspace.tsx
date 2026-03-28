@@ -1088,6 +1088,7 @@ export function ReadPageWorkspace({
             pageNumber={pageNumber}
             queueIndex={hifzQueueIndex ?? 0}
             visible={tasmiAllRevealed}
+            bottomOffsetPx={isAudioVisible ? 112 : 0}
             onTasmiSuccess={() => setTasmiRevealedLines(totalLineCount)}
             onSessionComplete={() => { setSessionElapsedMs(Date.now() - sessionStartTime); setSessionComplete(true); }}
             onPageComplete={() => setSessionPagesCompleted((n) => n + 1)}

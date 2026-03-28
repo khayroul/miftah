@@ -25,6 +25,7 @@ interface HifzInlineRatingProps {
   pageNumber: number;
   queueIndex?: number;
   visible: boolean;
+  bottomOffsetPx?: number;
   /** Called when tasmi' completes successfully (non-ulang) — parent can auto-reveal the veil. */
   onTasmiSuccess?: () => void;
   onSessionComplete?: () => void;
@@ -49,6 +50,7 @@ export function HifzInlineRating({
   pageNumber,
   queueIndex = 0,
   visible,
+  bottomOffsetPx = 0,
   onTasmiSuccess,
   onSessionComplete,
   onPageComplete,
@@ -303,10 +305,14 @@ export function HifzInlineRating({
   // Always show when tasmi is active, complete, or has an error.
   // When veil is still up (!visible), show only the tasmi button.
   const showTasmiOnly = !visible && !tasmiActive && !complete && !displayedError;
+  const bottomStyle = bottomOffsetPx > 0 ? { bottom: bottomOffsetPx } : undefined;
 
   if (complete) {
     return (
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-6 text-center shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95">
+      <div
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-6 text-center shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95"
+        style={bottomStyle}
+      >
         <p className="mb-1 text-xl font-bold text-stone-900 dark:text-stone-100">
           Alhamdulillah
         </p>
@@ -325,7 +331,10 @@ export function HifzInlineRating({
 
   if (displayedError) {
     return (
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-rose-200 bg-white/95 px-4 py-5 text-center shadow-lg backdrop-blur-md dark:border-rose-900/40 dark:bg-stone-900/95">
+      <div
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-rose-200 bg-white/95 px-4 py-5 text-center shadow-lg backdrop-blur-md dark:border-rose-900/40 dark:bg-stone-900/95"
+        style={bottomStyle}
+      >
         <p className="mb-2 text-sm font-semibold text-rose-700 dark:text-rose-300">
           Sesi tergendala
         </p>
@@ -362,7 +371,10 @@ export function HifzInlineRating({
 
   if (tasmiActive && tasmiExpectedText) {
     return (
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95">
+      <div
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95"
+        style={bottomStyle}
+      >
         <TasmiSessionUI
           expectedText={tasmiExpectedText}
           surahNumber={tasmiSurahNumber}
@@ -378,7 +390,10 @@ export function HifzInlineRating({
 
   if (showTasmiOnly) {
     return (
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95">
+      <div
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95"
+        style={bottomStyle}
+      >
         <p className="mb-3 text-center text-sm font-medium text-stone-600 dark:text-stone-400">
           Baca tanpa melihat, atau mulakan tasmi&rsquo;
         </p>
@@ -397,7 +412,10 @@ export function HifzInlineRating({
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95">
+    <div
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95"
+      style={bottomStyle}
+    >
       <p className="mb-3 text-center text-sm font-medium text-stone-600 dark:text-stone-400">
         Bagaimana hafalan halaman ini?
       </p>
