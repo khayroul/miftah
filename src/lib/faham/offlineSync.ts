@@ -12,11 +12,16 @@ const LS_KEY_STATS_CACHE = "miftah:faham:stats-cache:v1";
 
 type FahamRating = Extract<FsrsRating, 1 | 2 | 3 | 4>;
 
+function isPositiveInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value > 0;
+}
+
 export interface PendingFahamRating {
   id: string;
-  progressId: number;
   queuedAt: number;
   rating: FahamRating;
+  progressId?: number;
+  wordId?: number;
 }
 
 export interface CachedFahamQueue {
@@ -155,27 +160,29 @@ function sanitizePendingRatings(value: unknown): PendingFahamRating[] {
 
     const id = raw.id;
     const progressId = raw.progressId;
+    const wordId = raw.wordId;
     const queuedAt = raw.queuedAt;
     const rating = raw.rating;
+    const normalizedProgressId = isPositiveInteger(progressId) ? progressId : null;
+    const normalizedWordId = isPositiveInteger(wordId) ? wordId : null;
 
     if (
       typeof id !== "string" ||
-      typeof progressId !== "number" ||
-      !Number.isInteger(progressId) ||
-      progressId <= 0 ||
       typeof queuedAt !== "number" ||
       !Number.isFinite(queuedAt) ||
       queuedAt <= 0 ||
-      !isRating(rating)
+      !isRating(rating) ||
+      (normalizedProgressId === null && normalizedWordId === null)
     ) {
       continue;
     }
 
     entries.push({
       id,
-      progressId,
       queuedAt,
       rating,
+      progressId: normalizedProgressId ?? undefined,
+      wordId: normalizedWordId ?? undefined,
     });
   }
 
@@ -225,18 +232,22 @@ export function loadPendingFahamRatings(): PendingFahamRating[] {
 }
 
 export function enqueuePendingFahamRating(input: {
-  progressId: number;
+  progressId?: number;
   rating: FahamRating;
+  wordId?: number;
 }): PendingFahamRating[] {
-  if (!Number.isInteger(input.progressId) || input.progressId <= 0) {
+  const progressId = isPositiveInteger(input.progressId) ? input.progressId : null;
+  const wordId = isPositiveInteger(input.wordId) ? input.wordId : null;
+  if (progressId === null && wordId === null) {
     return loadPendingFahamRatings();
   }
 
   const nextEntry: PendingFahamRating = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
-    progressId: input.progressId,
     queuedAt: Date.now(),
     rating: input.rating,
+    progressId: progressId ?? undefined,
+    wordId: wordId ?? undefined,
   };
 
   const next = [...loadPendingFahamRatings(), nextEntry];

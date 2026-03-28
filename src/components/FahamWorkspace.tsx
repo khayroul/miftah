@@ -601,11 +601,17 @@ export function FahamWorkspace({
     try {
       for (let index = 0; index < pending.length; index += 1) {
         const entry = pending[index];
+        const body = entry.progressId
+          ? {
+              progressId: entry.progressId,
+              rating: entry.rating,
+            }
+          : {
+              rating: entry.rating,
+              wordId: entry.wordId,
+            };
         const response = await fetch("/api/faham/rate", {
-          body: JSON.stringify({
-            progressId: entry.progressId,
-            rating: entry.rating,
-          }),
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
           },
@@ -613,7 +619,8 @@ export function FahamWorkspace({
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to sync Faham rating ${entry.progressId}`);
+          const syncTarget = entry.progressId ?? entry.wordId ?? "unknown";
+          throw new Error(`Failed to sync Faham rating ${syncTarget}`);
         }
 
         syncedAny = true;
@@ -999,10 +1006,11 @@ export function FahamWorkspace({
 
     const rating: Extract<FsrsRating, 1 | 3> = answerState.isCorrect ? 3 : 1;
 
-    if (currentCard.progressId > 0) {
+    if (currentCard.progressId > 0 || currentCard.word.id > 0) {
       const pending = enqueuePendingFahamRating({
-        progressId: currentCard.progressId,
+        progressId: currentCard.progressId > 0 ? currentCard.progressId : undefined,
         rating,
+        wordId: currentCard.word.id > 0 ? currentCard.word.id : undefined,
       });
       setPendingSyncCount(pending.length);
       setSyncState(

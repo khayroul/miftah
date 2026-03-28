@@ -8,6 +8,7 @@ import { logVocabReview } from "@/lib/faham/review-log";
 import { fahamRateRequestSchema } from "@/lib/faham/schemas";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import {
+  getOrCreateVocabProgress,
   getVocabProgressById,
   updateVocabProgressAfterReview,
 } from "@/lib/faham/vocab-progress";
@@ -31,7 +32,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const progress = await getVocabProgressById(body.progressId);
+    const progress = "progressId" in body
+      ? await getVocabProgressById(body.progressId)
+      : await getOrCreateVocabProgress(userId, body.wordId);
     if (!progress) {
       return NextResponse.json({ error: "Progress not found" }, { status: 404 });
     }

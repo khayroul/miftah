@@ -2,6 +2,12 @@ import { z } from "zod";
 
 const fahamSourceEnum = z.enum(["reading_page", "theme_chunk", "hifz_ayah"]);
 const fahamDirectionEnum = z.enum(["arab_to_bm", "bm_to_arab", "mixed"]);
+const fahamRatingEnum = z.union([
+  z.literal(1),
+  z.literal(2),
+  z.literal(3),
+  z.literal(4),
+]);
 
 const ayahIdsSchema = z.array(z.number().int().positive()).min(1);
 
@@ -37,12 +43,13 @@ export const fahamQueueRequestSchema = z.object({
   isRevision: z.boolean().optional(),
 });
 
-export const fahamRateRequestSchema = z.object({
-  progressId: z.number().int().positive(),
-  rating: z.union([
-    z.literal(1),
-    z.literal(2),
-    z.literal(3),
-    z.literal(4),
-  ]),
-});
+export const fahamRateRequestSchema = z.union([
+  z.object({
+    progressId: z.number().int().positive(),
+    rating: fahamRatingEnum,
+  }),
+  z.object({
+    rating: fahamRatingEnum,
+    wordId: z.number().int().positive(),
+  }),
+]);

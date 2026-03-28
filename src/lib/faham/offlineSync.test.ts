@@ -138,6 +138,15 @@ test("enqueuePendingFahamRating persists ratings in FIFO order", () => {
   assert.equal(pending[1]?.progressId, 12);
 });
 
+test("enqueuePendingFahamRating accepts offline ratings keyed by wordId", () => {
+  enqueuePendingFahamRating({ rating: 3, wordId: 91 });
+
+  const pending = loadPendingFahamRatings();
+  assert.equal(pending.length, 1);
+  assert.equal(pending[0]?.progressId, undefined);
+  assert.equal(pending[0]?.wordId, 91);
+});
+
 test("replacePendingFahamRatings removes invalid pending entries", () => {
   const next = replacePendingFahamRatings([
     {
@@ -152,10 +161,22 @@ test("replacePendingFahamRatings removes invalid pending entries", () => {
       queuedAt: Date.now(),
       rating: 3,
     },
+    {
+      id: "valid-word",
+      queuedAt: Date.now() + 1,
+      rating: 1,
+      wordId: 102,
+    },
+    {
+      id: "invalid-missing-target",
+      queuedAt: Date.now() + 2,
+      rating: 3,
+    },
   ]);
 
-  assert.equal(next.length, 1);
+  assert.equal(next.length, 2);
   assert.equal(next[0]?.progressId, 77);
+  assert.equal(next[1]?.wordId, 102);
 });
 
 test("saveCachedFahamQueue round-trips queue settings and snapshot", () => {
