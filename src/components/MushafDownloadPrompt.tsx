@@ -431,40 +431,44 @@ export function MushafDownloadPrompt() {
     }
 
     return (
-      <div className="mx-auto mt-4 max-w-2xl">
-        <button
-          onClick={() => setReadyExpanded((prev) => !prev)}
-          className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white/95 px-4 py-2 text-sm font-medium text-stone-700 shadow-sm backdrop-blur transition hover:bg-white dark:border-stone-700 dark:bg-stone-900/92 dark:text-stone-100 dark:hover:bg-stone-900"
-          aria-expanded={readyExpanded}
-          aria-label="Buka atau tutup status luar talian"
-        >
-          <span
-            className="inline-flex h-2.5 w-2.5 rounded-full bg-teal-500"
-            aria-hidden
-          />
-          <span>Bacaan luar talian sedia digunakan</span>
-          <span className="text-xs text-stone-500 dark:text-stone-400">
-            {readyExpanded ? "Tutup" : "Buka"}
-          </span>
-        </button>
+      <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top,0px)+4.5rem)] z-40 flex justify-center px-4 sm:justify-end sm:px-6">
+        <div className="pointer-events-auto w-full max-w-[22rem] sm:w-auto sm:min-w-[18rem]">
+          <button
+            onClick={() => setReadyExpanded((prev) => !prev)}
+            className="inline-flex w-full items-center justify-between gap-2 rounded-full border border-stone-200 bg-white/95 px-4 py-2 text-sm font-medium text-stone-700 shadow-sm backdrop-blur transition hover:bg-white dark:border-stone-700 dark:bg-stone-900/92 dark:text-stone-100 dark:hover:bg-stone-900"
+            aria-expanded={readyExpanded}
+            aria-label="Buka atau tutup status luar talian"
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <span
+                className="inline-flex h-2.5 w-2.5 rounded-full bg-teal-500"
+                aria-hidden
+              />
+              <span className="truncate">Luar talian sedia</span>
+            </span>
+            <span className="shrink-0 text-xs text-stone-500 dark:text-stone-400">
+              {readyExpanded ? "Tutup" : "Butiran"}
+            </span>
+          </button>
 
-        {readyExpanded ? (
-          <div className="mt-3 rounded-2xl border border-stone-200/80 bg-white/88 p-4 shadow-sm backdrop-blur-sm dark:border-stone-700/50 dark:bg-stone-900/65">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <p className="max-w-xl text-sm text-stone-700 dark:text-stone-200">
-                Semakan ini pastikan fail Mushaf, tema, font, dan laluan PWA sudah ada dalam cache.
-              </p>
-              <button
-                onClick={handleRefreshStatus}
-                className="inline-flex items-center rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-              >
-                Semak semula
-              </button>
+          {readyExpanded ? (
+            <div className="mt-2 rounded-2xl border border-stone-200/80 bg-white/90 p-4 shadow-sm backdrop-blur-sm dark:border-stone-700/50 dark:bg-stone-900/70">
+              <div className="flex flex-col gap-3">
+                <p className="text-sm text-stone-700 dark:text-stone-200">
+                  Semakan ini pastikan fail Mushaf, tema, font, dan laluan PWA sudah ada dalam cache.
+                </p>
+                <button
+                  onClick={handleRefreshStatus}
+                  className="inline-flex w-fit items-center rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                >
+                  Semak semula
+                </button>
+              </div>
+
+              <ProgressSummary progress={ui.progress} compact />
             </div>
-
-            <ProgressSummary progress={ui.progress} compact />
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
     );
   }
