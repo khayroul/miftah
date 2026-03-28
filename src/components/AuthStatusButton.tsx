@@ -3,9 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import type { User } from "@supabase/supabase-js";
+import type { AuthChangeEvent, User } from "@supabase/supabase-js";
 import { buildSignInPath } from "@/lib/auth";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
+
+function shouldRefreshForAuthEvent(event: AuthChangeEvent): boolean {
+  return event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED";
+}
 
 export function AuthStatusButton() {
   const pathname = usePathname();
@@ -18,19 +22,31 @@ export function AuthStatusButton() {
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
+    let active = true;
 
-    void supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user ?? null);
+    // Read current auth state from local session first so offline/PWA contexts
+    // don't flap between signed-in/out when network checks fail transiently.
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!active) {
+        return;
+      }
+      setUser(data.session?.user ?? null);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) {
+        return;
+      }
       setUser(session?.user ?? null);
-      router.refresh();
+      if (navigator.onLine && shouldRefreshForAuthEvent(event)) {
+        router.refresh();
+      }
     });
 
     return () => {
+      active = false;
       subscription.unsubscribe();
     };
   }, [router]);
