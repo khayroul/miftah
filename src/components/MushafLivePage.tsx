@@ -68,6 +68,52 @@ function BasmalaLine({
   );
 }
 
+function scheduleIdleTask(
+  callback: () => void,
+  timeoutMs = 3000,
+): () => void {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  if ("requestIdleCallback" in window) {
+    const idleId = window.requestIdleCallback(callback, {
+      timeout: timeoutMs,
+    });
+
+    return () => {
+      window.cancelIdleCallback(idleId);
+    };
+  }
+
+  const timerId = globalThis.setTimeout(callback, timeoutMs);
+  return () => {
+    globalThis.clearTimeout(timerId);
+  };
+}
+
+function shouldWarmAdjacentFont(): boolean {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  const connection = Reflect.get(navigator, "connection");
+  if (!connection || typeof connection !== "object") {
+    return true;
+  }
+
+  if (Reflect.get(connection, "saveData") === true) {
+    return false;
+  }
+
+  const effectiveType = Reflect.get(connection, "effectiveType");
+  return (
+    effectiveType !== "slow-2g" &&
+    effectiveType !== "2g" &&
+    effectiveType !== "3g"
+  );
+}
+
 function TextLine({
   line,
   isLastLine,
@@ -178,9 +224,14 @@ export function MushafLivePage({
   }, []);
 
   useEffect(() => {
-    if (pageNumber > 1) preloadMushafFont(pageNumber - 1);
-    if (pageNumber < 604) preloadMushafFont(pageNumber + 1);
-  }, [pageNumber]);
+    if (!fontLoaded || pageNumber >= 604 || !shouldWarmAdjacentFont()) {
+      return;
+    }
+
+    return scheduleIdleTask(() => {
+      preloadMushafFont(pageNumber + 1);
+    });
+  }, [fontLoaded, pageNumber]);
 
   const isOpeningPage = pageNumber === 1 || pageNumber === 2;
 
