@@ -1,0 +1,700 @@
+{
+  "_meta": {
+    "capturedAt": "2026-07-12T17:09:37.308Z",
+    "dateStamp": "2026-07-13",
+    "gitSha": "67015680bc46a3da629e6daf8afddc9c83d5864d",
+    "baseUrl": "http://localhost:3199",
+    "viewports": [
+      "360x780",
+      "390x844",
+      "768x1024",
+      "1024x1366"
+    ],
+    "routeCount": 17,
+    "screenshotCount": 68,
+    "failureCount": 0,
+    "purpose": "Phase-0 visual baseline (spec 2026-07-13-consolidation-rebuild-launch-design.md §3 Phase-0 item 4) — zero-regression reference for Phase-1 restructure."
+  },
+  "entries": [
+    {
+      "route": "/",
+      "viewport": "360x780",
+      "file": "2026-07-13/home__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Root dashboard; getOptionalAuthUser -> logged-out state (no session cookie in this lane)."
+    },
+    {
+      "route": "/",
+      "viewport": "390x844",
+      "file": "2026-07-13/home__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Root dashboard; getOptionalAuthUser -> logged-out state (no session cookie in this lane)."
+    },
+    {
+      "route": "/",
+      "viewport": "768x1024",
+      "file": "2026-07-13/home__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Root dashboard; getOptionalAuthUser -> logged-out state (no session cookie in this lane)."
+    },
+    {
+      "route": "/",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/home__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Root dashboard; getOptionalAuthUser -> logged-out state (no session cookie in this lane)."
+    },
+    {
+      "route": "/read",
+      "viewport": "360x780",
+      "file": "2026-07-13/read-index__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Server-redirects (307) to /read/1; Playwright follows the redirect, so this capture is pixel-identical to read-1."
+    },
+    {
+      "route": "/read",
+      "viewport": "390x844",
+      "file": "2026-07-13/read-index__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Server-redirects (307) to /read/1; Playwright follows the redirect, so this capture is pixel-identical to read-1."
+    },
+    {
+      "route": "/read",
+      "viewport": "768x1024",
+      "file": "2026-07-13/read-index__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Server-redirects (307) to /read/1; Playwright follows the redirect, so this capture is pixel-identical to read-1."
+    },
+    {
+      "route": "/read",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/read-index__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Server-redirects (307) to /read/1; Playwright follows the redirect, so this capture is pixel-identical to read-1."
+    },
+    {
+      "route": "/read/1",
+      "viewport": "360x780",
+      "file": "2026-07-13/read-1__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Al-Fatihah, first mushaf page."
+    },
+    {
+      "route": "/read/1",
+      "viewport": "390x844",
+      "file": "2026-07-13/read-1__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Al-Fatihah, first mushaf page."
+    },
+    {
+      "route": "/read/1",
+      "viewport": "768x1024",
+      "file": "2026-07-13/read-1__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Al-Fatihah, first mushaf page."
+    },
+    {
+      "route": "/read/1",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/read-1__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Al-Fatihah, first mushaf page."
+    },
+    {
+      "route": "/read/302",
+      "viewport": "360x780",
+      "file": "2026-07-13/read-302__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Mid-mushaf page (representative)."
+    },
+    {
+      "route": "/read/302",
+      "viewport": "390x844",
+      "file": "2026-07-13/read-302__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Mid-mushaf page (representative)."
+    },
+    {
+      "route": "/read/302",
+      "viewport": "768x1024",
+      "file": "2026-07-13/read-302__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Mid-mushaf page (representative)."
+    },
+    {
+      "route": "/read/302",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/read-302__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Mid-mushaf page (representative)."
+    },
+    {
+      "route": "/read/604",
+      "viewport": "360x780",
+      "file": "2026-07-13/read-604__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Last mushaf page."
+    },
+    {
+      "route": "/read/604",
+      "viewport": "390x844",
+      "file": "2026-07-13/read-604__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Last mushaf page."
+    },
+    {
+      "route": "/read/604",
+      "viewport": "768x1024",
+      "file": "2026-07-13/read-604__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Last mushaf page."
+    },
+    {
+      "route": "/read/604",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/read-604__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Last mushaf page."
+    },
+    {
+      "route": "/read/1/tools",
+      "viewport": "360x780",
+      "file": "2026-07-13/read-1-tools__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Reading tools overlay for page 1."
+    },
+    {
+      "route": "/read/1/tools",
+      "viewport": "390x844",
+      "file": "2026-07-13/read-1-tools__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Reading tools overlay for page 1."
+    },
+    {
+      "route": "/read/1/tools",
+      "viewport": "768x1024",
+      "file": "2026-07-13/read-1-tools__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Reading tools overlay for page 1."
+    },
+    {
+      "route": "/read/1/tools",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/read-1-tools__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Reading tools overlay for page 1."
+    },
+    {
+      "route": "/read/302/tools",
+      "viewport": "360x780",
+      "file": "2026-07-13/read-302-tools__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Reading tools overlay for page 302."
+    },
+    {
+      "route": "/read/302/tools",
+      "viewport": "390x844",
+      "file": "2026-07-13/read-302-tools__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Reading tools overlay for page 302."
+    },
+    {
+      "route": "/read/302/tools",
+      "viewport": "768x1024",
+      "file": "2026-07-13/read-302-tools__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Reading tools overlay for page 302."
+    },
+    {
+      "route": "/read/302/tools",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/read-302-tools__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Reading tools overlay for page 302."
+    },
+    {
+      "route": "/read/604/tools",
+      "viewport": "360x780",
+      "file": "2026-07-13/read-604-tools__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Reading tools overlay for page 604."
+    },
+    {
+      "route": "/read/604/tools",
+      "viewport": "390x844",
+      "file": "2026-07-13/read-604-tools__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Reading tools overlay for page 604."
+    },
+    {
+      "route": "/read/604/tools",
+      "viewport": "768x1024",
+      "file": "2026-07-13/read-604-tools__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Reading tools overlay for page 604."
+    },
+    {
+      "route": "/read/604/tools",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/read-604-tools__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Reading tools overlay for page 604."
+    },
+    {
+      "route": "/read/surah/36/themes",
+      "viewport": "360x780",
+      "file": "2026-07-13/read-surah-36-themes__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Ya-Sin theme-appearance page."
+    },
+    {
+      "route": "/read/surah/36/themes",
+      "viewport": "390x844",
+      "file": "2026-07-13/read-surah-36-themes__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Ya-Sin theme-appearance page."
+    },
+    {
+      "route": "/read/surah/36/themes",
+      "viewport": "768x1024",
+      "file": "2026-07-13/read-surah-36-themes__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Ya-Sin theme-appearance page."
+    },
+    {
+      "route": "/read/surah/36/themes",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/read-surah-36-themes__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Ya-Sin theme-appearance page."
+    },
+    {
+      "route": "/read/surah/2/themes",
+      "viewport": "360x780",
+      "file": "2026-07-13/read-surah-2-themes__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Al-Baqarah theme-appearance page (has theme-chunk fixture data per .tmp/check_surah2_theme_links.ts)."
+    },
+    {
+      "route": "/read/surah/2/themes",
+      "viewport": "390x844",
+      "file": "2026-07-13/read-surah-2-themes__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Al-Baqarah theme-appearance page (has theme-chunk fixture data per .tmp/check_surah2_theme_links.ts)."
+    },
+    {
+      "route": "/read/surah/2/themes",
+      "viewport": "768x1024",
+      "file": "2026-07-13/read-surah-2-themes__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Al-Baqarah theme-appearance page (has theme-chunk fixture data per .tmp/check_surah2_theme_links.ts)."
+    },
+    {
+      "route": "/read/surah/2/themes",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/read-surah-2-themes__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Al-Baqarah theme-appearance page (has theme-chunk fixture data per .tmp/check_surah2_theme_links.ts)."
+    },
+    {
+      "route": "/hifz",
+      "viewport": "360x780",
+      "file": "2026-07-13/hifz__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Hifz overview; logged-out (no MIFTAH_USER_ID session in this lane, server falls back gracefully)."
+    },
+    {
+      "route": "/hifz",
+      "viewport": "390x844",
+      "file": "2026-07-13/hifz__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Hifz overview; logged-out (no MIFTAH_USER_ID session in this lane, server falls back gracefully)."
+    },
+    {
+      "route": "/hifz",
+      "viewport": "768x1024",
+      "file": "2026-07-13/hifz__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Hifz overview; logged-out (no MIFTAH_USER_ID session in this lane, server falls back gracefully)."
+    },
+    {
+      "route": "/hifz",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/hifz__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Hifz overview; logged-out (no MIFTAH_USER_ID session in this lane, server falls back gracefully)."
+    },
+    {
+      "route": "/faham",
+      "viewport": "360x780",
+      "file": "2026-07-13/faham__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Faham (vocabulary) overview; logged-out."
+    },
+    {
+      "route": "/faham",
+      "viewport": "390x844",
+      "file": "2026-07-13/faham__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Faham (vocabulary) overview; logged-out."
+    },
+    {
+      "route": "/faham",
+      "viewport": "768x1024",
+      "file": "2026-07-13/faham__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Faham (vocabulary) overview; logged-out."
+    },
+    {
+      "route": "/faham",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/faham__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Faham (vocabulary) overview; logged-out."
+    },
+    {
+      "route": "/dashboard-preview",
+      "viewport": "360x780",
+      "file": "2026-07-13/dashboard-preview__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "force-dynamic preview route; reads process.env.MIFTAH_USER_ID server-side (present in .env.local) so may render seeded data even though the browser session is logged-out."
+    },
+    {
+      "route": "/dashboard-preview",
+      "viewport": "390x844",
+      "file": "2026-07-13/dashboard-preview__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "force-dynamic preview route; reads process.env.MIFTAH_USER_ID server-side (present in .env.local) so may render seeded data even though the browser session is logged-out."
+    },
+    {
+      "route": "/dashboard-preview",
+      "viewport": "768x1024",
+      "file": "2026-07-13/dashboard-preview__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "force-dynamic preview route; reads process.env.MIFTAH_USER_ID server-side (present in .env.local) so may render seeded data even though the browser session is logged-out."
+    },
+    {
+      "route": "/dashboard-preview",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/dashboard-preview__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "force-dynamic preview route; reads process.env.MIFTAH_USER_ID server-side (present in .env.local) so may render seeded data even though the browser session is logged-out."
+    },
+    {
+      "route": "/auth/sign-in",
+      "viewport": "360x780",
+      "file": "2026-07-13/auth-sign-in__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Logged-out sign-in form (renders directly; redirects to / only if a session exists)."
+    },
+    {
+      "route": "/auth/sign-in",
+      "viewport": "390x844",
+      "file": "2026-07-13/auth-sign-in__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Logged-out sign-in form (renders directly; redirects to / only if a session exists)."
+    },
+    {
+      "route": "/auth/sign-in",
+      "viewport": "768x1024",
+      "file": "2026-07-13/auth-sign-in__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Logged-out sign-in form (renders directly; redirects to / only if a session exists)."
+    },
+    {
+      "route": "/auth/sign-in",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/auth-sign-in__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Logged-out sign-in form (renders directly; redirects to / only if a session exists)."
+    },
+    {
+      "route": "/auth/forgot-password",
+      "viewport": "360x780",
+      "file": "2026-07-13/auth-forgot-password__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Client-only form, no auth gate."
+    },
+    {
+      "route": "/auth/forgot-password",
+      "viewport": "390x844",
+      "file": "2026-07-13/auth-forgot-password__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Client-only form, no auth gate."
+    },
+    {
+      "route": "/auth/forgot-password",
+      "viewport": "768x1024",
+      "file": "2026-07-13/auth-forgot-password__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Client-only form, no auth gate."
+    },
+    {
+      "route": "/auth/forgot-password",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/auth-forgot-password__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Client-only form, no auth gate."
+    },
+    {
+      "route": "/auth/magic",
+      "viewport": "360x780",
+      "file": "2026-07-13/auth-magic__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Client-only magic-link completion screen; no code/token param supplied, so this captures the default/error messaging state."
+    },
+    {
+      "route": "/auth/magic",
+      "viewport": "390x844",
+      "file": "2026-07-13/auth-magic__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Client-only magic-link completion screen; no code/token param supplied, so this captures the default/error messaging state."
+    },
+    {
+      "route": "/auth/magic",
+      "viewport": "768x1024",
+      "file": "2026-07-13/auth-magic__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Client-only magic-link completion screen; no code/token param supplied, so this captures the default/error messaging state."
+    },
+    {
+      "route": "/auth/magic",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/auth-magic__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Client-only magic-link completion screen; no code/token param supplied, so this captures the default/error messaging state."
+    },
+    {
+      "route": "/auth/reset-password",
+      "viewport": "360x780",
+      "file": "2026-07-13/auth-reset-password__360x780.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Client-only form, no auth gate."
+    },
+    {
+      "route": "/auth/reset-password",
+      "viewport": "390x844",
+      "file": "2026-07-13/auth-reset-password__390x844.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Client-only form, no auth gate."
+    },
+    {
+      "route": "/auth/reset-password",
+      "viewport": "768x1024",
+      "file": "2026-07-13/auth-reset-password__768x1024.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Client-only form, no auth gate."
+    },
+    {
+      "route": "/auth/reset-password",
+      "viewport": "1024x1366",
+      "file": "2026-07-13/auth-reset-password__1024x1366.png",
+      "fullPage": true,
+      "httpStatus": 200,
+      "status": "captured",
+      "error": null,
+      "notes": "Client-only form, no auth gate."
+    }
+  ]
+}
