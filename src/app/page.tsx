@@ -1,5 +1,5 @@
-import { FeedbackButton } from "@/components/FeedbackButton";
 import { HomeDashboardClient } from "@/components/HomeDashboardClient";
+import { HomeDeferredUi } from "@/components/HomeDeferredUi";
 import { ModeNavigator } from "@/components/ModeNavigator";
 import { loadDashboardWithDbCache } from "@/lib/homeDashboardDb";
 import { getReadJumpTargets } from "@/lib/readNavigation";
@@ -32,9 +32,9 @@ export default async function Home() {
           initialSnapshot={initialSnapshot}
           surahTargets={jumpTargets.surahs}
         />
-      </main>
 
-      <FeedbackButton />
+        <HomeDeferredUi />
+      </main>
     </div>
   );
 }

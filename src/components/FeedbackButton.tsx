@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useReadAudio } from "@/components/ReadAudioProvider";
 import { usePathname } from "next/navigation";
 
 const SUCCESS_VISIBILITY_MS = 5000;
 
 export function FeedbackButton() {
-  const { feedbackHidden, feedbackOffsetPx } = useReadAudio();
+  const feedbackHidden = false;
+  const feedbackOffsetPx = 24;
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
