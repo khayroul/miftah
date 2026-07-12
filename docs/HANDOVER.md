@@ -17,7 +17,7 @@
 ## Production facts (W-H audit, 2026-07-13, read-only)
 
 - Supabase project `axjuolsguunsvqhmeveq` ("Miftah", ap-southeast-1), ACTIVE_HEALTHY.
-- **71 real auth.users, ~42.5k rows live progress data, writes through 2026-07-09.** NOT single-user. Operator account dominates (~26k rows); ~20 accounts with real usage (identity unconfirmed — operator to clarify).
+- **71 real auth.users, ~42.5k rows live progress data, writes through 2026-07-09.** NOT single-user by table structure, but usage-pattern analysis (2026-07-13, aggregate SQL, no PII) revises the risk picture: 86% of signups landed in the app's first week (2026-03-09), zero new signups since mid-April, 97%+ of review-log activity happened in the first 2 weeks, and **39 of 42 engaged accounts have been dormant 90+ days** — only 1 account active in the last 7 days (near-certainly the operator; ~65% of all Faham activity is one account). Read: a mostly-dormant early-cohort + operator dogfooding, not an active daily user base. Migration/redesign blast radius is lower than raw row-counts implied; a win-back email on relaunch is worth considering. Faham (vocab MCQ) was the feature with actual adoption pull; Hifz never caught on with this cohort.
 - Migrations: 13/17 applied; pending 14–17 verified additive-safe (tasmi_sessions, profile trigger, RPC, dashboard snapshot). TRUNCATE migration already fired 2026-03-11 (historical).
 - Security debt: 18 corpus tables anon-WRITABLE (RLS off); 5 SECURITY DEFINER views; 2 mutable search_path functions; leaked-password protection off. Board task: harden (fold into Lane A or early lane).
 
