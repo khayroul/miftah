@@ -1,5 +1,5 @@
 export const CACHE_IMAGES = "mushaf-images-v1";
-export const CACHE_DATA = "mushaf-data-v1";
+export const CACHE_DATA = "mushaf-data-v2";
 export const CACHE_TEMA = "tema-data-v1";
 export const CACHE_BUNDLE = "miftah-offline-bundle-v1";
 

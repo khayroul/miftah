@@ -20,7 +20,7 @@ const MIN_PAGE = 1;
 const MAX_PAGE = 604;
 
 const IMAGE_CACHE_NAME = "mushaf-images-v1";
-const DATA_CACHE_NAME = "mushaf-data-v1";
+const DATA_CACHE_NAME = "mushaf-data-v2";
 
 /**
  * Returns true if pageNumber is a valid integer between 1 and 604 inclusive.
@@ -59,7 +59,7 @@ async function findCacheEntry(
 
 /**
  * Assembles read-page data from the Cache API for offline rendering.
- * Checks the mushaf-images-v1 and mushaf-data-v1 caches by page number.
+ * Checks the mushaf-images-v1 and mushaf-data-v2 caches by page number.
  *
  * Browser-only: depends on the global `caches` API.
  */

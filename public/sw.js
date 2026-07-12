@@ -1,14 +1,14 @@
 // Miftah PWA Service Worker — multi-cache router with URL allowlist
 // BUILD_ID and CDN_ASSET_VERSION injected at prebuild time
-const BUILD_ID = "__BUILD_ID__";
-const CDN_ASSET_VERSION = "__CDN_ASSET_VERSION__";
+const BUILD_ID = "82323e5";
+const CDN_ASSET_VERSION = "4";
 
 const NAVIGATION_NETWORK_TIMEOUT_MS = 2500;
 
 const APP_SHELL_CACHE = `app-shell-${BUILD_ID}`;
 const OFFLINE_BUNDLE_CACHE = "miftah-offline-bundle-v1";
 const MUSHAF_IMAGES_CACHE = "mushaf-images-v1";
-const MUSHAF_DATA_CACHE = "mushaf-data-v1";
+const MUSHAF_DATA_CACHE = "mushaf-data-v2";
 const AUDIO_CACHE = "miftah-audio-v1";
 const TEMA_DATA_CACHE = "tema-data-v1";
 
@@ -43,7 +43,8 @@ self.addEventListener("activate", (event) => {
           .filter(
             (key) =>
               (key.startsWith("app-shell-") && key !== APP_SHELL_CACHE) ||
-              (key.startsWith("tema-data-") && key !== TEMA_DATA_CACHE)
+              (key.startsWith("tema-data-") && key !== TEMA_DATA_CACHE) ||
+              (key.startsWith("mushaf-data-") && key !== MUSHAF_DATA_CACHE)
           )
           .map((key) => caches.delete(key))
       )
