@@ -130,8 +130,8 @@ function toneClasses(tone: CardTone) {
   };
 }
 
-function shouldPrefetch(href: string): boolean {
-  return !href.startsWith("/read/");
+function shouldPrefetch(): boolean {
+  return false;
 }
 
 function buildHifzMushafHref(input: {
@@ -216,7 +216,7 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
       <div className="mt-6">
         <OfflineAwareLink
           href={card.href}
-          prefetch={shouldPrefetch(card.href)}
+          prefetch={shouldPrefetch()}
           onClick={card.onClick}
           className={`block w-full rounded-xl py-2.5 text-center text-sm font-medium transition ${
             card.tone === "teal"
@@ -233,7 +233,7 @@ function ModeProgressCard({ card }: { card: ModeCard }) {
         {card.secondaryHref && card.secondaryLabel ? (
           <OfflineAwareLink
             href={card.secondaryHref}
-            prefetch={shouldPrefetch(card.secondaryHref)}
+            prefetch={shouldPrefetch()}
             onClick={card.secondaryOnClick}
             className="mt-2 block w-full rounded-xl border border-stone-300/80 bg-white/65 py-2.5 text-center text-sm font-medium text-stone-800 transition hover:bg-white/90 dark:border-stone-600 dark:bg-stone-900/55 dark:text-stone-100 dark:hover:bg-stone-800"
           >
@@ -666,7 +666,7 @@ export function HomeDashboardClient({
             <div className="mt-6 flex flex-wrap gap-3">
               <OfflineAwareLink
                 href={homeHero.primaryHref}
-                prefetch={shouldPrefetch(homeHero.primaryHref)}
+                prefetch={shouldPrefetch()}
                 onClick={() => {
                   saveReadMode(homeHero.primaryMode);
                 }}
@@ -677,7 +677,7 @@ export function HomeDashboardClient({
               {homeHero.secondaryHref && homeHero.secondaryLabel ? (
                 <OfflineAwareLink
                   href={homeHero.secondaryHref}
-                  prefetch={shouldPrefetch(homeHero.secondaryHref)}
+                  prefetch={shouldPrefetch()}
                   onClick={() => {
                     if (homeHero.secondaryMode) {
                       saveReadMode(homeHero.secondaryMode);

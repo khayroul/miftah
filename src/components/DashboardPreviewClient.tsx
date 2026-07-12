@@ -99,7 +99,7 @@ function toneClasses(tone: CardTone) {
 }
 
 function shouldPrefetch(href: string): boolean {
-  return !href.startsWith("/read/");
+  return false;
 }
 
 function ModeProgressCard({

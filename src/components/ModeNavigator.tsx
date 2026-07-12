@@ -112,6 +112,7 @@ export function ModeNavigator({
     <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-[26px] border border-stone-200 bg-white/92 p-1 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
       <OfflineAwareLink
         href="/"
+        prefetch={false}
         aria-current={highlightHome ? "page" : undefined}
         className={`mr-0.5 flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-medium transition sm:mr-1 sm:px-3 sm:py-2 sm:text-base ${
           highlightHome
@@ -142,6 +143,7 @@ export function ModeNavigator({
           <OfflineAwareLink
             key={item.value}
             href={href}
+            prefetch={false}
             onClick={(e) => {
               saveReadMode(item.value);
               if (onModeClick) {
