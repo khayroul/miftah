@@ -605,7 +605,9 @@ async function loadRemoteManifest(
   pageNumber: number,
 ): Promise<MushafPageManifest | null> {
   try {
-    const response = await fetch(manifestUrl);
+    const response = await fetch(manifestUrl, {
+      cache: "force-cache",
+    });
     if (!response.ok) {
       return null;
     }
@@ -622,7 +624,9 @@ async function loadRemoteAyahManifest(
   ayah: number,
 ): Promise<MushafAyahManifest | null> {
   try {
-    const response = await fetch(manifestUrl);
+    const response = await fetch(manifestUrl, {
+      cache: "force-cache",
+    });
     if (!response.ok) {
       return null;
     }

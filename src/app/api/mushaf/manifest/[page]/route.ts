@@ -18,5 +18,9 @@ export async function GET(_request: Request, { params }: RouteParams): Promise<N
     return NextResponse.json({ error: "Manifest not found" }, { status: 404 });
   }
 
-  return NextResponse.json(manifest);
+  return NextResponse.json(manifest, {
+    headers: {
+      "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+    },
+  });
 }
