@@ -4,7 +4,7 @@ import { tasmiResultToLabel } from './fsrs-bridge';
 
 // ---- Helpers ----
 
-function collectEvents(expectedText: string, config?: Partial<Parameters<typeof TasmiSession.prototype.processAudioChunk>[0]>) {
+function collectEvents(expectedText: string) {
   const events: TasmiEvent[] = [];
   const session = new TasmiSession(expectedText, {
     serverUrl: 'http://fake:8000',
@@ -32,7 +32,6 @@ function mockTranscriptionResponses(responses: Array<{ normalized_text: string }
 
 const BASMALA = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
 const FATIHAH_2 = 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ';
-const FATIHAH_3 = 'الرَّحْمَٰنِ الرَّحِيمِ';
 
 // ---- Scenario 1: Perfect recitation ----
 
@@ -94,6 +93,64 @@ describe('TasmiSession — Scenario 2: Multi-chunk recitation', () => {
     const endEvent = events.find(e => e.type === 'session-end');
     expect(endEvent).toBeDefined();
     expect(endEvent!.data!.result!.accuracy).toBe(100);
+  });
+
+  it('counts only newly advanced words when student restarts a few words back', async () => {
+    const text = `${BASMALA} ${FATIHAH_2}`;
+    mockTranscriptionResponses([
+      { normalized_text: 'بسم الله الرحمن الرحيم' },
+      { normalized_text: 'الرحمن الرحيم الحمد لله' },
+      { normalized_text: 'رب العالمين' },
+    ]);
+
+    const { session, events } = collectEvents(text);
+    session.start();
+
+    await session.processAudioChunk(new Blob(['chunk1']));
+    await session.processAudioChunk(new Blob(['chunk2']));
+    await session.processAudioChunk(new Blob(['chunk3']));
+
+    const endEvent = events.find(e => e.type === 'session-end');
+    expect(endEvent).toBeDefined();
+    expect(endEvent!.data!.result!.totalWords).toBe(8);
+    expect(endEvent!.data!.result!.wordsCorrect).toBe(8);
+    expect(endEvent!.data!.result!.accuracy).toBe(100);
+  });
+
+  it('counts correct words from an errored chunk without crediting omitted words', async () => {
+    mockTranscriptionResponses([
+      { normalized_text: 'بسم الرحمن' },
+      { normalized_text: 'الرحيم' },
+    ]);
+
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+
+    await session.processAudioChunk(new Blob(['chunk1']));
+    await session.processAudioChunk(new Blob(['chunk2']));
+
+    const endEvent = events.find(e => e.type === 'session-end');
+    expect(endEvent).toBeDefined();
+    expect(endEvent!.data!.result!.wordsCorrect).toBe(3);
+    expect(endEvent!.data!.result!.accuracy).toBe(75);
+    expect(endEvent!.data!.result!.errorPositions).toEqual([1]);
+  });
+
+  it('does not penalize a clean restart that makes no new progress', async () => {
+    const text = `${BASMALA} ${FATIHAH_2}`;
+    mockTranscriptionResponses([
+      { normalized_text: 'بسم الله الرحمن الرحيم الحمد لله' },
+      { normalized_text: 'الرحيم الحمد' },
+    ]);
+
+    const { session, events } = collectEvents(text);
+    session.start();
+
+    await session.processAudioChunk(new Blob(['chunk1']));
+    await session.processAudioChunk(new Blob(['chunk2']));
+
+    expect(events.filter(e => e.type === 'error')).toHaveLength(0);
+    expect(events.filter(e => e.type === 'talqin')).toHaveLength(0);
   });
 });
 

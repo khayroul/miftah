@@ -8,8 +8,8 @@ import { SequenceMatcher, MatchResult } from './sequence-matcher';
 export interface TasmiConfig {
   /** Server URL for transcription */
   serverUrl: string;
-  /** API key for server auth */
-  apiKey: string;
+  /** Optional API key for direct server auth */
+  apiKey?: string;
   /** Seconds of silence before triggering talqin (default: 6) */
   silenceThresholdSeconds: number;
   /** Number of consecutive errors before triggering talqin (default: 2) */
@@ -108,9 +108,17 @@ export class TasmiSession {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
 
-      const response = await fetch(`${this.config.serverUrl}/transcribe`, {
+      const headers = this.config.apiKey
+        ? { 'x-api-key': this.config.apiKey }
+        : undefined;
+
+      const transcribeUrl = this.config.serverUrl.endsWith('/transcribe')
+        ? this.config.serverUrl
+        : `${this.config.serverUrl}/transcribe`;
+
+      const response = await fetch(transcribeUrl, {
         method: 'POST',
-        headers: { 'x-api-key': this.config.apiKey },
+        headers,
         body: formData,
         signal: controller.signal,
       });
@@ -123,16 +131,14 @@ export class TasmiSession {
       const data = await response.json();
 
       // Match against expected
+      const previousLastCorrectIndex = this.matcher.lastCorrectIndex;
       const matchResult = this.matcher.matchChunk(data.normalized_text);
+      const newlyCorrectWords = this.getNewlyCorrectWords(
+        matchResult,
+        previousLastCorrectIndex,
+      );
 
-      if (matchResult.isClean && matchResult.wordsCorrect > 0) {
-        this.consecutiveErrors = 0;
-        this.totalWordsCorrect += matchResult.wordsCorrect;
-        this.eventHandler({
-          type: 'match',
-          data: { matchResult, progress: this.matcher.progress },
-        });
-      } else if (matchResult.wordsTotal === 0 && matchResult.errors.length === 0) {
+      if (matchResult.wordsTotal === 0 && matchResult.errors.length === 0) {
         // Empty transcription (Whisper returned nothing) — count as error for talqin
         this.consecutiveErrors++;
         this.eventHandler({
@@ -143,8 +149,16 @@ export class TasmiSession {
         if (this.consecutiveErrors >= this.config.errorThresholdCount) {
           this.triggerTalqin();
         }
+      } else if (matchResult.errors.length === 0) {
+        this.consecutiveErrors = 0;
+        this.addWordsCorrect(newlyCorrectWords);
+        this.eventHandler({
+          type: 'match',
+          data: { matchResult, progress: this.matcher.progress },
+        });
       } else {
         this.consecutiveErrors++;
+        this.addWordsCorrect(newlyCorrectWords);
         matchResult.errors.forEach(e => this.errorPositions.add(e.position));
 
         this.eventHandler({
@@ -173,6 +187,26 @@ export class TasmiSession {
     if (this.isActive) {
       this.eventHandler({ type: 'listening' });
     }
+  }
+
+  private getNewlyCorrectWords(
+    matchResult: MatchResult,
+    previousLastCorrectIndex: number,
+  ): number {
+    const rawAdvance = Math.max(0, matchResult.lastCorrectIndex - previousLastCorrectIndex);
+    const omissionsInNewSpan = matchResult.errors.filter(
+      error => error.type === 'omission' && error.position > previousLastCorrectIndex,
+    ).length;
+
+    return Math.max(0, rawAdvance - omissionsInNewSpan);
+  }
+
+  private addWordsCorrect(words: number): void {
+    if (words <= 0) return;
+    this.totalWordsCorrect = Math.min(
+      this.matcher.totalExpectedWords,
+      this.totalWordsCorrect + words,
+    );
   }
 
   /**

@@ -44,8 +44,7 @@ const STATUS_LABELS: Record<TasmiStatus, string> = {
   complete: "Selesai!",
 };
 
-const TASMI_SERVER_URL = process.env.NEXT_PUBLIC_TASMI_SERVER_URL ?? "";
-const TASMI_API_KEY = process.env.NEXT_PUBLIC_TASMI_API_KEY ?? "";
+const TASMI_TRANSCRIBE_ENDPOINT = "/api/tasmi/transcribe";
 
 // Module-level cache for quran-align timestamp data (fetched once per page load)
 let alignDataCache: Array<{ surah: number; ayah: number; segments: [number, number, number, number][] }> | null = null;
@@ -155,8 +154,23 @@ export function TasmiSessionUI({
   }, []);
 
   const startSession = useCallback(async () => {
-    if (!TASMI_SERVER_URL) {
-      setErrorMsg("Pelayan tasmi' belum dikonfigurasikan.");
+    try {
+      const configResponse = await fetch(TASMI_TRANSCRIBE_ENDPOINT, {
+        method: "GET",
+        cache: "no-store",
+      });
+      const configPayload = (await configResponse.json().catch(() => null)) as
+        | { configured?: boolean }
+        | null;
+
+      if (!configResponse.ok || configPayload?.configured !== true) {
+        setErrorMsg("Pelayan tasmi' belum dikonfigurasikan.");
+        setStatus("idle");
+        return;
+      }
+    } catch {
+      setErrorMsg("Pelayan tasmi' tak dapat dihubungi sekarang.");
+      setStatus("idle");
       return;
     }
 
@@ -166,8 +180,7 @@ export function TasmiSessionUI({
     setErrorMsg(null);
 
     const session = new TasmiSession(expectedText, {
-      serverUrl: TASMI_SERVER_URL,
-      apiKey: TASMI_API_KEY,
+      serverUrl: TASMI_TRANSCRIBE_ENDPOINT,
       silenceThresholdSeconds: 6,
       errorThresholdCount: 2,
     }, handleEvent);
@@ -214,6 +227,7 @@ export function TasmiSessionUI({
     const sessionResult = sessionRef.current?.end();
     if (sessionResult) {
       setResult(sessionResult);
+      setStatus("complete");
     }
   }, []);
 
