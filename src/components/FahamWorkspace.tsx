@@ -15,6 +15,7 @@ import {
   enqueuePendingFahamRating,
   loadCachedFahamQueue,
   loadCachedFahamStats,
+  type CachedFahamQueue,
   loadPendingFahamRatings,
   replacePendingFahamRatings,
   saveCachedFahamQueue,
@@ -81,6 +82,8 @@ const DIRECTION_CONFIGS: Record<
 type FahamCorrectAdvanceMode = "fast" | "normal" | "pause";
 
 const CORRECT_ADVANCE_STORAGE_KEY = "miftah:faham:correct-advance-mode";
+const FAHAM_QUEUE_REQUEST_TIMEOUT_MS = 4000;
+const FAHAM_STATS_REQUEST_TIMEOUT_MS = 2500;
 
 const CORRECT_ADVANCE_CONFIGS: Record<
   FahamCorrectAdvanceMode,
@@ -177,22 +180,51 @@ function formatMetricValue(value: number | null): string {
   return value.toLocaleString();
 }
 
+function matchesCachedQueueConfig(
+  cachedQueue: CachedFahamQueue | null,
+  expected: {
+    directionMode: FahamMcqDirectionMode;
+    isRevision: boolean;
+    preset: FahamSourcePreset;
+  },
+): cachedQueue is CachedFahamQueue {
+  if (!cachedQueue) {
+    return false;
+  }
+
+  return (
+    cachedQueue.directionMode === expected.directionMode &&
+    cachedQueue.isRevision === expected.isRevision &&
+    cachedQueue.preset === expected.preset
+  );
+}
+
 async function requestQueue(
   preset: FahamSourcePreset,
   directionMode: FahamMcqDirectionMode,
   isRevision: boolean = false,
+  timeoutMs: number = FAHAM_QUEUE_REQUEST_TIMEOUT_MS,
 ): Promise<FahamQueueSnapshot> {
-  const response = await fetch("/api/faham/queue", {
-    body: JSON.stringify({
-      directionMode,
-      preferredSources: FAHAM_PRESET_CONFIGS[preset].preferredSources,
-      isRevision,
-    }),
-    headers: {
-      "Content-Type": "application/json",
-    },
-    method: "POST",
-  });
+  const controller = new AbortController();
+  const timeoutId = globalThis.setTimeout(() => controller.abort(), timeoutMs);
+  let response: Response;
+
+  try {
+    response = await fetch("/api/faham/queue", {
+      body: JSON.stringify({
+        directionMode,
+        preferredSources: FAHAM_PRESET_CONFIGS[preset].preferredSources,
+        isRevision,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+      signal: controller.signal,
+    });
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     throw new Error("Failed to fetch Faham queue");
@@ -256,8 +288,21 @@ interface FahamSessionSummary {
 
 type FahamSyncState = "idle" | "syncing" | "offline" | "error";
 
-async function requestStats(): Promise<FahamStats> {
-  const response = await fetch("/api/faham/stats");
+async function requestStats(
+  timeoutMs: number = FAHAM_STATS_REQUEST_TIMEOUT_MS,
+): Promise<FahamStats> {
+  const controller = new AbortController();
+  const timeoutId = globalThis.setTimeout(() => controller.abort(), timeoutMs);
+  let response: Response;
+
+  try {
+    response = await fetch("/api/faham/stats", {
+      signal: controller.signal,
+    });
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+  }
+
   if (!response.ok) {
     throw new Error("Failed to fetch Faham stats");
   }
@@ -539,11 +584,26 @@ export function FahamWorkspace({
 
   const restoreCachedQueue = useCallback(
     (
-      message: string,
-      options: { clearSessionSummary?: boolean; resetSessionTracking?: boolean } = {},
+      message: string | null,
+      options: {
+        clearSessionSummary?: boolean;
+        expectedConfig?: {
+          directionMode: FahamMcqDirectionMode;
+          isRevision: boolean;
+          preset: FahamSourcePreset;
+        };
+        resetSessionTracking?: boolean;
+      } = {},
     ): boolean => {
       const cachedQueue = loadCachedFahamQueue();
       if (!cachedQueue) {
+        return false;
+      }
+
+      if (
+        options.expectedConfig &&
+        !matchesCachedQueueConfig(cachedQueue, options.expectedConfig)
+      ) {
         return false;
       }
 
@@ -671,7 +731,7 @@ export function FahamWorkspace({
           setAnswerState(null);
           setErrorMessage(
             source === "tier-package"
-              ? "Luar talian: sesi Faham dibina daripada pakej perkataan yang telah dimuat turun."
+              ? "Sesi tempatan: Faham dibuka daripada pakej perkataan yang telah dimuat turun."
               : null,
           );
           setSessionSummary(null);
@@ -681,7 +741,7 @@ export function FahamWorkspace({
         })
         .catch(() => {
           const restored = restoreCachedQueue(
-            "Luar talian: guna barisan Faham terakhir yang tersimpan.",
+            "Sesi tersimpan dibuka supaya anda boleh teruskan tanpa tunggu sambungan pulih.",
             { clearSessionSummary: true, resetSessionTracking: true },
           );
           if (!restored) {
@@ -699,45 +759,124 @@ export function FahamWorkspace({
       return;
     }
 
-    startTransition(() => {
-      void requestQueueWithFallback(initialPreset, "arab_to_bm", false)
-        .then(({ snapshot: nextSnapshot, source }) => {
-          saveCachedFahamQueue({
-            directionMode: "arab_to_bm",
-            isRevision: false,
-            preset: initialPreset,
-            snapshot: nextSnapshot,
-          });
-          setPreset(initialPreset);
-          setDirectionMode("arab_to_bm");
-          setIsRevision(false);
-          setSnapshot(nextSnapshot);
+    let cancelled = false;
+
+    const bootstrapQueue = async () => {
+      const initialConfig = {
+        directionMode: "arab_to_bm" as const,
+        isRevision: false,
+        preset: initialPreset,
+      };
+
+      const restoredCached = restoreCachedQueue(null, {
+        clearSessionSummary: true,
+        expectedConfig: initialConfig,
+        resetSessionTracking: true,
+      });
+      if (restoredCached && !cancelled) {
+        setIsHydratingInitialQueue(false);
+      }
+
+      if (!restoredCached) {
+        const cachedStats = loadCachedFahamStats();
+        if (cachedStats) {
+          applyStats(cachedStats.stats, false);
+        }
+
+        const offlineSnapshot = await buildOfflineFahamQueueSnapshot({
+          directionMode: initialConfig.directionMode,
+          isRevision: initialConfig.isRevision,
+          levelProgressHint:
+            cachedStats?.stats.levelProgress ??
+            initialStats?.levelProgress ??
+            initialQueue.levelProgress,
+          preset: initialConfig.preset,
+        });
+
+        if (
+          !cancelled &&
+          offlineSnapshot &&
+          countQueueCards(offlineSnapshot) > 0
+        ) {
+          setPreset(initialConfig.preset);
+          setDirectionMode(initialConfig.directionMode);
+          setIsRevision(initialConfig.isRevision);
+          setSnapshot(offlineSnapshot);
           setCurrentIndex(0);
           setAnswerState(null);
-          setErrorMessage(
-            source === "tier-package"
-              ? "Luar talian: sesi Faham dibina daripada pakej perkataan yang telah dimuat turun."
-              : null,
-          );
+          setErrorMessage(null);
           setSessionSummary(null);
+          setShowPreview(true);
           resetSessionTracking();
-          void prefetchTierVocabForWordLimit(nextSnapshot.levelProgress.activeWordLimit);
-        })
-        .catch(() => {
-          const restored = restoreCachedQueue(
-            "Luar talian: guna barisan Faham terakhir yang tersimpan.",
-            { clearSessionSummary: true, resetSessionTracking: true },
-          );
-          if (!restored) {
-            setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
-          }
-        })
-        .finally(() => {
           setIsHydratingInitialQueue(false);
-        });
-    });
+          void prefetchTierVocabForWordLimit(
+            offlineSnapshot.levelProgress.activeWordLimit,
+          );
+        }
+      }
+
+      startTransition(() => {
+        void requestQueueWithFallback(initialPreset, "arab_to_bm", false)
+          .then(({ snapshot: nextSnapshot, source }) => {
+            if (cancelled) {
+              return;
+            }
+
+            saveCachedFahamQueue({
+              directionMode: "arab_to_bm",
+              isRevision: false,
+              preset: initialPreset,
+              snapshot: nextSnapshot,
+            });
+            setPreset(initialPreset);
+            setDirectionMode("arab_to_bm");
+            setIsRevision(false);
+            setSnapshot(nextSnapshot);
+            setCurrentIndex(0);
+            setAnswerState(null);
+            setErrorMessage(
+              source === "tier-package"
+                ? "Sesi tempatan: Faham dibuka daripada pakej perkataan yang telah dimuat turun."
+                : null,
+            );
+            setSessionSummary(null);
+            setShowPreview(true);
+            resetSessionTracking();
+            void prefetchTierVocabForWordLimit(
+              nextSnapshot.levelProgress.activeWordLimit,
+            );
+          })
+          .catch(() => {
+            if (cancelled) {
+              return;
+            }
+
+            const restored = restoreCachedQueue(
+              "Sesi tersimpan dibuka supaya anda boleh teruskan tanpa tunggu sambungan pulih.",
+              { clearSessionSummary: true, resetSessionTracking: true },
+            );
+            if (!restored) {
+              setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
+            }
+          })
+          .finally(() => {
+            if (!cancelled) {
+              setIsHydratingInitialQueue(false);
+            }
+          });
+      });
+    };
+
+    void bootstrapQueue();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
+    applyStats,
     initialPreset,
+    initialQueue.levelProgress,
+    initialStats?.levelProgress,
     prefetchTierVocabForWordLimit,
     requestQueueWithFallback,
     resetSessionTracking,
@@ -791,13 +930,13 @@ export function FahamWorkspace({
       setAnswerState(null);
       setErrorMessage(
         source === "tier-package"
-          ? "Luar talian: sesi seterusnya dibina daripada pakej perkataan tempatan."
+          ? "Sesi tempatan: sesi seterusnya dibina daripada pakej perkataan yang telah dimuat turun."
           : null,
       );
       setShowPreview(true);
     } catch {
       hasRestoredCachedQueue = restoreCachedQueue(
-        "Luar talian: sesi seterusnya guna barisan tersimpan.",
+        "Sesi tersimpan dibuka supaya anda boleh terus sambung tanpa tunggu sambungan pulih.",
       );
       if (!hasRestoredCachedQueue) {
         setCurrentIndex(0);
