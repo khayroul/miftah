@@ -14,7 +14,10 @@
  *
  * See docs/superpowers/specs/2026-07-13-target-architecture-DRAFT.md §3.5.
  */
-export { HifzTasmiOverlay } from "./components/HifzTasmiOverlay";
+export const loadHifzTasmiOverlay = () =>
+  import("./components/HifzTasmiOverlay").then(
+    (module) => module.HifzTasmiOverlay,
+  );
 export { TasmiSessionUI } from "./components/TasmiSessionUI";
 export type { AyahRange } from "./components/TasmiSessionUI";
 export { normalizeArabic, tokenizeWords } from "./domain/arabic-normalizer";

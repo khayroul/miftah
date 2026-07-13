@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
+import type { ReadAudioTrack } from "../domain/audio/pageAudioTracks";
+import { PageAudioRangeSettings } from "./PageAudioRangeSettings";
 
 export type PageAudioTrack = ReadAudioTrack;
 
@@ -10,30 +11,8 @@ interface PageAudioControlsProps {
   onPlaybackAyahChange?: (ayahKey: string | null) => void;
 }
 
-const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5] as const;
-const REPEAT_OPTIONS = [1, 2, 3, 5, 10, -1] as const;
-
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
-}
-
-function repeatLabel(value: number): string {
-  if (value === -1) {
-    return "∞ (ulang)";
-  }
-  return `${value}x`;
-}
-
-function normalizeRepeatValue(rawValue: string): number {
-  const parsed = Number.parseInt(rawValue, 10);
-  if (
-    REPEAT_OPTIONS.includes(
-      parsed as (typeof REPEAT_OPTIONS)[number],
-    )
-  ) {
-    return parsed;
-  }
-  return 1;
 }
 
 export function PageAudioControls({
@@ -324,133 +303,28 @@ export function PageAudioControls({
         </button>
       </div>
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        <label className="text-xs text-stone-600 dark:text-stone-300">
-          Kelajuan
-          <select
-            value={String(speed)}
-            onChange={(event) => setSpeed(Number.parseFloat(event.target.value))}
-            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
-          >
-            {SPEED_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}x
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="text-xs text-stone-600 dark:text-stone-300">
-          Ulangan asal
-          <select
-            value={String(defaultRepeatCount)}
-            onChange={(event) => {
-              setDefaultRepeatCount(normalizeRepeatValue(event.target.value));
-              setRepeatStep(0);
-            }}
-            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
-          >
-            {REPEAT_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {repeatLabel(option)}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="flex items-end gap-2 text-xs text-stone-600 dark:text-stone-300">
-          <input
-            type="checkbox"
-            checked={loopRange}
-            onChange={(event) => setLoopRange(event.target.checked)}
-            className="h-4 w-4 rounded border-stone-300 text-stone-900 dark:border-stone-600 dark:bg-stone-900"
-          />
-          <span>Ulang julat pilihan</span>
-        </label>
-      </div>
-
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <label className="text-xs text-stone-600 dark:text-stone-300">
-          Mula Julat
-          <select
-            value={String(normalizedRangeStart)}
-            onChange={(event) =>
-              updateRangeStart(Number.parseInt(event.target.value, 10))
-            }
-            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
-          >
-            {tracks.map((track, index) => (
-              <option key={`start-${track.key}`} value={index}>
-                {track.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="text-xs text-stone-600 dark:text-stone-300">
-          Akhir Julat
-          <select
-            value={String(normalizedRangeEnd)}
-            onChange={(event) =>
-              updateRangeEnd(Number.parseInt(event.target.value, 10))
-            }
-            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
-          >
-            {tracks.map((track, index) => (
-              <option key={`end-${track.key}`} value={index}>
-                {track.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {rangeStatus ? (
-        <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">Julat aktif: {rangeStatus}</p>
-      ) : null}
-
-      <details className="mt-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-700 dark:bg-stone-800/45">
-        <summary className="cursor-pointer text-xs font-medium uppercase tracking-wide text-stone-600 dark:text-stone-300">
-          Ulangan Setiap Ayat
-        </summary>
-        <div className="mt-3 space-y-3">
-          <button
-            type="button"
-            onClick={resetRangeRepeatOverrides}
-            className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
-          >
-            Tetapkan Semula Julat Kepada Ulangan Asal
-          </button>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {tracksInRange.map((track) => {
-              const value = repeatByTrack[track.key] ?? defaultRepeatCount;
-              return (
-                <label key={`repeat-${track.key}`} className="text-xs text-stone-600 dark:text-stone-300">
-                  {track.label}
-                  <select
-                    value={String(value)}
-                    onChange={(event) =>
-                      setTrackRepeatCount(
-                        track.key,
-                        normalizeRepeatValue(event.target.value),
-                      )
-                    }
-                    className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
-                  >
-                    {REPEAT_OPTIONS.map((option) => (
-                      <option key={`${track.key}-${option}`} value={option}>
-                        {repeatLabel(option)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              );
-            })}
-          </div>
-        </div>
-      </details>
-
-      <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">{repeatStatus}</p>
+      <PageAudioRangeSettings
+        defaultRepeatCount={defaultRepeatCount}
+        loopRange={loopRange}
+        normalizedRangeEnd={normalizedRangeEnd}
+        normalizedRangeStart={normalizedRangeStart}
+        rangeStatus={rangeStatus}
+        repeatByTrack={repeatByTrack}
+        repeatStatus={repeatStatus}
+        speed={speed}
+        tracks={tracks}
+        tracksInRange={tracksInRange}
+        onDefaultRepeatCountChange={(value) => {
+          setDefaultRepeatCount(value);
+          setRepeatStep(0);
+        }}
+        onLoopRangeChange={setLoopRange}
+        onRangeEndChange={updateRangeEnd}
+        onRangeStartChange={updateRangeStart}
+        onResetRangeRepeatOverrides={resetRangeRepeatOverrides}
+        onSpeedChange={setSpeed}
+        onTrackRepeatCountChange={setTrackRepeatCount}
+      />
     </section>
   );
 }

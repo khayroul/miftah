@@ -10,12 +10,12 @@ import {
   type ReactNode,
 } from "react";
 import dynamic from "next/dynamic";
-import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
-import { trackReadAudioTelemetry } from "@/lib/readAudioTelemetry";
+import type { ReadAudioTrack } from "../domain/audio/pageAudioTracks";
+import { trackReadAudioTelemetry } from "../domain/audio/readAudioTelemetry";
 
 const ReadAudioDock = dynamic(
   () =>
-    import("@/components/ReadAudioDock").then(
+    import("./ReadAudioDock").then(
       (module) => module.ReadAudioDock,
     ),
   {

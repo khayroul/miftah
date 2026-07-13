@@ -2,9 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo } from "react";
-import { saveReadMode, type ReadMode } from "@/lib/readMode";
-import { findMarkerForPage } from "@/lib/readNavigationUtils";
-import { useReadingProgressState } from "@/lib/useReadingProgressState";
+import { findMarkerForPage } from "../domain/readNavigationUtils";
+import { saveReadMode, type ReadMode } from "../domain/readMode";
+import { useReadingProgressState } from "../domain/useReadingProgressState";
 import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 
 const AuthStatusButton = dynamic(

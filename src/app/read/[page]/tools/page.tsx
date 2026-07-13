@@ -2,13 +2,15 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PageAudioControls } from "@/components/PageAudioControls";
-import { ReadJumpControls } from "@/components/ReadJumpControls";
+import {
+  findMarkerForPage,
+  mapAyatToPageAudioTracks,
+  PageAudioControls,
+  ReadJumpControls,
+} from "@/features/read";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { mapAyatToPageAudioTracks } from "@/lib/pageAudioTracks";
 import { getAyatByPage, getSurah } from "@/lib/queries";
 import { getReadJumpTargets, parseReadPage } from "@/lib/readNavigation";
-import { findMarkerForPage } from "@/lib/readNavigationUtils";
 
 interface ReadToolsPageProps {
   params: Promise<{ page: string }>;

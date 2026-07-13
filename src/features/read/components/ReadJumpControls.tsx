@@ -10,9 +10,9 @@ import type {
 import {
   getMarkerPageById,
   parseBoundedIntegerInput,
-} from "@/lib/readNavigationUtils";
+} from "../domain/readNavigationUtils";
 import { navigateWithOfflineSupport } from "@/lib/pwa/navigation";
-import { FALLBACK_READ_JUMP_TARGETS } from "@/lib/readJumpTargetsFallback";
+import { FALLBACK_READ_JUMP_TARGETS } from "../domain/readJumpTargetsFallback";
 
 interface ReadJumpControlsProps {
   currentPage: number;

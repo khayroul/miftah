@@ -1,4 +1,4 @@
-import { getQuranWordAudioUrl } from "@/lib/quranWordAudio";
+import { getQuranWordAudioUrl } from "@/features/read";
 import type { WordWithOccurrences } from "./types";
 import type { FahamMcqPoolWord } from "./mcqTypes";
 

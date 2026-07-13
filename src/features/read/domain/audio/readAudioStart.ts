@@ -1,4 +1,4 @@
-import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
+import type { ReadAudioTrack } from "./pageAudioTracks";
 
 export interface ReadAudioStartSelection {
   currentIndex: number;

@@ -1,7 +1,7 @@
 "use client";
 
 import { OfflineAwareLink } from "@/components/OfflineAwareLink";
-import { saveReadMode } from "@/lib/readMode";
+import { saveReadMode } from "@/features/read";
 import type { HomeDashboardSnapshot } from "../domain/homeDashboard";
 import type { HomeHeroAction } from "../domain/homeDashboardHero";
 import {

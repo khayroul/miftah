@@ -15,7 +15,7 @@ import {
   toggleDifficultAyah,
   type HifzRevealStage,
 } from "@/features/hifz";
-import { useReadMode } from "@/lib/useReadMode";
+import { useReadMode } from "@/features/read/domain/useReadMode";
 import { getAyahKeyFromLocation } from "@/mushaf/lib/mushafGlyphs";
 import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
 import type { MushafWordTranslationMap } from "@/mushaf/types/mushaf";
