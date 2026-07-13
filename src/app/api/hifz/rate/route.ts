@@ -1,7 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { recomputeAndStoreSnapshot } from "@/features/home/server";
-import { applyRating } from "@/lib/fsrs";
+import { applyRating } from "@/shared/fsrs";
 import { dbRowToCard, cardToDbRow } from "@/shared/fsrsBridge";
 import {
   getProgressById,
@@ -10,10 +10,10 @@ import {
   demoteManzilToSabqi,
 } from "@/data/repositories/hifz";
 import { logReview } from "@/data/repositories/hifz";
-import { getOptionalAuthUser } from "@/lib/auth-server";
-import type { FsrsRating, FsrsState } from "@/types/database";
-import type { Grade } from "@/lib/fsrs";
-import { recordActivityEvent } from "@/lib/activityEvents";
+import { getOptionalAuthUser } from "@/features/auth/server";
+import type { FsrsRating, FsrsState } from "@/shared/types/database";
+import type { Grade } from "@/shared/fsrs";
+import { recordActivityEvent } from "@/data/repositories/activity";
 
 interface RateBody {
   progressId: number;

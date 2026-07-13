@@ -1,4 +1,4 @@
-import { supabaseServer } from "@/lib/supabase-server";
+import { supabaseServer } from "@/data/supabase/server";
 import { matureCardDbRow } from "@/shared/fsrsBridge";
 
 export interface HifzTasmiAyah {

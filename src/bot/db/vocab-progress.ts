@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "../supabase-admin.js";
 import { newCardDbRow } from "../services/fsrs-bridge.js";
-import type { FsrsFields, VocabProgress } from "@/types/database";
+import type { FsrsFields, VocabProgress } from "@/shared/types/database";
 
 export async function getOrCreateVocabProgress(
   userId: string,

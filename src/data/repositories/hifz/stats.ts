@@ -1,4 +1,4 @@
-import { supabaseServer } from "@/lib/supabase-server";
+import { supabaseServer } from "@/data/supabase/server";
 import { TOTAL_QURAN_PAGES, JUZ_PAGE_COUNTS, pageToJuz } from "@/features/hifz/domain/constants";
 import type {
   HifzStats,

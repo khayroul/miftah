@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getOptionalAuthUser } from "@/lib/auth-server";
-import { createSupabaseServerClient } from "@/lib/supabase-auth-server";
+import { getOptionalAuthUser } from "@/features/auth/server";
+import { insertFeedback } from "@/data/repositories/feedback";
 
 // This route accepts unauthenticated feedback, so cap the attacker-controlled
 // `metadata` blob to keep it from being used to bloat the table.
@@ -33,10 +33,8 @@ export async function POST(request: Request) {
     }
 
     const user = await getOptionalAuthUser();
-    const supabase = await createSupabaseServerClient();
-
-    const { error } = await supabase.from("feedback").insert({
-      user_id: user?.id ?? null,
+    await insertFeedback({
+      userId: user?.id ?? null,
       body,
       metadata: {
         ...metadata,
@@ -44,8 +42,6 @@ export async function POST(request: Request) {
         userAgent: request.headers.get("user-agent"),
       },
     });
-
-    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {

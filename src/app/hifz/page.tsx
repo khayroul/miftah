@@ -15,8 +15,8 @@ import {
 } from "@/features/hifz/server";
 import { LightweightBreadcrumb } from "@/features/read";
 import { getReadJumpTargets } from "@/lib/readNavigation";
-import { getOptionalAuthUser } from "@/lib/auth-server";
-import { getUserStreak } from "@/lib/activity";
+import { getOptionalAuthUser } from "@/features/auth/server";
+import { getUserStreak } from "@/data/repositories/activity";
 
 export default async function HifzPage() {
   const userPromise = getOptionalAuthUser();

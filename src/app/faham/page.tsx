@@ -6,7 +6,7 @@ import {
   type FahamQueueSnapshot,
 } from "@/features/faham/server";
 import { getReadJumpTargets } from "@/lib/readNavigation";
-import { getOptionalAuthUser } from "@/lib/auth-server";
+import { getOptionalAuthUser } from "@/features/auth/server";
 
 interface FahamPageProps {
   searchParams: Promise<{

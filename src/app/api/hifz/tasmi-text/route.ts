@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOptionalAuthUser } from "@/lib/auth-server";
+import { getOptionalAuthUser } from "@/features/auth/server";
 import { getHifzTasmiAyahs } from "@/data/repositories/hifz";
 import {
   MAX_TASMI_AYAH_IDS,

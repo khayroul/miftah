@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import type { Ayah } from "@/types/database";
+import type { Ayah } from "@/shared/types/database";
 import { mapAyatToPageAudioTracks } from "./pageAudioTracks";
 import { resolveReadAudioPageStartFromAyah } from "./readAudioStart";
 

@@ -1,5 +1,5 @@
 import { supabaseServer } from "@/data/supabase/server";
-import type { UserReadingState } from "@/types/database";
+import type { UserReadingState } from "@/shared/types/database";
 
 const READING_STATE_COLUMNS =
   "user_id,last_page,last_read_at,created_at,updated_at";

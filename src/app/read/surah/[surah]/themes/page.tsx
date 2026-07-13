@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ModeNavigator } from "@/features/read";
 import { TemaDataFetcher } from "@/features/tema";
 import { getSurah, getSurahs } from "@/lib/queries";
-import type { Surah } from "@/types/database";
+import type { Surah } from "@/shared/types/database";
 
 interface SurahThemeAppearancePageProps {
   params: Promise<{ surah: string }>;

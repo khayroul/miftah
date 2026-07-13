@@ -1,23 +1,23 @@
 import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { recomputeAndStoreSnapshot } from "@/features/home/server";
-import type { Grade } from "@/lib/fsrs";
-import { applyRating } from "@/lib/fsrs";
+import type { Grade } from "@/shared/fsrs";
+import { applyRating } from "@/shared/fsrs";
 import { dbRowToCard, cardToDbRow } from "@/shared/fsrsBridge";
 import { logVocabReview } from "@/data/repositories/faham-review";
 import {
   fahamRateRequestSchema,
   isRecentlyReviewed,
 } from "@/features/faham/server";
-import { getOptionalAuthUser } from "@/lib/auth-server";
+import { getOptionalAuthUser } from "@/features/auth/server";
 import {
   getOrCreateVocabProgress,
   getVocabProgressById,
   updateVocabProgressAfterReview,
 } from "@/data/repositories/faham-progress";
-import type { FsrsState } from "@/types/database";
+import type { FsrsState } from "@/shared/types/database";
 import { ZodError } from "zod";
-import { recordActivityEvent } from "@/lib/activityEvents";
+import { recordActivityEvent } from "@/data/repositories/activity";
 
 export async function POST(request: Request): Promise<NextResponse> {
   let rawBody: unknown;

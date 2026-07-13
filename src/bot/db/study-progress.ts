@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "../supabase-admin.js";
 import { newCardDbRow } from "../services/fsrs-bridge.js";
-import type { FsrsFields, HifzStatus, StudyProgress } from "@/types/database";
+import type { FsrsFields, HifzStatus, StudyProgress } from "@/shared/types/database";
 
 export async function getOrCreateProgress(
   userId: string,

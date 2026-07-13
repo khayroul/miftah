@@ -1,6 +1,6 @@
 "use client";
 
-import type { FsrsRating } from "@/types/database";
+import type { FsrsRating } from "@/shared/types/database";
 import { getOfflineStorage, isObjectRecord, parseJson } from "./offlineSyncStorage";
 
 const LS_KEY_PENDING_RATINGS = "miftah:faham:pending-ratings:v1";

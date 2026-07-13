@@ -1,5 +1,5 @@
 import { supabaseServer } from "@/data/supabase/server";
-import type { FsrsRating, FsrsState } from "@/types/database";
+import type { FsrsRating, FsrsState } from "@/shared/types/database";
 
 export async function logVocabReview(params: {
   elapsedDays: number;

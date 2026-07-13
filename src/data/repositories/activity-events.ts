@@ -1,33 +1,9 @@
-import { supabaseServer } from "@/lib/supabase-server";
-
-export type ActivityEventType =
-  | "faham_word_reviewed"
-  | "hifz_ayah_memorized"
-  | "hifz_ayah_reviewed"
-  | "read_page_viewed"
-  | "theme_chunk_completed"
-  | "theme_chunk_started";
-
-export type ActivityEntityType = "ayah" | "page" | "theme_chunk" | "word";
-
-export interface RecordActivityEventInput {
-  activityType: ActivityEventType;
-  entityId?: number | null;
-  entityKey: string;
-  entityType: ActivityEntityType;
-  metadata?: Record<string, unknown>;
-  occurredAt?: string;
-  userId: string;
-}
-
-export interface DailyActivityEventSummary {
-  activityDate: string;
-  fahamWordsCount: number;
-  hifzAyatCount: number;
-  readPagesCount: number;
-  themeChunksCount: number;
-  totalEvents: number;
-}
+import { supabaseServer } from "@/data/supabase/server";
+import type {
+  ActivityEventType,
+  DailyActivityEventSummary,
+  RecordActivityEventInput,
+} from "@/shared/activity";
 
 function toActivityDateKey(value: string): string {
   return value.slice(0, 10);
@@ -39,10 +15,6 @@ function buildIdempotencyKey(input: {
   entityKey: string;
 }): string {
   return `${input.activityType}:${input.activityDate}:${input.entityKey}`;
-}
-
-export function todayActivityDateKey(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 export async function recordActivityEvent(

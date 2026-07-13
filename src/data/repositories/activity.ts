@@ -1,20 +1,25 @@
-import { supabaseServer } from "@/lib/supabase-server";
+import { supabaseServer } from "@/data/supabase/server";
 import {
   getActivityEventDateKeys,
   getDailyActivityEventSummary,
   getDailyHifzAyahCountFromEvents,
   getDailyHifzPageCountFromEvents,
   getLegacyActivityDateKeys,
+} from "./activity-events";
+import {
+  buildStreakFromDateKeys,
+} from "@/shared/activity/streak";
+import {
   todayActivityDateKey,
-} from "@/lib/activityEvents";
+  type ActivityType,
+  type DailyGoalType,
+} from "@/shared/activity";
 
-export type ActivityType = "read" | "faham" | "hifz" | "theme";
-export type DailyGoalType =
-  | "faham_words"
-  | "read_pages"
-  | "hifz_ayat"
-  | "hifz_pages"
-  | "theme_chunks";
+export {
+  getReadPageActivityRows,
+  recordActivityEvent,
+} from "./activity-events";
+
 type ActivityMetadata = {
   ayahId?: number;
   ayat?: number[];
@@ -23,54 +28,8 @@ type ActivityMetadata = {
   [key: string]: unknown;
 };
 
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const AVERAGE_AYAT_PER_PAGE = 6236 / 604;
-
 function toDateKey(value: string): string {
   return value.slice(0, 10);
-}
-
-function dateDiffDays(newerDateKey: string, olderDateKey: string): number {
-  const newer = new Date(`${newerDateKey}T00:00:00.000Z`).getTime();
-  const older = new Date(`${olderDateKey}T00:00:00.000Z`).getTime();
-  return Math.round((newer - older) / DAY_IN_MS);
-}
-
-function buildStreakFromDateKeys(dateKeys: string[]): {
-  current_streak: number;
-  longest_streak: number;
-  last_activity_date: string | null;
-} {
-  if (dateKeys.length === 0) {
-    return { current_streak: 0, longest_streak: 0, last_activity_date: null };
-  }
-
-  const sorted = [...new Set(dateKeys)].sort((left, right) => right.localeCompare(left));
-  let currentStreak = 1;
-  for (let index = 1; index < sorted.length; index += 1) {
-    if (dateDiffDays(sorted[index - 1], sorted[index]) === 1) {
-      currentStreak += 1;
-      continue;
-    }
-    break;
-  }
-
-  let longestStreak = 1;
-  let run = 1;
-  for (let index = 1; index < sorted.length; index += 1) {
-    if (dateDiffDays(sorted[index - 1], sorted[index]) === 1) {
-      run += 1;
-      longestStreak = Math.max(longestStreak, run);
-    } else {
-      run = 1;
-    }
-  }
-
-  return {
-    current_streak: currentStreak,
-    longest_streak: longestStreak,
-    last_activity_date: sorted[0] ?? null,
-  };
 }
 
 async function deriveStreakFallback(userId: string) {
@@ -209,14 +168,6 @@ export async function getUserDailyGoal(
     count: data.daily_goal_count || 10,
     type: (data.daily_goal_type || "faham_words") as DailyGoalType,
   };
-}
-
-export function recommendHifzPageGoalFromAyahGoal(ayahGoal: number): number {
-  if (!Number.isFinite(ayahGoal) || ayahGoal <= 0) {
-    return 1;
-  }
-
-  return Math.max(1, Math.round(ayahGoal / AVERAGE_AYAT_PER_PAGE));
 }
 
 interface DailyActivityCountOptions {

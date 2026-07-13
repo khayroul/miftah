@@ -1,5 +1,5 @@
-import { supabaseServer } from "@/lib/supabase-server";
-import type { FsrsRating, FsrsState } from "@/types/database";
+import { supabaseServer } from "@/data/supabase/server";
+import type { FsrsRating, FsrsState } from "@/shared/types/database";
 
 export async function logReview(params: {
   userId: string;

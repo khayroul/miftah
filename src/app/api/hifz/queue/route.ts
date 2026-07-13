@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOptionalAuthUser } from "@/lib/auth-server";
+import { getOptionalAuthUser } from "@/features/auth/server";
 import { buildDailyPlanWithDetails } from "@/data/repositories/hifz";
 import { buildHifzQueueResponse } from "@/features/hifz/domain/queue";
 

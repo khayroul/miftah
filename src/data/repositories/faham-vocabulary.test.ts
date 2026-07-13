@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { Word } from "@/types/database";
+import type { Word } from "@/shared/types/database";
 import {
   attachFirstOccurrences,
   chunkIds,

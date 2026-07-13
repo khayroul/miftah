@@ -1,5 +1,5 @@
 import type { TasmiRatingLabel, TasmiSessionResult } from "@/features/tasmi";
-import type { FsrsRating } from "@/types/database";
+import type { FsrsRating } from "@/shared/types/database";
 import { RATING_LABEL_DISPLAY } from "../../domain/exercise-labels";
 
 interface UnveilResultCardProps {

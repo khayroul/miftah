@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { Suspense, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
-import { sanitizeNextPath } from "@/lib/auth";
-import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
+import { sanitizeNextPath } from "@/features/auth";
+import { createSupabaseBrowserClient } from "@/data/repositories/auth-browser";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 function ForgotPasswordForm() {

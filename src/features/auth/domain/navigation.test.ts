@@ -7,7 +7,7 @@ import {
   formatCooldownDuration,
   getMagicLinkCooldownSeconds,
   sanitizeNextPath,
-} from "./auth";
+} from "./navigation";
 
 test("sanitizeNextPath keeps safe in-app paths", () => {
   assert.equal(sanitizeNextPath("/read/5"), "/read/5");

@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "../supabase-admin.js";
-import type { Ayah, HifzStatus, Surah, Word } from "@/types/database";
+import type { Ayah, HifzStatus, Surah, Word } from "@/shared/types/database";
 import { getReviewCount } from "./review-log.js";
 
 interface SurahNameJoin {

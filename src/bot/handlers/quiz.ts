@@ -5,9 +5,9 @@ import { supabaseAdmin } from "../supabase-admin.js";
 import { getDueVocabWithDetails, getNewVocabByFrequency } from "../db/queries-bot.js";
 import { getOrCreateVocabProgress, updateVocabFsrs } from "../db/vocab-progress.js";
 import { logReview } from "../db/review-log.js";
-import { applyRating } from "@/lib/fsrs";
+import { applyRating } from "@/shared/fsrs";
 import { cardToDbRow, dbRowToCard } from "../services/fsrs-bridge.js";
-import type { FsrsRating, FsrsState, VocabProgress } from "@/types/database";
+import type { FsrsRating, FsrsState, VocabProgress } from "@/shared/types/database";
 
 const DEFAULT_QUIZ_COUNT = 10;
 const MAX_QUIZ_COUNT = 30;

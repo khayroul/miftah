@@ -2,8 +2,8 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { buildSignInPath, sanitizeNextPath } from "@/lib/auth";
-import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
+import { buildSignInPath, sanitizeNextPath } from "@/features/auth";
+import { createSupabaseBrowserClient } from "@/data/repositories/auth-browser";
 
 function MagicLinkPageContent() {
   const router = useRouter();

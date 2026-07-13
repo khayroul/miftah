@@ -1,6 +1,6 @@
 import type { Card } from "ts-fsrs";
 import { State } from "ts-fsrs";
-import type { FsrsFields } from "@/types/database";
+import type { FsrsFields } from "@/shared/types/database";
 
 /** Convert a database row's FSRS columns into a ts-fsrs Card object */
 export function dbRowToCard(row: FsrsFields): Card {

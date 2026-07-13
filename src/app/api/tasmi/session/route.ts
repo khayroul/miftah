@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getOptionalAuthUser } from "@/lib/auth-server";
+import { getOptionalAuthUser } from "@/features/auth/server";
 import { saveTasmiSession } from "@/data/repositories/tasmi";
 
 const TasmiSessionSchema = z.object({

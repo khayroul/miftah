@@ -1,8 +1,8 @@
 import type { Context } from "grammy";
 import { InlineKeyboard } from "grammy";
 import { USER_ID } from "../config.js";
-import { applyRating } from "@/lib/fsrs";
-import type { FsrsRating, FsrsState } from "@/types/database";
+import { applyRating } from "@/shared/fsrs";
+import type { FsrsRating, FsrsState } from "@/shared/types/database";
 import { dbRowToCard, cardToDbRow } from "../services/fsrs-bridge.js";
 import {
   getProgressById,

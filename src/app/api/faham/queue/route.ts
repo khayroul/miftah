@@ -4,7 +4,7 @@ import {
   buildFahamQueueSnapshot,
   fahamQueueRequestSchema,
 } from "@/features/faham/server";
-import { getOptionalAuthUser } from "@/lib/auth-server";
+import { getOptionalAuthUser } from "@/features/auth/server";
 
 export async function POST(request: Request): Promise<NextResponse> {
   let rawBody: unknown = {};

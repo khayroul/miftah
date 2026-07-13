@@ -1,4 +1,4 @@
-import { buildSignInPath } from "@/lib/auth";
+import { buildSignInPath } from "@/features/auth";
 import { TasmiSessionUI, type AyahRange, type TasmiRatingLabel, type TasmiSessionResult } from "@/features/tasmi";
 import type { HifzFlowType } from "../domain/sessionQueue";
 

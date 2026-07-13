@@ -1,4 +1,4 @@
-import type { FahamSourceType, Word } from "@/types/database";
+import type { FahamSourceType, Word } from "@/shared/types/database";
 import type {
   FahamCandidateWord,
   FahamDueCard,

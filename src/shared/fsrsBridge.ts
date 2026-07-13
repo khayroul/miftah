@@ -1,6 +1,6 @@
 import type { Card } from "ts-fsrs";
 import { State } from "ts-fsrs";
-import type { FsrsFields } from "@/types/database";
+import type { FsrsFields } from "@/shared/types/database";
 
 /** Convert database FSRS columns into the scheduler's Card shape. */
 export function dbRowToCard(row: FsrsFields): Card {

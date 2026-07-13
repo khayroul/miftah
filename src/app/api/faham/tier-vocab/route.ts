@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOptionalAuthUser } from "@/lib/auth-server";
+import { getOptionalAuthUser } from "@/features/auth/server";
 import { FAHAM_LEVEL_WORD_LIMITS } from "@/features/faham/server";
 import { getFahamLevelState } from "@/data/repositories/faham-levels";
 import { getFahamTierVocabWords } from "@/data/repositories/faham";

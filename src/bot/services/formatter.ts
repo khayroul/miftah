@@ -1,5 +1,5 @@
 import { InlineKeyboard } from "grammy";
-import type { Ayah, Word } from "@/types/database";
+import type { Ayah, Word } from "@/shared/types/database";
 import type { DailyPlan } from "./scheduler.js";
 import type { BlankingLevel } from "./blanking.js";
 import type { UserStats } from "../db/queries-bot.js";

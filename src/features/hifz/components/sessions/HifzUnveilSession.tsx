@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
 import type { MushafPageManifest } from "@/mushaf/types/mushaf";
-import type { FsrsRating } from "@/types/database";
+import type { FsrsRating } from "@/shared/types/database";
 import {
   getPerAyahRatings,
   normalizeArabic,

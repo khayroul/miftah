@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Suspense, useEffect, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
+import { createSupabaseBrowserClient } from "@/data/repositories/auth-browser";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 function ResetPasswordForm() {

@@ -3,7 +3,7 @@ import type {
   VocabExposureSummary,
   VocabProgress,
   Word,
-} from "@/types/database";
+} from "@/shared/types/database";
 
 interface WordOccurrenceLite {
   ayah_id: number;

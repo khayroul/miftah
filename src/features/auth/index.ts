@@ -1,10 +1,8 @@
 /**
  * features/auth — PUBLIC INTERFACE (barrel)
  *
- * Phase-1 Wave-0 scaffold (empty). Supabase Auth (sign-in form, status button,
- * session helpers). SCAFFOLD ONLY today — the feature is ACTIVATED in Phase 2
- * (parent spec §Phase-2 Lane A) against the `data/supabase/rls.ts` session
- * seam this restructure creates. No behavior now.
+ * Phase-1 public client-safe Auth surface. Phase 2 activates the RLS and
+ * entitlement behavior; this boundary preserves the existing session flows.
  *
  * Boundary rules (spec §2, §4.4 — enforced by eslint.config.mjs):
  *  - Other features import `auth` only via this barrel (`@/features/auth`).
@@ -14,4 +12,14 @@
  *
  * See docs/superpowers/specs/2026-07-13-target-architecture-DRAFT.md §3.7, §8(1).
  */
-export {};
+export { AuthSignInForm } from "./components/AuthSignInForm";
+export { AuthStatusButton } from "./components/AuthStatusButton";
+export {
+  MAGIC_LINK_DEFAULT_COOLDOWN_SECONDS,
+  buildMagicLinkPath,
+  buildSignInPath,
+  formatCooldownDuration,
+  getMagicLinkCooldownSeconds,
+  sanitizeNextPath,
+} from "./domain/navigation";
+export type { AuthErrorLike } from "./domain/navigation";

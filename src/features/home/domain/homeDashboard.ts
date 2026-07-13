@@ -19,14 +19,17 @@ import {
 import { buildDailyPlanWithDetails } from "@/data/repositories/hifz";
 import { hasAnyHifzProgress } from "@/data/repositories/hifz";
 import { getHifzStats } from "@/data/repositories/hifz";
-import { getReadPageActivityRows } from "@/lib/activityEvents";
+import { getReadPageActivityRows } from "@/data/repositories/activity";
 import {
   getUserStreak,
   getUserDailyGoal,
   getDailyActivityCount,
+} from "@/data/repositories/activity";
+import {
   recommendHifzPageGoalFromAyahGoal,
-} from "@/lib/activity";
-import type { ActivityType, DailyGoalType } from "@/lib/activity";
+  type ActivityType,
+  type DailyGoalType,
+} from "@/shared/activity";
 import type { PlanItem } from "@/data/repositories/hifz";
 
 const TOTAL_QURAN_PAGES = 604;

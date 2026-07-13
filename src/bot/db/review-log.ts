@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "../supabase-admin.js";
-import type { FsrsRating, FsrsState, ReviewLog } from "@/types/database";
+import type { FsrsRating, FsrsState, ReviewLog } from "@/shared/types/database";
 
 export async function logReview(params: {
   userId: string;
