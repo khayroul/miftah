@@ -35,10 +35,11 @@ const originalEnv = Object.fromEntries(
 const originalFetch = globalThis.fetch;
 
 function setJsonFetch(body: unknown, ok = true): void {
-  globalThis.fetch = (async () => ({
-    ok,
-    json: async () => body,
-  })) as typeof fetch;
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify(body), {
+      headers: { "Content-Type": "application/json" },
+      status: ok ? 200 : 500,
+    });
 }
 
 beforeEach(() => {
@@ -286,12 +287,11 @@ describe("Mushaf manifest normalization and failures", () => {
     setJsonFetch({}, false);
     assert.equal(await loadPageManifest(9999), null);
 
-    globalThis.fetch = (async () => ({
-      ok: true,
-      json: async () => {
-        throw new SyntaxError("bad json");
-      },
-    })) as typeof fetch;
+    globalThis.fetch = async () =>
+      new Response("{bad json", {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
     assert.equal(await loadAyahManifest(9999, 9999), null);
 
     globalThis.fetch = (async () => {
