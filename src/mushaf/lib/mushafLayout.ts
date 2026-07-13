@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import type { MushafLayoutLine, MushafLayoutPage } from "@/types/mushafLayout";
+import type { MushafLayoutLine, MushafLayoutPage } from "@/mushaf/types/mushafLayout";
 
 interface SurahMetaEntry {
   name_ar: string;

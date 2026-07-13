@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { resolvePageImageSource, type PageVariant } from "@/lib/mushafAssets";
+import { resolvePageImageSource, type PageVariant } from "@/mushaf/lib/mushafAssets";
 
 export const runtime = "nodejs";
 

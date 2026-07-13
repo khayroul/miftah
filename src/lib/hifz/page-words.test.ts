@@ -1,7 +1,7 @@
 // src/lib/hifz/page-words.test.ts
 import { describe, it, expect } from 'vitest';
 import { getPageWords, buildAyahWordRanges } from './page-words';
-import type { MushafLayoutPage } from '@/types/mushafLayout';
+import type { MushafLayoutPage } from '@/mushaf/types/mushafLayout';
 
 const MOCK_LAYOUT: MushafLayoutPage = {
   page: 2,

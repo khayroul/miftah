@@ -18,10 +18,10 @@ import {
   type HifzRevealStage,
 } from "@/lib/hifz/pageReveal";
 import { useReadMode } from "@/lib/useReadMode";
-import { getAyahKeyFromLocation } from "@/lib/mushafGlyphs";
-import type { MushafLayoutPage } from "@/types/mushafLayout";
-import type { MushafWordTranslationMap } from "@/types/mushaf";
-import { MushafLivePage, type MushafLiveWordRef } from "@/components/MushafLivePage";
+import { getAyahKeyFromLocation } from "@/mushaf/lib/mushafGlyphs";
+import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
+import type { MushafWordTranslationMap } from "@/mushaf/types/mushaf";
+import { MushafLivePage, type MushafLiveWordRef } from "@/mushaf/components/MushafLivePage";
 
 export interface MushafAyahDetail {
   id: number;

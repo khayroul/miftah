@@ -1,8 +1,8 @@
 // src/lib/hifz/progressive-unveil.test.ts
 import { describe, it, expect } from 'vitest';
 import { buildUnveilState, revealUpTo } from './progressive-unveil';
-import type { MushafLayoutPage } from '@/types/mushafLayout';
-import type { MushafPageManifest } from '@/types/mushaf';
+import type { MushafLayoutPage } from '@/mushaf/types/mushafLayout';
+import type { MushafPageManifest } from '@/mushaf/types/mushaf';
 
 const MOCK_LAYOUT: MushafLayoutPage = {
   page: 2,

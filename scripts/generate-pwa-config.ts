@@ -5,7 +5,7 @@ import path from "node:path";
 const OUTPUT_PATH = path.join(process.cwd(), "public", "pwa-config.json");
 
 function extractCdnVersion(): string {
-  const assetsPath = path.join(process.cwd(), "src", "lib", "mushafAssets.ts");
+  const assetsPath = path.join(process.cwd(), "src", "mushaf", "lib", "mushafAssets.ts");
   const content = readFileSync(assetsPath, "utf-8");
   const match = content.match(/CDN_ASSET_VERSION\s*=\s*"(\d+)"/);
   if (!match) throw new Error("Could not find CDN_ASSET_VERSION in mushafAssets.ts");

@@ -1,5 +1,5 @@
 // src/lib/hifz/page-words.ts
-import type { MushafLayoutPage } from '@/types/mushafLayout';
+import type { MushafLayoutPage } from '@/mushaf/types/mushafLayout';
 import type { PageWord, AyahWordRange } from '@/types/hifz-exercises';
 
 function parseLocation(location: string): {

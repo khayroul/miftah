@@ -7,8 +7,8 @@ import {
   useState,
   type TouchEvent,
 } from "react";
-import type { MushafLayoutPage } from "@/types/mushafLayout";
-import { MushafLivePage, type MushafLiveWordRef } from "@/components/MushafLivePage";
+import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
+import { MushafLivePage, type MushafLiveWordRef } from "@/mushaf/components/MushafLivePage";
 
 interface ReadOnlyMushafPageViewProps {
   pageNumber: number;

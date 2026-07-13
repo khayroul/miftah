@@ -1,6 +1,6 @@
-import type { MushafPageManifest } from "@/types/mushaf";
-import type { MushafLayoutPage } from "@/types/mushafLayout";
-import type { MushafWordTranslationMap } from "@/types/mushaf";
+import type { MushafPageManifest } from "@/mushaf/types/mushaf";
+import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
+import type { MushafWordTranslationMap } from "@/mushaf/types/mushaf";
 import { validatePageTranslations } from "./offlineTranslations";
 
 export type OfflinePageResult =

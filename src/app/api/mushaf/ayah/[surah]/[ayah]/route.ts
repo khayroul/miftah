@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { resolveAyahImageSource } from "@/lib/mushafAssets";
+import { resolveAyahImageSource } from "@/mushaf/lib/mushafAssets";
 
 export const runtime = "nodejs";
 

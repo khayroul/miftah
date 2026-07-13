@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import type { MushafWordHitbox, MushafWordTranslationMap } from "@/types/mushaf";
+import type { MushafWordHitbox, MushafWordTranslationMap } from "@/mushaf/types/mushaf";
 
 type RawTranslationMap = Record<string, unknown>;
 

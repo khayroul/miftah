@@ -14,7 +14,7 @@ function getGitSha(): string {
 }
 
 function getCdnVersion(): string {
-  const assetsPath = path.join(process.cwd(), "src", "lib", "mushafAssets.ts");
+  const assetsPath = path.join(process.cwd(), "src", "mushaf", "lib", "mushafAssets.ts");
   const content = readFileSync(assetsPath, "utf-8");
   const match = content.match(/CDN_ASSET_VERSION\s*=\s*"(\d+)"/);
   return match ? match[1] : "1";

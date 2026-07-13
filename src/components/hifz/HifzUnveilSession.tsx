@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { MushafLayoutPage } from "@/types/mushafLayout";
-import type { MushafPageManifest } from "@/types/mushaf";
+import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
+import type { MushafPageManifest } from "@/mushaf/types/mushaf";
 import type { TasmiEvent, TasmiSessionResult } from "@/lib/tasmi/tasmi-session";
 import type { TasmiRatingLabel } from "@/lib/tasmi/fsrs-bridge";
 import type { FsrsRating } from "@/types/database";

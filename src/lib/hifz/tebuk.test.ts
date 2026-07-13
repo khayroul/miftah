@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { pickTebukPrompts } from './tebuk';
-import type { MushafLayoutPage } from '@/types/mushafLayout';
+import type { MushafLayoutPage } from '@/mushaf/types/mushafLayout';
 
 // Page with 3 ayahs: ayah 2:1 (1 word — too short), 2:2 (6 words), 2:3 (7 words)
 const MOCK_LAYOUT: MushafLayoutPage = {
