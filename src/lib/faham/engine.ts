@@ -12,7 +12,7 @@ export const DEFAULT_FAHAM_ENGINE_CONFIG: FahamEngineConfig = {
   sessionSize: 10,
   minDistinctContextCount: 1, // Available immediately
   minExposureEventCount: 1,   // Available immediately
-  minOccurrenceWeight: 1,     // Available immediately
+  minOccurrenceWeight: 4,     // Requires meaningful repeated occurrence weight before unlocking
   newWeight: 0.65,
   dueWeight: 0.25,
   masteredWeight: 0.10,       // Strictly 10%
@@ -115,10 +115,14 @@ function preferenceScore(
 
 export function isEligibleForNewCard(
   candidate: FahamCandidateWord,
-  _config: FahamEngineConfig,
+  config: FahamEngineConfig,
 ): boolean {
-  // Always available if encountered at least once
-  return candidate.summary.exposure_event_count >= 1;
+  const summary = candidate.summary;
+  return (
+    summary.distinct_context_count >= config.minDistinctContextCount &&
+    summary.exposure_event_count >= config.minExposureEventCount &&
+    summary.total_occurrence_weight >= config.minOccurrenceWeight
+  );
 }
 
 export function scoreFahamCandidate(
@@ -174,17 +178,18 @@ export function buildFahamQueuePlan(params: {
   candidates: FahamCandidateWord[];
   config: FahamEngineConfig;
   dueCards: FahamDueCard[];
-  masteredCards: FahamDueCard[];
+  masteredCards?: FahamDueCard[];
   learningCards?: FahamDueCard[];
   isRevision?: boolean;
 }): FahamQueuePlan {
   const config = normalizeFahamEngineConfig(params.config);
   const total = config.sessionSize;
   const isRevision = params.isRevision ?? false;
+  const masteredCardsInput = params.masteredCards ?? [];
 
   // 1. ALLOCATE MASTERED (Strict 10%)
   const targetMasteredCount = Math.max(1, Math.floor(total * 0.10));
-  const masteredCards = params.masteredCards.slice(0, targetMasteredCount);
+  const masteredCards = masteredCardsInput.slice(0, targetMasteredCount);
 
   // 2. FILL REMAINING SLOTS WITH DUE THEN LEARNING (even if not due) THEN NEW
   let remainingSlots = total - masteredCards.length;
@@ -211,7 +216,7 @@ export function buildFahamQueuePlan(params: {
   // 3. IF STILL SLOTS REMAINING (e.g. no more due/learning/new), fill more mastered
   if (remainingSlots > 0) {
     const extraMasteredNeeded = remainingSlots;
-    const additionalMastered = params.masteredCards.slice(
+    const additionalMastered = masteredCardsInput.slice(
       masteredCards.length,
       masteredCards.length + extraMasteredNeeded,
     );
@@ -234,7 +239,7 @@ export function buildFahamQueuePlan(params: {
         dueCount: params.dueCards.length,
         eligibleNewCount,
         totalCandidateCount: params.candidates.length,
-        masteredCount: params.masteredCards.length,
+        masteredCount: masteredCardsInput.length,
         learningCount: params.learningCards?.length ?? 0,
       },
     };
@@ -250,7 +255,7 @@ export function buildFahamQueuePlan(params: {
       dueCount: params.dueCards.length,
       eligibleNewCount,
       totalCandidateCount: params.candidates.length,
-      masteredCount: params.masteredCards.length,
+      masteredCount: masteredCardsInput.length,
       learningCount: params.learningCards?.length ?? 0,
     },
   };
