@@ -9,7 +9,7 @@ import type {
 } from "@/types/database";
 import { getOrCreateVocabProgress } from "./vocab-progress";
 import { buildFahamSourceKey } from "./source-key";
-import { isRecentExposure } from "./idempotency";
+import { isRecentExposure, isUniqueViolation } from "./idempotency";
 import type {
   FahamCandidateWord,
   FahamDueCard,
@@ -144,40 +144,63 @@ async function getUniqueWordOccurrencesForAyahIds(
   return Array.from(counts.values());
 }
 
+/**
+ * Build the per-row event id for an exposure word (B6).
+ *
+ * One exposure event fans out to one row per exposed word. To keep every word
+ * row unique under the (user_id, event_id) index while letting them coexist, the
+ * stable per-event token is namespaced by word: `${eventId}#${wordId}`. A retry
+ * with the same base eventId regenerates the identical composite for each word,
+ * so the re-insert aborts on the unique index and is a true no-op. Returns null
+ * for legacy clients that send no event id (those rows are window-guarded).
+ */
+export function buildExposureRowEventId(
+  eventId: string | null | undefined,
+  wordId: number,
+): string | null {
+  return typeof eventId === "string" && eventId.length > 0
+    ? `${eventId}#${wordId}`
+    : null;
+}
+
 export async function recordVocabExposureEvents(
   userId: string,
   input: FahamExposureInput,
+  eventId?: string | null,
 ): Promise<{ recordedWordCount: number; sourceKey: string; deduped?: boolean }> {
   const sourceKey = buildFahamSourceKey(input);
   const now = new Date();
+  const hasEventId = typeof eventId === "string" && eventId.length > 0;
 
-  // Idempotency guard (B6): best-effort natural-key dedup. The exposure client
-  // retries a lost-response POST (same source_key), which would otherwise bare-
-  // insert a duplicate set of exposure rows. If an exposure for this
-  // (user_id, source_key) was recorded within the dedup window, skip the insert.
+  // Idempotency (B6). When the client stamps a stable per-event id
+  // (X-Miftah-Exposure-Event-Id), robust dedup is handled by the partial UNIQUE
+  // index (user_id, event_id) plus the retry-abort catch below: each word row
+  // carries a composite `${eventId}#${word_id}`, so a retried event re-inserts
+  // the identical row set and aborts on 23505, which we treat as a true no-op.
   //
-  // This is BEST-EFFORT only: vocab_exposure_events has no per-event id column,
-  // so this cannot distinguish a network retry (same X-Miftah-Exposure-Event-Id)
-  // from a genuine re-exposure to the same source within the window. Robust
-  // per-event dedup needs a migration — see the RF-2 follow-up:
-  //   ALTER TABLE vocab_exposure_events ADD COLUMN event_id TEXT;
-  //   CREATE UNIQUE INDEX ON vocab_exposure_events (user_id, event_id);
-  // then upsert on (user_id, event_id). Not added here (migrations are out of
-  // scope / backup-gated for this lane).
-  const { data: recentRow } = await supabaseServer
-    .from("vocab_exposure_events")
-    .select("exposed_at")
-    .eq("user_id", userId)
-    .eq("source_key", sourceKey)
-    .order("exposed_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (recentRow && isRecentExposure((recentRow as { exposed_at: string }).exposed_at, now)) {
-    return {
-      deduped: true,
-      recordedWordCount: 0,
-      sourceKey,
-    };
+  // The best-effort natural-key window guard is kept ONLY as a fallback for
+  // LEGACY clients that send no event id (event_id IS NULL rows, which the
+  // partial unique index does not cover). It cannot distinguish a network retry
+  // from a genuine re-exposure, which is exactly why the event-id path exists.
+  if (!hasEventId) {
+    const { data: recentRow } = await supabaseServer
+      .from("vocab_exposure_events")
+      .select("exposed_at")
+      .eq("user_id", userId)
+      .eq("source_key", sourceKey)
+      .order("exposed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (
+      recentRow &&
+      isRecentExposure((recentRow as { exposed_at: string }).exposed_at, now)
+    ) {
+      return {
+        deduped: true,
+        recordedWordCount: 0,
+        sourceKey,
+      };
+    }
   }
 
   const words = await getUniqueWordOccurrencesForAyahIds(input.ayahIds);
@@ -199,6 +222,10 @@ export async function recordVocabExposureEvents(
     word_id: word.id,
     source_type: input.sourceType,
     source_key: sourceKey,
+    // Per-word composite so one exposure event yields many coexisting rows while
+    // remaining unique under (user_id, event_id); a retry regenerates identical
+    // ids and no-ops on the index. Null for legacy clients (window-guarded).
+    event_id: buildExposureRowEventId(eventId, word.id),
     ayah_id: ayahId,
     page_number: input.sourceType === "reading_page" ? input.pageNumber : null,
     surah_id:
@@ -215,6 +242,17 @@ export async function recordVocabExposureEvents(
     .from("vocab_exposure_events")
     .insert(rows);
   if (error) {
+    // B6: a retry carrying the same event_id set aborts the INSERT with a 23505
+    // unique_violation on the partial (user_id, event_id) index. Treat it as an
+    // idempotent no-op rather than surfacing a 500. Only when an event id was
+    // supplied — a legacy null-event insert has no per-event guarantee.
+    if (hasEventId && isUniqueViolation(error)) {
+      return {
+        deduped: true,
+        recordedWordCount: 0,
+        sourceKey,
+      };
+    }
     throw error;
   }
 

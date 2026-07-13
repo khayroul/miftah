@@ -212,6 +212,9 @@ export interface VocabExposureEvent {
   word_id: number;
   source_type: FahamSourceType;
   source_key: string;
+  // Per-event idempotency token (B6). Null for legacy rows written before the
+  // RF-2 follow-up; non-null rows are deduped by the (user_id, event_id) index.
+  event_id: string | null;
   ayah_id: number | null;
   page_number: number | null;
   surah_id: number | null;
@@ -274,7 +277,11 @@ export interface ThemeChunkProgress {
   id: number;
   user_id: string;
   surah_id: number;
-  chunk_index: number;
+  // Volatile positional display hint only (nullable since the RF-5 re-key). The
+  // row's stable identity is (surah_id, start_ayah, end_ayah).
+  chunk_index: number | null;
+  start_ayah: number;
+  end_ayah: number;
   status: ThemeChunkProgressStatus;
   first_opened_at: string;
   last_opened_at: string;
