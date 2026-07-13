@@ -72,10 +72,12 @@ next-env.d.ts
 supabase/.temp/
 .tmp/
 
-# PWA generated files (build-time)
+# PWA generated files (predev/prebuild only; source is scripts/sw.template.js
+# plus scripts/render-pwa-artifacts.ts — never edit or commit these outputs)
 public/translations/
 public/layouts/
 public/pwa-config.json
+public/sw.js
 
 # Claude Code — track rules/settings, ignore personal data
 .claude/*

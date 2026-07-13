@@ -1,7 +1,9 @@
 // Miftah PWA Service Worker — multi-cache router with URL allowlist
-// BUILD_ID and CDN_ASSET_VERSION injected at prebuild time
-const BUILD_ID = "82323e5";
-const CDN_ASSET_VERSION = "4";
+// Generated from this tracked template by scripts/render-pwa-artifacts.ts.
+const BUILD_ID = "__MIFTAH_BUILD_ID__";
+// Embedded for build/config consistency verification; runtime cache policy is independent.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const CDN_ASSET_VERSION = "__MIFTAH_CDN_ASSET_VERSION__";
 
 const NAVIGATION_NETWORK_TIMEOUT_MS = 2500;
 
@@ -169,14 +171,31 @@ async function cacheFirstStrategy(cacheNames, targetCacheName, request, options)
 
   try {
     const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(targetCacheName);
-      await cache.put(request, response.clone());
+    if (response.ok && response.status !== 206) {
+      try {
+        const cache = await caches.open(targetCacheName);
+        await cache.put(request, response.clone());
+      } catch {
+        // A successful network response is still usable when Cache.put fails
+        // (quota, Vary, partial-response, or browser cache implementation).
+      }
     }
     return response;
   } catch {
     return new Response("Network error", { status: 503 });
   }
+}
+
+async function audioStrategy(request) {
+  if (request.headers.has("range")) {
+    try {
+      return await fetch(request);
+    } catch {
+      return new Response("Network error", { status: 503 });
+    }
+  }
+
+  return cacheFirstStrategy([AUDIO_CACHE], AUDIO_CACHE, request);
 }
 
 async function cacheFirstTema(request) {
@@ -314,9 +333,7 @@ self.addEventListener("fetch", (event) => {
 
   // Audio
   if (matchesAudio(url)) {
-    event.respondWith(
-      cacheFirstStrategy([AUDIO_CACHE], AUDIO_CACHE, event.request),
-    );
+    event.respondWith(audioStrategy(event.request));
     return;
   }
 
