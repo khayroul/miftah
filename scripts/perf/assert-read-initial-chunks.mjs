@@ -10,7 +10,19 @@ const routeManifestPath = path.join(
 );
 const routeKey = "/read/[page]/page";
 const entryPattern = /features\/read\/components\/(ReadPageWorkspace|ReadAudioProvider)\.tsx$/;
-const forbiddenMarkers = ["onnxruntime", "MicVAD", "ricky0123", "TasmiRecorder"];
+const maxRawBytes = 150_000;
+const maxGzipBytes = 42_000;
+const forbiddenMarkers = [
+  "onnxruntime",
+  "MicVAD",
+  "ricky0123",
+  "TasmiRecorder",
+  "GoTrueClient",
+  "createBrowserClient",
+  "AuthSignInForm",
+  "SIGNED_IN",
+  "miftah.auth.magic-link-cooldown-until",
+];
 
 if (!fs.existsSync(routeManifestPath)) {
   throw new Error("Read client-reference manifest is missing. Run a production build first.");
@@ -49,6 +61,11 @@ console.log(
   `Read initial chunks: ${chunkPaths.length} files, ${rawBytes} raw bytes, ${gzipBytes} gzip bytes`,
 );
 if (violations.length > 0) {
-  throw new Error(`Heavy voice runtime leaked into Read initial chunks: ${JSON.stringify(violations)}`);
+  throw new Error(`Forbidden runtime leaked into Read initial chunks: ${JSON.stringify(violations)}`);
 }
-console.log("Read initial chunks exclude ONNX, MicVAD, VAD-web, and TasmiRecorder.");
+if (rawBytes > maxRawBytes || gzipBytes > maxGzipBytes) {
+  throw new Error(
+    `Read initial chunks exceed budget: ${rawBytes}/${maxRawBytes} raw, ${gzipBytes}/${maxGzipBytes} gzip`,
+  );
+}
+console.log("Read initial chunks exclude heavy voice and Auth runtimes and remain within budget.");

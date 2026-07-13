@@ -93,6 +93,8 @@ const eslintConfig = defineConfig([
                 "!@/features/*/read-overlay",
                 "!@/features/*/read-overlays/**",
                 "!@/features/*/mushaf-runtime",
+                "!@/features/auth/navigation",
+                "!@/features/auth/status-button",
               ],
               message:
                 "Import another feature only through a documented public entry — not its internals. Within a feature use relative imports (spec §4.4).",
