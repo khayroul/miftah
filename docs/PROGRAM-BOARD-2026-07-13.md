@@ -2,7 +2,7 @@
 
 North-star: make Quran understanding measurable and central through **Understanding Coverage %** and a guided **Understanding Path**.
 
-Verified base: local `main` at `f50d83d`, clean before Wave 7 dispatch, 77 commits ahead of `origin/main`. Nothing in this board authorizes a push, production deploy, or migration.
+Verified base: local `main` at `275e6bc2`, clean after Wave 7 integration, 85 commits ahead of `origin/main`. Nothing in this board authorizes a push, production deploy, or migration.
 
 ## Wave map
 
@@ -17,8 +17,8 @@ flowchart LR
     W5[W5 Faham<br/>DONE]
     W55[W5.5 Understanding + perf<br/>DONE LOCALLY]
     W6[W6 Hifz<br/>DONE LOCALLY]
-    W7[W7 Read integration hub<br/>ACTIVE]
-    W8[W8 Shared/PWA + repo finalization<br/>QUEUED]
+    W7[W7 Read integration hub<br/>DONE LOCALLY]
+    W8[W8 Shared/PWA + repo finalization<br/>ACTIVE]
     P2[Phase 2<br/>Coverage-led product redesign<br/>BLOCKED BY W7-W8 + DATA SIGN-OFF]
     P3[Phase 3<br/>QA + relaunch<br/>QUEUED]
 
@@ -29,10 +29,10 @@ flowchart LR
 
 | Lane | Worktree / branch | Ownership | Status | Exit gate |
 |---|---|---|---|---|
-| W7-A Read shell/domain | `miftah-worktrees/wave7-read-shell` / `phase-1/wave7-read-shell` | `features/read`, Read components, pure Read domain, thin `app/read` shells | RUNNING | public boundary; large Read files decomposed; route behavior preserved; tests/lint/build |
-| W7-B Read data/perf | `miftah-worktrees/wave7-read-data` / `phase-1/wave7-read-data` | typed Read repositories, `api/read`, Supabase-bearing Read libs | RUNNING | no unsafe auth change; known IDs reused; explicit select columns; focused tests/lint/build |
-| W7-V Independent verification | read-only on `main` | route/overlay matrix, boundaries, test and visual contract | RUNNING | acceptance checklist plus critical findings |
-| W7-I Tower integration | `main` | review commits, resolve only integration seams, merge with `--no-ff` | WAITING | combined tests, lint, production build, route/overlay smoke, visual evidence |
+| W8-A Shared/PWA | `miftah-worktrees/wave8-pwa` / `phase-1/wave8-pwa` | `shared/pwa`, PWA components, download-engine decomposition | RUNNING | PWA tests; files under 400 LOC; SW/cache behavior preserved; lint/build |
+| W8-B Repository/shared audit | read-only on `main` | Supabase leaks, activity/auth/shared destinations, bot import swaps | RUNNING | exact disjoint mutation plan with auth deferrals |
+| W8-V Independent verification | read-only on `main` | PWA/offline, bot smoke, boundary and final Phase-1 gates | RUNNING | baseline plus acceptance checklist |
+| W8-I Tower integration | `main` | independently review and merge Wave 8 commits | WAITING | combined PWA/bot/tests/lint/build; zero stale boundaries |
 
 ## Completion queue and gains
 
@@ -44,6 +44,14 @@ flowchart LR
 | 4 | Phase 2 UX + onboarding | Wires coverage hero, Understanding Path, next-best-word curriculum, grammar keys | A product users can understand, pursue, and measure |
 | 5 | Auth + license + Tasmi production lanes | Activates multi-user identity, payment entitlement, and phrase-level recitation | Commercial relaunch candidate |
 | 6 | Phase 3 QA/relaunch | Full regression, accessibility, device, migration rehearsal, cohort win-back | Operator-reviewed production launch |
+
+## Latest closed-wave evidence
+
+- Wave 7 merged locally at `275e6bc2`.
+- 79/79 combined Read, Read-data, and PWA tests pass; focused lint and the webpack production build pass across 34 routes.
+- `ReadPageWorkspace`: 1,165 → 240 LOC; `ReadAudioDock`: 950 → 379; `PageAudioControls`: 456 → 330.
+- Read required client chunks: 632,055 → 133,651 raw bytes and 170,478 → 37,312 gzip; ONNX, MicVAD, VAD-web, and TasmiRecorder remain deferred.
+- External gate still open: authenticated overlay/manual visual comparison on a normal host.
 
 ## Non-negotiable gates
 
