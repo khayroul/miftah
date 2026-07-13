@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useReadMode } from "../domain/useReadMode";
 import type { ReadMode } from "../domain/readMode";
 import { ModeNavigator } from "./ModeNavigator";
-import { navigateWithOfflineSupport } from "@/lib/pwa/navigation";
+import { navigateWithOfflineSupport } from "@/shared/pwa/navigation";
 
 interface ReadModeToolsProps {
   themeSurahId: number;

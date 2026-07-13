@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { registerServiceWorker } from "@/lib/pwa/swRegistration";
+import { registerServiceWorker } from "../swRegistration";
 
 export function ServiceWorkerRegistrar() {
   useEffect(() => {

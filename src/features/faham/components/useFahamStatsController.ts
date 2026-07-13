@@ -3,7 +3,7 @@
 /* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps -- this controller intentionally owns the stats and prefetch refs */
 
 import { useCallback, useEffect } from "react";
-import { loadPwaConfig } from "@/lib/pwa/downloadEngine";
+import { loadPwaConfig } from "@/shared/pwa/downloadConfig";
 import { prefetchFahamTierVocabPackage } from "../domain/tierVocabPackage";
 import { loadCachedFahamStats, saveCachedFahamStats } from "../domain/offlineSync";
 import { requestStats, type FahamStats } from "./fahamWorkspaceSupport";

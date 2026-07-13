@@ -20,11 +20,13 @@ export const metadata: Metadata = {
   description: "Memorize the Quran by understanding, not just repetition.",
 };
 
-import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { ReadingStateSync } from "@/features/read";
-import { OfflineIndicator } from "@/components/OfflineIndicator";
-import { UpdateBanner } from "@/components/UpdateBanner";
-import { PwaDebugLoader } from "@/components/PwaDebugLoader";
+import {
+  OfflineIndicator,
+  PwaDebugLoader,
+  ServiceWorkerRegistrar,
+  UpdateBanner,
+} from "@/shared/pwa/components";
 
 export default function RootLayout({
   children,

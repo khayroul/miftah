@@ -9,7 +9,7 @@ import {
   hasUserStartedDownload,
   isMushafDownloaded,
   setDownloadStarted,
-} from "@/lib/pwa/mushafStatus";
+} from "@/shared/pwa/download";
 import {
   DOWNLOAD_PACKAGES,
   downloadMushaf,
@@ -17,7 +17,7 @@ import {
   loadPwaConfig,
   type DownloadPackageId,
   type MushafDownloadProgress,
-} from "@/lib/pwa/downloadEngine";
+} from "@/shared/pwa/download";
 
 type UIState =
   | { readonly kind: "loading" }

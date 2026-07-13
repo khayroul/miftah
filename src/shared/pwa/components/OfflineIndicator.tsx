@@ -1,6 +1,6 @@
 "use client";
 
-import { useOnlineStatus } from "@/lib/pwa/offlineDetection";
+import { useOnlineStatus } from "../offlineDetection";
 import { useEffect, useRef, useState } from "react";
 
 export function OfflineIndicator() {

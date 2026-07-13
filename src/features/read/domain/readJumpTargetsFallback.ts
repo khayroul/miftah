@@ -1,6 +1,6 @@
 import surahSeedData from "../../../../data/seed/surahs.json";
 import { JUZ_BOUNDARY_PAGES } from "@/features/hifz/read-runtime";
-import { SURAH_PAGE_MAP } from "@/lib/pwa/surahPageMap";
+import { SURAH_PAGE_MAP } from "@/shared/pwa/surahPageMap";
 import type {
   JuzJumpTarget,
   ReadJumpTargets,

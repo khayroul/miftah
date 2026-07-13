@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { setupReadingStateSync } from "@/lib/pwa/readingStateSync";
+import { setupReadingStateSync } from "@/shared/pwa/readingStateSync";
 
 export function ReadingStateSync() {
   useEffect(() => {

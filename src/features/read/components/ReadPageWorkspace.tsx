@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { useRouter, useSearchParams } from "next/navigation";
 import { buildQueuePageHref, type HifzExerciseFlow, type HifzFlowType } from "@/features/hifz/read-runtime";
 import type { MushafAyahDetail, MushafLayoutPage, MushafWordTranslationMap } from "@/mushaf";
-import { navigateWithOfflineSupport, prefetchWithOfflineSupport } from "@/lib/pwa/navigation";
+import { navigateWithOfflineSupport, prefetchWithOfflineSupport } from "@/shared/pwa/navigation";
 import type { ReadAudioTrack } from "../domain/audio/pageAudioTracks";
 import type { ReadMode } from "../domain/readMode";
 import { useReadMode } from "../domain/useReadMode";
