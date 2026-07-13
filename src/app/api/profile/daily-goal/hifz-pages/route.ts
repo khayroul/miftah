@@ -1,12 +1,12 @@
 import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
-import { recomputeAndStoreSnapshot } from "@/lib/homeDashboardDb";
+import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import {
   getUserDailyGoal,
   recommendHifzPageGoalFromAyahGoal,
 } from "@/lib/activity";
-import { supabaseServer } from "@/lib/supabase-server";
+import { migrateLegacyHifzDailyGoal } from "@/data/repositories/home";
 
 export async function POST(): Promise<NextResponse> {
   try {
@@ -24,18 +24,7 @@ export async function POST(): Promise<NextResponse> {
     }
 
     const nextCount = recommendHifzPageGoalFromAyahGoal(currentGoal.count);
-    const { error } = await supabaseServer
-      .from("profiles")
-      .update({
-        daily_goal_count: nextCount,
-        daily_goal_type: "hifz_pages",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", user.id);
-
-    if (error) {
-      throw error;
-    }
+    await migrateLegacyHifzDailyGoal(user.id, nextCount, new Date().toISOString());
 
     revalidateTag("hifz", "max");
     revalidateTag("home-dashboard", "max");

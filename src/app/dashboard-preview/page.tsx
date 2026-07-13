@@ -1,10 +1,10 @@
 export const dynamic = "force-dynamic";
 
-import { DashboardPreviewClient } from "@/components/DashboardPreviewClient";
+import { DashboardPreviewClient } from "@/features/home/components/DashboardPreviewClient";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { getHifzStats } from "@/lib/hifz/stats";
-import { loadHomeDashboardSnapshot } from "@/lib/homeDashboard";
+import { loadHomeDashboardSnapshot } from "@/features/home/server";
 
 const TOTAL_QURAN_PAGES = 604;
 

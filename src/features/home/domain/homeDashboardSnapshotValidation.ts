@@ -1,5 +1,5 @@
-import type { DailyGoalType } from "./activity";
-import type { FahamLevelProgress } from "./faham/levels";
+import type { DailyGoalType } from "@/lib/activity";
+import type { FahamLevelProgress } from "@/lib/faham/levels";
 import type {
   HomeDashboardSnapshot,
   HomeFahamSnapshot,
@@ -8,7 +8,6 @@ import type {
   HomeTemaSnapshot,
 } from "./homeDashboard";
 
-const STORAGE_KEY_PREFIX = "miftah.home.dashboard.v1";
 const EMPTY_HOME_DASHBOARD_SNAPSHOT: HomeDashboardSnapshot = {
   faham: null,
   hifz: null,
@@ -17,31 +16,9 @@ const EMPTY_HOME_DASHBOARD_SNAPSHOT: HomeDashboardSnapshot = {
   activity: null,
 };
 
-interface StorageLike {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-
-function getStorage(): StorageLike | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
-  }
-}
-
-function buildStorageKey(userId: string): string {
-  return `${STORAGE_KEY_PREFIX}:${userId}`;
-}
-
 function asNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
@@ -373,42 +350,4 @@ export function sanitizeHomeDashboardSnapshot(
     activity:
       raw.activity === null ? null : sanitizeActivitySnapshot(raw.activity),
   };
-}
-
-export function loadHomeDashboardSnapshotCache(
-  userId: string,
-  storage: StorageLike | null = getStorage(),
-): HomeDashboardSnapshot | null {
-  if (!storage || userId.length === 0) {
-    return null;
-  }
-
-  try {
-    const raw = storage.getItem(buildStorageKey(userId));
-    if (!raw) {
-      return null;
-    }
-
-    return sanitizeHomeDashboardSnapshot(JSON.parse(raw));
-  } catch {
-    return null;
-  }
-}
-
-export function saveHomeDashboardSnapshotCache(
-  userId: string,
-  snapshot: HomeDashboardSnapshot,
-  storage: StorageLike | null = getStorage(),
-): boolean {
-  if (!storage || userId.length === 0) {
-    return false;
-  }
-
-  try {
-    const normalized = sanitizeHomeDashboardSnapshot(snapshot);
-    storage.setItem(buildStorageKey(userId), JSON.stringify(normalized));
-    return true;
-  } catch {
-    return false;
-  }
 }

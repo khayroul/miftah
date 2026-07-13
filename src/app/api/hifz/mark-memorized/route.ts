@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
-import { recomputeAndStoreSnapshot } from "@/lib/homeDashboardDb";
+import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import { getOrCreateProgress, updateHifzStatus } from "@/lib/hifz/study-progress";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import type { HifzStatus } from "@/types/database";

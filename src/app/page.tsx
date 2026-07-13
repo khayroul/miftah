@@ -1,7 +1,7 @@
-import { HomeDashboardClient } from "@/components/HomeDashboardClient";
-import { HomeDeferredUi } from "@/components/HomeDeferredUi";
-import { ModeNavigator } from "@/components/ModeNavigator";
-import { loadDashboardWithDbCache } from "@/lib/homeDashboardDb";
+import { HomeDashboardClient } from "@/features/home/components/HomeDashboardClient";
+import { HomeDeferredUi } from "@/features/home/components/HomeDeferredUi";
+import { ModeNavigator } from "@/features/home/components/ModeNavigator";
+import { loadDashboardWithDbCache } from "@/features/home/server";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 

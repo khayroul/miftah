@@ -1,4 +1,4 @@
-import { ModeNavigator } from "@/components/ModeNavigator";
+import { ModeNavigator } from "@/features/home/components/ModeNavigator";
 import { HifzOverview } from "@/components/HifzOverview";
 import { LightweightBreadcrumb } from "@/components/LightweightBreadcrumb";
 import { countUniquePlanItemPages } from "@/lib/hifz/queue";

@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
-import { recomputeAndStoreSnapshot } from "@/lib/homeDashboardDb";
+import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import { ZodError } from "zod";
 import { recordVocabExposureEvents } from "@/lib/faham/repository";
 import { fahamExposureSchema } from "@/lib/faham/schemas";

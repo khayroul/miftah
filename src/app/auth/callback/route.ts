@@ -1,7 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { sanitizeNextPath } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase-auth-server";
-import { recomputeAndStoreSnapshot } from "@/lib/homeDashboardDb";
+import { recomputeAndStoreSnapshot } from "@/features/home/server";
 
 export async function GET(request: Request): Promise<NextResponse> {
   const url = new URL(request.url);
