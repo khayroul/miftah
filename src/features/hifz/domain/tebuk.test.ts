@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { pickTebukPrompts } from './tebuk';
 import type { MushafLayoutPage } from '@/mushaf/types/mushafLayout';
 
-// Page with 3 ayahs: ayah 2:1 (1 word — too short), 2:2 (6 words), 2:3 (7 words)
+// Page with 3 ayahs: ayah 2:1 (1 word — too short), 2:2 (6 words), 2:3 (5 words)
 const MOCK_LAYOUT: MushafLayoutPage = {
   page: 2,
   lines: [
@@ -56,10 +56,23 @@ describe('pickTebukPrompts', () => {
   });
 
   it('continuation text is non-empty and capped at 20 words', () => {
-    const prompts = pickTebukPrompts(MOCK_LAYOUT, 1);
-    expect(prompts[0].continuationText.length).toBeGreaterThan(0);
-    const wordCount = prompts[0].continuationText.split(' ').filter(w => w.length > 0).length;
-    expect(wordCount).toBeLessThanOrEqual(20);
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.999999);
+
+    try {
+      const prompts = pickTebukPrompts(MOCK_LAYOUT, 2);
+      const finalAyahPrompt = prompts.find(p => p.ayah === 3);
+
+      expect(finalAyahPrompt).toBeDefined();
+      expect(finalAyahPrompt?.startWordIdx).toBe(0);
+      expect(finalAyahPrompt?.continuationText.length).toBeGreaterThan(0);
+      expect(prompts.every(p => p.continuationText.length > 0)).toBe(true);
+      for (const prompt of prompts) {
+        const wordCount = prompt.continuationText.split(' ').filter(w => w.length > 0).length;
+        expect(wordCount).toBeLessThanOrEqual(20);
+      }
+    } finally {
+      random.mockRestore();
+    }
   });
 
   it('continuationAyahKeys includes the prompt ayah', () => {

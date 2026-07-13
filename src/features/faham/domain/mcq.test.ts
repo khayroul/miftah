@@ -25,6 +25,7 @@ function buildWord(overrides: Partial<Word> = {}): Word {
 
 function buildPoolWord(overrides: Partial<FahamMcqPoolWord> = {}): FahamMcqPoolWord {
   return {
+    audioKey: null,
     frequency: 150,
     id: 100,
     lemma: "هدى",

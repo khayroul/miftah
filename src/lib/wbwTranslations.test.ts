@@ -6,7 +6,7 @@ import {
   getWordTranslationsByHitboxes,
   getWordTranslationsByLocation,
 } from "./wbwTranslations";
-import type { MushafPageManifest } from "../types/mushaf";
+import type { MushafPageManifest } from "@/mushaf/types/mushaf";
 
 async function loadPageManifest(page: number): Promise<MushafPageManifest> {
   const filePath = path.resolve(
