@@ -159,23 +159,25 @@ describe("rendered service-worker audio behavior", () => {
 });
 
 describe("rendered service-worker activation", () => {
-  it("removes only stale app shell/versioned data while preserving durable caches", async () => {
-    const durableCaches = [
+  it("removes only stale app shells and preserves every content-cache version", async () => {
+    const contentCaches = [
       "miftah-offline-bundle-v1",
       "mushaf-images-v1",
+      "mushaf-data-v1",
       "mushaf-data-v2",
       "miftah-audio-v1",
+      "tema-data-v0",
       "tema-data-v1",
     ];
     const runtime = createRenderedWorkerRuntime({
-      cacheKeys: ["app-shell-old", "app-shell-abc1234", ...durableCaches],
+      cacheKeys: ["app-shell-old", "app-shell-abc1234", ...contentCaches],
       fetch: async () => new Response("unused"),
     });
 
     await runtime.dispatchActivate();
 
     assert.deepEqual(runtime.deletedCaches, ["app-shell-old"]);
-    for (const cacheName of durableCaches) {
+    for (const cacheName of contentCaches) {
       assert.ok(!runtime.deletedCaches.includes(cacheName));
     }
   });

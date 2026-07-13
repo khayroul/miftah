@@ -42,11 +42,10 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
+          // App-shell releases may retire only their own generated cache.
+          // Downloaded content is deleted only by explicit content migrations.
           .filter(
-            (key) =>
-              (key.startsWith("app-shell-") && key !== APP_SHELL_CACHE) ||
-              (key.startsWith("tema-data-") && key !== TEMA_DATA_CACHE) ||
-              (key.startsWith("mushaf-data-") && key !== MUSHAF_DATA_CACHE)
+            (key) => key.startsWith("app-shell-") && key !== APP_SHELL_CACHE,
           )
           .map((key) => caches.delete(key))
       )
