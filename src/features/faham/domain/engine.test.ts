@@ -67,6 +67,9 @@ function buildDueCard(id: number): FahamDueCard {
     needs_reinforcement: false,
     mistake_streak: 0,
     last_incorrect_at: null,
+    is_mastered: false,
+    correct_streak: 0,
+    incorrect_streak: 0,
     stability: 0,
     difficulty: 0,
     elapsed_days: 0,
@@ -148,7 +151,6 @@ test("preferred sources change candidate ordering", () => {
 
 test("due backlog pauses new card release", () => {
   const config = normalizeFahamEngineConfig({
-    newLimit: 3,
     pauseNewCardsAboveDueCount: 2,
   });
 
@@ -165,7 +167,7 @@ test("due backlog pauses new card release", () => {
 
 test("plan releases capped number of new candidates when due backlog is small", () => {
   const config = normalizeFahamEngineConfig({
-    newLimit: 1,
+    sessionSize: 2,
     pauseNewCardsAboveDueCount: 10,
   });
 
