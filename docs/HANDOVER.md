@@ -21,6 +21,21 @@
 - Migrations: 13/17 applied; pending 14–17 verified additive-safe (tasmi_sessions, profile trigger, RPC, dashboard snapshot). TRUNCATE migration already fired 2026-03-11 (historical).
 - Security debt: 18 corpus tables anon-WRITABLE (RLS off); 5 SECURITY DEFINER views; 2 mutable search_path functions; leaked-password protection off. Board task: harden (fold into Lane A or early lane).
 
+## Pre-restructure audit + fix-now sprint (2026-07-13) — DONE except migration lane
+Audit: 8 read-only lanes + triage → `docs/superpowers/specs/2026-07-13-audit-report-and-triage.md` (~9 CRIT / ~37 MAJOR; 6 root-fixes fix-now, rest routed to Phase-1/2/Lane C). Fix-now sprint landed on main:
+- **RF-1** (`4dfca92`) security: execFile TTS (no shell), auth+size-caps on tasmi-transcribe + feedback, backslash open-redirect fix (+test), full .env contract, **Telegram bot RETIRED for v1** (fail-closed + removed from build/start scripts + `src/bot/RETIRED.md`; operator still must stop any running launchd/systemd service).
+- **RF-2** (idempotency): app-level `src/lib/faham/idempotency.ts` (30s window keyed on `last_review`, null-safe) on faham rate/exposure + hifz rate-batch; `handleContinue` re-entrancy guard; getOrCreateSabak 23505 graceful. **Migration follow-up (batched w/ RF-5 behind backup gate):** `vocab_exposure_events` needs `event_id TEXT` + `UNIQUE(user_id,event_id)` for ROBUST exposure dedup (B6 is best-effort app-level today).
+- **RF-3** (`9288067`+`a499fff`): MCQ dedupe (correct answer can't appear twice) + per-attempt shuffle/direction, callers wired (`queue.ts` reps, `offlineQueue.ts` nowIso).
+- **RF-4** (`db6b28e`): faham engine exposure-gate live (`minOccurrenceWeight` 1→4, product intent) + masteredCards crash guard; 3 RED engine tests now green.
+- **RF-6: NO FIX — W-J B1 REFUTED.** Verified against real layout data (32:15): sajdah + ayah-number are TWO separate glyphs, `trailingSignsCount=2` is correct. Sacred render untouched. Stray Genesys-repo worktree the lane wrongly created was cleaned up.
+- **RF-5 (PENDING, backup-gated):** tema progress stable-id re-keying + migration. Batch the RF-2 B6 exposure event_id migration into the same backup-gated lane.
+
+## Tasmi' vision (operator 2026-07-13) — Lane C source LOCKED
+`docs/superpowers/specs/2026-07-13-tasmi-mode-design-operator-vision.md`. Mode A recite-a-page (live word-follow highlight + on-error 3-word talqin → silent → repeat to page end). Mode B juzuk exam (read random test-ayah → recite to page end → NEXT loop). Resolved: Mode B has per-session exam/practice toggle; v1 = word-sequence only (no tajwid); fallback = phrase-level if word-level real-time isn't feasible. **Lane C opens with a feasibility spike** before promising the live-highlight UX.
+
+## Worktree/merge note
+`isolation:worktree` from a Genesys-rooted session creates a GENESYS worktree (wrong repo). Fix lanes correctly made their own `~/miftah-worktrees/<RF>` off miftah main. Tower merges each with `--no-ff` from `/Users/Executor/miftah`, re-verifies (tests+build), then `git worktree remove` + `git branch -d`. Two pre-existing stashes on miftah main ("before hifz rebase", offline-shell WIP) — provenance unknown, left untouched.
+
 ## What is next
 
 1. **OPERATOR GATES (blocking):** (a) confirm who the 71 users are + give push/deploy GO (15 commits + 11 remote branch deletions + v1-base tag); (b) ratify architecture draft §8 (5 open questions); (c) start Bayarcash merchant onboarding (multi-week KYC); (d) start VPS credential rotation; (e) archive `khayroul/miftah-tasmi-server` on GitHub; (f) Telegram bot disposition decision (retire-for-v1 vs port — spec Phase-0 item 7).
