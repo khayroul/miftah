@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { MushafPageView, ReadOnlyMushafPageView, type MushafAyahDetail, type MushafLayoutPage, type MushafPageManifest, type MushafWordTranslationMap } from "@/mushaf";
 import type { HifzExerciseFlow, HifzFlowType } from "@/features/hifz";
-import { loadHifzTasmiOverlay } from "@/features/tasmi";
 import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 import type { HifzQueueRecoveryError } from "./useReadHifzQueue";
 import { ReadHifzOverlays } from "./ReadHifzOverlays";
@@ -12,7 +11,10 @@ import { ReadModeTools } from "./ReadModeTools";
 
 const FahamExposureTracker = dynamic(() => import("@/features/faham").then((module) => module.FahamExposureTracker), { ssr: false, loading: () => null });
 const ReadJumpControls = dynamic(() => import("./ReadJumpControls").then((module) => module.ReadJumpControls), { ssr: false, loading: () => null });
-const HifzTasmiOverlay = dynamic(() => loadHifzTasmiOverlay(), { ssr: false, loading: () => null });
+const HifzTasmiOverlay = dynamic(
+  () => import("@/features/tasmi").then((module) => module.loadHifzTasmiOverlay()),
+  { ssr: false, loading: () => null },
+);
 
 interface ReadPageCanvasProps {
   activePlaybackAyahKey: string | null;

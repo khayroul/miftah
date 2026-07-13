@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import {
-  getReadPageStaticData,
   LightweightBreadcrumb,
   ReadAudioProvider,
   ReadPageWorkspace,
 } from "@/features/read";
+import { getReadPageStaticData } from "@/features/read/server";
 import { parseReadPage } from "@/lib/readNavigation";
 
 interface ReadPageProps {

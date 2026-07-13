@@ -30,15 +30,12 @@ export { getQuranWordAudioUrl } from "./domain/audio/quranWordAudio";
 export { FALLBACK_READ_JUMP_TARGETS } from "./domain/readJumpTargetsFallback";
 export {
   findMarkerForPage,
-  findPageForAyah,
-  findPageForJuz,
-  findPageForSurah,
+  getMarkerPageById,
+  parseBoundedIntegerInput,
 } from "./domain/readNavigationUtils";
-export { getReadPageStaticData } from "./domain/readPageData";
-export type { ReadPageStaticData } from "./domain/readPageData";
 export {
+  defaultReadMode,
   loadReadMode,
-  readModeLabel,
   saveReadMode,
 } from "./domain/readMode";
 export type { ReadMode } from "./domain/readMode";

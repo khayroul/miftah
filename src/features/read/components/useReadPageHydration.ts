@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect -- hydration resets mirror the pre-wave workspace behavior */
 
 import { useEffect, useRef, useState } from "react";
 import { preCacheAudioUrls, type HifzExerciseFlow, type HifzFlowType } from "@/features/hifz";
@@ -42,7 +41,9 @@ export function useReadPageHydration(input: UseReadPageHydrationInput) {
   const [shouldTrackExposure, setShouldTrackExposure] = useState(false);
   const lastSyncedPageRef = useRef<number | null>(null);
 
-  useEffect(() => rememberLastReadPage(input.pageNumber), [input.pageNumber]);
+  useEffect(() => {
+    rememberLastReadPage(input.pageNumber);
+  }, [input.pageNumber]);
   useEffect(() => setIsImageReady(false), [input.pageNumber]);
   useEffect(() => setResolvedMemorizedAyahKeys(input.initialMemorizedAyahKeys), [input.initialMemorizedAyahKeys]);
 
