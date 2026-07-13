@@ -36,11 +36,11 @@
 Live, word-level, near-real-time sequence following on the current stack (VAD-chunked audio -> Whisper large-v3 on CPU) is the ambitious core. The audit already found the server freezes under concurrent load (T-02), a server outage is indistinguishable from a mistake (T-03/T-05), and latency is unbounded (T-04). "Highlight each word as recited" implies low-latency streaming/word-aligned ASR, which chunk-then-transcribe does not natively give.
 -> **Lane C must open with a FEASIBILITY SPIKE** (like the mockup-from-photo validation-spike precedent) proving word-level real-time follow is achievable at acceptable latency BEFORE the exact UX is promised. Named fallbacks if word-level real-time isn't hit: (a) ayah-level or short-phrase-level follow (highlight per phrase, not per word); (b) recite-then-check (record an ayah, then reveal correctness) rather than live. The spike picks the highest fidelity the engine actually supports.
 
-## Open clarifiers (resolve before Lane C build; defaults noted)
-1. Talqin start position — the 3 words start AT the point of error (default, traditional) vs from the current ayah start.
-2. Resume point after talqin — reciter repeats the 3 prompted words then continues (default) vs continues after them.
-3. Does Mode B (juzuk exam) ALSO apply the talqin correction (practice-style) OR is it a pure test (mistakes logged, no help — traditional examination)? — genuine fork.
-4. Correctness bar — word-SEQUENCE correctness only (default for v1) vs tajwid/pronunciation quality (much higher ASR bar, likely post-v1).
+## Clarifiers — RESOLVED (operator 2026-07-13)
+1. **Mode B correction = reciter CHOOSES per session.** Session-start toggle: "exam mode" (silent on mistakes; mistakes tracked/scored, no help — traditional examination) vs "practice mode" (same 3-word talqin help as Mode A). Both modes share the listening/matcher/talqin engine; the toggle gates whether talqin fires. Build the toggle into Mode B session start.
+2. **Correctness bar = word-SEQUENCE only for v1.** Right words in right order. NO tajwid/pronunciation-quality judging in v1 (that needs Quran-specialized ASR — aspirational, post-v1, do not promise). This keeps the ASR bar achievable.
+3. **Live-follow fallback = PHRASE-LEVEL.** If the feasibility spike shows reliable single-word real-time follow isn't achievable on the current server, degrade to highlighting per short phrase (2–4 words), NOT recite-then-reveal. Spike targets word-level; ships whichever of {word, phrase} it proves, phrase as the floor.
+4. STILL DEFAULTED (confirm at build): talqin 3 words start AT point of error (traditional); reciter repeats the 3 prompted words then continues.
 
 ## Absorption
 Operator-teaching-absorption: captured here (repo, machine/worker-consumed) + memory hook in `miftah-consolidation-program.md`. Do NOT let this evaporate — it is the v1 Tasmi product spec.
