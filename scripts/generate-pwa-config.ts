@@ -1,16 +1,10 @@
-import { writeFileSync, readFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync } from "node:fs";
 import { execSync } from "node:child_process";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
+import { MUSHAF_CDN_ASSET_VERSION } from "../src/mushaf/lib/mushafAssetVersion";
 
 const OUTPUT_PATH = path.join(process.cwd(), "public", "pwa-config.json");
-
-function extractCdnVersion(): string {
-  const assetsPath = path.join(process.cwd(), "src", "mushaf", "lib", "mushafAssets.ts");
-  const content = readFileSync(assetsPath, "utf-8");
-  const match = content.match(/CDN_ASSET_VERSION\s*=\s*"(\d+)"/);
-  if (!match) throw new Error("Could not find CDN_ASSET_VERSION in mushafAssets.ts");
-  return match[1];
-}
 
 function getBuildId(): string {
   try {
@@ -20,23 +14,33 @@ function getBuildId(): string {
   }
 }
 
-function main(): void {
-  const cdnVersion = extractCdnVersion();
-  const appBuildId = getBuildId();
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
+interface PwaConfigEnvironment {
+  readonly NEXT_PUBLIC_SUPABASE_URL?: string;
+  readonly MUSHAF_PAGES_BUCKET?: string;
+  readonly MUSHAF_MANIFESTS_BUCKET?: string;
+  readonly TEMA_DATA_VERSION?: string;
+  readonly FAHAM_DATA_VERSION?: string;
+}
+
+export function createPwaConfig(
+  appBuildId: string,
+  environment: PwaConfigEnvironment = process.env as PwaConfigEnvironment,
+) {
+  const supabaseUrl = environment.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
   if (!supabaseUrl) {
     console.warn("⚠️  NEXT_PUBLIC_SUPABASE_URL not set. Offline downloads will not work until configured.");
   }
-  const pagesBucket = process.env.MUSHAF_PAGES_BUCKET?.trim() || "mushaf-pages";
-  const manifestsBucket = process.env.MUSHAF_MANIFESTS_BUCKET?.trim() || "mushaf-manifests";
-  const temaDataVersion = process.env.TEMA_DATA_VERSION?.trim() || "1";
-  const fahamDataVersion = process.env.FAHAM_DATA_VERSION?.trim() || "1";
+  const pagesBucket = environment.MUSHAF_PAGES_BUCKET?.trim() || "mushaf-pages";
+  const manifestsBucket =
+    environment.MUSHAF_MANIFESTS_BUCKET?.trim() || "mushaf-manifests";
+  const temaDataVersion = environment.TEMA_DATA_VERSION?.trim() || "1";
+  const fahamDataVersion = environment.FAHAM_DATA_VERSION?.trim() || "1";
   const storageBase = supabaseUrl
     ? `${supabaseUrl.replace(/\/+$/, "")}/storage/v1/object/public`
     : "";
 
-  const config = {
-    cdnAssetVersion: cdnVersion,
+  return {
+    cdnAssetVersion: MUSHAF_CDN_ASSET_VERSION,
     temaDataVersion,
     fahamDataVersion,
     supabaseStorageBase: storageBase,
@@ -44,11 +48,18 @@ function main(): void {
     manifestsBucket,
     appBuildId,
   };
+}
+
+function main(): void {
+  const config = createPwaConfig(getBuildId());
   mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
   writeFileSync(OUTPUT_PATH, JSON.stringify(config, null, 2), "utf-8");
   console.log(
-    `Generated ${OUTPUT_PATH} (version: ${cdnVersion}, tema: ${temaDataVersion}, faham: ${fahamDataVersion}, build: ${appBuildId})`,
+    `Generated ${OUTPUT_PATH} (version: ${config.cdnAssetVersion}, tema: ${config.temaDataVersion}, faham: ${config.fahamDataVersion}, build: ${config.appBuildId})`,
   );
 }
 
-main();
+const entryPath = process.argv[1];
+if (entryPath && import.meta.url === pathToFileURL(path.resolve(entryPath)).href) {
+  main();
+}
