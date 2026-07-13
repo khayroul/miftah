@@ -11,4 +11,12 @@
  * `src/lib/faham/repository.ts` is the reference implementation to replicate.
  * See docs/superpowers/specs/2026-07-13-target-architecture-DRAFT.md §3.9.
  */
-export {};
+export {
+  getCoverageTiers,
+  getUnderstandingCoverage,
+  UNDERSTANDING_COVERAGE_TIERS,
+} from "./understanding";
+export type {
+  UnderstandingCoverage,
+  UnderstandingCoverageTier,
+} from "./understanding";

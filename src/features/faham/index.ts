@@ -13,4 +13,12 @@
  * Exports land here in Wave 5 (biggest single decomposition).
  * See docs/superpowers/specs/2026-07-13-target-architecture-DRAFT.md §3.3.
  */
-export {};
+export {
+  getCoverageTiers,
+  getUnderstandingCoverage,
+  UNDERSTANDING_COVERAGE_TIERS,
+} from "./understanding";
+export type {
+  UnderstandingCoverage,
+  UnderstandingCoverageTier,
+} from "./understanding";
