@@ -1,6 +1,6 @@
-import { supabaseServer } from "@/lib/supabase-server";
+import { supabaseServer } from "@/data/supabase/server";
 import { getRawDailyPlan } from "./study-progress";
-import type { StudyProgress } from "@/types/database";
+import type { StudyProgress } from "@/shared/types/database";
 import type {
   AyahDetail,
   DailyPlanWithDetails,

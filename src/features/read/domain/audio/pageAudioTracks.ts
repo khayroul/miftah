@@ -1,4 +1,4 @@
-import type { Ayah } from "@/types/database";
+import type { Ayah } from "@/shared/types/database";
 
 export interface ReadAudioTrack {
   key: string;

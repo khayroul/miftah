@@ -2,9 +2,9 @@ import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import { ZodError, z } from "zod";
-import { getOptionalAuthUser } from "@/lib/auth-server";
+import { getOptionalAuthUser } from "@/features/auth/server";
 import { markThemeChunkProgress } from "@/data/repositories/tema";
-import { recordActivityEvent } from "@/lib/activityEvents";
+import { recordActivityEvent } from "@/data/repositories/activity";
 
 const themeProgressSchema = z.object({
   chunkIndex: z.number().int().min(1),

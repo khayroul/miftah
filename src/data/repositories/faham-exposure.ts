@@ -1,5 +1,5 @@
 import { supabaseServer } from "@/data/supabase/server";
-import type { Word } from "@/types/database";
+import type { Word } from "@/shared/types/database";
 import { buildFahamSourceKey } from "@/features/faham/domain/source-key";
 import { isRecentExposure } from "@/features/faham/domain/idempotency";
 import { isUniqueViolation } from "@/shared/postgres";

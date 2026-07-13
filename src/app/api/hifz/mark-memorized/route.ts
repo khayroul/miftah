@@ -2,9 +2,9 @@ import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import { getOrCreateProgress, updateHifzStatus } from "@/data/repositories/hifz";
-import { getOptionalAuthUser } from "@/lib/auth-server";
-import type { HifzStatus } from "@/types/database";
-import { recordActivityEvent } from "@/lib/activityEvents";
+import { getOptionalAuthUser } from "@/features/auth/server";
+import type { HifzStatus } from "@/shared/types/database";
+import { recordActivityEvent } from "@/data/repositories/activity";
 
 interface MarkMemorizedBody {
   ayahId?: number;

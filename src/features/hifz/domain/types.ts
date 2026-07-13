@@ -1,7 +1,7 @@
 // src/types/hifz-exercises.ts
 import type { TasmiRatingLabel, TasmiSessionResult } from '@/features/tasmi';
-import type { FsrsRating } from '@/types/database';
-import type { StudyProgress } from '@/types/database';
+import type { FsrsRating } from '@/shared/types/database';
+import type { StudyProgress } from '@/shared/types/database';
 
 export interface AyahDetail {
   id: number;

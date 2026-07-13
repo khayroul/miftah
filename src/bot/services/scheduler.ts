@@ -7,7 +7,7 @@ import {
   promoteSabqiToManzil,
 } from "../db/study-progress.js";
 import { getNextSabakAyahIds } from "../db/queries-bot.js";
-import type { StudyProgress } from "@/types/database";
+import type { StudyProgress } from "@/shared/types/database";
 
 export interface DailyPlan {
   sabqi: StudyProgress[];

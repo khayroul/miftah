@@ -1,10 +1,10 @@
 import type { NextRequest } from "next/server";
-import { updateSupabaseSession } from "@/lib/supabase-auth-server";
+import { updateSupabaseSession } from "@/data/repositories/auth-server";
 import {
   buildRateLimitedResponse,
   checkRateLimit,
   type RateLimitDetails,
-} from "@/lib/ratelimit";
+} from "@/shared/ratelimit";
 
 type MiddlewareDependencies = {
   checkRateLimit: (key: string) => Promise<RateLimitDetails>;

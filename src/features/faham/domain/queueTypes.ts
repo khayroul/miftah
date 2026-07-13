@@ -50,7 +50,7 @@ export interface SerializedFahamSourceLink {
   detail: string;
   href: string;
   label: string;
-  type: import("@/types/database").FahamSourceType;
+  type: import("@/shared/types/database").FahamSourceType;
 }
 
 export interface SerializedFahamSourceContext {

@@ -1,6 +1,6 @@
 import { supabaseServer } from "@/data/supabase/server";
 import { TOP_FAHAM_WORD_LIMIT } from "@/features/faham/domain/config";
-import type { VocabExposureSummary, VocabProgress, Word } from "@/types/database";
+import type { VocabExposureSummary, VocabProgress, Word } from "@/shared/types/database";
 import { getOrCreateVocabProgress } from "./faham-progress";
 import type {
   FahamCandidateWord,

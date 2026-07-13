@@ -5,7 +5,7 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 import { getRemotePageImageUrl } from "@/mushaf/lib/mushafAssets";
 import { supabaseAdmin } from "../supabase-admin.js";
-import type { Ayah } from "@/types/database";
+import type { Ayah } from "@/shared/types/database";
 
 const PROJECT_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

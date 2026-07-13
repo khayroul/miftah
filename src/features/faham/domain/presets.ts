@@ -1,4 +1,4 @@
-import type { FahamSourceType } from "@/types/database";
+import type { FahamSourceType } from "@/shared/types/database";
 
 export type FahamSourcePreset = "mixed" | "reading" | "theme" | "hifz";
 

@@ -4,7 +4,7 @@ import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import { ZodError } from "zod";
 import { recordVocabExposureEvents } from "@/data/repositories/faham";
 import { fahamExposureSchema } from "@/features/faham/server";
-import { getOptionalAuthUser } from "@/lib/auth-server";
+import { getOptionalAuthUser } from "@/features/auth/server";
 
 export async function POST(request: Request): Promise<NextResponse> {
   let rawBody: unknown;

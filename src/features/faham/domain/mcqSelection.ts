@@ -1,4 +1,4 @@
-import type { Word } from "@/types/database";
+import type { Word } from "@/shared/types/database";
 import type { FahamMcqDirection, FahamMcqPoolWord } from "./mcqTypes";
 
 function collapseWhitespace(value: string): string {

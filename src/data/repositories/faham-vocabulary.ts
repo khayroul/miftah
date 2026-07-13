@@ -5,7 +5,7 @@ import {
   type FahamMcqPoolWord,
 } from "@/features/faham/domain/mcq";
 import { TOP_FAHAM_WORD_LIMIT } from "@/features/faham/domain/config";
-import type { Word } from "@/types/database";
+import type { Word } from "@/shared/types/database";
 
 export interface AyahLite {
   surah_id: number;

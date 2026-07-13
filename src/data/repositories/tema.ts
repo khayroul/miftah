@@ -7,7 +7,7 @@ import type {
   Theme,
   ThemeChunkProgress,
   ThemeChunkProgressStatus,
-} from "@/types/database";
+} from "@/shared/types/database";
 
 export interface ThemeAppearanceAyah {
   id: number;

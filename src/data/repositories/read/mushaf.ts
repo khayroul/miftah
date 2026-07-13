@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { supabaseBrowser } from "@/data/supabase/browser";
-import type { Surah, Ayah } from "@/types/database";
+import type { Surah, Ayah } from "@/shared/types/database";
 
 const supabase = supabaseBrowser;
 const SURAH_COLUMNS =

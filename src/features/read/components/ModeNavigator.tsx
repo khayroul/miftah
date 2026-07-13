@@ -9,7 +9,7 @@ import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 
 const AuthStatusButton = dynamic(
   () =>
-    import("@/components/AuthStatusButton").then(
+    import("@/features/auth").then(
       (module) => module.AuthStatusButton,
     ),
   {

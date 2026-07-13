@@ -1,7 +1,7 @@
-import { supabaseServer } from "@/lib/supabase-server";
+import { supabaseServer } from "@/data/supabase/server";
 import { newCardDbRow } from "@/shared/fsrsBridge";
 import { isUniqueViolation } from "@/shared/postgres";
-import type { FsrsFields, HifzStatus, StudyProgress } from "@/types/database";
+import type { FsrsFields, HifzStatus, StudyProgress } from "@/shared/types/database";
 
 const SABQI_WINDOW_DAYS = 7;
 const SABAK_SIZE = 10;

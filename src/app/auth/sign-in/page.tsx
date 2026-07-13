@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { sanitizeNextPath } from "@/lib/auth";
-import { getOptionalAuthUser } from "@/lib/auth-server";
-import { AuthSignInForm } from "@/components/AuthSignInForm";
+import { sanitizeNextPath } from "@/features/auth";
+import { getOptionalAuthUser } from "@/features/auth/server";
+import { AuthSignInForm } from "@/features/auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface SignInPageProps {

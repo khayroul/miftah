@@ -1,7 +1,7 @@
-import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "./supabase-auth-server";
-import { buildSignInPath } from "./auth";
+import { createSupabaseServerClient } from "@/data/repositories/auth-server";
+import type { User } from "@/data/repositories/auth-browser";
+import { buildSignInPath } from "./domain/navigation";
 
 export type AuthenticatedUser = Pick<User, "id">;
 

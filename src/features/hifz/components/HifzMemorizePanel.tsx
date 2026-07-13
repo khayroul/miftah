@@ -1,7 +1,7 @@
 "use client";
 
 import { TasmiSessionUI, type AyahRange, type TasmiRatingLabel, type TasmiSessionResult } from "@/features/tasmi";
-import { buildSignInPath } from "@/lib/auth";
+import { buildSignInPath } from "@/features/auth";
 import type { MemorizeChunk, MemorizeChunkSizeOption, ChunkSizeSuggestion } from "../domain/memorizeChunks";
 
 export type MemorizeStep = 1 | 2 | 3 | 4;

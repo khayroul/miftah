@@ -1,4 +1,4 @@
-import type { Word } from "@/types/database";
+import type { Word } from "@/shared/types/database";
 import { getAudioKey, getAudioUrlForKey, getMalayAudioUrl } from "./mcqAudio";
 import {
   buildWhyThisSetNotes,

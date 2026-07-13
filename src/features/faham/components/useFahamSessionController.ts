@@ -3,7 +3,7 @@
 /* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps -- this controller intentionally owns mutations of shared session refs */
 
 import { useCallback, useEffect } from "react";
-import type { FsrsRating } from "@/types/database";
+import type { FsrsRating } from "@/shared/types/database";
 import { enqueuePendingFahamRating } from "../domain/offlineSync";
 import { saveCachedFahamQueue } from "../domain/offlineSync";
 import {

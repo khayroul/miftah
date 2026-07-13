@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { authenticatedUserFromClaims } from "./auth-server";
+import { authenticatedUserFromClaims } from "./server";
 
 test("authenticatedUserFromClaims accepts only a non-empty subject", () => {
   assert.deepEqual(authenticatedUserFromClaims({ sub: "verified-user-id" }), {

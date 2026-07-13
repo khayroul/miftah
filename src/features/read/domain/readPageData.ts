@@ -5,7 +5,7 @@ import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
 import { mapAyatToPageAudioTracks, type ReadAudioTrack } from "./audio/pageAudioTracks";
 import { getAyatByPage, getSurah } from "@/data/repositories/read";
 import { getWordTranslationsByLocation } from "@/lib/wbwTranslations";
-import type { Ayah, Surah } from "@/types/database";
+import type { Ayah, Surah } from "@/shared/types/database";
 import type { MushafWordTranslationMap } from "@/mushaf/types/mushaf";
 
 export interface ReadPageStaticData {

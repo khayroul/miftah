@@ -1,4 +1,4 @@
-import type { FahamSourceType } from "@/types/database";
+import type { FahamSourceType } from "@/shared/types/database";
 import { TOP_FAHAM_WORD_LIMIT } from "./config";
 import { buildFahamLevelProgress } from "./levels";
 import type { FahamMcqDirectionMode } from "./mcq";

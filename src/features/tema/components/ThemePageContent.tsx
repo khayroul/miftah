@@ -8,7 +8,7 @@ import { ThemeJumpControls } from "./ThemeJumpControls";
 import { resolveThemeChunkLabelBm } from "../domain/themeLabels";
 import type { AyahWordByWordEntry } from "@/lib/queries";
 import type { ThemeAppearanceChunk } from "@/data/repositories/tema";
-import type { Surah } from "@/types/database";
+import type { Surah } from "@/shared/types/database";
 
 export interface ThemePageContentProps {
   readonly surahNumber: number;

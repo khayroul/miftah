@@ -14,7 +14,7 @@ import {
   buildBlankingKeyboard,
   buildSabakKeyboard,
 } from "../services/formatter.js";
-import type { StudyProgress } from "@/types/database";
+import type { StudyProgress } from "@/shared/types/database";
 
 // Session state per chat
 const planCache = new Map<number, DailyPlan>();

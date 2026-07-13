@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
-import { sanitizeNextPath } from "@/lib/auth";
-import { createSupabaseServerClient } from "@/lib/supabase-auth-server";
+import { sanitizeNextPath } from "@/features/auth";
+import { createSupabaseServerClient } from "@/data/repositories/auth-server";
 import { recomputeAndStoreSnapshot } from "@/features/home/server";
 
 export async function GET(request: Request): Promise<NextResponse> {

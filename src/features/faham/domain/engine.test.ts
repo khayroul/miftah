@@ -8,7 +8,7 @@ import {
   scoreFahamCandidate,
 } from "./engine";
 import type { FahamCandidateWord, FahamDueCard } from "./types";
-import type { VocabExposureSummary, VocabProgress, Word } from "@/types/database";
+import type { VocabExposureSummary, VocabProgress, Word } from "@/shared/types/database";
 
 function buildWord(overrides: Partial<Word> = {}): Word {
   return {

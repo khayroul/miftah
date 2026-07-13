@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { ThemePageContent } from "./ThemePageContent";
-import type { Surah } from "@/types/database";
+import type { Surah } from "@/shared/types/database";
 import type { AyahWordByWordEntry } from "@/lib/queries";
 import type { ThemeAppearanceChunk } from "@/data/repositories/tema";
 

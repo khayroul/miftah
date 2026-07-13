@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { NextRequest, NextResponse } from "next/server";
-import { appendSessionCookies } from "./supabase-auth-server";
+import { appendSessionCookies } from "./auth-server";
 
 test("appendSessionCookies retains cookies from every Supabase setAll batch", () => {
   const firstBatch = [{ name: "sb-access-token", value: "access", options: { path: "/" } }];

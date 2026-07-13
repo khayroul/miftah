@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import type { AuthChangeEvent, User } from "@supabase/supabase-js";
-import { buildSignInPath } from "@/lib/auth";
-import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
+import {
+  createSupabaseBrowserClient,
+  type AuthChangeEvent,
+  type User,
+} from "@/data/repositories/auth-browser";
+import { buildSignInPath } from "../domain/navigation";
 
 function shouldRefreshForAuthEvent(event: AuthChangeEvent): boolean {
   return event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED";

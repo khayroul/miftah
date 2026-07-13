@@ -3,7 +3,7 @@ import { HomeDeferredUi } from "@/features/home/components/HomeDeferredUi";
 import { ModeNavigator } from "@/features/read";
 import { loadDashboardWithDbCache } from "@/features/home/server";
 import { getReadJumpTargets } from "@/lib/readNavigation";
-import { getOptionalAuthUser } from "@/lib/auth-server";
+import { getOptionalAuthUser } from "@/features/auth/server";
 
 export default async function Home() {
   const userPromise = getOptionalAuthUser();
