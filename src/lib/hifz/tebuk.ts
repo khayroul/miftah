@@ -1,4 +1,4 @@
-import type { MushafLayoutPage } from '@/types/mushafLayout';
+import type { MushafLayoutPage } from '@/mushaf/types/mushafLayout';
 import type { TebukPrompt, PageWord } from '@/types/hifz-exercises';
 import { getPageWords } from './page-words';
 import { normalizeArabic } from '../tasmi/arabic-normalizer';

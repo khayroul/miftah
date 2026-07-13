@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 
 const MushafDownloadPrompt = dynamic(
   () =>
-    import("@/components/MushafDownloadPrompt").then(
+    import("@/mushaf/components/MushafDownloadPrompt").then(
       (module) => module.MushafDownloadPrompt,
     ),
   {

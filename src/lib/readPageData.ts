@@ -1,12 +1,12 @@
 import { unstable_cache } from "next/cache";
-import type { MushafAyahDetail } from "@/components/MushafPageView";
-import { loadMushafLayout, normalizeLayoutForRender } from "@/lib/mushafLayout";
-import type { MushafLayoutPage } from "@/types/mushafLayout";
+import type { MushafAyahDetail } from "@/mushaf/components/MushafPageView";
+import { loadMushafLayout, normalizeLayoutForRender } from "@/mushaf/lib/mushafLayout";
+import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
 import { mapAyatToPageAudioTracks, type ReadAudioTrack } from "@/lib/pageAudioTracks";
 import { getAyatByPage, getSurah } from "@/lib/queries";
 import { getWordTranslationsByLocation } from "@/lib/wbwTranslations";
 import type { Ayah, Surah } from "@/types/database";
-import type { MushafWordTranslationMap } from "@/types/mushaf";
+import type { MushafWordTranslationMap } from "@/mushaf/types/mushaf";
 
 export interface ReadPageStaticData {
   audioTracks: ReadAudioTrack[];

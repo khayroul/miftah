@@ -12,8 +12,8 @@ import {
 import {
   MushafPageView,
   type MushafAyahDetail,
-} from "@/components/MushafPageView";
-import { ReadOnlyMushafPageView } from "@/components/ReadOnlyMushafPageView";
+} from "@/mushaf/components/MushafPageView";
+import { ReadOnlyMushafPageView } from "@/mushaf/components/ReadOnlyMushafPageView";
 import { ReadModeTools } from "@/components/ReadModeTools";
 import { useReadAudio } from "@/components/ReadAudioProvider";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
@@ -35,12 +35,12 @@ import { rememberLastReadPage } from "@/lib/readingProgressStorage";
 import { useReadMode } from "@/lib/useReadMode";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ReadMode } from "@/lib/readMode";
-import type { MushafWordTranslationMap } from "@/types/mushaf";
-import type { MushafLayoutPage } from "@/types/mushafLayout";
+import type { MushafWordTranslationMap } from "@/mushaf/types/mushaf";
+import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
 import type { ReactNode } from "react";
 import { preCacheAudioUrls } from "@/lib/hifz/audioPreCache";
 import type { HifzExerciseFlow } from "@/types/hifz-exercises";
-import type { MushafPageManifest } from "@/types/mushaf";
+import type { MushafPageManifest } from "@/mushaf/types/mushaf";
 import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 import {
   navigateWithOfflineSupport,

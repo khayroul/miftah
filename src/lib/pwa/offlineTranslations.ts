@@ -1,4 +1,4 @@
-import type { MushafWordTranslationMap } from "@/types/mushaf";
+import type { MushafWordTranslationMap } from "@/mushaf/types/mushaf";
 
 /**
  * Validates raw JSON data from a per-page translation file and returns a

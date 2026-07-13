@@ -3,7 +3,7 @@ import type { Context } from "grammy";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { getRemotePageImageUrl } from "@/lib/mushafAssets";
+import { getRemotePageImageUrl } from "@/mushaf/lib/mushafAssets";
 import { supabaseAdmin } from "../supabase-admin.js";
 import type { Ayah } from "@/types/database";
 

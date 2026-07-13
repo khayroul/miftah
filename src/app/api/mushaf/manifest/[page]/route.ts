@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { loadPageManifest } from "@/lib/mushafAssets";
+import { loadPageManifest } from "@/mushaf/lib/mushafAssets";
 
 interface RouteParams {
   params: Promise<{ page: string }>;

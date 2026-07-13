@@ -1,6 +1,6 @@
 // src/lib/hifz/progressive-unveil.ts
-import type { MushafLayoutPage } from '@/types/mushafLayout';
-import type { MushafPageManifest, MushafWordHitbox } from '@/types/mushaf';
+import type { MushafLayoutPage } from '@/mushaf/types/mushafLayout';
+import type { MushafPageManifest, MushafWordHitbox } from '@/mushaf/types/mushaf';
 import { getPageWords } from './page-words';
 
 export interface UnveilWord {

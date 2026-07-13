@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useCallback } from "react";
-import type { MushafLayoutLine, MushafLayoutPage } from "@/types/mushafLayout";
-import { computeLastLineFlags } from "@/types/mushafLayout";
-import { splitWordGlyphs, getAyahKeyFromLocation } from "@/lib/mushafGlyphs";
+import type { MushafLayoutLine, MushafLayoutPage } from "@/mushaf/types/mushafLayout";
+import { computeLastLineFlags } from "@/mushaf/types/mushafLayout";
+import { splitWordGlyphs, getAyahKeyFromLocation } from "@/mushaf/lib/mushafGlyphs";
 import {
   useMushafFont,
   ensureGlobalMushafFonts,
   preloadMushafFont,
   getFontFamily,
-} from "@/lib/mushafFonts";
+} from "@/mushaf/lib/mushafFonts";
 
 export interface MushafLiveWordRef {
   location: string;

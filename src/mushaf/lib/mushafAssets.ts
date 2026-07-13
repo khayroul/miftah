@@ -4,7 +4,7 @@ import type {
   MushafAyahManifest,
   MushafPageManifest,
   MushafWordHitbox,
-} from "@/types/mushaf";
+} from "@/mushaf/types/mushaf";
 
 export type PageVariant = "page" | "thumb" | "mobile";
 type RawManifest = Record<string, unknown>;

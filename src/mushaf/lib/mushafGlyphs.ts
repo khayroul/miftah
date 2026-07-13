@@ -1,4 +1,4 @@
-import type { MushafLayoutWord } from "@/types/mushafLayout";
+import type { MushafLayoutWord } from "@/mushaf/types/mushafLayout";
 
 export interface SplitGlyphs {
   prefix: string[];

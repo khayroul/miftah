@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { resolveWordImageSource } from "@/lib/mushafAssets";
+import { resolveWordImageSource } from "@/mushaf/lib/mushafAssets";
 
 export const runtime = "nodejs";
 
