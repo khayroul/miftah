@@ -5,6 +5,9 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  buildAuthenticatedRequestHeaders,
+} from "./auth-request-context";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -34,32 +37,44 @@ export async function createSupabaseServerClient(): Promise<SupabaseClient> {
 export async function updateSupabaseSession(
   request: NextRequest,
 ): Promise<NextResponse> {
-  let response = NextResponse.next({
-    request,
-  });
+  const requestHeaders = buildAuthenticatedRequestHeaders(request.headers, null);
+  let cookiesToSet: Array<{
+    name: string;
+    options: CookieOptions;
+    value: string;
+  }> = [];
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
-        for (const { name, value } of cookiesToSet) {
+      setAll(newCookies) {
+        for (const { name, value } of newCookies) {
           request.cookies.set(name, value);
         }
 
-        response = NextResponse.next({
-          request,
-        });
-
-        for (const { name, options, value } of cookiesToSet) {
-          response.cookies.set(name, value, options as CookieOptions);
-        }
+        cookiesToSet = newCookies.map(({ name, options, value }) => ({
+          name,
+          options,
+          value,
+        }));
       },
     },
   });
 
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const response = NextResponse.next({
+    request: {
+      headers: buildAuthenticatedRequestHeaders(requestHeaders, user?.id ?? null),
+    },
+  });
+
+  for (const { name, options, value } of cookiesToSet) {
+    response.cookies.set(name, value, options);
+  }
 
   return response;
 }

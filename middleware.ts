@@ -1,28 +1,31 @@
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { updateSupabaseSession } from "@/lib/supabase-auth-server";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { buildRateLimitedResponse } from "@/lib/auth-request-context";
 
 export async function middleware(request: NextRequest) {
-  // Apply rate limiting to API routes
+  const sessionResponsePromise = updateSupabaseSession(request);
+
+  // Rate limiting and session validation are independent. Always complete
+  // session refresh first so a 429 cannot discard a rotated refresh token.
   if (request.nextUrl.pathname.startsWith("/api")) {
     const ip = request.headers.get("x-forwarded-for") ?? "anonymous";
-    const { success, limit, remaining, reset } = await checkRateLimit(
-      `ratelimit_api_${ip}`
-    );
+    const [sessionResponse, { success, limit, remaining, reset }] = await Promise.all([
+      sessionResponsePromise,
+      checkRateLimit(`ratelimit_api_${ip}`),
+    ]);
 
     if (!success) {
-      return new NextResponse("Panggilan API terlalu kerap. Sila tunggu sebentar.", {
-        status: 429,
-        headers: {
-          "X-RateLimit-Limit": limit.toString(),
-          "X-RateLimit-Remaining": remaining.toString(),
-          "X-RateLimit-Reset": reset.toString(),
-        },
-      });
+      return buildRateLimitedResponse(
+        { limit, remaining, reset },
+        sessionResponse,
+      );
     }
+
+    return sessionResponse;
   }
 
-  return updateSupabaseSession(request);
+  return sessionResponsePromise;
 }
 
 export const config = {
@@ -30,4 +33,3 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ttf|woff2?)$).*)",
   ],
 };
-
