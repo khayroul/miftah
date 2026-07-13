@@ -1,5 +1,5 @@
 /**
- * Build-time script: generates src/lib/pwa/surahPageMap.ts
+ * Build-time script: generates src/shared/pwa/surahPageMap.ts
  *
  * Reads 604 mushaf layout JSONs from data/mushaf-layout/mushaf/
  * and produces a TypeScript source file with the SURAH_PAGE_MAP constant.
@@ -194,7 +194,7 @@ function main(): void {
   const map = buildSurahPageMap();
 
   const projectRoot = path.resolve(path.dirname(process.argv[1]), "..");
-  const outputPath = path.join(projectRoot, "src", "lib", "pwa", "surahPageMap.ts");
+  const outputPath = path.join(projectRoot, "src", "shared", "pwa", "surahPageMap.ts");
 
   const source = generateTypeScriptSource(map);
   fs.writeFileSync(outputPath, source, "utf-8");

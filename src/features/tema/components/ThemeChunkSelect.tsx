@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { navigateWithOfflineSupport } from "@/lib/pwa/navigation";
+import { navigateWithOfflineSupport } from "@/shared/pwa/navigation";
 
 interface ThemeChunkSelectProps {
   surahNumber: number;

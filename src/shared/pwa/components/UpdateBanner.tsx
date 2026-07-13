@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { onSwUpdate, skipWaitingAndReload } from "@/lib/pwa/swRegistration";
+import { onSwUpdate, skipWaitingAndReload } from "../swRegistration";
 
 export function UpdateBanner() {
   const [showUpdate, setShowUpdate] = useState(false);

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ComponentProps } from "react";
-import { maybeHandleOfflineDocumentNavigation } from "@/lib/pwa/navigation";
+import { maybeHandleOfflineDocumentNavigation } from "@/shared/pwa/navigation";
 
 type OfflineAwareLinkProps = ComponentProps<typeof Link>;
 

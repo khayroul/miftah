@@ -7,19 +7,24 @@ import {
   isMushafDownloaded,
   clearMushafDownloaded,
 } from "./mushafStatus";
+import type { OptionalOfflineCacheHooks } from "./optionalCacheHooks";
 
-export function installDebugTools(): void {
+export function installDebugTools(optionalCache?: OptionalOfflineCacheHooks): void {
   if (typeof window === "undefined") return;
 
   const debug = {
     async downloadMushaf() {
       const config = await loadPwaConfig();
       console.log("[PWA Debug] Downloading full mushaf + tema...");
-      await downloadMushaf(config, (progress) => {
-        console.log(
-          `[PWA Debug] ${progress.completedItems}/${progress.totalItems} items`,
-        );
-      });
+      await downloadMushaf(
+        config,
+        (progress) => {
+          console.log(
+            `[PWA Debug] ${progress.completedItems}/${progress.totalItems} items`,
+          );
+        },
+        { optionalCache },
+      );
       console.log("[PWA Debug] Done.");
     },
     cancelDownload,

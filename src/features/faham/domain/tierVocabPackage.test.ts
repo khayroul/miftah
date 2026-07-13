@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CACHE_DATA } from "@/lib/pwa/offlineBundle";
+import { CACHE_DATA } from "@/shared/pwa/offlineBundle";
 import {
   clearCachedFahamTierVocabPackage,
   loadCachedFahamTierVocabPackage,

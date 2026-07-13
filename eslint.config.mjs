@@ -87,6 +87,7 @@ const eslintConfig = defineConfig([
               group: [
                 "@/features/*/**",
                 "!@/features/*/server",
+                "!@/features/*/client",
                 "!@/features/*/read-loaders",
                 "!@/features/*/read-runtime",
                 "!@/features/*/read-overlay",
@@ -103,13 +104,12 @@ const eslintConfig = defineConfig([
     },
   },
 
-  // ── Phase-1 boundary: ui/** · shared/** · mushaf/** ─────────────────────────
+  // ── Phase-1 boundary: ui/** · mushaf/** ────────────────────────────────────
   // Supabase clients confined to src/data/** (spec §4.4). These lower layers
   // route persistence through repositories, never a client directly.
   {
     files: [
       "src/ui/**/*.{ts,tsx,js,jsx,mjs,cjs}",
-      "src/shared/**/*.{ts,tsx,js,jsx,mjs,cjs}",
       "src/mushaf/**/*.{ts,tsx,js,jsx,mjs,cjs}",
     ],
     rules: {
@@ -118,6 +118,28 @@ const eslintConfig = defineConfig([
         {
           paths: supabaseClientPaths,
           patterns: supabaseClientPatterns,
+        },
+      ],
+    },
+  },
+
+  // shared/** is a lower-level dependency. Features may consume shared code,
+  // but shared code must never reach back into a feature (cycle prevention).
+  {
+    files: ["src/shared/**/*.{ts,tsx,js,jsx,mjs,cjs}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: supabaseClientPaths,
+          patterns: [
+            {
+              group: ["@/features/*", "@/features/*/**"],
+              message:
+                "Shared infrastructure cannot import a feature. Inject a typed callback from an app/feature coordinator instead.",
+            },
+            ...supabaseClientPatterns,
+          ],
         },
       ],
     },

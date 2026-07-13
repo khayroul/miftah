@@ -21,7 +21,7 @@ import {
   type CachedFahamTierVocabPayload,
 } from "./tierVocabPackage";
 import type { WordWithOccurrences } from "./types";
-import { loadPwaConfig } from "@/lib/pwa/downloadEngine";
+import { loadPwaConfig } from "@/shared/pwa/downloadConfig";
 
 const OFFLINE_SESSION_SIZE = 10;
 const POOL_SIZE = 1200;

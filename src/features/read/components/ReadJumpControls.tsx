@@ -11,7 +11,7 @@ import {
   getMarkerPageById,
   parseBoundedIntegerInput,
 } from "../domain/readNavigationUtils";
-import { navigateWithOfflineSupport } from "@/lib/pwa/navigation";
+import { navigateWithOfflineSupport } from "@/shared/pwa/navigation";
 import { FALLBACK_READ_JUMP_TARGETS } from "../domain/readJumpTargetsFallback";
 
 interface ReadJumpControlsProps {

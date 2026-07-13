@@ -1,6 +1,6 @@
 "use client";
 
-import { CACHE_DATA } from "@/lib/pwa/offlineBundle";
+import { CACHE_DATA } from "@/shared/pwa/offlineBundle";
 import {
   buildTierVocabUrl,
   clearTierVocabMarker,

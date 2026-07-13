@@ -6,6 +6,7 @@ import {
   cancelDownload,
   downloadMushaf,
   type MushafDownloadProgress,
+  type OptionalOfflineCacheHooks,
   type PwaConfig,
 } from "./downloadEngine";
 import { TOTAL_ITEMS } from "./mushafStatus";
@@ -128,10 +129,13 @@ const mockFetch: typeof fetch = async (
       : input.url;
 
   if (url === "/" || url.startsWith("/read/")) {
-    return new Response("<html><body>cached route</body></html>", {
+    return new Response(
+      '<html><body><script src="/_next/static/app.js"></script></body></html>',
+      {
       status: 200,
       headers: { "Content-Type": "text/html" },
-    });
+      },
+    );
   }
 
   return new Response("{}", {
@@ -212,6 +216,34 @@ describe("download packages", () => {
     assert.equal(mushafEvent.packageIndex, 2);
     assert.equal(mushafEvent.packageCount, 2);
     assert.ok(mushafEvent.packageTotalItems > first.packageTotalItems);
+  });
+
+  it("prefetches an injected optional cache after a successful finalization", async () => {
+    const prefetchCalls: Array<{
+      readonly appBuildId: string;
+      readonly dataVersion: string;
+    }> = [];
+    const optionalCache: OptionalOfflineCacheHooks = {
+      clear: async () => undefined,
+      getMarker: () => null,
+      prefetch: async ({ appBuildId, dataVersion }) => {
+        prefetchCalls.push({ appBuildId, dataVersion });
+      },
+    };
+
+    await downloadMushaf(
+      {
+        ...FALLBACK_CONFIG,
+        appBuildId: "build-success",
+        fahamDataVersion: "faham-7",
+      },
+      undefined,
+      { optionalCache },
+    );
+
+    assert.deepEqual(prefetchCalls, [
+      { appBuildId: "build-success", dataVersion: "faham-7" },
+    ]);
   });
 });
 
