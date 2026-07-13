@@ -1,4 +1,4 @@
-import type { HomeDashboardSnapshot } from "@/lib/homeDashboard";
+import type { HomeDashboardSnapshot } from "./homeDashboard";
 import type { ReadMode } from "@/lib/readMode";
 
 type HeroTone = "teal" | "amber" | "indigo" | "stone";

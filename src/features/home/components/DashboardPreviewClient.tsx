@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { HomeDashboardSnapshot } from "@/lib/homeDashboard";
+import type { HomeDashboardSnapshot } from "../domain/homeDashboard";
 
 const TOTAL_QURAN_PAGES = 604;
 

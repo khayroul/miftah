@@ -1,4 +1,8 @@
-import { unstable_cache } from "next/cache";
+import {
+  getHomeFahamCounts,
+  getHomeReadDashboardData,
+  getHomeTemaCounts,
+} from "@/data/repositories/home";
 import { TOP_FAHAM_WORD_LIMIT } from "@/lib/faham/config";
 import { buildFahamQueuePlan, DEFAULT_FAHAM_ENGINE_CONFIG } from "@/lib/faham/engine";
 import { buildFahamLevelProgress, getFahamLevelState, type FahamLevelProgress } from "@/lib/faham/levels";
@@ -10,7 +14,6 @@ import {
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { hasAnyHifzProgress } from "@/lib/hifz/study-progress";
 import { getHifzStats } from "@/lib/hifz/stats";
-import { supabaseServer } from "@/lib/supabase-server";
 import { getReadPageActivityRows } from "@/lib/activityEvents";
 import {
   getUserStreak,
@@ -198,59 +201,22 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
       totalWords: levelProgress.activeWordLimit,
     };
   }
-  const [dueCards, candidates, dueCountResult, progressResult, encounteredCountResult, masteredCountResult] = await Promise.all([
+  const [dueCards, candidates, counts] = await Promise.all([
     getDueFahamCards(
       userId,
       Math.max(config.dueLimit, config.pauseNewCardsAboveDueCount),
       levelProgress.activeWordLimit,
     ),
     getFahamExposureCandidates(userId, config.candidatePoolSize, levelProgress.activeWordLimit),
-    supabaseServer
-      .from("vocab_progress")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .in("word_id", focusWordIds)
-      .lte("due", now),
-    supabaseServer
-      .from("vocab_progress")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .in("word_id", focusWordIds),
-    supabaseServer
-      .from("v_vocab_exposure_summary")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .in("word_id", focusWordIds),
-    supabaseServer
-      .from("vocab_progress")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .in("word_id", focusWordIds)
-      .eq("is_mastered", true),
+    getHomeFahamCounts(userId, focusWordIds, now),
   ]);
-
-  if (dueCountResult.error) {
-    throw dueCountResult.error;
-  }
-  if (progressResult.error) {
-    throw progressResult.error;
-  }
-  if (encounteredCountResult.error) {
-    throw encounteredCountResult.error;
-  }
-  if (masteredCountResult.error) {
-    throw masteredCountResult.error;
-  }
   const plan = buildFahamQueuePlan({
     candidates,
     config,
     dueCards,
     masteredCards: [],
   });
-  const dueCount = dueCountResult.count ?? 0;
-  const encounteredWordCount = encounteredCountResult.count ?? 0;
-  const masteredWordCount = masteredCountResult.count ?? 0;
-  const reviewedWordCount = progressResult.count ?? 0;
+  const { dueCount, encounteredWordCount, masteredWordCount, reviewedWordCount } = counts;
   const totalWords = levelProgress.activeWordLimit;
 
   return {
@@ -268,56 +234,9 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
   };
 }
 
-function isMissingRelation(error: { message?: string } | null): boolean {
-  const message = String(error?.message ?? "").toLowerCase();
-  return (
-    message.includes("does not exist") ||
-    message.includes('relation "') ||
-    message.includes("relation '")
-  );
-}
-
 async function loadTemaSnapshot(userId: string): Promise<HomeTemaSnapshot> {
-  const [totalChunksResult, exposuresResult, completedResult] = await Promise.all([
-    supabaseServer
-      .from("ayah_theme_chunks")
-      .select("id", { count: "exact", head: true }),
-    supabaseServer
-      .from("vocab_exposure_events")
-      .select("source_key")
-      .eq("user_id", userId)
-      .eq("source_type", "theme_chunk"),
-    supabaseServer
-      .from("theme_chunk_progress")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .eq("status", "completed"),
-  ]);
-
-  if (totalChunksResult.error && !isMissingRelation(totalChunksResult.error)) {
-    throw totalChunksResult.error;
-  }
-  if (exposuresResult.error && !isMissingRelation(exposuresResult.error)) {
-    throw exposuresResult.error;
-  }
-  if (completedResult.error && !isMissingRelation(completedResult.error)) {
-    throw completedResult.error;
-  }
-
-  const sourceKeys = new Set(
-    ((exposuresResult.data ?? []) as Array<{ source_key: string | null }>)
-      .map((row) => row.source_key)
-      .filter((value): value is string => typeof value === "string" && value.length > 0),
-  );
-  const totalChunks =
-    totalChunksResult.error && isMissingRelation(totalChunksResult.error)
-      ? 0
-      : totalChunksResult.count ?? 0;
-  const exploredCount = sourceKeys.size;
-  const completedCount =
-    completedResult.error && isMissingRelation(completedResult.error)
-      ? 0
-      : completedResult.count ?? 0;
+  const { completedCount, exploredSourceKeys, totalChunks } = await getHomeTemaCounts(userId);
+  const exploredCount = new Set(exploredSourceKeys).size;
 
   return {
     completedCount,
@@ -329,26 +248,10 @@ async function loadTemaSnapshot(userId: string): Promise<HomeTemaSnapshot> {
 }
 
 async function loadReadSnapshot(userId: string): Promise<HomeReadSnapshot> {
-  const [readingStateResult, readActivityResult, readEventRows] = await Promise.all([
-    supabaseServer
-      .from("user_reading_state")
-      .select("last_page, last_read_at")
-      .eq("user_id", userId)
-      .maybeSingle(),
-    supabaseServer
-      .from("user_activity_log")
-      .select("activity_date, metadata")
-      .eq("user_id", userId)
-      .eq("activity_type", "read"),
+  const [readDashboardData, readEventRows] = await Promise.all([
+    getHomeReadDashboardData(userId),
     getReadPageActivityRows(userId),
   ]);
-
-  if (readingStateResult.error && readingStateResult.error.code !== "PGRST116") {
-    throw readingStateResult.error;
-  }
-  if (readActivityResult.error) {
-    throw readActivityResult.error;
-  }
 
   const uniquePagesLifetime = new Set<number>();
   const uniquePages7d = new Set<number>();
@@ -356,10 +259,7 @@ async function loadReadSnapshot(userId: string): Promise<HomeReadSnapshot> {
     .toISOString()
     .slice(0, 10);
 
-  const rows = (readActivityResult.data ?? []) as Array<{
-    activity_date: string;
-    metadata: unknown;
-  }>;
+  const rows = readDashboardData.activityRows;
   for (const row of readEventRows) {
     if (!row.entityId) {
       continue;
@@ -379,15 +279,15 @@ async function loadReadSnapshot(userId: string): Promise<HomeReadSnapshot> {
         : [];
     for (const page of pages) {
       uniquePagesLifetime.add(page);
-      if (row.activity_date >= cutoffKey) {
+      if (row.activityDate >= cutoffKey) {
         uniquePages7d.add(page);
       }
     }
   }
 
   return {
-    lastPage: readingStateResult.data?.last_page ?? null,
-    lastReadAt: readingStateResult.data?.last_read_at ?? null,
+    lastPage: readDashboardData.readingState?.lastPage ?? null,
+    lastReadAt: readDashboardData.readingState?.lastReadAt ?? null,
     uniquePages7d: uniquePages7d.size,
     uniquePagesLifetime: uniquePagesLifetime.size,
   };
@@ -477,9 +377,3 @@ export async function loadHomeDashboardSnapshotUncached(
 
   return { faham, hifz, read, tema, activity };
 }
-
-export const loadHomeDashboardSnapshot = unstable_cache(
-  loadHomeDashboardSnapshotUncached,
-  ["home-dashboard-snapshot"],
-  { revalidate: 30, tags: ["home-dashboard"] },
-);

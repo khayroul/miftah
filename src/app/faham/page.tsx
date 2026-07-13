@@ -1,5 +1,5 @@
 import { FahamWorkspace } from "@/components/FahamWorkspace";
-import { ModeNavigator } from "@/components/ModeNavigator";
+import { ModeNavigator } from "@/features/home/components/ModeNavigator";
 import type { FahamQueueSnapshot } from "@/lib/faham/queue";
 import type { FahamLevelProgress } from "@/lib/faham/levels";
 import { getReadJumpTargets } from "@/lib/readNavigation";

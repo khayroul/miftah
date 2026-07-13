@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
-import { recomputeAndStoreSnapshot } from "@/lib/homeDashboardDb";
+import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import { applyRating } from "@/lib/fsrs";
 import { dbRowToCard, cardToDbRow } from "@/lib/hifz/fsrs-bridge";
 import {

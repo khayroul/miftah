@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
-import { loadDashboardWithDbCache } from "@/lib/homeDashboardDb";
+import { loadDashboardWithDbCache } from "@/features/home/server";
 
 export async function GET() {
   try {

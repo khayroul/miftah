@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
-import { recomputeAndStoreSnapshot } from "@/lib/homeDashboardDb";
+import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import { ZodError, z } from "zod";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { markThemeChunkProgress } from "@/data/repositories/tema";

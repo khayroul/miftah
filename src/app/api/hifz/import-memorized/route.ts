@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
-import { recomputeAndStoreSnapshot } from "@/lib/homeDashboardDb";
+import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { matureCardDbRow } from "@/lib/hifz/fsrs-bridge";

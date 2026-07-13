@@ -1,11 +1,22 @@
+import { unstable_cache } from "next/cache";
+import {
+  getHomeStoredDashboardSnapshot,
+  storeHomeDashboardSnapshot,
+} from "@/data/repositories/home";
 import {
   hasHomeDashboardData,
   sanitizeHomeDashboardSnapshot,
-} from "@/lib/homeDashboardStorage";
-import { supabaseServer } from "@/lib/supabase-server";
-import type { HomeDashboardSnapshot } from "@/lib/homeDashboard";
+} from "./domain/homeDashboardStorage";
+import type { HomeDashboardSnapshot } from "./domain/homeDashboard";
 
 const SNAPSHOT_STALE_MS = 5 * 60 * 1000;
+
+async function loadHomeDashboardSnapshotUncached(
+  userId: string | null,
+): Promise<HomeDashboardSnapshot> {
+  const dashboard = await import("./domain/homeDashboard");
+  return dashboard.loadHomeDashboardSnapshotUncached(userId);
+}
 
 /**
  * Read precomputed dashboard snapshot from profiles table.
@@ -15,22 +26,17 @@ export async function readSnapshotFromDb(
   userId: string,
 ): Promise<HomeDashboardSnapshot | null> {
   try {
-    const { data, error } = await supabaseServer
-      .from("profiles")
-      .select("dashboard_snapshot, snapshot_computed_at")
-      .eq("id", userId)
-      .single();
-
-    if (error || !data?.dashboard_snapshot || !data.snapshot_computed_at) {
+    const storedSnapshot = await getHomeStoredDashboardSnapshot(userId);
+    if (!storedSnapshot) {
       return null;
     }
 
-    const computedAt = new Date(data.snapshot_computed_at).getTime();
+    const computedAt = new Date(storedSnapshot.snapshotComputedAt).getTime();
     if (Date.now() - computedAt > SNAPSHOT_STALE_MS) {
       return null;
     }
 
-    const snapshot = sanitizeHomeDashboardSnapshot(data.dashboard_snapshot);
+    const snapshot = sanitizeHomeDashboardSnapshot(storedSnapshot.dashboardSnapshot);
     return hasHomeDashboardData(snapshot) ? snapshot : null;
   } catch {
     return null;
@@ -45,18 +51,8 @@ export async function recomputeAndStoreSnapshot(
   userId: string,
 ): Promise<void> {
   try {
-    const { loadHomeDashboardSnapshotUncached } = await import(
-      "@/lib/homeDashboard"
-    );
     const snapshot = await loadHomeDashboardSnapshotUncached(userId);
-
-    await supabaseServer
-      .from("profiles")
-      .update({
-        dashboard_snapshot: snapshot,
-        snapshot_computed_at: new Date().toISOString(),
-      })
-      .eq("id", userId);
+    await storeHomeDashboardSnapshot(userId, snapshot, new Date().toISOString());
   } catch (error) {
     console.error("[homeDashboardDb] recompute failed:", error);
   }
@@ -68,8 +64,6 @@ export async function recomputeAndStoreSnapshot(
 export async function loadDashboardWithDbCache(
   userId: string | null,
 ): Promise<HomeDashboardSnapshot> {
-  const { loadHomeDashboardSnapshot } = await import("@/lib/homeDashboard");
-
   if (!userId) {
     return loadHomeDashboardSnapshot(userId);
   }
@@ -81,3 +75,9 @@ export async function loadDashboardWithDbCache(
 
   return loadHomeDashboardSnapshot(userId);
 }
+
+export const loadHomeDashboardSnapshot = unstable_cache(
+  loadHomeDashboardSnapshotUncached,
+  ["home-dashboard-snapshot"],
+  { revalidate: 30, tags: ["home-dashboard"] },
+);

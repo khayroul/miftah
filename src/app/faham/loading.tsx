@@ -1,4 +1,4 @@
-import { ModeNavigator } from "@/components/ModeNavigator";
+import { ModeNavigator } from "@/features/home/components/ModeNavigator";
 
 export default function FahamPageLoading() {
   return (

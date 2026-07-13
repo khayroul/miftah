@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useReadMode } from "@/lib/useReadMode";
 import type { ReadMode } from "@/lib/readMode";
-import { ModeNavigator } from "./ModeNavigator";
+import { ModeNavigator } from "@/features/home/components/ModeNavigator";
 import { navigateWithOfflineSupport } from "@/lib/pwa/navigation";
 
 interface ReadModeToolsProps {
