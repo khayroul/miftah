@@ -1,18 +1,10 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { unstable_cache } from "next/cache";
-import { supabase } from "./supabase";
-
-interface AyahNavigationRow {
-  surah_id: number | null;
-  juz_number: number | null;
-  page_number: number | null;
-}
-
-interface SurahNameRow {
-  id: number;
-  name_transliteration: string | null;
-}
+import {
+  fetchReadNavigationDataset,
+  type AyahNavigationRow,
+} from "@/data/repositories/read/navigation";
 
 interface LocalSurahSeedRow {
   id?: number;
@@ -90,38 +82,6 @@ function buildStartPageMap(
   return startPages;
 }
 
-async function fetchAllAyahNavigationRows(): Promise<AyahNavigationRow[]> {
-  const pageSize = 1000;
-  let from = 0;
-  const rows: AyahNavigationRow[] = [];
-
-  while (true) {
-    const { data, error } = await supabase
-      .from("ayat")
-      .select("surah_id,juz_number,page_number")
-      .order("id", { ascending: true })
-      .range(from, from + pageSize - 1);
-
-    if (error) {
-      throw error;
-    }
-
-    if (!data || data.length === 0) {
-      break;
-    }
-
-    rows.push(...(data as AyahNavigationRow[]));
-
-    if (data.length < pageSize) {
-      break;
-    }
-
-    from += pageSize;
-  }
-
-  return rows;
-}
-
 function buildSurahTargets(
   surahStartPages: Map<number, number>,
   namesBySurahId: Map<number, string>,
@@ -158,29 +118,21 @@ function buildJuzTargets(juzStartPages: Map<number, number>): JuzJumpTarget[] {
 }
 
 async function buildTargetsFromSupabase(): Promise<ReadJumpTargets> {
-  const [ayahRows, surahResponse] = await Promise.all([
-    fetchAllAyahNavigationRows(),
-    supabase
-      .from("surahs")
-      .select("id,name_transliteration")
-      .order("id", { ascending: true }),
-  ]);
+  const dataset = await fetchReadNavigationDataset();
 
   const namesBySurahId = new Map<number, string>();
-  if (!surahResponse.error && surahResponse.data) {
-    for (const row of surahResponse.data as SurahNameRow[]) {
-      if (
-        Number.isInteger(row.id) &&
-        typeof row.name_transliteration === "string" &&
-        row.name_transliteration.trim().length > 0
-      ) {
-        namesBySurahId.set(row.id, row.name_transliteration.trim());
-      }
+  for (const row of dataset.surahs) {
+    if (
+      Number.isInteger(row.id) &&
+      typeof row.name_transliteration === "string" &&
+      row.name_transliteration.trim().length > 0
+    ) {
+      namesBySurahId.set(row.id, row.name_transliteration.trim());
     }
   }
 
-  const surahStartPages = buildStartPageMap(ayahRows, "surah_id");
-  const juzStartPages = buildStartPageMap(ayahRows, "juz_number");
+  const surahStartPages = buildStartPageMap(dataset.ayat, "surah_id");
+  const juzStartPages = buildStartPageMap(dataset.ayat, "juz_number");
 
   if (surahStartPages.size === 0 || juzStartPages.size === 0) {
     throw new Error("Navigation mapping is empty from Supabase.");
