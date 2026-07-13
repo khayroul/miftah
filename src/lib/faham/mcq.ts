@@ -122,6 +122,15 @@ function collapseWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
+// Case/whitespace-normalized key used to compare two DISPLAY values for
+// equality (e.g. deciding whether a candidate's choice text is really the
+// same answer as the correct word's, or just a different pool row that
+// happens to render identically). Never used for display — only for set
+// membership checks.
+function normalizeChoiceValue(value: string): string {
+  return collapseWhitespace(value).toLowerCase();
+}
+
 function tokenizeMeaning(value: string): string[] {
   return collapseWhitespace(value)
     .toLowerCase()
@@ -288,9 +297,19 @@ function selectDistractors(params: {
   pool: FahamMcqPoolWord[];
   scoreCandidate: (correctWord: Word, candidate: FahamMcqPoolWord) => number;
   toChoiceValue: (candidate: FahamMcqPoolWord) => string | null;
+  // B2 fix: the correct answer's own display value. A candidate whose
+  // display value matches this (case/whitespace-normalized) must never be
+  // offered as a distractor, even when it has a different `id` — otherwise
+  // the correct answer's text can appear twice among the options (once as
+  // the answer, once disguised as a "wrong" choice).
+  correctChoiceValue: string;
 }): string[] {
-  const { correctWord, count, pool, scoreCandidate, toChoiceValue } = params;
-  const seen = new Set<string>();
+  const { correctWord, count, pool, scoreCandidate, toChoiceValue, correctChoiceValue } = params;
+  const normalizedCorrect = normalizeChoiceValue(correctChoiceValue);
+  // Seed `seen` with the correct value so it can never be re-added as a
+  // "distractor" duplicate, and so all dedup below compares on the same
+  // normalized key (display value, not id).
+  const seen = new Set<string>([normalizedCorrect]);
   const ranked = pool
     .filter((candidate) => candidate.id !== correctWord.id)
     .map((candidate) => {
@@ -303,7 +322,11 @@ function selectDistractors(params: {
         : null;
     })
     .filter((candidate): candidate is { choiceValue: string; score: number } => {
-      return candidate !== null && Number.isFinite(candidate.score);
+      return (
+        candidate !== null &&
+        Number.isFinite(candidate.score) &&
+        normalizeChoiceValue(candidate.choiceValue) !== normalizedCorrect
+      );
     })
     .sort((left, right) => {
       if (right.score !== left.score) {
@@ -314,10 +337,11 @@ function selectDistractors(params: {
 
   const deduped: string[] = [];
   for (const candidate of ranked) {
-    if (seen.has(candidate.choiceValue)) {
+    const key = normalizeChoiceValue(candidate.choiceValue);
+    if (seen.has(key)) {
       continue;
     }
-    seen.add(candidate.choiceValue);
+    seen.add(key);
     deduped.push(candidate.choiceValue);
   }
 
@@ -328,6 +352,7 @@ function buildArabicToMalayMcq(
   word: WordWithOccurrences,
   pool: FahamMcqPoolWord[],
   optionCount: number,
+  attemptSeed: string | number,
 ): FahamBuiltMcq | null {
   const correctMeaning = normalizeMalayMeaning(word.translation_bm);
   const correctArabic = normalizeArabicText(word.text_uthmani);
@@ -342,15 +367,22 @@ function buildArabicToMalayMcq(
     pool,
     scoreCandidate: scoreMalayDistractor,
     toChoiceValue: (candidate) => normalizeMalayMeaning(candidate.translationBm),
+    correctChoiceValue: correctMeaning,
   });
   if (distractors.length < distractorCount) {
     return null;
   }
 
   const selectedDistractors = distractors.slice(0, distractorCount);
+  // B3 fix: fold the per-attempt seed into the ordering key so the same
+  // word doesn't render the same option positions/correctIndex on every
+  // repeat forever. `correctIndex` below is derived from THIS SAME shuffled
+  // array, so option order and correctIndex can never desync within one
+  // build (SSR and client both call this pure function with the same
+  // (word.id, attemptSeed) pair and get an identical result).
   const optionValues = deterministicOrder(
     [correctMeaning, ...selectedDistractors],
-    `bm-options:${word.id}`,
+    `bm-options:${word.id}:${attemptSeed}`,
     (item) => item,
   );
   const correctIndex = optionValues.findIndex((item) => item === correctMeaning);
@@ -385,6 +417,7 @@ function buildMalayToArabicMcq(
   word: WordWithOccurrences,
   pool: FahamMcqPoolWord[],
   optionCount: number,
+  attemptSeed: string | number,
 ): FahamBuiltMcq | null {
   const correctMeaning = normalizeMalayMeaning(word.translation_bm);
   const correctArabic = normalizeArabicText(word.text_uthmani);
@@ -399,15 +432,17 @@ function buildMalayToArabicMcq(
     pool,
     scoreCandidate: scoreArabicDistractor,
     toChoiceValue: (candidate) => normalizeArabicText(candidate.textUthmani),
+    correctChoiceValue: correctArabic,
   });
   if (distractors.length < distractorCount) {
     return null;
   }
 
   const selectedDistractors = distractors.slice(0, distractorCount);
+  // B3 fix: see matching comment in buildArabicToMalayMcq — same reasoning.
   const optionValues = deterministicOrder(
     [correctArabic, ...selectedDistractors],
-    `ar-options:${word.id}`,
+    `ar-options:${word.id}:${attemptSeed}`,
     (item) => item,
   );
   const correctIndex = optionValues.findIndex((item) => item === correctArabic);
@@ -438,12 +473,20 @@ function buildMalayToArabicMcq(
   };
 }
 
-function resolveDirectionOrder(word: Word, mode: FahamMcqDirectionMode): FahamMcqDirection[] {
+function resolveDirectionOrder(
+  word: Word,
+  mode: FahamMcqDirectionMode,
+  attemptSeed: string | number,
+): FahamMcqDirection[] {
   if (mode === "arab_to_bm" || mode === "bm_to_arab") {
     return [mode];
   }
 
-  const mixedSeed = hashSeed(`${word.id}:${word.text_simple}`);
+  // B8 fix: fold the per-attempt seed into the mixed-direction pick so a
+  // word alternates direction across repeats instead of being pinned to
+  // whichever direction `word.id:text_simple` hashed to on the first ever
+  // render (which contradicted the "mixed" UI copy promising alternation).
+  const mixedSeed = hashSeed(`${word.id}:${word.text_simple}:${attemptSeed}`);
   return mixedSeed % 2 === 0
     ? ["arab_to_bm", "bm_to_arab"]
     : ["bm_to_arab", "arab_to_bm"];
@@ -454,13 +497,20 @@ export function buildFahamMcqForWord(
   pool: FahamMcqPoolWord[],
   directionMode: FahamMcqDirectionMode,
   optionCount = 4,
+  // B3/B8 fix: per-attempt seed (e.g. a review-session done-count, FSRS
+  // `reps`, or a card-index/timestamp bucket) that reshuffles option order
+  // and mixed-direction choice on every repeat. Optional + defaulted for
+  // back-compat: existing callers that don't pass this yet keep building
+  // (still a valid MCQ), they just won't get per-attempt variation until
+  // they're wired to pass a real per-attempt value — see completion report.
+  attemptSeed: string | number = 0,
 ): FahamBuiltMcq | null {
-  const directions = resolveDirectionOrder(word, directionMode);
+  const directions = resolveDirectionOrder(word, directionMode, attemptSeed);
 
   for (const direction of directions) {
     const built = direction === "arab_to_bm"
-      ? buildArabicToMalayMcq(word, pool, optionCount)
-      : buildMalayToArabicMcq(word, pool, optionCount);
+      ? buildArabicToMalayMcq(word, pool, optionCount, attemptSeed)
+      : buildMalayToArabicMcq(word, pool, optionCount, attemptSeed);
     if (built) {
       return built;
     }

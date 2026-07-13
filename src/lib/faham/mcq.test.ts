@@ -101,3 +101,182 @@ test("mixed mode deterministically chooses one valid direction", () => {
   assert.deepEqual(first, second);
   assert.ok(first?.direction === "arab_to_bm" || first?.direction === "bm_to_arab");
 });
+
+// --- RF-3: B2 / B3 / B8 integrity fixes -------------------------------
+
+test("B2: a distractor sharing the correct meaning (different id, case/whitespace variant) is never offered", () => {
+  // word: translation_bm "kitab", frequency 120, pos "noun"
+  const word = buildWord();
+  const pool = [
+    // Trap: different id, but the SAME display meaning as the correct answer
+    // (case + whitespace variant), engineered (same pos/length/frequency as
+    // the correct word) to score far ABOVE every filler below — so if the
+    // implementation only excludes by id, this candidate is guaranteed to
+    // win a distractor slot instead of merely "maybe" winning one.
+    buildPoolWord({ id: 7, translationBm: " Kitab ", frequency: 120, pos: "noun" }),
+    // Fillers: deliberately low-scoring (mismatched pos + far length/frequency)
+    // so they never outrank the trap — exactly 3 of them so, once the trap is
+    // correctly excluded, they alone satisfy distractorCount (3) and the MCQ
+    // still builds successfully post-fix.
+    buildPoolWord({
+      id: 2,
+      translationBm: "hari pembalasan yang amat dahsat sungguh",
+      pos: "particle",
+      frequency: 500,
+    }),
+    buildPoolWord({
+      id: 3,
+      translationBm: "rahmat kurniaan yang melimpah ruah semua",
+      pos: "particle",
+      frequency: 510,
+    }),
+    buildPoolWord({
+      id: 6,
+      translationBm: "hamba yang taat kepada penciptanya setiap",
+      pos: "particle",
+      frequency: 520,
+    }),
+  ];
+
+  const mcq = buildFahamMcqForWord(word, pool, "arab_to_bm");
+
+  assert.ok(mcq);
+  const normalizedValues = mcq!.options.map((option) => option.value.trim().toLowerCase());
+  const correctOccurrences = normalizedValues.filter((value) => value === "kitab");
+  assert.equal(correctOccurrences.length, 1, "correct value must appear exactly once among options");
+  assert.equal(mcq!.options[mcq!.correctIndex].value, "kitab");
+});
+
+test("B2: a distractor sharing the correct Arabic text (different id, whitespace variant) is never offered", () => {
+  const word = buildWord({ root: "كتب", lemma: "كتاب", translation_bm: "petunjuk", pos: "noun" });
+  const correctArabic = word.text_uthmani;
+  const pool = [
+    // Trap: different id, same displayed Arabic text as the correct answer
+    // (whitespace variant), engineered (different root/lemma so it isn't
+    // root/lemma-penalized, same pos/length/frequency as correct) to score
+    // far ABOVE every filler below — guaranteed to win a slot if the
+    // implementation only excludes by id.
+    buildPoolWord({
+      id: 9,
+      textUthmani: `  ${correctArabic}  `,
+      translationBm: "ilmu",
+      root: "دين",
+      lemma: "دين",
+      frequency: 120,
+      pos: "noun",
+    }),
+    // Fillers: deliberately low-scoring (mismatched pos + far length/frequency).
+    buildPoolWord({
+      id: 2,
+      textUthmani: "الرَّحْمَٰنِ الرَّحِيمِ الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
+      translationBm: "cahaya",
+      root: "رحم",
+      lemma: "رحمن",
+      pos: "particle",
+      frequency: 900,
+    }),
+    buildPoolWord({
+      id: 3,
+      textUthmani: "مَالِكِ يَوْمِ الدِّينِ إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
+      translationBm: "rahmat",
+      root: "ملك",
+      lemma: "مالك",
+      pos: "particle",
+      frequency: 910,
+    }),
+    buildPoolWord({
+      id: 4,
+      textUthmani: "اهدِنَا الصِّرَاطَ المُستَقِيمَ صِرَاطَ الَّذِينَ أَنعَمتَ عَلَيهِم",
+      translationBm: "cara",
+      root: "هدي",
+      lemma: "هدى",
+      pos: "particle",
+      frequency: 920,
+    }),
+  ];
+
+  const mcq = buildFahamMcqForWord(word, pool, "bm_to_arab");
+
+  assert.ok(mcq);
+  const values = mcq!.options.map((option) => option.value.trim());
+  const correctOccurrences = values.filter((value) => value === correctArabic);
+  assert.equal(correctOccurrences.length, 1, "correct Arabic value must appear exactly once among options");
+  assert.equal(mcq!.options[mcq!.correctIndex].value, correctArabic);
+});
+
+test("B3: a different attemptSeed reshuffles option order for the same word", () => {
+  const word = buildWord({ id: 55, translation_bm: "kitab" });
+  const pool = [
+    buildPoolWord({ id: 2, translationBm: "petunjuk", frequency: 130 }),
+    buildPoolWord({ id: 3, translationBm: "rahmat", frequency: 90 }),
+    buildPoolWord({ id: 6, translationBm: "hamba", frequency: 140 }),
+    buildPoolWord({ id: 8, translationBm: "cahaya", frequency: 145 }),
+    buildPoolWord({ id: 9, translationBm: "ilmu", frequency: 128 }),
+  ];
+
+  const orders = new Set<string>();
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const mcq = buildFahamMcqForWord(word, pool, "arab_to_bm", 4, attempt);
+    assert.ok(mcq);
+    orders.add(mcq!.options.map((option) => option.value).join("|"));
+  }
+
+  assert.ok(orders.size > 1, "expected option order to vary across attemptSeeds, but it never changed");
+});
+
+test("B3: correctIndex always points at the correct value regardless of attemptSeed", () => {
+  const word = buildWord({ id: 55, translation_bm: "kitab" });
+  const pool = [
+    buildPoolWord({ id: 2, translationBm: "petunjuk", frequency: 130 }),
+    buildPoolWord({ id: 3, translationBm: "rahmat", frequency: 90 }),
+    buildPoolWord({ id: 6, translationBm: "hamba", frequency: 140 }),
+    buildPoolWord({ id: 8, translationBm: "cahaya", frequency: 145 }),
+    buildPoolWord({ id: 9, translationBm: "ilmu", frequency: 128 }),
+  ];
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const mcq = buildFahamMcqForWord(word, pool, "arab_to_bm", 4, attempt);
+    assert.ok(mcq, `expected a built mcq for attempt ${attempt}`);
+    assert.equal(mcq!.options[mcq!.correctIndex].value, "kitab");
+  }
+});
+
+test("B3: same word + same attemptSeed stays stable within one render", () => {
+  const word = buildWord({ id: 55, translation_bm: "kitab" });
+  const pool = [
+    buildPoolWord({ id: 2, translationBm: "petunjuk", frequency: 130 }),
+    buildPoolWord({ id: 3, translationBm: "rahmat", frequency: 90 }),
+    buildPoolWord({ id: 6, translationBm: "hamba", frequency: 140 }),
+    buildPoolWord({ id: 8, translationBm: "cahaya", frequency: 145 }),
+    buildPoolWord({ id: 9, translationBm: "ilmu", frequency: 128 }),
+  ];
+
+  const first = buildFahamMcqForWord(word, pool, "arab_to_bm", 4, "attempt-7");
+  const second = buildFahamMcqForWord(word, pool, "arab_to_bm", 4, "attempt-7");
+
+  assert.ok(first);
+  assert.deepEqual(first, second);
+});
+
+test("B8: mixed direction alternates across attemptSeed instead of pinning forever", () => {
+  const word = buildWord({ id: 22, translation_bm: "jalan yang lurus" });
+  // Distinct textUthmani per pool word (not the shared buildPoolWord default)
+  // so BOTH directions (arab_to_bm and bm_to_arab) can actually build — a
+  // pool with colliding Arabic text would make one direction structurally
+  // unbuildable regardless of seed, masking the alternation this test checks.
+  const pool = [
+    buildPoolWord({ id: 2, textUthmani: "النُّور", translationBm: "cahaya" }),
+    buildPoolWord({ id: 3, textUthmani: "الرَّحْمَة", translationBm: "rahmat" }),
+    buildPoolWord({ id: 4, textUthmani: "الْعِلْم", translationBm: "ilmu" }),
+    buildPoolWord({ id: 5, textUthmani: "الْحَقّ", translationBm: "kebenaran" }),
+  ];
+
+  const directions = new Set<string>();
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const mcq = buildFahamMcqForWord(word, pool, "mixed", 4, attempt);
+    assert.ok(mcq, `expected a built mcq for attempt ${attempt}`);
+    directions.add(mcq!.direction);
+  }
+
+  assert.equal(directions.size, 2, "expected both directions to appear across repeated attempts");
+});
