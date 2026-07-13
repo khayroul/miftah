@@ -161,10 +161,12 @@ export async function storeHomeDashboardSnapshot(
   snapshot: HomeDashboardSnapshot,
   computedAt: string,
 ): Promise<void> {
-  await supabaseServer
+  const { error } = await supabaseServer
     .from("profiles")
     .update({ dashboard_snapshot: snapshot, snapshot_computed_at: computedAt })
     .eq("id", userId);
+
+  if (error) throw error;
 }
 
 export async function migrateLegacyHifzDailyGoal(

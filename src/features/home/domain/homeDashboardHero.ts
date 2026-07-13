@@ -201,7 +201,7 @@ export function buildHomeHero({
           ),
         },
         {
-          label: "Liputan",
+          label: "Ditemui",
           value: `${faham.encounteredWordCount} / ${faham.focusWordLimit}`,
         },
       ],

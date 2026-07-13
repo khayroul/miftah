@@ -106,7 +106,8 @@ function sanitizeFahamSnapshot(raw: unknown): HomeFahamSnapshot | null {
     raw.blockedReason === null || raw.blockedReason === "due_backlog"
       ? raw.blockedReason
       : undefined;
-  const coveragePct = asNumber(raw.coveragePct);
+  const exposureProgressPct =
+    asNumber(raw.exposureProgressPct) ?? asNumber(raw.coveragePct);
   const dueCount = asNumber(raw.dueCount);
   const encounteredWordCount = asNumber(raw.encounteredWordCount);
   const eligibleNewCount = asNumber(raw.eligibleNewCount);
@@ -119,7 +120,7 @@ function sanitizeFahamSnapshot(raw: unknown): HomeFahamSnapshot | null {
 
   if (
     blockedReason === undefined ||
-    coveragePct === null ||
+    exposureProgressPct === null ||
     dueCount === null ||
     encounteredWordCount === null ||
     eligibleNewCount === null ||
@@ -135,7 +136,7 @@ function sanitizeFahamSnapshot(raw: unknown): HomeFahamSnapshot | null {
 
   return {
     blockedReason,
-    coveragePct,
+    exposureProgressPct,
     dueCount,
     encounteredWordCount,
     eligibleNewCount,

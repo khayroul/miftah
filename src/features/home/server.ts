@@ -11,6 +11,19 @@ import type { HomeDashboardSnapshot } from "./domain/homeDashboard";
 
 const SNAPSHOT_STALE_MS = 5 * 60 * 1000;
 
+function hasLegacyFahamCoveragePct(raw: unknown): boolean {
+  if (typeof raw !== "object" || raw === null || !("faham" in raw)) {
+    return false;
+  }
+
+  const faham = raw.faham;
+  return (
+    typeof faham === "object" &&
+    faham !== null &&
+    Object.prototype.hasOwnProperty.call(faham, "coveragePct")
+  );
+}
+
 async function loadHomeDashboardSnapshotUncached(
   userId: string | null,
 ): Promise<HomeDashboardSnapshot> {
@@ -37,7 +50,23 @@ export async function readSnapshotFromDb(
     }
 
     const snapshot = sanitizeHomeDashboardSnapshot(storedSnapshot.dashboardSnapshot);
-    return hasHomeDashboardData(snapshot) ? snapshot : null;
+    if (!hasHomeDashboardData(snapshot)) {
+      return null;
+    }
+
+    if (hasLegacyFahamCoveragePct(storedSnapshot.dashboardSnapshot)) {
+      try {
+        await storeHomeDashboardSnapshot(
+          userId,
+          snapshot,
+          storedSnapshot.snapshotComputedAt,
+        );
+      } catch (error) {
+        console.error("[homeDashboardDb] legacy snapshot migration failed:", error);
+      }
+    }
+
+    return snapshot;
   } catch {
     return null;
   }

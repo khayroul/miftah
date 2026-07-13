@@ -225,7 +225,7 @@ export function HomeDashboardClient({
           ? "Tahap maksimum dibuka."
           : `L${fahamLevel.nextLevel} akan buka cap ke ${nextFahamCapLabel} perkataan.`
         : undefined,
-      percent: snapshot.faham?.coveragePct ?? 0,
+      percent: snapshot.faham?.exposureProgressPct ?? 0,
       title: "Faham",
       tone: "amber",
       href: "/faham",
