@@ -41,6 +41,23 @@
 - **Add a data-quality gate before coverage goes headline:** verify the frequency source (96,219 vs canonical ~77,430), confirm the `is_mastered` bar is meaningful (RF-4 fixed its gate), so the flagship number is defensible.
 - Performance/cost is already elevated to a first-class pillar (the ledger) — keep it.
 
+## Curriculum decision (operator asked "what's your recommendation + how") — RECOMMENDED
+**Guided default "Understanding Path" + optional "fastest route" toggle.** NOT a gentle nudge (too weak to make understanding central), NOT naive frequency-first (front-loads dry particles → feels like a grammar drill). The default steers hard toward high-leverage words but blends for meaning + context.
+
+### The mechanism = a "next best words" recommender (the DRIVE layer)
+`getNextBestWords(userId, context?)` scores each un-mastered word and returns the highest-value learnable set:
+- **Leverage** = word frequency (coverage gain if mastered) — the core signal.
+- **Learnability** = concrete/meaningful (noun/verb) up-weighted; pure-function particles down-weighted EARLY so the user always feels they're learning "real" Quran words.
+- **Context** = boost words in the surah/page the user is currently reading or memorising → ties Baca/Hifz → understanding.
+- **Readiness** = FSRS spacing; don't overload.
+Next set = weighted blend. Coverage % is the visible outcome; the recommender is the hidden engine maximising it.
+
+### The particle problem + its fix
+The top ~20-30 words are mostly particles (و/ال/في/من/على) — huge coverage, low felt-meaning. FIX: teach the top CONTENT words first (قال، الله، رب، يوم، ناس) for immediate "I understand real words" satisfaction, AND package the top ~50 particles as a small framed **"grammar keys"** unit ("the connective tissue of the Quran") — contextualised, not drilled blind. Gets the coverage win without the dry-drill feel.
+
+### How it's framed everywhere (the EMPHASIS layer)
+Every session goal = "+X% of the Quran" (not "10 cards"). Home hero = coverage %. Default home CTA = "Continue your path" → recommender's next set. Context-based Faham stays available (reading surah X → learn X's words). "Fastest route" toggle drops the learnability/context weighting → pure leverage for power users. Start the blend conservative (meaning-first), measure, tune.
+
 ## Where each piece lands
 - **Now:** query validated (this doc), index live.
 - **Data-layer / faham wave (Wave 5):** productionise the coverage + tier query in the repository (cached, cheap), expose via a stats module.
