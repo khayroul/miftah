@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-auth-server";
 
+// This route accepts unauthenticated feedback, so cap the attacker-controlled
+// `metadata` blob to keep it from being used to bloat the table.
+const MAX_METADATA_BYTES = 8 * 1024; // 8KB serialized
+
 export async function POST(request: Request) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -8,6 +12,24 @@ export async function POST(request: Request) {
 
     if (!body) {
       return NextResponse.json({ error: "Body is required" }, { status: 400 });
+    }
+
+    if (metadata !== undefined && metadata !== null) {
+      let serializedMetadata: string;
+      try {
+        serializedMetadata = JSON.stringify(metadata);
+      } catch {
+        return NextResponse.json(
+          { error: "Invalid metadata" },
+          { status: 400 },
+        );
+      }
+      if (serializedMetadata.length > MAX_METADATA_BYTES) {
+        return NextResponse.json(
+          { error: "Metadata too large" },
+          { status: 413 },
+        );
+      }
     }
 
     // Get current user if any

@@ -14,6 +14,25 @@ export function sanitizeNextPath(
     return fallback;
   }
 
+  // Reject backslashes: browsers normalize "\" to "/", so "/\evil.com"
+  // resolves to "//evil.com" → https://evil.com/ (open redirect).
+  if (value.includes("\\")) {
+    return fallback;
+  }
+
+  // Belt-and-braces: resolve against a fixed origin and confirm the result
+  // stays same-origin. Anything that escapes localhost (protocol-relative,
+  // absolute URL, or host injection that slipped past the checks above) is
+  // rejected rather than returned to the redirect target.
+  try {
+    const resolved = new URL(value, "http://localhost");
+    if (resolved.origin !== "http://localhost") {
+      return fallback;
+    }
+  } catch {
+    return fallback;
+  }
+
   return value;
 }
 
