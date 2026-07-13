@@ -55,7 +55,7 @@ export function pickTebukPrompts(
   const selected = shuffled.slice(0, count);
 
   return selected.map((group) => {
-    const maxStart = group.words.length - PROMPT_WORD_COUNT;
+    const maxStart = group.words.length - PROMPT_WORD_COUNT - 1;
     const startIdx = Math.floor(Math.random() * (maxStart + 1));
 
     const promptWords = group.words.slice(startIdx, startIdx + PROMPT_WORD_COUNT);
