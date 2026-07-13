@@ -4,7 +4,7 @@ import {
   type FahamLevelState,
 } from "@/lib/faham/levels";
 import { supabaseServer } from "@/data/supabase/server";
-import { getTopFahamWordIds } from "./faham";
+import { getTopFahamWordIds } from "./faham-vocabulary";
 
 type SupabaseServerClient = typeof supabaseServer;
 
