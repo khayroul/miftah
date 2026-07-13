@@ -50,14 +50,21 @@ const BOT_COMMANDS = [
   { command: "ask", description: "Tanya tentang Al-Quran" },
 ];
 
-// Auth middleware: allow all if no ALLOWED_CHAT_IDS configured (dev mode)
+// Auth middleware: FAIL CLOSED. An empty allowlist refuses ALL traffic.
+// (Previously an unset TELEGRAM_ALLOWED_CHAT_IDS let everyone through in
+// "dev mode" — a fail-OPEN hole.) The bot is also retired for v1; see
+// src/bot/RETIRED.md.
 bot.use(async (ctx, next) => {
-  if (ALLOWED_CHAT_IDS.size > 0) {
-    const chatId = ctx.chat?.id?.toString();
-    if (!chatId || !ALLOWED_CHAT_IDS.has(chatId)) {
-      console.log(`[auth] Blocked chat_id: ${chatId}`);
-      return;
-    }
+  if (ALLOWED_CHAT_IDS.size === 0) {
+    console.log(
+      "[auth] Blocked: TELEGRAM_ALLOWED_CHAT_IDS is empty (fail-closed)",
+    );
+    return;
+  }
+  const chatId = ctx.chat?.id?.toString();
+  if (!chatId || !ALLOWED_CHAT_IDS.has(chatId)) {
+    console.log(`[auth] Blocked chat_id: ${chatId}`);
+    return;
   }
   await next();
 });
@@ -171,7 +178,7 @@ async function runBotWithRetry(): Promise<void> {
         onStart: (info) => {
           console.log(`[miftah-bot] Running as @${info.username}`);
           console.log(
-            `[miftah-bot] Auth: ${ALLOWED_CHAT_IDS.size > 0 ? `${ALLOWED_CHAT_IDS.size} allowed chat(s)` : "open (dev mode)"}`,
+            `[miftah-bot] Auth: ${ALLOWED_CHAT_IDS.size > 0 ? `${ALLOWED_CHAT_IDS.size} allowed chat(s)` : "NONE — refusing all traffic (fail-closed)"}`,
           );
         },
       });

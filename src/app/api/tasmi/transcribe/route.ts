@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
+import { getOptionalAuthUser } from "@/lib/auth-server";
 
 export const runtime = "nodejs";
+
+// Reject uploads larger than this before proxying to the transcription server.
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5MB
 
 function getTasmiServerUrl(): string {
   return (
@@ -27,6 +31,15 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
+  // Auth gate — mirror the sibling tasmi/session route (401 when logged out).
+  const user = await getOptionalAuthUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "Log masuk diperlukan untuk transkripsi tasmi'" },
+      { status: 401 },
+    );
+  }
+
   const serverUrl = getTasmiServerUrl();
   const apiKey = getTasmiApiKey();
 
@@ -34,6 +47,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json(
       { error: "Tasmi server is not configured" },
       { status: 500 },
+    );
+  }
+
+  // Reject oversized bodies before parsing/proxying (cheap Content-Length check).
+  const contentLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_UPLOAD_BYTES) {
+    return NextResponse.json(
+      { error: "Audio terlalu besar" },
+      { status: 413 },
     );
   }
 
@@ -47,6 +69,15 @@ export async function POST(request: Request): Promise<NextResponse> {
   const file = formData.get("file");
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Audio file is required" }, { status: 400 });
+  }
+
+  // Belt-and-braces: enforce the cap on the actual file size too (Content-Length
+  // may be absent or understated).
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return NextResponse.json(
+      { error: "Audio terlalu besar" },
+      { status: 413 },
+    );
   }
 
   const upstreamForm = new FormData();

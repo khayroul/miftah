@@ -16,6 +16,17 @@ test("sanitizeNextPath keeps safe in-app paths", () => {
   assert.equal(sanitizeNextPath(undefined, "/read"), "/read");
 });
 
+test("sanitizeNextPath rejects backslash open-redirect payloads (RF-1 F4)", () => {
+  // Browsers normalize "\" to "/", so "/\evil.com" resolves to "//evil.com"
+  // → https://evil.com/. These must all fall back, never pass through.
+  assert.equal(sanitizeNextPath("/\\evil.com", "/"), "/");
+  assert.equal(sanitizeNextPath("//evil.com", "/"), "/");
+  assert.equal(sanitizeNextPath("/\\/evil.com", "/"), "/");
+  assert.equal(sanitizeNextPath("/\\\\evil.com", "/"), "/");
+  // A legitimate in-app path is still accepted verbatim.
+  assert.equal(sanitizeNextPath("/read/1"), "/read/1");
+});
+
 test("auth path builders encode next path", () => {
   assert.equal(
     buildSignInPath("/read/1?focus=ayah"),
