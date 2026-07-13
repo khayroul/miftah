@@ -1,4 +1,4 @@
-import { FahamExposureTracker } from "@/components/FahamExposureTracker";
+import { FahamExposureTracker } from "@/features/faham";
 import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 import { ThemeActionPanel } from "./ThemeActionPanel";
 import { ThemeChunkAyahList } from "./ThemeChunkAyahList";
