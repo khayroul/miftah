@@ -2,8 +2,23 @@ import { supabaseServer } from "@/data/supabase/server";
 
 export const UNDERSTANDING_COVERAGE_TIERS = [10, 100, 300, 500, 1000, 2000, 5000] as const;
 
+/**
+ * This metric is not approved as a public Quran-understanding claim yet.
+ * The denominator and mastery criterion require the data-owner sign-offs in
+ * docs/coverage-data-quality-verdict-2026-07-13.md.
+ */
+export const UNDERSTANDING_COVERAGE_EVIDENCE = Object.freeze({
+  claimStatus: "internal_only_unverified",
+  denominatorStatus: "unreconciled_word_frequency",
+  displayLabel: "Frequency-weighted recognised vocabulary",
+  masteryStatus: "implementation_recall_flag",
+} as const);
+
+export type UnderstandingCoverageEvidence = typeof UNDERSTANDING_COVERAGE_EVIDENCE;
+
 export interface UnderstandingCoverage {
   denominator: number;
+  evidence: UnderstandingCoverageEvidence;
   masteredFrequency: number;
   masteredWordCount: number;
   percentage: number;
@@ -11,6 +26,7 @@ export interface UnderstandingCoverage {
 
 export interface UnderstandingCoverageTier {
   coveragePercentage: number;
+  evidence: UnderstandingCoverageEvidence;
   masteredFrequency: number;
   masteredWordCount: number;
   tierFrequency: number;
@@ -120,6 +136,7 @@ export function createUnderstandingCoverageService(
 
       return {
         denominator: snapshot.denominator,
+        evidence: UNDERSTANDING_COVERAGE_EVIDENCE,
         masteredFrequency,
         masteredWordCount: masteredIds.size,
         percentage: percentage(masteredFrequency, snapshot.denominator),
@@ -142,6 +159,7 @@ export function createUnderstandingCoverageService(
 
         return {
           coveragePercentage: tier.coveragePercentage,
+          evidence: UNDERSTANDING_COVERAGE_EVIDENCE,
           masteredFrequency,
           masteredWordCount,
           tierFrequency: tier.tierFrequency,

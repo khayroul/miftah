@@ -15,3 +15,19 @@
 export { FahamExposureTracker } from "./components/FahamExposureTracker";
 export { FahamWorkspace } from "./components/FahamWorkspace";
 export type { FahamLevelProgress } from "./domain/levels";
+export {
+  calculateCoverageDeltaPercentage,
+  getNextBestWords,
+  UNDERSTANDING_PATH_MODES,
+  UNDERSTANDING_RECOMMENDATION_EVIDENCE,
+} from "./domain/understandingRecommender";
+export type {
+  GetNextBestWordsInput,
+  RecommendedUnderstandingWord,
+  UnderstandingLexicalKind,
+  UnderstandingPathMode,
+  UnderstandingRecommendationEvidence,
+  UnderstandingScoreBreakdown,
+  UnderstandingScoreFactor,
+  UnderstandingWordCandidate,
+} from "./domain/understandingRecommender";

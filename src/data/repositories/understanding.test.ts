@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  UNDERSTANDING_COVERAGE_EVIDENCE,
   UNDERSTANDING_COVERAGE_TIERS,
   createUnderstandingCoverageService,
 } from "./understanding";
@@ -16,6 +17,7 @@ test("returns zero coverage when a user has not mastered any words", async () =>
 
   assert.deepEqual(await service.getUnderstandingCoverage("user-1"), {
     denominator: 15,
+    evidence: UNDERSTANDING_COVERAGE_EVIDENCE,
     masteredFrequency: 0,
     masteredWordCount: 0,
     percentage: 0,
@@ -34,6 +36,7 @@ test("weights coverage by a mastered word's Quran frequency", async () => {
 
   assert.deepEqual(await service.getUnderstandingCoverage("user-1"), {
     denominator: 100,
+    evidence: UNDERSTANDING_COVERAGE_EVIDENCE,
     masteredFrequency: 20,
     masteredWordCount: 2,
     percentage: 20,
@@ -57,6 +60,7 @@ test("returns all requested tier boundaries, including tiers larger than the voc
   );
   assert.deepEqual(tiers[0], {
     coveragePercentage: (10 / 12) * 100,
+    evidence: UNDERSTANDING_COVERAGE_EVIDENCE,
     masteredFrequency: 1,
     masteredWordCount: 1,
     tierFrequency: 10,
@@ -65,6 +69,7 @@ test("returns all requested tier boundaries, including tiers larger than the voc
   });
   assert.deepEqual(tiers.at(-1), {
     coveragePercentage: 100,
+    evidence: UNDERSTANDING_COVERAGE_EVIDENCE,
     masteredFrequency: 2,
     masteredWordCount: 2,
     tierFrequency: 12,
@@ -84,6 +89,7 @@ test("deduplicates mastered ids and ignores ids outside the canonical word list"
 
   assert.deepEqual(await service.getUnderstandingCoverage("user-1"), {
     denominator: 100,
+    evidence: UNDERSTANDING_COVERAGE_EVIDENCE,
     masteredFrequency: 60,
     masteredWordCount: 1,
     percentage: 60,
