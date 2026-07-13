@@ -1,3 +1,5 @@
+import { MUSHAF_CDN_ASSET_VERSION } from "./mushafAssetVersion";
+
 export type PageVariant = "page" | "thumb" | "mobile";
 
 export type MushafPageImageSource =
@@ -53,12 +55,8 @@ function getRemoteBaseUrl(
   return buildSupabasePublicBaseUrl(bucketEnvName, fallbackBucket);
 }
 
-// Bump only when rendered assets are re-uploaded. It is intentionally kept
-// identical to the pre-split facade so browser and edge cache keys do not move.
-const CDN_ASSET_VERSION = "4";
-
 export function joinAssetUrl(baseUrl: string, filename: string): string {
-  return `${trimTrailingSlashes(baseUrl)}/${filename}?v=${CDN_ASSET_VERSION}`;
+  return `${trimTrailingSlashes(baseUrl)}/${filename}?v=${MUSHAF_CDN_ASSET_VERSION}`;
 }
 
 function formatPageNumber(pageNumber: number): string {

@@ -2,6 +2,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
+import { MUSHAF_CDN_ASSET_VERSION } from "../src/mushaf/lib/mushafAssetVersion";
 
 const SW_PATH = path.join(process.cwd(), "public", "sw.js");
 
@@ -13,23 +15,23 @@ function getGitSha(): string {
   }
 }
 
-function getCdnVersion(): string {
-  const assetsPath = path.join(process.cwd(), "src", "mushaf", "lib", "mushafAssets.ts");
-  const content = readFileSync(assetsPath, "utf-8");
-  const match = content.match(/CDN_ASSET_VERSION\s*=\s*"(\d+)"/);
-  return match ? match[1] : "1";
+export function injectBuildMetadata(sw: string, buildId: string): string {
+  return sw
+    .replace('"__BUILD_ID__"', `"${buildId}"`)
+    .replace('"__CDN_ASSET_VERSION__"', `"${MUSHAF_CDN_ASSET_VERSION}"`);
 }
 
 function main(): void {
   const buildId = getGitSha();
-  const cdnVersion = getCdnVersion();
-
-  let sw = readFileSync(SW_PATH, "utf-8");
-  sw = sw.replace('"__BUILD_ID__"', `"${buildId}"`);
-  sw = sw.replace('"__CDN_ASSET_VERSION__"', `"${cdnVersion}"`);
+  const sw = injectBuildMetadata(readFileSync(SW_PATH, "utf-8"), buildId);
 
   writeFileSync(SW_PATH, sw, "utf-8");
-  console.log(`Injected BUILD_ID=${buildId}, CDN_ASSET_VERSION=${cdnVersion} into sw.js`);
+  console.log(
+    `Injected BUILD_ID=${buildId}, CDN_ASSET_VERSION=${MUSHAF_CDN_ASSET_VERSION} into sw.js`,
+  );
 }
 
-main();
+const entryPath = process.argv[1];
+if (entryPath && import.meta.url === pathToFileURL(path.resolve(entryPath)).href) {
+  main();
+}
