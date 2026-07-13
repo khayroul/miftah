@@ -15,12 +15,10 @@ export interface ValidatedTasmiSessionInput {
 export async function saveTasmiSession(
   userId: string,
   input: ValidatedTasmiSessionInput,
-): Promise<void> {
+): Promise<boolean> {
   const { error } = await supabaseServer
     .from("tasmi_sessions")
-    .insert({ user_id: userId, ...input });
+    .insert({ ...input, user_id: userId });
 
-  if (error) {
-    throw error;
-  }
+  return !error;
 }

@@ -41,9 +41,8 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const { data } = parsed;
 
-  try {
-    await saveTasmiSession(user.id, data);
-  } catch {
+  const saved = await saveTasmiSession(user.id, data);
+  if (!saved) {
     return NextResponse.json(
       { error: "Gagal simpan sesi tasmi'" },
       { status: 500 },
