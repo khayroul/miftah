@@ -1,5 +1,13 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { NextResponse } from "next/server";
+
+export type RateLimitDetails = {
+  limit: number;
+  remaining: number;
+  reset: number;
+  success: boolean;
+};
 
 // Only enable if Upstash credentials are provided
 const hasUpstash = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
@@ -22,4 +30,20 @@ export async function checkRateLimit(identifier: string) {
     return { success: true, limit: 0, remaining: 0, reset: 0 };
   }
   return await ratelimit.limit(identifier);
+}
+
+export function buildRateLimitedResponse(
+  { limit, remaining, reset }: RateLimitDetails,
+): NextResponse {
+  return new NextResponse(
+    "Panggilan API terlalu kerap. Sila tunggu sebentar.",
+    {
+      status: 429,
+      headers: {
+        "X-RateLimit-Limit": limit.toString(),
+        "X-RateLimit-Remaining": remaining.toString(),
+        "X-RateLimit-Reset": reset.toString(),
+      },
+    },
+  );
 }

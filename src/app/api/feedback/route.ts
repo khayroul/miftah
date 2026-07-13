@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getOptionalAuthUser } from "@/lib/auth-server";
 import { createSupabaseServerClient } from "@/lib/supabase-auth-server";
 
 // This route accepts unauthenticated feedback, so cap the attacker-controlled
@@ -7,7 +8,6 @@ const MAX_METADATA_BYTES = 8 * 1024; // 8KB serialized
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createSupabaseServerClient();
     const { body, metadata } = await request.json();
 
     if (!body) {
@@ -32,8 +32,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // Get current user if any
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getOptionalAuthUser();
+    const supabase = await createSupabaseServerClient();
 
     const { error } = await supabase.from("feedback").insert({
       user_id: user?.id ?? null,

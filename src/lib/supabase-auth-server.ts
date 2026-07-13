@@ -9,6 +9,23 @@ import { NextResponse, type NextRequest } from "next/server";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+type SessionCookie = {
+  name: string;
+  options: CookieOptions;
+  value: string;
+};
+
+/**
+ * Preserve every batch emitted by Supabase. A refresh can emit more than one
+ * batch, and replacing this collection would drop cookies from an earlier one.
+ */
+export function appendSessionCookies(
+  existingCookies: readonly SessionCookie[],
+  newCookies: readonly SessionCookie[],
+): SessionCookie[] {
+  return [...existingCookies, ...newCookies];
+}
+
 export async function createSupabaseServerClient(): Promise<SupabaseClient> {
   const cookieStore = await cookies();
 
@@ -34,32 +51,39 @@ export async function createSupabaseServerClient(): Promise<SupabaseClient> {
 export async function updateSupabaseSession(
   request: NextRequest,
 ): Promise<NextResponse> {
-  let response = NextResponse.next({
-    request,
-  });
+  let cookiesToSet: SessionCookie[] = [];
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
-        for (const { name, value } of cookiesToSet) {
+      setAll(newCookies) {
+        for (const { name, value } of newCookies) {
           request.cookies.set(name, value);
         }
 
-        response = NextResponse.next({
-          request,
-        });
-
-        for (const { name, options, value } of cookiesToSet) {
-          response.cookies.set(name, value, options as CookieOptions);
-        }
+        cookiesToSet = appendSessionCookies(
+          cookiesToSet,
+          newCookies.map(({ name, options, value }) => ({ name, options, value })),
+        );
       },
     },
   });
 
   await supabase.auth.getUser();
+  const response = NextResponse.next({
+    request: {
+      // Supabase's setAll mutates request.cookies (and therefore the Cookie
+      // header). Build this only after getUser so downstream handlers receive
+      // the rotated token, not the pre-refresh request headers.
+      headers: new Headers(request.headers),
+    },
+  });
+
+  for (const { name, options, value } of cookiesToSet) {
+    response.cookies.set(name, value, options);
+  }
 
   return response;
 }
