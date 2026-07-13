@@ -1,35 +1,25 @@
 import { NextResponse } from "next/server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { getHifzTasmiAyahs } from "@/data/repositories/hifz";
-
-interface TasmiTextBody {
-  ayahIds?: unknown;
-}
-
-function parseAyahIds(value: unknown): number[] | null {
-  if (!Array.isArray(value) || value.length === 0 || value.length > 30) {
-    return null;
-  }
-  const ayahIds = value.filter(
-    (ayahId): ayahId is number =>
-      typeof ayahId === "number" && Number.isInteger(ayahId) && ayahId > 0,
-  );
-  if (ayahIds.length !== value.length) return null;
-  return Array.from(new Set(ayahIds));
-}
+import {
+  MAX_TASMI_AYAH_IDS,
+  parseTasmiAyahIds,
+} from "@/features/hifz/domain/tasmiTextRequest";
 
 export async function POST(request: Request): Promise<NextResponse> {
-  let body: TasmiTextBody;
+  let body: unknown;
   try {
-    body = (await request.json()) as TasmiTextBody;
+    body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const ayahIds = parseAyahIds(body.ayahIds);
+  const ayahIds = parseTasmiAyahIds(body);
   if (!ayahIds) {
     return NextResponse.json(
-      { error: "ayahIds must contain 1 to 30 positive integers" },
+      {
+        error: `ayahIds must contain 1 to ${MAX_TASMI_AYAH_IDS} unique positive integers`,
+      },
       { status: 400 },
     );
   }

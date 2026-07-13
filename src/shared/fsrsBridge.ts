@@ -2,7 +2,7 @@ import type { Card } from "ts-fsrs";
 import { State } from "ts-fsrs";
 import type { FsrsFields } from "@/types/database";
 
-/** Convert a database row's FSRS columns into a ts-fsrs Card object */
+/** Convert database FSRS columns into the scheduler's Card shape. */
 export function dbRowToCard(row: FsrsFields): Card {
   return {
     due: new Date(row.due),
@@ -18,7 +18,7 @@ export function dbRowToCard(row: FsrsFields): Card {
   };
 }
 
-/** Convert a ts-fsrs Card back to database columns */
+/** Convert a scheduler Card back to database columns. */
 export function cardToDbRow(card: Card): FsrsFields {
   return {
     stability: card.stability,
@@ -37,7 +37,7 @@ export function cardToDbRow(card: Card): FsrsFields {
   };
 }
 
-/** FSRS columns for an already-memorized (mature) card */
+/** FSRS columns for an already-memorized (mature) card. */
 export function matureCardDbRow(): FsrsFields {
   const now = new Date();
   const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -48,13 +48,13 @@ export function matureCardDbRow(): FsrsFields {
     scheduled_days: 7,
     reps: 5,
     lapses: 0,
-    state: 2, // Review
+    state: 2,
     due: sevenDaysLater.toISOString(),
     last_review: now.toISOString(),
   };
 }
 
-/** Default FSRS columns for a brand-new card */
+/** Default FSRS columns for a brand-new card. */
 export function newCardDbRow(): FsrsFields {
   return {
     stability: 0,

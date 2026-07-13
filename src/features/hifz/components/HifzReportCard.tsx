@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import type { JuzStat, PageGridEntry, PageGridStatus } from "@/data/repositories/hifz";
+import type { JuzStat, PageGridEntry, PageGridStatus } from "../domain/types";
 import { JUZ_BOUNDARY_PAGES, JUZ_PAGE_COUNTS } from "../domain/constants";
 import { HifzPageActionSheet } from "./HifzPageActionSheet";
 

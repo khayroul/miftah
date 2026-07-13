@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { PageGridEntry, PageGridStatus } from "@/data/repositories/hifz";
+import type { PageGridEntry, PageGridStatus } from "../domain/types";
 
 interface HifzPageActionSheetProps {
   entry: PageGridEntry;

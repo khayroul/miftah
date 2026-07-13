@@ -14,9 +14,12 @@ import {
   type TasmiSessionResult,
 } from "@/features/tasmi";
 import { pickTebukPrompts } from "../../domain/tebuk";
-import { TebukPromptCard } from "./TebukPromptCard";
 import { TebukResultCard } from "./TebukResultCard";
 import { TebukSessionSummary } from "./TebukSessionSummary";
+import {
+  HifzSessionErrorOverlay,
+  TebukActivePanel,
+} from "./HifzSessionOverlays";
 
 const ROUNDS_PER_SESSION = 3;
 const PROMPT_WORD_COUNT = 4;
@@ -333,25 +336,7 @@ export function HifzTebukSession({
 
   // VAD error state
   if (vadError) {
-    return (
-      <div className="fixed inset-0 z-40 flex items-center justify-center bg-stone-900/80 backdrop-blur-sm">
-        <div className="mx-4 w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm dark:border-stone-700 dark:bg-stone-900">
-          <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">
-            Mikrofon tidak dapat diakses
-          </p>
-          <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
-            {vadError}
-          </p>
-          <button
-            type="button"
-            onClick={onExit}
-            className="mt-6 w-full rounded-xl bg-stone-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-700"
-          >
-            Keluar
-          </button>
-        </div>
-      </div>
-    );
+    return <HifzSessionErrorOverlay error={vadError} onExit={onExit} />;
   }
 
   return (
@@ -360,56 +345,17 @@ export function HifzTebukSession({
         {/* Prompt / Playing / Reciting phases */}
         {(phase === "prompt" || phase === "playing" || phase === "reciting") &&
           currentPrompt && (
-            <div className="flex flex-col gap-3">
-              <TebukPromptCard
-                prompt={currentPrompt}
-                pageNumber={pageNumber}
-                roundNumber={currentRoundIndex + 1}
-                totalRounds={prompts.length}
-                isRevealed={isPromptRevealed}
-                onReplay={handleReplay}
-              />
-
-              {/* Phase status indicator */}
-              <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`h-2.5 w-2.5 rounded-full ${
-                      phase === "playing"
-                        ? "animate-pulse bg-teal-500"
-                        : phase === "reciting"
-                          ? "animate-pulse bg-rose-500"
-                          : "bg-stone-400"
-                    }`}
-                  />
-                  <p className="text-sm text-stone-600 dark:text-stone-300">
-                    {phase === "playing"
-                      ? "Mendengar..."
-                      : phase === "reciting"
-                        ? "Sambung bacaan..."
-                        : "Sedia..."}
-                  </p>
-                </div>
-
-                {phase === "reciting" && (
-                  <button
-                    type="button"
-                    onClick={finalizeRound}
-                    className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-                  >
-                    Selesai baca
-                  </button>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={onExit}
-                className="text-center text-xs text-stone-400 underline-offset-2 hover:underline dark:text-stone-500"
-              >
-                Keluar
-              </button>
-            </div>
+            <TebukActivePanel
+              currentPrompt={currentPrompt}
+              isPromptRevealed={isPromptRevealed}
+              onExit={onExit}
+              onFinish={finalizeRound}
+              onReplay={handleReplay}
+              pageNumber={pageNumber}
+              phase={phase}
+              roundNumber={currentRoundIndex + 1}
+              totalRounds={prompts.length}
+            />
           )}
 
         {/* Result phase */}

@@ -6,7 +6,7 @@ export type {
   AyahDetail,
   DailyPlanWithDetails,
   PlanItem,
-} from "./hifz/scheduler";
+} from "@/features/hifz/domain/types";
 export {
   emptyPageGrid,
   getHifzStats,
@@ -18,7 +18,7 @@ export type {
   JuzStat,
   PageGridEntry,
   PageGridStatus,
-} from "./hifz/stats";
+} from "@/features/hifz/domain/types";
 export {
   demoteManzilToSabqi,
   getOrCreateProgress,

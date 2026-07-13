@@ -2,7 +2,7 @@
 
 import type { HifzQueueResponse } from "../domain/queue";
 import type { HifzResumePoint } from "../domain/resumePoint";
-import type { HifzStats, JuzStat } from "@/data/repositories/hifz";
+import type { HifzStats, JuzStat } from "../domain/types";
 
 export interface HifzImportSummary {
   count: number;

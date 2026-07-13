@@ -26,6 +26,12 @@ import {
   loadQueue,
   recoverQueueState,
   saveQueueState,
+  loadHifzInlineRating,
+  loadHifzMemorizeStepper,
+  loadHifzSessionBar,
+  loadHifzSessionComplete,
+  loadHifzTebukSession,
+  loadHifzUnveilSession,
   type HifzFlowType,
   type HifzQueuePagePointer,
   type HifzSessionQueue,
@@ -80,10 +86,7 @@ const HifzTasmiOverlay = dynamic(
 );
 
 const HifzInlineRating = dynamic(
-  () =>
-    import("@/features/hifz/components/HifzInlineRating").then(
-      (module) => module.HifzInlineRating,
-    ),
+  () => loadHifzInlineRating(),
   {
     ssr: false,
     loading: () => null,
@@ -91,10 +94,7 @@ const HifzInlineRating = dynamic(
 );
 
 const HifzMemorizeStepper = dynamic(
-  () =>
-    import("@/features/hifz/components/HifzMemorizeStepper").then(
-      (module) => module.HifzMemorizeStepper,
-    ),
+  () => loadHifzMemorizeStepper(),
   {
     ssr: false,
     loading: () => null,
@@ -102,10 +102,7 @@ const HifzMemorizeStepper = dynamic(
 );
 
 const HifzSessionBar = dynamic(
-  () =>
-    import("@/features/hifz/components/HifzSessionBar").then(
-      (module) => module.HifzSessionBar,
-    ),
+  () => loadHifzSessionBar(),
   {
     ssr: false,
     loading: () => null,
@@ -113,10 +110,7 @@ const HifzSessionBar = dynamic(
 );
 
 const HifzSessionComplete = dynamic(
-  () =>
-    import("@/features/hifz/components/HifzSessionComplete").then(
-      (module) => module.HifzSessionComplete,
-    ),
+  () => loadHifzSessionComplete(),
   {
     ssr: false,
     loading: () => null,
@@ -124,10 +118,7 @@ const HifzSessionComplete = dynamic(
 );
 
 const HifzTebukSession = dynamic(
-  () =>
-    import("@/features/hifz/components/sessions/HifzTebukSession").then(
-      (module) => module.HifzTebukSession,
-    ),
+  () => loadHifzTebukSession(),
   {
     ssr: false,
     loading: () => null,
@@ -135,10 +126,7 @@ const HifzTebukSession = dynamic(
 );
 
 const HifzUnveilSession = dynamic(
-  () =>
-    import("@/features/hifz/components/sessions/HifzUnveilSession").then(
-      (module) => module.HifzUnveilSession,
-    ),
+  () => loadHifzUnveilSession(),
   {
     ssr: false,
     loading: () => null,

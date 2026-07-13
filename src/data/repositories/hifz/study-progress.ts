@@ -1,6 +1,6 @@
 import { supabaseServer } from "@/lib/supabase-server";
-import { newCardDbRow } from "@/features/hifz/domain/fsrs-bridge";
-import { isUniqueViolation } from "@/features/faham/server";
+import { newCardDbRow } from "@/shared/fsrsBridge";
+import { isUniqueViolation } from "@/shared/postgres";
 import type { FsrsFields, HifzStatus, StudyProgress } from "@/types/database";
 
 const SABQI_WINDOW_DAYS = 7;

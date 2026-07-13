@@ -1,28 +1,11 @@
 import { supabaseServer } from "@/lib/supabase-server";
 import { getRawDailyPlan } from "./study-progress";
 import type { StudyProgress } from "@/types/database";
-
-export interface AyahDetail {
-  id: number;
-  surahId: number;
-  ayahNumber: number;
-  pageNumber: number;
-  textUthmani: string;
-  displayBm: string | null;
-  surahNameEn: string;
-  surahNameTranslit: string;
-}
-
-export interface PlanItem {
-  progress: StudyProgress;
-  ayah: AyahDetail;
-}
-
-export interface DailyPlanWithDetails {
-  sabqi: PlanItem[];
-  sabak: PlanItem[];
-  manzil: PlanItem[];
-}
+import type {
+  AyahDetail,
+  DailyPlanWithDetails,
+  PlanItem,
+} from "@/features/hifz/domain/types";
 
 async function enrichWithAyahDetails(
   items: StudyProgress[],

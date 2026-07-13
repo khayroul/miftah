@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { PageGridEntry, PageGridStatus } from "@/data/repositories/hifz";
+import type { PageGridEntry, PageGridStatus } from "../domain/types";
 
 interface HifzPageGridProps {
   entries: PageGridEntry[];

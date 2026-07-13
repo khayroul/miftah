@@ -21,12 +21,10 @@ import {
 import { clearResumePoint } from "../domain/resumePoint";
 import { loadHifzTasmiText } from "../domain/tasmiText";
 import type { MemorizeFlowError, MemorizeStep } from "./HifzMemorizePanel";
-
-interface RateBatchResponse {
-  error?: string;
-  ok?: boolean;
-  results?: Array<{ ok: boolean; progressId: number }>;
-}
+import {
+  isCompleteRateBatchResponse,
+  type RateBatchResponsePayload,
+} from "../domain/rateBatchResponse";
 
 interface MarkMemorizedResponse {
   error?: string;
@@ -54,7 +52,6 @@ interface SubmissionOptions {
 async function submitChunk(
   chunk: MemorizeChunk,
   rating: 1 | 3,
-  validatePayload: boolean,
 ): Promise<MemorizeFlowError | null> {
   const ratings = chunk.items.map((item) => ({
     progressId: item.progressId,
@@ -66,16 +63,15 @@ async function submitChunk(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ratings }),
   });
-  const ratePayload = validatePayload
-    ? (await rateResponse.json().catch(() => null)) as RateBatchResponse | null
-    : null;
-  if (
-    !rateResponse.ok ||
-    (validatePayload &&
-      (ratePayload?.ok !== true ||
-        ratePayload.results?.some((entry) => entry.ok !== true)))
-  ) {
-    return validatePayload && rateResponse.status === 401
+  const ratePayload = (await rateResponse.json().catch(() => null)) as
+    | RateBatchResponsePayload
+    | null;
+  if (!isCompleteRateBatchResponse(
+    rateResponse.ok,
+    ratePayload,
+    ratings.map((entry) => entry.progressId),
+  )) {
+    return rateResponse.status === 401
       ? {
           message: "Sesi hafalan perlukan akaun aktif. Log masuk dahulu kemudian buka semula dari Hafal.",
           requiresSignIn: true,
@@ -92,11 +88,11 @@ async function submitChunk(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ayahIds: chunk.items.map((item) => item.ayahId) }),
   });
-  const markPayload = validatePayload
-    ? (await markResponse.json().catch(() => null)) as MarkMemorizedResponse | null
-    : null;
-  if (!markResponse.ok || (validatePayload && markPayload?.ok !== true)) {
-    return validatePayload && markResponse.status === 401
+  const markPayload = (await markResponse.json().catch(() => null)) as
+    | MarkMemorizedResponse
+    | null;
+  if (!markResponse.ok || markPayload?.ok !== true) {
+    return markResponse.status === 401
       ? {
           message: "Sesi hafalan perlukan akaun aktif. Log masuk dahulu kemudian buka semula dari Hafal.",
           requiresSignIn: true,
@@ -199,7 +195,7 @@ export function useMemorizeSubmission(options: SubmissionOptions) {
       if (!chunk || chunk.items.length === 0) return;
       setSubmitting(true);
       try {
-        const error = await submitChunk(chunk, label === "ulang" ? 1 : 3, false);
+        const error = await submitChunk(chunk, label === "ulang" ? 1 : 3);
         if (error) {
           setErrorState(error);
           setSubmitting(false);
@@ -259,7 +255,7 @@ export function useMemorizeSubmission(options: SubmissionOptions) {
           setSubmitting(false);
           return;
         }
-        const error = await submitChunk(chunk, 3, true);
+        const error = await submitChunk(chunk, 3);
         if (error) {
           setErrorState(error);
           setSubmitting(false);

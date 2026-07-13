@@ -1,7 +1,8 @@
 import { supabaseServer } from "@/data/supabase/server";
 import type { Word } from "@/types/database";
 import { buildFahamSourceKey } from "@/features/faham/domain/source-key";
-import { isRecentExposure, isUniqueViolation } from "@/features/faham/domain/idempotency";
+import { isRecentExposure } from "@/features/faham/domain/idempotency";
+import { isUniqueViolation } from "@/shared/postgres";
 import type { FahamExposureInput } from "@/features/faham/domain/types";
 import {
   firstRelation,

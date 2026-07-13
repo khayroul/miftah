@@ -2,7 +2,7 @@ import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import { applyRating } from "@/lib/fsrs";
-import { dbRowToCard, cardToDbRow } from "@/features/hifz/domain/fsrs-bridge";
+import { dbRowToCard, cardToDbRow } from "@/shared/fsrsBridge";
 import {
   getProgressById,
   updateFsrsFields,

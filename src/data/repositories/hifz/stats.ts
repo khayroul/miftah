@@ -1,21 +1,10 @@
 import { supabaseServer } from "@/lib/supabase-server";
 import { TOTAL_QURAN_PAGES, JUZ_PAGE_COUNTS, pageToJuz } from "@/features/hifz/domain/constants";
-
-export interface JuzStat {
-  juz: number;
-  totalPages: number;
-  manzilPages: number;
-  sabqiPages: number;
-  sabakPages: number;
-  notStartedPages: number;
-  manzilPagePct: number;
-}
-
-export interface HifzStats {
-  totalManzilPages: number;
-  dueTodayPages: number;
-  streak: number;
-}
+import type {
+  HifzStats,
+  JuzStat,
+  PageGridEntry,
+} from "@/features/hifz/domain/types";
 
 interface HifzPageProgressRow {
   is_complete_manzil: boolean | null;
@@ -130,15 +119,6 @@ export async function getHifzStats(userId: string): Promise<HifzStats> {
     dueTodayPages,
     streak,
   };
-}
-
-export type PageGridStatus = "not-started" | "sabak" | "sabqi" | "manzil" | "due" | "overdue";
-
-export interface PageGridEntry {
-  page: number;
-  juz: number;
-  status: PageGridStatus;
-  lastReviewedAt: string | null;
 }
 
 export async function getPageProgressGrid(userId: string): Promise<PageGridEntry[]> {

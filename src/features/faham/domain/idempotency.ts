@@ -71,17 +71,5 @@ export function isRecentExposure(
   return isWithinWindow(lastExposedAt, now, windowMs);
 }
 
-/**
- * B8: true when a Supabase/Postgres error is a unique-constraint violation
- * (SQLSTATE 23505). Lets a concurrent insert that lost the UNIQUE(user_id, ...)
- * race degrade gracefully (re-select the winner's rows) instead of surfacing an
- * unhandled 500.
- */
-export function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: unknown }).code === "23505"
-  );
-}
+// Compatibility re-export. Persistence code owns this generic SQLSTATE concern.
+export { isUniqueViolation } from "@/shared/postgres";

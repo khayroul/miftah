@@ -9,10 +9,10 @@ import type {
   HifzQueueItem,
 } from "../domain/sessionQueue";
 import type { HifzQueueResponse } from "../domain/queue";
-import type { JuzStat, HifzStats } from "@/data/repositories/hifz";
+import type { JuzStat, HifzStats } from "../domain/types";
 import { getResumePoint, clearResumePoint, type HifzResumePoint } from "../domain/resumePoint";
 import { getDifficultAyahCount } from "../domain/difficultAyahs";
-import type { PageGridEntry } from "@/data/repositories/hifz";
+import type { PageGridEntry } from "../domain/types";
 import {
   HifzErrorNotice,
   HifzImportSummaryCard,

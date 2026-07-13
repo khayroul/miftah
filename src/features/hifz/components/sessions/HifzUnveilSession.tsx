@@ -20,6 +20,10 @@ import type { UnveilState } from "../../domain/progressive-unveil";
 import { getPageWords, buildAyahWordRanges } from "../../domain/page-words";
 import { VeilOverlay } from "./VeilOverlay";
 import { UnveilResultCard } from "./UnveilResultCard";
+import {
+  HifzSessionErrorOverlay,
+  UnveilActiveControls,
+} from "./HifzSessionOverlays";
 
 type UnveilPhase = "prompting" | "reciting" | "complete";
 
@@ -310,25 +314,7 @@ export function HifzUnveilSession({
 
   // VAD error state
   if (vadError) {
-    return (
-      <div className="fixed inset-0 z-40 flex items-center justify-center bg-stone-900/80 backdrop-blur-sm">
-        <div className="mx-4 w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm dark:border-stone-700 dark:bg-stone-900">
-          <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">
-            Mikrofon tidak dapat diakses
-          </p>
-          <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
-            {vadError}
-          </p>
-          <button
-            type="button"
-            onClick={onExit}
-            className="mt-6 w-full rounded-xl bg-stone-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-700"
-          >
-            Keluar
-          </button>
-        </div>
-      </div>
-    );
+    return <HifzSessionErrorOverlay error={vadError} onExit={onExit} />;
   }
 
   const imageWidth = manifest.image_width;
@@ -349,78 +335,12 @@ export function HifzUnveilSession({
 
       {/* Session controls overlay */}
       {phase !== "complete" && (
-        <div className="fixed inset-0 z-40 flex items-end justify-center bg-stone-900/40 backdrop-blur-[2px] sm:items-center">
-          <div className="mx-4 mb-4 w-full max-w-sm sm:mb-0">
-            <div className="flex flex-col gap-3">
-              {/* Status bar */}
-              <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`h-2.5 w-2.5 rounded-full ${
-                      phase === "prompting"
-                        ? "animate-pulse bg-teal-500"
-                        : "animate-pulse bg-rose-500"
-                    }`}
-                  />
-                  <p className="text-sm text-stone-600 dark:text-stone-300">
-                    {phase === "prompting" ? "Mendengar..." : "Baca semula halaman..."}
-                  </p>
-                </div>
-
-                {phase === "reciting" && (
-                  <button
-                    type="button"
-                    onClick={handleManualFinish}
-                    className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-                  >
-                    Selesai baca
-                  </button>
-                )}
-              </div>
-
-              {/* Progress indicator */}
-              <div className="rounded-xl border border-stone-200 bg-white px-4 py-2 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-                <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
-                  <span>
-                    {unveilState.revealedUpTo + 1} / {unveilState.totalWords} patah
-                  </span>
-                  <span>
-                    {unveilState.totalWords > 0
-                      ? Math.round(
-                          ((unveilState.revealedUpTo + 1) / unveilState.totalWords) * 100,
-                        )
-                      : 0}
-                    %
-                  </span>
-                </div>
-                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
-                  <div
-                    className="h-full rounded-full bg-teal-500 transition-all duration-300"
-                    style={{
-                      width: `${
-                        unveilState.totalWords > 0
-                          ? Math.round(
-                              ((unveilState.revealedUpTo + 1) /
-                                unveilState.totalWords) *
-                                100,
-                            )
-                          : 0
-                      }%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={onExit}
-                className="text-center text-xs text-stone-400 underline-offset-2 hover:underline dark:text-stone-500"
-              >
-                Keluar
-              </button>
-            </div>
-          </div>
-        </div>
+        <UnveilActiveControls
+          onExit={onExit}
+          onFinish={handleManualFinish}
+          phase={phase}
+          unveilState={unveilState}
+        />
       )}
 
       {/* Result card */}

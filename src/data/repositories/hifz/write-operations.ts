@@ -1,5 +1,5 @@
 import { supabaseServer } from "@/lib/supabase-server";
-import { matureCardDbRow } from "@/features/hifz/domain/fsrs-bridge";
+import { matureCardDbRow } from "@/shared/fsrsBridge";
 
 export interface HifzTasmiAyah {
   id: number;

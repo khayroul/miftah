@@ -1,6 +1,60 @@
 // src/types/hifz-exercises.ts
 import type { TasmiRatingLabel, TasmiSessionResult } from '@/features/tasmi';
 import type { FsrsRating } from '@/types/database';
+import type { StudyProgress } from '@/types/database';
+
+export interface AyahDetail {
+  id: number;
+  surahId: number;
+  ayahNumber: number;
+  pageNumber: number;
+  textUthmani: string;
+  displayBm: string | null;
+  surahNameEn: string;
+  surahNameTranslit: string;
+}
+
+export interface PlanItem {
+  progress: StudyProgress;
+  ayah: AyahDetail;
+}
+
+export interface DailyPlanWithDetails {
+  sabqi: PlanItem[];
+  sabak: PlanItem[];
+  manzil: PlanItem[];
+}
+
+export interface JuzStat {
+  juz: number;
+  totalPages: number;
+  manzilPages: number;
+  sabqiPages: number;
+  sabakPages: number;
+  notStartedPages: number;
+  manzilPagePct: number;
+}
+
+export interface HifzStats {
+  totalManzilPages: number;
+  dueTodayPages: number;
+  streak: number;
+}
+
+export type PageGridStatus =
+  | "not-started"
+  | "sabak"
+  | "sabqi"
+  | "manzil"
+  | "due"
+  | "overdue";
+
+export interface PageGridEntry {
+  page: number;
+  juz: number;
+  status: PageGridStatus;
+  lastReviewedAt: string | null;
+}
 
 /** Supported hifz exercise flows (separate from HifzFlowType which covers memorize/review) */
 export type HifzExerciseFlow = 'tebuk' | 'unveil';
