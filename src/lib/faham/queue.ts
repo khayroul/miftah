@@ -2,7 +2,6 @@ import type { FahamSourceType } from "@/types/database";
 import { TOP_FAHAM_WORD_LIMIT } from "./config";
 import {
   buildFahamLevelProgress,
-  getFahamLevelState,
   type FahamLevelProgress,
 } from "./levels";
 import type { FahamBuiltMcq, FahamMcqDirectionMode } from "./mcq";
@@ -21,7 +20,8 @@ import {
   getMasteredFahamCards,
   getRecentFahamExposureSources,
   materializeNewFahamCards,
-} from "./repository";
+} from "@/data/repositories/faham";
+import { getFahamLevelState } from "@/data/repositories/faham-levels";
 
 interface QueueOverrides {
   directionMode?: FahamMcqDirectionMode;

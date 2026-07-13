@@ -1,21 +1,24 @@
 import { cache } from "react";
-import { supabaseServer } from "@/lib/supabase-server";
-import { normalizeMalayMeaning, FahamMcqPoolWord } from "./mcq";
-import { TOP_FAHAM_WORD_LIMIT } from "./config";
+import { supabaseServer } from "@/data/supabase/server";
+import {
+  normalizeMalayMeaning,
+  type FahamMcqPoolWord,
+} from "@/lib/faham/mcq";
+import { TOP_FAHAM_WORD_LIMIT } from "@/lib/faham/config";
 import type {
   VocabExposureSummary,
   VocabProgress,
   Word,
 } from "@/types/database";
-import { getOrCreateVocabProgress } from "./vocab-progress";
-import { buildFahamSourceKey } from "./source-key";
-import { isRecentExposure, isUniqueViolation } from "./idempotency";
+import { getOrCreateVocabProgress } from "./faham-progress";
+import { buildFahamSourceKey } from "@/lib/faham/source-key";
+import { isRecentExposure, isUniqueViolation } from "@/lib/faham/idempotency";
 import type {
   FahamCandidateWord,
   FahamDueCard,
   FahamExposureInput,
   WordWithOccurrences,
-} from "./types";
+} from "@/lib/faham/types";
 
 interface AyahLite {
   surah_id: number;

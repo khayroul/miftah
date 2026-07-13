@@ -1,4 +1,4 @@
-import { supabaseServer } from "@/lib/supabase-server";
+import { supabaseServer } from "@/data/supabase/server";
 import { newCardDbRow } from "@/lib/hifz/fsrs-bridge";
 import type { FsrsFields, VocabProgress } from "@/types/database";
 

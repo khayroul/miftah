@@ -2,7 +2,7 @@ import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import { ZodError } from "zod";
-import { recordVocabExposureEvents } from "@/lib/faham/repository";
+import { recordVocabExposureEvents } from "@/data/repositories/faham";
 import { fahamExposureSchema } from "@/lib/faham/schemas";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 

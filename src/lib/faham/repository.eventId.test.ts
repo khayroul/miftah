@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildExposureRowEventId } from "./repository";
+import { buildExposureRowEventId } from "@/data/repositories/faham";
 import { isUniqueViolation } from "./idempotency";
 
 // B6 (RF-2 follow-up): vocab_exposure_events gains a per-event id so a network
