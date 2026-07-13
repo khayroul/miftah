@@ -249,7 +249,13 @@ function serializeCard(
   directionMode: FahamMcqDirectionMode,
 ): SerializedFahamCard | null {
   const translationBm = normalizeMalayMeaning(card.word.translation_bm);
-  const mcq = buildFahamMcqForWord(card.word, mcqPool, directionMode);
+  const mcq = buildFahamMcqForWord(
+    card.word,
+    mcqPool,
+    directionMode,
+    4,
+    card.progress.reps,
+  );
   if (!translationBm || !mcq) {
     return null;
   }

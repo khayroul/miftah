@@ -249,7 +249,7 @@ export function buildOfflineFahamQueueSnapshotFromTierPayload(params: {
     }
 
     const word = toWordWithOccurrences(entry.word);
-    const mcq = buildFahamMcqForWord(word, pool, params.directionMode);
+    const mcq = buildFahamMcqForWord(word, pool, params.directionMode, 4, nowIso);
     if (!mcq) {
       continue;
     }
