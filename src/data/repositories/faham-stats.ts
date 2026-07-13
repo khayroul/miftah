@@ -23,7 +23,7 @@ export async function getFahamStats(
   ] = await Promise.all([
     supabaseServer
       .from("v_vocab_exposure_summary")
-      .select("*", { count: "exact", head: true })
+      .select("word_id", { count: "exact", head: true })
       .eq("user_id", userId)
       .in("word_id", topWordIds),
     supabaseServer

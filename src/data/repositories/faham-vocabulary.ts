@@ -22,6 +22,13 @@ export interface RepoWordWithOccurrences extends Word {
   word_occurrences: WordOccurrenceLite | WordOccurrenceLite[] | null;
 }
 
+interface WordOccurrenceQueryRow extends WordOccurrenceLite {
+  word_id: number;
+}
+
+export const FAHAM_WORD_COLUMNS =
+  "id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency";
+
 export interface FahamTierVocabWord {
   frequency: number;
   id: number;
@@ -37,6 +44,74 @@ export function firstRelation<T>(value: T | T[] | null): T | null {
     return value[0] ?? null;
   }
   return value ?? null;
+}
+
+export function uniquePositiveIntegerIds(ids: number[]): number[] {
+  return Array.from(
+    new Set(ids.filter((id) => Number.isInteger(id) && id > 0)),
+  );
+}
+
+/**
+ * Index the first Quran-order occurrence for each word.
+ *
+ * The repository query sorts by ayah then position, so retaining the first row
+ * gives one deterministic audio/context anchor without embedding every
+ * occurrence into every parent word query.
+ */
+export function indexFirstOccurrences(
+  rows: WordOccurrenceQueryRow[],
+): Map<number, WordOccurrenceLite> {
+  const firstByWordId = new Map<number, WordOccurrenceLite>();
+
+  for (const { word_id: wordId, ...occurrence } of rows) {
+    if (!firstByWordId.has(wordId)) {
+      firstByWordId.set(wordId, occurrence);
+    }
+  }
+
+  return firstByWordId;
+}
+
+/**
+ * Load occurrence context in one lean batch for a set of words.
+ *
+ * PostgREST cannot express a per-parent LIMIT in the old embedded relation.
+ * This query therefore returns narrow occurrence rows, ordered once, and the
+ * mapper retains only the first row per word. It avoids duplicating the much
+ * wider word/progress payload for every occurrence.
+ */
+export async function firstOccurrenceFor(
+  wordIds: number[],
+): Promise<Map<number, WordOccurrenceLite>> {
+  const uniqueWordIds = uniquePositiveIntegerIds(wordIds);
+  if (uniqueWordIds.length === 0) {
+    return new Map();
+  }
+
+  const { data, error } = await supabaseServer
+    .from("word_occurrences")
+    .select(
+      "word_id, ayah_id, position, page_number, ayat!inner(surah_id, ayah_number)",
+    )
+    .in("word_id", uniqueWordIds)
+    .order("ayah_id", { ascending: true })
+    .order("position", { ascending: true });
+  if (error) {
+    throw error;
+  }
+
+  return indexFirstOccurrences((data ?? []) as WordOccurrenceQueryRow[]);
+}
+
+export function attachFirstOccurrences(
+  words: Word[],
+  occurrences: Map<number, WordOccurrenceLite>,
+): RepoWordWithOccurrences[] {
+  return words.map((word) => ({
+    ...word,
+    word_occurrences: occurrences.get(word.id) ?? null,
+  }));
 }
 
 export const getTopFahamWordIds = cache(async (wordLimit = TOP_FAHAM_WORD_LIMIT): Promise<number[]> => {
@@ -68,9 +143,7 @@ export async function getFahamMcqWordPool(
 
   const { data, error } = await supabaseServer
     .from("words")
-    .select(
-      "id, text_uthmani, text_simple, translation_bm, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, page_number, ayat(surah_id, ayah_number))",
-    )
+    .select(FAHAM_WORD_COLUMNS)
     .in("id", topWordIds)
     .not("translation_bm", "is", null)
     .order("frequency", { ascending: false })
@@ -79,10 +152,14 @@ export async function getFahamMcqWordPool(
     throw error;
   }
 
+  const wordRows = (data ?? []) as Word[];
+  const firstOccurrences = await firstOccurrenceFor(
+    wordRows.map((word) => word.id),
+  );
   const seen = new Set<string>();
   const pool: FahamMcqPoolWord[] = [];
 
-  for (const row of (data ?? []) as RepoWordWithOccurrences[]) {
+  for (const row of attachFirstOccurrences(wordRows, firstOccurrences)) {
     const normalizedMeaning = normalizeMalayMeaning(row.translation_bm);
     const normalizedArabic = row.text_uthmani ? row.text_uthmani.trim() : "";
     if (

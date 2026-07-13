@@ -2,13 +2,16 @@ import { supabaseServer } from "@/data/supabase/server";
 import { newCardDbRow } from "@/lib/hifz/fsrs-bridge";
 import type { FsrsFields, VocabProgress } from "@/types/database";
 
+const VOCAB_PROGRESS_COLUMNS =
+  "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at";
+
 export async function getOrCreateVocabProgress(
   userId: string,
   wordId: number,
 ): Promise<VocabProgress> {
   const { data } = await supabaseServer
     .from("vocab_progress")
-    .select("*")
+    .select(VOCAB_PROGRESS_COLUMNS)
     .eq("user_id", userId)
     .eq("word_id", wordId)
     .single();
@@ -21,7 +24,7 @@ export async function getOrCreateVocabProgress(
   const { data: created, error } = await supabaseServer
     .from("vocab_progress")
     .insert(row)
-    .select()
+    .select(VOCAB_PROGRESS_COLUMNS)
     .single();
   if (error) {
     throw error;
@@ -34,7 +37,7 @@ export async function getVocabProgressById(
 ): Promise<VocabProgress | null> {
   const { data } = await supabaseServer
     .from("vocab_progress")
-    .select("*")
+    .select(VOCAB_PROGRESS_COLUMNS)
     .eq("id", id)
     .single();
 

@@ -1,21 +1,87 @@
 import { supabaseServer } from "@/data/supabase/server";
 import { TOP_FAHAM_WORD_LIMIT } from "@/features/faham/domain/config";
-import type { VocabExposureSummary, VocabProgress } from "@/types/database";
+import type { VocabExposureSummary, VocabProgress, Word } from "@/types/database";
 import { getOrCreateVocabProgress } from "./faham-progress";
 import type {
   FahamCandidateWord,
   FahamDueCard,
-  WordWithOccurrences,
 } from "@/features/faham/domain/types";
 import {
+  attachFirstOccurrences,
+  FAHAM_WORD_COLUMNS,
   firstRelation,
+  firstOccurrenceFor,
   getTopFahamWordIds,
-  type RepoWordWithOccurrences,
+  type WordOccurrenceLite,
 } from "./faham-vocabulary";
 
 interface VocabProgressWordJoinRow extends VocabProgress {
-  words: RepoWordWithOccurrences | RepoWordWithOccurrences[] | null;
+  words: Word | Word[] | null;
 }
+
+const VOCAB_PROGRESS_COLUMNS =
+  "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at";
+const VOCAB_EXPOSURE_SUMMARY_COLUMNS =
+  "user_id, word_id, exposure_event_count, distinct_context_count, distinct_source_count, total_occurrence_weight, reading_event_count, theme_event_count, hifz_event_count, reading_occurrence_weight, theme_occurrence_weight, hifz_occurrence_weight, last_exposed_at";
+const VOCAB_PROGRESS_WITH_WORD_COLUMNS =
+  `${VOCAB_PROGRESS_COLUMNS}, words!inner(${FAHAM_WORD_COLUMNS})`;
+
+function toVocabProgress(row: VocabProgressWordJoinRow): VocabProgress {
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    word_id: row.word_id,
+    stability: row.stability,
+    difficulty: row.difficulty,
+    elapsed_days: row.elapsed_days,
+    scheduled_days: row.scheduled_days,
+    reps: row.reps,
+    lapses: row.lapses,
+    state: row.state,
+    due: row.due,
+    last_review: row.last_review,
+    needs_reinforcement: row.needs_reinforcement,
+    mistake_streak: row.mistake_streak,
+    is_mastered: row.is_mastered,
+    correct_streak: row.correct_streak,
+    incorrect_streak: row.incorrect_streak,
+    last_incorrect_at: row.last_incorrect_at,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+function toDueCards(
+  rows: VocabProgressWordJoinRow[],
+  firstOccurrences: Map<number, WordOccurrenceLite>,
+): FahamDueCard[] {
+  return rows
+    .map<FahamDueCard | null>((row) => {
+      const word = firstRelation(row.words);
+      if (!word) {
+        return null;
+      }
+
+      return {
+        progress: toVocabProgress(row),
+        word: {
+          ...word,
+          word_occurrences: firstOccurrences.get(word.id) ?? null,
+        },
+      };
+    })
+    .filter((row): row is FahamDueCard => row !== null);
+}
+
+async function hydrateProgressRows(
+  rows: VocabProgressWordJoinRow[],
+): Promise<FahamDueCard[]> {
+  const firstOccurrences = await firstOccurrenceFor(
+    rows.map((row) => row.word_id),
+  );
+  return toDueCards(rows, firstOccurrences);
+}
+
 export async function getDueFahamCards(
   userId: string,
   limit: number,
@@ -28,9 +94,7 @@ export async function getDueFahamCards(
 
   const { data, error } = await supabaseServer
     .from("vocab_progress")
-    .select(
-      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, page_number, ayat(surah_id, ayah_number)))",
-    )
+    .select(VOCAB_PROGRESS_WITH_WORD_COLUMNS)
     .eq("user_id", userId)
     .in("word_id", topWordIds)
     .lte("due", new Date().toISOString())
@@ -42,40 +106,7 @@ export async function getDueFahamCards(
     throw error;
   }
 
-  return ((data ?? []) as VocabProgressWordJoinRow[])
-    .map((row) => {
-      const word = firstRelation(row.words);
-      if (!word) {
-        return null;
-      }
-
-      return {
-        progress: {
-          id: row.id,
-          user_id: row.user_id,
-          word_id: row.word_id,
-          stability: row.stability,
-          difficulty: row.difficulty,
-          elapsed_days: row.elapsed_days,
-          scheduled_days: row.scheduled_days,
-          reps: row.reps,
-          lapses: row.lapses,
-          state: row.state,
-          due: row.due,
-          last_review: row.last_review,
-          needs_reinforcement: row.needs_reinforcement,
-          mistake_streak: row.mistake_streak,
-          is_mastered: row.is_mastered,
-          correct_streak: row.correct_streak,
-          incorrect_streak: row.incorrect_streak,
-          last_incorrect_at: row.last_incorrect_at,
-          created_at: row.created_at,
-          updated_at: row.updated_at,
-        },
-        word: word as WordWithOccurrences,
-      };
-    })
-    .filter((row): row is FahamDueCard => row !== null);
+  return hydrateProgressRows((data ?? []) as VocabProgressWordJoinRow[]);
 }
 export async function getFahamExposureCandidates(
   userId: string,
@@ -89,7 +120,7 @@ export async function getFahamExposureCandidates(
 
   const { data, error } = await supabaseServer
     .from("v_vocab_exposure_summary")
-    .select("*")
+    .select(VOCAB_EXPOSURE_SUMMARY_COLUMNS)
     .eq("user_id", userId)
     .in("word_id", topWordIds)
     .order("last_exposed_at", { ascending: false })
@@ -108,9 +139,7 @@ export async function getFahamExposureCandidates(
     await Promise.all([
       supabaseServer
         .from("words")
-        .select(
-          "id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, page_number, ayat(surah_id, ayah_number))",
-        )
+        .select(FAHAM_WORD_COLUMNS)
         .in("id", wordIds),
       supabaseServer
         .from("vocab_progress")
@@ -126,8 +155,8 @@ export async function getFahamExposureCandidates(
     throw progressError;
   }
 
-  const wordsById = new Map<number, RepoWordWithOccurrences>();
-  for (const word of (wordData ?? []) as RepoWordWithOccurrences[]) {
+  const wordsById = new Map<number, Word>();
+  for (const word of (wordData ?? []) as Word[]) {
     wordsById.set(word.id, word);
   }
 
@@ -135,7 +164,7 @@ export async function getFahamExposureCandidates(
     ((knownProgress ?? []) as Array<{ word_id: number }>).map((row) => row.word_id),
   );
 
-  return summaries
+  const eligible = summaries
     .filter((summary) => !knownWordIds.has(summary.word_id))
     .map((summary) => {
       const word = wordsById.get(summary.word_id);
@@ -146,9 +175,20 @@ export async function getFahamExposureCandidates(
         return null;
       }
 
-      return { summary, word: word as WordWithOccurrences };
+      return { summary, word };
     })
-    .filter((row): row is FahamCandidateWord => row !== null);
+    .filter((row): row is { summary: VocabExposureSummary; word: Word } => row !== null);
+
+  const firstOccurrences = await firstOccurrenceFor(
+    eligible.map(({ word }) => word.id),
+  );
+  return eligible.map(({ summary, word }) => ({
+    summary,
+    word: {
+      ...word,
+      word_occurrences: firstOccurrences.get(word.id) ?? null,
+    },
+  }));
 }
 
 export async function materializeNewFahamCards(
@@ -180,9 +220,7 @@ export async function getBootstrapFahamCards(
     await Promise.all([
       supabaseServer
         .from("words")
-        .select(
-          "id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, page_number, ayat(surah_id, ayah_number))",
-        )
+        .select(FAHAM_WORD_COLUMNS)
         .in("id", topWordIds)
         .not("translation_bm", "is", null)
         .order("frequency", { ascending: false })
@@ -204,14 +242,16 @@ export async function getBootstrapFahamCards(
     ((knownProgress ?? []) as Array<{ word_id: number }>).map((row) => row.word_id),
   );
 
-  const words = ((wordData ?? []) as RepoWordWithOccurrences[])
+  const words = ((wordData ?? []) as Word[])
     .filter((word) => !knownWordIds.has(word.id))
     .slice(0, limit);
+  const firstOccurrences = await firstOccurrenceFor(words.map((word) => word.id));
+  const wordsWithOccurrences = attachFirstOccurrences(words, firstOccurrences);
 
   return Promise.all(
-    words.map(async (word) => ({
+    wordsWithOccurrences.map(async (word) => ({
       progress: await getOrCreateVocabProgress(userId, word.id),
-      word: word as WordWithOccurrences,
+      word,
     })),
   );
 }
@@ -228,9 +268,7 @@ export async function getMasteredFahamCards(
 
   const { data, error } = await supabaseServer
     .from("vocab_progress")
-    .select(
-      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, page_number, ayat(surah_id, ayah_number)))",
-    )
+    .select(VOCAB_PROGRESS_WITH_WORD_COLUMNS)
     .eq("user_id", userId)
     .in("word_id", topWordIds)
     .eq("is_mastered", true)
@@ -240,40 +278,7 @@ export async function getMasteredFahamCards(
     throw error;
   }
 
-  return ((data ?? []) as VocabProgressWordJoinRow[])
-    .map((row) => {
-      const word = firstRelation(row.words);
-      if (!word) {
-        return null;
-      }
-
-      return {
-        progress: {
-          id: row.id,
-          user_id: row.user_id,
-          word_id: row.word_id,
-          stability: row.stability,
-          difficulty: row.difficulty,
-          elapsed_days: row.elapsed_days,
-          scheduled_days: row.scheduled_days,
-          reps: row.reps,
-          lapses: row.lapses,
-          state: row.state,
-          due: row.due,
-          last_review: row.last_review,
-          needs_reinforcement: row.needs_reinforcement,
-          mistake_streak: row.mistake_streak,
-          is_mastered: row.is_mastered,
-          correct_streak: row.correct_streak,
-          incorrect_streak: row.incorrect_streak,
-          last_incorrect_at: row.last_incorrect_at,
-          created_at: row.created_at,
-          updated_at: row.updated_at,
-        },
-        word: word as WordWithOccurrences,
-      };
-    })
-    .filter((row): row is FahamDueCard => row !== null);
+  return hydrateProgressRows((data ?? []) as VocabProgressWordJoinRow[]);
 }
 
 export async function getLearningFahamCards(
@@ -288,9 +293,7 @@ export async function getLearningFahamCards(
 
   const { data, error } = await supabaseServer
     .from("vocab_progress")
-    .select(
-      "id, user_id, word_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, needs_reinforcement, mistake_streak, is_mastered, correct_streak, incorrect_streak, last_incorrect_at, created_at, updated_at, words!inner(id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency, word_occurrences(ayah_id, position, page_number, ayat(surah_id, ayah_number)))",
-    )
+    .select(VOCAB_PROGRESS_WITH_WORD_COLUMNS)
     .eq("user_id", userId)
     .in("word_id", topWordIds)
     .gt("due", new Date().toISOString())
@@ -302,38 +305,5 @@ export async function getLearningFahamCards(
     throw error;
   }
 
-  return ((data ?? []) as VocabProgressWordJoinRow[])
-    .map((row) => {
-      const word = firstRelation(row.words);
-      if (!word) {
-        return null;
-      }
-
-      return {
-        progress: {
-          id: row.id,
-          user_id: row.user_id,
-          word_id: row.word_id,
-          stability: row.stability,
-          difficulty: row.difficulty,
-          elapsed_days: row.elapsed_days,
-          scheduled_days: row.scheduled_days,
-          reps: row.reps,
-          lapses: row.lapses,
-          state: row.state,
-          due: row.due,
-          last_review: row.last_review,
-          needs_reinforcement: row.needs_reinforcement,
-          mistake_streak: row.mistake_streak,
-          is_mastered: row.is_mastered,
-          correct_streak: row.correct_streak,
-          incorrect_streak: row.incorrect_streak,
-          last_incorrect_at: row.last_incorrect_at,
-          created_at: row.created_at,
-          updated_at: row.updated_at,
-        },
-        word: word as WordWithOccurrences,
-      };
-    })
-    .filter((row): row is FahamDueCard => row !== null);
+  return hydrateProgressRows((data ?? []) as VocabProgressWordJoinRow[]);
 }
