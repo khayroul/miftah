@@ -2,25 +2,16 @@
 
 import dynamic from "next/dynamic";
 import type { MushafLayoutPage, MushafPageManifest } from "@/mushaf";
-import {
-  loadHifzInlineRating,
-  loadHifzMemorizeStepper,
-  loadHifzSessionBar,
-  loadHifzSessionComplete,
-  loadHifzTebukSession,
-  loadHifzUnveilSession,
-  type HifzExerciseFlow,
-  type HifzFlowType,
-} from "@/features/hifz";
+import type { HifzExerciseFlow, HifzFlowType } from "@/features/hifz/read-runtime";
 import { buildSignInPath } from "@/lib/auth";
 import type { HifzQueueRecoveryError } from "./useReadHifzQueue";
 
-const HifzInlineRating = dynamic(() => loadHifzInlineRating(), { ssr: false, loading: () => null });
-const HifzMemorizeStepper = dynamic(() => loadHifzMemorizeStepper(), { ssr: false, loading: () => null });
-const HifzSessionBar = dynamic(() => loadHifzSessionBar(), { ssr: false, loading: () => null });
-const HifzSessionComplete = dynamic(() => loadHifzSessionComplete(), { ssr: false, loading: () => null });
-const HifzTebukSession = dynamic(() => loadHifzTebukSession(), { ssr: false, loading: () => null });
-const HifzUnveilSession = dynamic(() => loadHifzUnveilSession(), { ssr: false, loading: () => null });
+const HifzInlineRating = dynamic(() => import("@/features/hifz/read-overlays/inline-rating").then((module) => module.HifzInlineRating), { ssr: false, loading: () => null });
+const HifzMemorizeStepper = dynamic(() => import("@/features/hifz/read-overlays/memorize-stepper").then((module) => module.HifzMemorizeStepper), { ssr: false, loading: () => null });
+const HifzSessionBar = dynamic(() => import("@/features/hifz/read-overlays/session-bar").then((module) => module.HifzSessionBar), { ssr: false, loading: () => null });
+const HifzSessionComplete = dynamic(() => import("@/features/hifz/read-overlays/session-complete").then((module) => module.HifzSessionComplete), { ssr: false, loading: () => null });
+const HifzTebukSession = dynamic(() => import("@/features/hifz/read-overlays/tebuk-session").then((module) => module.HifzTebukSession), { ssr: false, loading: () => null });
+const HifzUnveilSession = dynamic(() => import("@/features/hifz/read-overlays/unveil-session").then((module) => module.HifzUnveilSession), { ssr: false, loading: () => null });
 
 interface ReadHifzOverlaysProps {
   alignData: unknown[];

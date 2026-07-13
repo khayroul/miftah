@@ -14,8 +14,7 @@ import {
   getDifficultAyahs,
   toggleDifficultAyah,
   type HifzRevealStage,
-} from "@/features/hifz";
-import { useReadMode } from "@/features/read/domain/useReadMode";
+} from "@/features/hifz/mushaf-runtime";
 import { getAyahKeyFromLocation } from "@/mushaf/lib/mushafGlyphs";
 import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
 import type { MushafWordTranslationMap } from "@/mushaf/types/mushaf";
@@ -31,6 +30,7 @@ export interface MushafAyahDetail {
 }
 
 interface MushafPageViewProps {
+  mode: "read" | "faham" | "tema" | "hifz";
   pageNumber: number;
   layout: MushafLayoutPage;
   wordTranslations: MushafWordTranslationMap;
@@ -72,6 +72,7 @@ function trackHifzUiEvent(
 }
 
 export function MushafPageView({
+  mode,
   pageNumber,
   layout,
   wordTranslations,
@@ -112,7 +113,6 @@ export function MushafPageView({
   const [swipePreviewPage, setSwipePreviewPage] = useState<number | null>(null);
   const [swipeViewportWidth, setSwipeViewportWidth] = useState(0);
 
-  const { mode } = useReadMode();
   const modeAllowsWordInteraction = mode === "faham";
 
   // Derive ayah keys from layout

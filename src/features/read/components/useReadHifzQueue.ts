@@ -13,7 +13,7 @@ import {
   type HifzQueuePagePointer,
   type HifzQueueResponse,
   type HifzSessionQueue,
-} from "@/features/hifz";
+} from "@/features/hifz/read-runtime";
 
 export interface HifzQueueRecoveryError {
   message: string;

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { buildQueuePageHref, type HifzExerciseFlow, type HifzFlowType } from "@/features/hifz";
+import { buildQueuePageHref, type HifzExerciseFlow, type HifzFlowType } from "@/features/hifz/read-runtime";
 import type { MushafAyahDetail, MushafLayoutPage, MushafWordTranslationMap } from "@/mushaf";
 import { navigateWithOfflineSupport, prefetchWithOfflineSupport } from "@/lib/pwa/navigation";
 import type { ReadAudioTrack } from "../domain/audio/pageAudioTracks";
@@ -190,6 +190,7 @@ export function ReadPageWorkspace({
       isRecovering={queue.isRecovering}
       layout={layout}
       memorizeHideMushaf={memorizeHideMushaf}
+      mode={mode}
       mushafHeader={mushafHeader}
       nextPageHref={nextPageHref}
       pageManifest={hydration.pageManifest}

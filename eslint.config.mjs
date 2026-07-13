@@ -72,8 +72,8 @@ const eslintConfig = defineConfig([
 
   // ── Phase-1 boundary: features/** ──────────────────────────────────────────
   // (a) no cross-feature INTERNAL imports — another feature is reachable only
-  //     through its public barrel `@/features/<name>` (deep paths `@/features/
-  //     <name>/...` are forbidden; within a feature, use relative imports).
+  //     through an explicit public entry (`@/features/<name>`, `server`, or a
+  //     narrowly documented integration entry such as `read-*`).
   // (b) no Supabase client imports (confined to src/data/**).
   {
     files: ["src/features/**/*.{ts,tsx,js,jsx,mjs,cjs}"],
@@ -84,9 +84,17 @@ const eslintConfig = defineConfig([
           paths: supabaseClientPaths,
           patterns: [
             {
-              group: ["@/features/*/**", "!@/features/*/server"],
+              group: [
+                "@/features/*/**",
+                "!@/features/*/server",
+                "!@/features/*/read-loaders",
+                "!@/features/*/read-runtime",
+                "!@/features/*/read-overlay",
+                "!@/features/*/read-overlays/**",
+                "!@/features/*/mushaf-runtime",
+              ],
               message:
-                "Import another feature only through its public barrel `@/features/<name>` — not its internals. Within a feature use relative imports (spec §4.4).",
+                "Import another feature only through a documented public entry — not its internals. Within a feature use relative imports (spec §4.4).",
             },
             ...supabaseClientPatterns,
           ],

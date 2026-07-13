@@ -14,26 +14,14 @@
  */
 // Lazy public component loaders keep domain-only consumers from registering the
 // Tasmi/ONNX client graph while still giving Read a stable feature boundary.
-export const loadHifzInlineRating = () =>
-  import("./components/HifzInlineRating").then((module) => module.HifzInlineRating);
-export const loadHifzMemorizeStepper = () =>
-  import("./components/HifzMemorizeStepper").then(
-    (module) => module.HifzMemorizeStepper,
-  );
-export const loadHifzSessionBar = () =>
-  import("./components/HifzSessionBar").then((module) => module.HifzSessionBar);
-export const loadHifzSessionComplete = () =>
-  import("./components/HifzSessionComplete").then(
-    (module) => module.HifzSessionComplete,
-  );
-export const loadHifzTebukSession = () =>
-  import("./components/sessions/HifzTebukSession").then(
-    (module) => module.HifzTebukSession,
-  );
-export const loadHifzUnveilSession = () =>
-  import("./components/sessions/HifzUnveilSession").then(
-    (module) => module.HifzUnveilSession,
-  );
+export {
+  loadHifzInlineRating,
+  loadHifzMemorizeStepper,
+  loadHifzSessionBar,
+  loadHifzSessionComplete,
+  loadHifzTebukSession,
+  loadHifzUnveilSession,
+} from "./read-loaders";
 export { preCacheAudioUrls } from "./domain/audioPreCache";
 export { JUZ_BOUNDARY_PAGES } from "./domain/constants";
 export {

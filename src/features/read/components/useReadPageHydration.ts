@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { preCacheAudioUrls, type HifzExerciseFlow, type HifzFlowType } from "@/features/hifz";
+import { preCacheAudioUrls, type HifzExerciseFlow, type HifzFlowType } from "@/features/hifz/read-runtime";
 import type { MushafAyahDetail, MushafLayoutPage, MushafPageManifest } from "@/mushaf";
 import type { ReadAudioTrack } from "../domain/audio/pageAudioTracks";
 import { rememberLastReadPage } from "../domain/readingProgressStorage";

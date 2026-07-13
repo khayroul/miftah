@@ -3,7 +3,8 @@
 import dynamic from "next/dynamic";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { MushafPageView, ReadOnlyMushafPageView, type MushafAyahDetail, type MushafLayoutPage, type MushafPageManifest, type MushafWordTranslationMap } from "@/mushaf";
-import type { HifzExerciseFlow, HifzFlowType } from "@/features/hifz";
+import type { HifzExerciseFlow, HifzFlowType } from "@/features/hifz/read-runtime";
+import type { ReadMode } from "../domain/readMode";
 import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 import type { HifzQueueRecoveryError } from "./useReadHifzQueue";
 import { ReadHifzOverlays } from "./ReadHifzOverlays";
@@ -12,7 +13,7 @@ import { ReadModeTools } from "./ReadModeTools";
 const FahamExposureTracker = dynamic(() => import("@/features/faham").then((module) => module.FahamExposureTracker), { ssr: false, loading: () => null });
 const ReadJumpControls = dynamic(() => import("./ReadJumpControls").then((module) => module.ReadJumpControls), { ssr: false, loading: () => null });
 const HifzTasmiOverlay = dynamic(
-  () => import("@/features/tasmi").then((module) => module.loadHifzTasmiOverlay()),
+  () => import("@/features/tasmi/read-overlay").then((module) => module.HifzTasmiOverlay),
   { ssr: false, loading: () => null },
 );
 
@@ -33,6 +34,7 @@ interface ReadPageCanvasProps {
   isRecovering: boolean;
   layout: MushafLayoutPage;
   memorizeHideMushaf: boolean;
+  mode: ReadMode;
   mushafHeader?: ReactNode;
   nextPageHref: string | null;
   pageManifest: MushafPageManifest | null;
@@ -105,7 +107,7 @@ export function ReadPageCanvas(props: ReadPageCanvasProps) {
         {props.useLightweightViewer ? (
           <ReadOnlyMushafPageView key={props.pageNumber} pageNumber={props.pageNumber} layout={props.layout} onNavigatePrevPage={props.onNavigatePreviousPage} onNavigateNextPage={props.onNavigateNextPage} onCanvasTap={props.onCanvasTap} onAyahAudioTap={props.audioEnabled ? props.onAyahAudioTap : undefined} audioDiscovered={props.audioDiscovered} onAudioDiscovered={props.onAudioDiscovered} onReadyChange={props.onReadyChange} activePlaybackAyahKey={props.activePlaybackAyahKey} />
         ) : (
-          <MushafPageView key={props.pageNumber} pageNumber={props.pageNumber} layout={props.layout} wordTranslations={props.wordTranslations} ayahDetails={props.ayahDetails} memorizedAyahKeys={props.resolvedMemorizedAyahKeys} hifzRevealByThirdsEnabled={!props.flow && props.hifzRevealByThirdsEnabled} onNavigatePrevPage={props.onNavigatePreviousPage} onNavigateNextPage={props.onNavigateNextPage} onCanvasTap={props.onCanvasTap} onAyahAudioTap={props.audioEnabled ? props.onAyahAudioTap : undefined} audioDiscovered={props.audioDiscovered} onAudioDiscovered={props.onAudioDiscovered} onReadyChange={props.onReadyChange} activePlaybackAyahKey={props.activePlaybackAyahKey} isAudioDockVisible={props.isAudioVisible} onPlayableAyahKeysChange={props.flow === "memorize" ? undefined : props.setPlayableAyahKeys} />
+          <MushafPageView mode={props.mode} key={props.pageNumber} pageNumber={props.pageNumber} layout={props.layout} wordTranslations={props.wordTranslations} ayahDetails={props.ayahDetails} memorizedAyahKeys={props.resolvedMemorizedAyahKeys} hifzRevealByThirdsEnabled={!props.flow && props.hifzRevealByThirdsEnabled} onNavigatePrevPage={props.onNavigatePreviousPage} onNavigateNextPage={props.onNavigateNextPage} onCanvasTap={props.onCanvasTap} onAyahAudioTap={props.audioEnabled ? props.onAyahAudioTap : undefined} audioDiscovered={props.audioDiscovered} onAudioDiscovered={props.onAudioDiscovered} onReadyChange={props.onReadyChange} activePlaybackAyahKey={props.activePlaybackAyahKey} isAudioDockVisible={props.isAudioVisible} onPlayableAyahKeysChange={props.flow === "memorize" ? undefined : props.setPlayableAyahKeys} />
         )}
       </div>
     </div>
