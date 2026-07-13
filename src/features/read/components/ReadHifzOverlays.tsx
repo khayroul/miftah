@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import type { MushafLayoutPage, MushafPageManifest } from "@/mushaf";
 import type { HifzExerciseFlow, HifzFlowType } from "@/features/hifz/read-runtime";
-import { buildSignInPath } from "@/features/auth";
+import { buildSignInPath } from "@/features/auth/navigation";
 import type { HifzQueueRecoveryError } from "./useReadHifzQueue";
 
 const HifzInlineRating = dynamic(() => import("@/features/hifz/read-overlays/inline-rating").then((module) => module.HifzInlineRating), { ssr: false, loading: () => null });
