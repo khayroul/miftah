@@ -5,9 +5,6 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  buildAuthenticatedRequestHeaders,
-} from "./auth-request-context";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -74,15 +71,13 @@ export async function updateSupabaseSession(
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  await supabase.auth.getUser();
   const response = NextResponse.next({
     request: {
       // Supabase's setAll mutates request.cookies (and therefore the Cookie
       // header). Build this only after getUser so downstream handlers receive
       // the rotated token, not the pre-refresh request headers.
-      headers: buildAuthenticatedRequestHeaders(request.headers, user?.id ?? null),
+      headers: new Headers(request.headers),
     },
   });
 

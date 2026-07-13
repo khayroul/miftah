@@ -1,9 +1,7 @@
 import type { User } from "@supabase/supabase-js";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "./supabase-auth-server";
 import { buildSignInPath } from "./auth";
-import { AUTHENTICATED_USER_ID_HEADER } from "./auth-request-context";
 
 export type AuthenticatedUser = Pick<User, "id">;
 
@@ -12,19 +10,31 @@ export type AuthenticatedUser = Pick<User, "id">;
  * These MUST NOT be imported into client components.
  */
 
-export async function getOptionalAuthUser(): Promise<AuthenticatedUser | null> {
-  const requestHeaders = await headers();
-  const verifiedUserId = requestHeaders.get(AUTHENTICATED_USER_ID_HEADER);
-  if (verifiedUserId) {
-    return { id: verifiedUserId };
+export function authenticatedUserFromClaims(
+  claims: { sub?: unknown } | null,
+): AuthenticatedUser | null {
+  if (typeof claims?.sub !== "string" || claims.sub.length === 0) {
+    return null;
   }
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  return { id: claims.sub };
+}
 
-  return user ? { id: user.id } : null;
+export async function getOptionalAuthUser(): Promise<AuthenticatedUser | null> {
+  const supabase = await createSupabaseServerClient();
+
+  try {
+    const { data, error } = await supabase.auth.getClaims();
+    if (error) {
+      console.error("Unable to validate authenticated user claims");
+      return null;
+    }
+
+    return authenticatedUserFromClaims(data?.claims ?? null);
+  } catch {
+    console.error("Unable to validate authenticated user claims");
+    return null;
+  }
 }
 
 export async function requireAuthUser(nextPath: string): Promise<AuthenticatedUser> {
