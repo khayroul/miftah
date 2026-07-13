@@ -15,7 +15,7 @@
     "lint": "eslint",
     "perf:e2e-speed": "node scripts/perf/e2e-speed.mjs",
     "perf:read-chunks": "node scripts/perf/assert-read-initial-chunks.mjs",
-    "test:pwa": "node --import tsx --test src/shared/pwa/surahPageMap.test.ts src/shared/pwa/offlineTranslations.test.ts src/shared/pwa/mushafStatus.test.ts src/shared/pwa/downloadEngine.test.ts src/shared/pwa/offlinePageData.test.ts",
+    "test:pwa": "node --import tsx --test src/shared/pwa/surahPageMap.test.ts src/shared/pwa/offlineTranslations.test.ts src/shared/pwa/mushafStatus.test.ts src/shared/pwa/downloadEngine.test.ts src/shared/pwa/downloadMigration.test.ts src/shared/pwa/offlinePageData.test.ts",
     "test:read-nav": "tsx --test src/features/read/domain/readNavigationUtils.test.ts",
     "test:read-mode": "tsx --test src/features/read/domain/readMode.test.ts",
     "test:reading-progress": "tsx --test src/features/read/domain/readingProgressStorage.test.ts",

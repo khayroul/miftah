@@ -27,6 +27,7 @@ A bug needs fixing *before the baseline freeze* only if it is (a) security-CRITI
 - **Hifz state-corruption (W-K B1 client-trusted transitions, B2 age-only promotion) demoted OUT of fix-now** — real+verified, but hifz has ~0 adoption so negligible data accrues and the freeze concern is near-void → Phase-2 hifz rebuild.
 - **All Tasmi (W-N T-01..T-12) → Lane C** (Phase-2 builds/productionizes Tasmi; pre-fixing before that lane exists is wasted). T-07 VPS TLS = operator week-1 cred rotation.
 - **All PWA/SW (W-O) → Phase-2 SW-migration lane** (already scheduled), except B1 (version source-of-truth trap) is a *precondition* for the redesign update-prompt (do early) and B2 (audio-206→fake-503) is a cheap one-line win.
+  **Wave-8 restructure boundary (2026-07-13):** neither defect is changed by the behavior-preserving `shared/pwa` relocation. The build-ID source-of-truth repair and HTTP 206 audio handling remain explicit Phase-2 SW-migration work, with stale-install/update and ranged-audio regression tests required there.
 - **Tebuk/Unveil (W-K B4/B5) → DEFER**: incomplete features, not regressions.
 - **Disputed:** W-K B2 "dumped to lowest bucket" wording is backwards (manzil is higher); the age-only-promotion bug is real, the description isn't. W-Q F-06/F-07 are not findings (harness timing; vacuous img checks).
 

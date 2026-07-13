@@ -9,3 +9,4 @@ export type {
   CachedFahamTierVocabPayload,
   PrefetchFahamTierVocabResult,
 } from "./domain/tierVocabPackage";
+export { FAHAM_PWA_CACHE_HOOKS } from "./pwaCacheHooks";

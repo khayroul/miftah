@@ -21,9 +21,9 @@ export const metadata: Metadata = {
 };
 
 import { ReadingStateSync } from "@/features/read";
+import { FahamPwaDebugLoader } from "@/features/faham/client-debug";
 import {
   OfflineIndicator,
-  PwaDebugLoader,
   ServiceWorkerRegistrar,
   UpdateBanner,
 } from "@/shared/pwa/components";
@@ -67,7 +67,7 @@ export default function RootLayout({
         <ReadingStateSync />
         <OfflineIndicator />
         <UpdateBanner />
-        <PwaDebugLoader />
+        <FahamPwaDebugLoader />
         {children}
       </body>
     </html>

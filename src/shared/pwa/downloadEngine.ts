@@ -1,4 +1,3 @@
-import { prefetchFahamTierVocabPackage } from "@/features/faham/client";
 import { TOTAL_PAGES, TOTAL_TEMA_ENTRIES } from "./offlineBundle";
 import {
   isMushafDownloaded,
@@ -26,6 +25,7 @@ import {
   type DownloadPackageId,
   type ProgressCallback,
 } from "./downloadPackages";
+import type { OptionalOfflineCacheHooks } from "./optionalCacheHooks";
 
 export {
   buildPageAssetUrls,
@@ -40,6 +40,11 @@ export {
   type DownloadPackageId,
   type MushafDownloadProgress,
 } from "./downloadPackages";
+export type {
+  OptionalOfflineCacheHooks,
+  OptionalOfflineCacheMarker,
+  OptionalOfflineCachePrefetchParams,
+} from "./optionalCacheHooks";
 
 let activeController: AbortController | null = null;
 let isDownloading = false;
@@ -111,8 +116,9 @@ async function finalizeDownload(
   config: PwaConfig,
   controller: AbortController,
   temaDataVersion: string,
-  fahamDataVersion: string,
+  optionalCacheDataVersion: string,
   appBuildId: string,
+  optionalCache?: OptionalOfflineCacheHooks,
 ): Promise<void> {
   if (controller.signal.aborted) return;
   const finalStatus = await isMushafDownloaded(
@@ -126,16 +132,23 @@ async function finalizeDownload(
 
   markMushafDownloaded(config.cdnAssetVersion, temaDataVersion, appBuildId);
   clearDownloadCheckpoint();
-  void prefetchFahamTierVocabPackage({
-    appBuildId,
-    controller,
-    dataVersion: fahamDataVersion,
-  }).catch(() => undefined);
+  if (optionalCache) {
+    void optionalCache.prefetch({
+      appBuildId,
+      controller,
+      dataVersion: optionalCacheDataVersion,
+    }).catch(() => undefined);
+  }
+}
+
+export interface DownloadMushafOptions {
+  readonly optionalCache?: OptionalOfflineCacheHooks;
 }
 
 export async function downloadMushaf(
   config: PwaConfig,
   onProgress?: ProgressCallback,
+  options?: DownloadMushafOptions,
 ): Promise<void> {
   if (isDownloading) return;
   isDownloading = true;
@@ -143,15 +156,16 @@ export async function downloadMushaf(
   activeController = controller;
 
   const temaDataVersion = config.temaDataVersion ?? "1";
-  const fahamDataVersion = config.fahamDataVersion ?? "1";
+  const optionalCacheDataVersion = config.fahamDataVersion ?? "1";
   const appBuildId = config.appBuildId ?? "unknown";
 
   try {
     await migrateIfVersionChanged(
       config.cdnAssetVersion,
       temaDataVersion,
-      fahamDataVersion,
+      optionalCacheDataVersion,
       appBuildId,
+      options?.optionalCache,
     );
     const baseline = await isMushafDownloaded(
       config.cdnAssetVersion,
@@ -207,8 +221,9 @@ export async function downloadMushaf(
       config,
       controller,
       temaDataVersion,
-      fahamDataVersion,
+      optionalCacheDataVersion,
       appBuildId,
+      options?.optionalCache,
     );
   } catch (error) {
     if (error instanceof DOMException && error.name === "QuotaExceededError") {

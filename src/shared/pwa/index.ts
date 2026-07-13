@@ -5,3 +5,8 @@ export type {
   DownloadPackageId,
   MushafDownloadProgress,
 } from "./downloadPackages";
+export type {
+  OptionalOfflineCacheHooks,
+  OptionalOfflineCacheMarker,
+  OptionalOfflineCachePrefetchParams,
+} from "./optionalCacheHooks";

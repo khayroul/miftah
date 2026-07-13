@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { FAHAM_PWA_CACHE_HOOKS } from "@/features/faham/client";
 
 const MushafDownloadPrompt = dynamic(
   () =>
@@ -27,7 +28,7 @@ const FeedbackButton = dynamic(
 export function HomeDeferredUi() {
   return (
     <>
-      <MushafDownloadPrompt />
+      <MushafDownloadPrompt optionalCache={FAHAM_PWA_CACHE_HOOKS} />
       <FeedbackButton />
     </>
   );
