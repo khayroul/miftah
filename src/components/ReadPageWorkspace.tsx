@@ -49,7 +49,7 @@ import {
 
 const FahamExposureTracker = dynamic(
   () =>
-    import("@/components/FahamExposureTracker").then(
+    import("@/features/faham").then(
       (module) => module.FahamExposureTracker,
     ),
   {

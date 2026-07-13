@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
-import { FAHAM_LEVEL_WORD_LIMITS } from "@/lib/faham/config";
-import { getFahamLevelState } from "@/lib/faham/levels";
-import { getFahamTierVocabWords } from "@/lib/faham/repository";
+import { FAHAM_LEVEL_WORD_LIMITS } from "@/features/faham/server";
+import { getFahamLevelState } from "@/data/repositories/faham-levels";
+import { getFahamTierVocabWords } from "@/data/repositories/faham";
 
 function parseRequestedWordLimit(value: string | null): number | null {
   if (!value) {

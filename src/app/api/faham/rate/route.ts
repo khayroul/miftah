@@ -4,15 +4,17 @@ import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import type { Grade } from "@/lib/fsrs";
 import { applyRating } from "@/lib/fsrs";
 import { dbRowToCard, cardToDbRow } from "@/lib/hifz/fsrs-bridge";
-import { logVocabReview } from "@/lib/faham/review-log";
-import { fahamRateRequestSchema } from "@/lib/faham/schemas";
-import { isRecentlyReviewed } from "@/lib/faham/idempotency";
+import { logVocabReview } from "@/data/repositories/faham-review";
+import {
+  fahamRateRequestSchema,
+  isRecentlyReviewed,
+} from "@/features/faham/server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import {
   getOrCreateVocabProgress,
   getVocabProgressById,
   updateVocabProgressAfterReview,
-} from "@/lib/faham/vocab-progress";
+} from "@/data/repositories/faham-progress";
 import type { FsrsState } from "@/types/database";
 import { ZodError } from "zod";
 import { recordActivityEvent } from "@/lib/activityEvents";

@@ -3,14 +3,19 @@ import {
   getHomeReadDashboardData,
   getHomeTemaCounts,
 } from "@/data/repositories/home";
-import { TOP_FAHAM_WORD_LIMIT } from "@/lib/faham/config";
-import { buildFahamQueuePlan, DEFAULT_FAHAM_ENGINE_CONFIG } from "@/lib/faham/engine";
-import { buildFahamLevelProgress, getFahamLevelState, type FahamLevelProgress } from "@/lib/faham/levels";
+import {
+  buildFahamLevelProgress,
+  buildFahamQueuePlan,
+  DEFAULT_FAHAM_ENGINE_CONFIG,
+  TOP_FAHAM_WORD_LIMIT,
+  type FahamLevelProgress,
+} from "@/features/faham/server";
+import { getFahamLevelState } from "@/data/repositories/faham-levels";
 import {
   getDueFahamCards,
   getFahamExposureCandidates,
   getTopFahamWordIds,
-} from "@/lib/faham/repository";
+} from "@/data/repositories/faham";
 import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
 import { hasAnyHifzProgress } from "@/lib/hifz/study-progress";
 import { getHifzStats } from "@/lib/hifz/stats";

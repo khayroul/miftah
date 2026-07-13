@@ -1,4 +1,4 @@
-import { supabaseServer } from "@/lib/supabase-server";
+import { supabaseServer } from "@/data/supabase/server";
 import type { FsrsRating, FsrsState } from "@/types/database";
 
 export async function logVocabReview(params: {

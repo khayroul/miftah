@@ -1,4 +1,4 @@
-import type { FahamSourceType, VocabExposureSummary, Word } from "@/types/database";
+import type { FahamSourceType, Word } from "@/types/database";
 import type {
   FahamCandidateWord,
   FahamDueCard,
@@ -22,19 +22,6 @@ export const DEFAULT_FAHAM_ENGINE_CONFIG: FahamEngineConfig = {
 
 const SOURCE_WEIGHT_FALLBACK = 1;
 const SOURCE_WEIGHT_BY_ORDER = [7, 5, 3] as const;
-
-function sourceOccurrenceWeight(
-  summary: VocabExposureSummary,
-  source: FahamSourceType,
-): number {
-  if (source === "reading_page") {
-    return summary.reading_occurrence_weight;
-  }
-  if (source === "theme_chunk") {
-    return summary.theme_occurrence_weight;
-  }
-  return summary.hifz_occurrence_weight;
-}
 
 function buildSourceWeights(
   preferredSources: FahamSourceType[],

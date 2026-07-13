@@ -1,5 +1,5 @@
 import type { DailyGoalType } from "@/lib/activity";
-import type { FahamLevelProgress } from "@/lib/faham/levels";
+import type { FahamLevelProgress } from "@/features/faham/server";
 import type {
   HomeDashboardSnapshot,
   HomeFahamSnapshot,

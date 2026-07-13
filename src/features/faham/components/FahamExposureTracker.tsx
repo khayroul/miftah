@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { buildFahamSourceKey } from "@/lib/faham/source-key";
+import { buildFahamSourceKey } from "../domain/source-key";
 import {
   enqueueFahamExposureEvent,
   flushQueuedFahamExposureEvents,
   setupFahamExposureSync,
-} from "@/lib/faham/exposureSync";
-import type { FahamExposureInput } from "@/lib/faham/types";
+} from "../domain/exposureSync";
+import type { FahamExposureInput } from "../domain/types";
 
 const SESSION_KEY_PREFIX = "miftah:faham:exposure:";
 

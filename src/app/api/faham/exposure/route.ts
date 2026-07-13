@@ -2,8 +2,8 @@ import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import { ZodError } from "zod";
-import { recordVocabExposureEvents } from "@/lib/faham/repository";
-import { fahamExposureSchema } from "@/lib/faham/schemas";
+import { recordVocabExposureEvents } from "@/data/repositories/faham";
+import { fahamExposureSchema } from "@/features/faham/server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 
 export async function POST(request: Request): Promise<NextResponse> {

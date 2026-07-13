@@ -4,25 +4,15 @@ import type { FahamLevelProgress } from "./levels";
 import type { FahamMcqDirectionMode } from "./mcq";
 import type { FahamQueueSnapshot } from "./queue";
 import type { FahamSourcePreset } from "./presets";
-import type { FsrsRating } from "@/types/database";
+import {
+  getOfflineStorage,
+  isFiniteNumber,
+  isObjectRecord,
+  parseJson,
+} from "./offlineSyncStorage";
 
-const LS_KEY_PENDING_RATINGS = "miftah:faham:pending-ratings:v1";
 const LS_KEY_QUEUE_CACHE = "miftah:faham:queue-cache:v1";
 const LS_KEY_STATS_CACHE = "miftah:faham:stats-cache:v1";
-
-type FahamRating = Extract<FsrsRating, 1 | 2 | 3 | 4>;
-
-function isPositiveInteger(value: unknown): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value > 0;
-}
-
-export interface PendingFahamRating {
-  id: string;
-  queuedAt: number;
-  rating: FahamRating;
-  progressId?: number;
-  wordId?: number;
-}
 
 export interface CachedFahamQueue {
   directionMode: FahamMcqDirectionMode;
@@ -44,38 +34,6 @@ export interface CachedFahamStats {
 interface CachedStatsEnvelope {
   savedAt: number;
   stats: CachedFahamStats;
-}
-
-function getStorage(): Storage | null {
-  if (typeof localStorage === "undefined") {
-    return null;
-  }
-
-  try {
-    return localStorage;
-  } catch {
-    return null;
-  }
-}
-
-function isObjectRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function isFiniteNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value);
-}
-
-function parseJson(raw: string): unknown | null {
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-function isRating(value: unknown): value is FahamRating {
-  return value === 1 || value === 2 || value === 3 || value === 4;
 }
 
 function isSerializedFahamCardLike(value: unknown): boolean {
@@ -147,127 +105,13 @@ function isFahamQueueSnapshot(value: unknown): value is FahamQueueSnapshot {
   );
 }
 
-function sanitizePendingRatings(value: unknown): PendingFahamRating[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  const entries: PendingFahamRating[] = [];
-  for (const raw of value) {
-    if (!isObjectRecord(raw)) {
-      continue;
-    }
-
-    const id = raw.id;
-    const progressId = raw.progressId;
-    const wordId = raw.wordId;
-    const queuedAt = raw.queuedAt;
-    const rating = raw.rating;
-    const normalizedProgressId = isPositiveInteger(progressId) ? progressId : null;
-    const normalizedWordId = isPositiveInteger(wordId) ? wordId : null;
-
-    if (
-      typeof id !== "string" ||
-      typeof queuedAt !== "number" ||
-      !Number.isFinite(queuedAt) ||
-      queuedAt <= 0 ||
-      !isRating(rating) ||
-      (normalizedProgressId === null && normalizedWordId === null)
-    ) {
-      continue;
-    }
-
-    entries.push({
-      id,
-      queuedAt,
-      rating,
-      progressId: normalizedProgressId ?? undefined,
-      wordId: normalizedWordId ?? undefined,
-    });
-  }
-
-  return entries.sort((a, b) => a.queuedAt - b.queuedAt);
-}
-
-function persistPendingRatings(entries: PendingFahamRating[]): void {
-  const storage = getStorage();
-  if (!storage) {
-    return;
-  }
-
-  try {
-    storage.setItem(LS_KEY_PENDING_RATINGS, JSON.stringify(entries));
-  } catch {
-    // Ignore storage quota/availability issues.
-  }
-}
-
-export function loadPendingFahamRatings(): PendingFahamRating[] {
-  const storage = getStorage();
-  if (!storage) {
-    return [];
-  }
-
-  const raw = storage.getItem(LS_KEY_PENDING_RATINGS);
-  if (!raw) {
-    return [];
-  }
-
-  const parsed = parseJson(raw);
-  const sanitized = sanitizePendingRatings(parsed);
-  if (sanitized.length === 0) {
-    try {
-      storage.removeItem(LS_KEY_PENDING_RATINGS);
-    } catch {
-      // Ignore storage failures.
-    }
-    return [];
-  }
-
-  if (sanitized.length !== (Array.isArray(parsed) ? parsed.length : 0)) {
-    persistPendingRatings(sanitized);
-  }
-
-  return sanitized;
-}
-
-export function enqueuePendingFahamRating(input: {
-  progressId?: number;
-  rating: FahamRating;
-  wordId?: number;
-}): PendingFahamRating[] {
-  const progressId = isPositiveInteger(input.progressId) ? input.progressId : null;
-  const wordId = isPositiveInteger(input.wordId) ? input.wordId : null;
-  if (progressId === null && wordId === null) {
-    return loadPendingFahamRatings();
-  }
-
-  const nextEntry: PendingFahamRating = {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
-    queuedAt: Date.now(),
-    rating: input.rating,
-    progressId: progressId ?? undefined,
-    wordId: wordId ?? undefined,
-  };
-
-  const next = [...loadPendingFahamRatings(), nextEntry];
-  persistPendingRatings(next);
-  return next;
-}
-
-export function replacePendingFahamRatings(entries: PendingFahamRating[]): PendingFahamRating[] {
-  const sanitized = sanitizePendingRatings(entries);
-  persistPendingRatings(sanitized);
-  return sanitized;
-}
-
 export function saveCachedFahamQueue(input: {
   directionMode: FahamMcqDirectionMode;
   isRevision: boolean;
   preset: FahamSourcePreset;
   snapshot: FahamQueueSnapshot;
 }): void {
-  const storage = getStorage();
+  const storage = getOfflineStorage();
   if (!storage) {
     return;
   }
@@ -288,7 +132,7 @@ export function saveCachedFahamQueue(input: {
 }
 
 export function loadCachedFahamQueue(): CachedFahamQueue | null {
-  const storage = getStorage();
+  const storage = getOfflineStorage();
   if (!storage) {
     return null;
   }
@@ -360,15 +204,11 @@ function isCachedFahamStats(value: unknown): value is CachedFahamStats {
     return true;
   }
 
-  if (!isObjectRecord(levelProgress)) {
-    return false;
-  }
-
-  return true;
+  return isObjectRecord(levelProgress);
 }
 
 export function saveCachedFahamStats(stats: CachedFahamStats): void {
-  const storage = getStorage();
+  const storage = getOfflineStorage();
   if (!storage) {
     return;
   }
@@ -386,7 +226,7 @@ export function saveCachedFahamStats(stats: CachedFahamStats): void {
 }
 
 export function loadCachedFahamStats(): CachedStatsEnvelope | null {
-  const storage = getStorage();
+  const storage = getOfflineStorage();
   if (!storage) {
     return null;
   }

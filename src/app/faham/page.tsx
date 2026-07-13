@@ -1,12 +1,12 @@
-import { FahamWorkspace } from "@/components/FahamWorkspace";
+import { FahamWorkspace } from "@/features/faham";
 import { ModeNavigator } from "@/features/home/components/ModeNavigator";
-import type { FahamQueueSnapshot } from "@/lib/faham/queue";
-import type { FahamLevelProgress } from "@/lib/faham/levels";
-import { getReadJumpTargets } from "@/lib/readNavigation";
-import { getOptionalAuthUser } from "@/lib/auth-server";
 import {
   parseFahamSourcePreset,
-} from "@/lib/faham/presets";
+  type FahamLevelProgress,
+  type FahamQueueSnapshot,
+} from "@/features/faham/server";
+import { getReadJumpTargets } from "@/lib/readNavigation";
+import { getOptionalAuthUser } from "@/lib/auth-server";
 
 interface FahamPageProps {
   searchParams: Promise<{
