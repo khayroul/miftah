@@ -22,12 +22,16 @@ export interface RepoWordWithOccurrences extends Word {
   word_occurrences: WordOccurrenceLite | WordOccurrenceLite[] | null;
 }
 
-interface WordOccurrenceQueryRow extends WordOccurrenceLite {
-  word_id: number;
+export interface FirstOccurrenceWordRow {
+  first_occurrence: WordOccurrenceLite | WordOccurrenceLite[] | null;
+  id: number;
 }
 
 export const FAHAM_WORD_COLUMNS =
   "id, text_uthmani, text_simple, translation_bm, translation_en, transliteration, root, lemma, pos, frequency";
+export const FIRST_OCCURRENCE_PARENT_CHUNK_SIZE = 200;
+const FIRST_OCCURRENCE_SELECT =
+  "id, first_occurrence:word_occurrences(ayah_id, position, page_number, ayat(surah_id, ayah_number))";
 
 export interface FahamTierVocabWord {
   frequency: number;
@@ -52,56 +56,97 @@ export function uniquePositiveIntegerIds(ids: number[]): number[] {
   );
 }
 
-/**
- * Index the first Quran-order occurrence for each word.
- *
- * The repository query sorts by ayah then position, so retaining the first row
- * gives one deterministic audio/context anchor without embedding every
- * occurrence into every parent word query.
- */
-export function indexFirstOccurrences(
-  rows: WordOccurrenceQueryRow[],
-): Map<number, WordOccurrenceLite> {
-  const firstByWordId = new Map<number, WordOccurrenceLite>();
+/** Split parent ids into requests comfortably below row and URL limits. */
+export function chunkIds(
+  ids: number[],
+  chunkSize = FIRST_OCCURRENCE_PARENT_CHUNK_SIZE,
+): number[][] {
+  if (!Number.isInteger(chunkSize) || chunkSize <= 0) {
+    throw new RangeError("chunkSize must be a positive integer");
+  }
 
-  for (const { word_id: wordId, ...occurrence } of rows) {
-    if (!firstByWordId.has(wordId)) {
-      firstByWordId.set(wordId, occurrence);
+  const chunks: number[][] = [];
+  for (let index = 0; index < ids.length; index += chunkSize) {
+    chunks.push(ids.slice(index, index + chunkSize));
+  }
+  return chunks;
+}
+
+/** Extract aliased child rows and restore the caller's parent-id order. */
+export function firstOccurrencesFromWordRows(
+  requestedWordIds: number[],
+  rows: FirstOccurrenceWordRow[],
+): Map<number, WordOccurrenceLite> {
+  const foundByWordId = new Map<number, WordOccurrenceLite>();
+
+  for (const row of rows) {
+    const firstOccurrence = firstRelation(row.first_occurrence);
+    if (firstOccurrence && !foundByWordId.has(row.id)) {
+      foundByWordId.set(row.id, firstOccurrence);
     }
   }
 
-  return firstByWordId;
+  const ordered = new Map<number, WordOccurrenceLite>();
+  for (const wordId of requestedWordIds) {
+    const occurrence = foundByWordId.get(wordId);
+    if (occurrence) {
+      ordered.set(wordId, occurrence);
+    }
+  }
+  return ordered;
 }
 
-/**
- * Load occurrence context in one lean batch for a set of words.
- *
- * PostgREST cannot express a per-parent LIMIT in the old embedded relation.
- * This query therefore returns narrow occurrence rows, ordered once, and the
- * mapper retains only the first row per word. It avoids duplicating the much
- * wider word/progress payload for every occurrence.
- */
-export async function firstOccurrenceFor(
+type FirstOccurrenceChunkLoader = (
   wordIds: number[],
+) => Promise<FirstOccurrenceWordRow[]>;
+
+export async function loadFirstOccurrencesInChunks(
+  wordIds: number[],
+  loadChunk: FirstOccurrenceChunkLoader,
+  chunkSize = FIRST_OCCURRENCE_PARENT_CHUNK_SIZE,
 ): Promise<Map<number, WordOccurrenceLite>> {
   const uniqueWordIds = uniquePositiveIntegerIds(wordIds);
   if (uniqueWordIds.length === 0) {
     return new Map();
   }
 
-  const { data, error } = await supabaseServer
-    .from("word_occurrences")
-    .select(
-      "word_id, ayah_id, position, page_number, ayat!inner(surah_id, ayah_number)",
-    )
-    .in("word_id", uniqueWordIds)
-    .order("ayah_id", { ascending: true })
-    .order("position", { ascending: true });
-  if (error) {
-    throw error;
-  }
+  const rowChunks = await Promise.all(
+    chunkIds(uniqueWordIds, chunkSize).map(loadChunk),
+  );
+  return firstOccurrencesFromWordRows(uniqueWordIds, rowChunks.flat());
+}
 
-  return indexFirstOccurrences((data ?? []) as WordOccurrenceQueryRow[]);
+/**
+ * Load one occurrence context per word through bounded parent batches.
+ *
+ * The root `words` rows stay below PostgREST's row cap, while the aliased
+ * embedded relation gets its own order and per-parent limit. Unlike a flat
+ * occurrence query, a high-frequency word can never consume the response cap
+ * before later requested words are represented.
+ */
+export async function firstOccurrenceFor(
+  wordIds: number[],
+): Promise<Map<number, WordOccurrenceLite>> {
+  return loadFirstOccurrencesInChunks(wordIds, async (wordIdChunk) => {
+    const { data, error } = await supabaseServer
+      .from("words")
+      .select(FIRST_OCCURRENCE_SELECT)
+      .in("id", wordIdChunk)
+      .order("ayah_id", {
+        ascending: true,
+        referencedTable: "first_occurrence",
+      })
+      .order("position", {
+        ascending: true,
+        referencedTable: "first_occurrence",
+      })
+      .limit(1, { referencedTable: "first_occurrence" });
+    if (error) {
+      throw error;
+    }
+
+    return (data ?? []) as FirstOccurrenceWordRow[];
+  });
 }
 
 export function attachFirstOccurrences(
