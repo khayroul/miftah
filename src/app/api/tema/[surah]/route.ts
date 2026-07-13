@@ -29,7 +29,19 @@ export async function GET(
   }
 
   try {
-    const chunks = await getThemeAppearanceChunksBySurah(surahId);
+    // The prev-surah fetch (for cross-surah back navigation) depends on
+    // nothing computed from the current surah's chunks — fire both
+    // concurrently instead of sequentially. Its error handling stays
+    // non-critical (swallowed to null) exactly as the old try/catch did.
+    const prevChunksPromise: Promise<ThemeAppearanceChunk[] | null> =
+      surahId > 1
+        ? getThemeAppearanceChunksBySurah(surahId - 1).catch(() => null)
+        : Promise.resolve(null);
+
+    const [chunks, prevChunks] = await Promise.all([
+      getThemeAppearanceChunksBySurah(surahId),
+      prevChunksPromise,
+    ]);
 
     // Collect all ayah IDs across all chunks for WBW
     const allAyahIds = chunks.flatMap((chunk) =>
@@ -41,18 +53,8 @@ export async function GET(
         : {};
 
     // Previous surah chunk count for cross-surah back navigation
-    let prevSurahChunkCount: number | null = null;
-    if (surahId > 1) {
-      try {
-        const prevChunks = await getThemeAppearanceChunksBySurah(
-          surahId - 1,
-        );
-        prevSurahChunkCount =
-          prevChunks.length > 0 ? prevChunks.length : null;
-      } catch {
-        // Non-critical — fall back to no cross-surah link
-      }
-    }
+    const prevSurahChunkCount: number | null =
+      prevChunks && prevChunks.length > 0 ? prevChunks.length : null;
 
     const response: TemaApiResponse = {
       surahId,

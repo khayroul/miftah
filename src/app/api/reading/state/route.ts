@@ -25,17 +25,21 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     const body = readingStateSchema.parse(rawBody);
-    const state = await saveUserReadingState(user.id, body.page);
-    await recordActivityEvent({
-      activityType: "read_page_viewed",
-      entityId: body.page,
-      entityKey: String(body.page),
-      entityType: "page",
-      metadata: {
-        page: body.page,
-      },
-      userId: user.id,
-    });
+    // Two independent writes to different tables (reading state vs.
+    // activity_events) — run concurrently instead of serially.
+    const [state] = await Promise.all([
+      saveUserReadingState(user.id, body.page),
+      recordActivityEvent({
+        activityType: "read_page_viewed",
+        entityId: body.page,
+        entityKey: String(body.page),
+        entityType: "page",
+        metadata: {
+          page: body.page,
+        },
+        userId: user.id,
+      }),
+    ]);
     revalidateTag("home-dashboard", "max");
     after(() => recomputeAndStoreSnapshot(user.id));
     return NextResponse.json({ ok: true, state });
