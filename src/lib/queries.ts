@@ -738,6 +738,61 @@ function withChunkIndex(
 }
 
 /**
+ * The STABLE content identity of a theme chunk (RF-5).
+ *
+ * theme_chunk_progress is keyed by this triple, never by the volatile positional
+ * `chunk_index` that `withChunkIndex` assigns. A future edit that shifts
+ * chunk_index (e.g. inserting a chunk earlier in the surah) leaves the content
+ * triple untouched, so a user's progress stays attached to the same ayah span.
+ */
+export interface ThemeChunkContentKey {
+  surahId: number;
+  startAyah: number;
+  endAyah: number;
+}
+
+/**
+ * Map a 1-based `chunk_index` to its stable content key within a chunk list.
+ *
+ * Pure and side-effect free — the returned key is independent of the chunk's
+ * position, which is the whole point: this is the seam that translates the
+ * volatile index the client sends into the stable (surah_id, start_ayah,
+ * end_ayah) triple that progress is persisted under. Returns null when the index
+ * is out of range for the surah's current chunking.
+ */
+export function themeChunkContentKeyFromChunks(
+  chunks: readonly Pick<
+    ThemeAppearanceChunk,
+    "chunk_index" | "surah_id" | "start_ayah" | "end_ayah"
+  >[],
+  chunkIndex: number,
+): ThemeChunkContentKey | null {
+  const chunk = chunks.find((entry) => entry.chunk_index === chunkIndex);
+  if (!chunk) {
+    return null;
+  }
+  return {
+    surahId: chunk.surah_id,
+    startAyah: chunk.start_ayah,
+    endAyah: chunk.end_ayah,
+  };
+}
+
+/**
+ * Resolve a (surahId, chunkIndex) request to its stable content key by running
+ * the real chunk builder. The theme-progress write path calls this before
+ * touching theme_chunk_progress, so persistence keys on stable content rather
+ * than the positional index.
+ */
+export async function resolveThemeChunkContentKey(
+  surahId: number,
+  chunkIndex: number,
+): Promise<ThemeChunkContentKey | null> {
+  const chunks = await getThemeAppearanceChunksBySurah(surahId);
+  return themeChunkContentKeyFromChunks(chunks, chunkIndex);
+}
+
+/**
  * Group ayat in a surah into contiguous "theme appearance" chunks.
  * Chunk boundary changes whenever the selected dominant theme changes.
  */

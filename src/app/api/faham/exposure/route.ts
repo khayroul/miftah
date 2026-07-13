@@ -25,14 +25,12 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     // Consume the client's idempotency token (B6). The client stamps every
     // exposure POST with a stable per-event id and retries lost-response POSTs
-    // with the SAME id. There is no column to persist it against yet (robust
-    // dedup is a migration follow-up documented in recordVocabExposureEvents),
-    // so the server-side guard is a best-effort natural-key window inside the
-    // repository; the id is read here (previously ignored) and echoed back for
-    // request correlation / future per-event dedup.
+    // with the SAME id. It is now persisted via the (user_id, event_id) partial
+    // unique index inside recordVocabExposureEvents, making a retry a true
+    // no-op; the id is also echoed back for request correlation.
     const eventId = request.headers.get("X-Miftah-Exposure-Event-Id");
 
-    const result = await recordVocabExposureEvents(userId, body);
+    const result = await recordVocabExposureEvents(userId, body, eventId);
     revalidateTag("home-dashboard", "max");
     after(() => recomputeAndStoreSnapshot(userId));
     return NextResponse.json({ eventId, ok: true, ...result });
