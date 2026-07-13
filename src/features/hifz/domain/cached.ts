@@ -1,7 +1,11 @@
 import { unstable_cache } from "next/cache";
-import { buildDailyPlanWithDetails } from "./scheduler";
-import { getHifzStats, getJuzProgress, getPageProgressGrid } from "./stats";
-import { hasAnyHifzProgress } from "./study-progress";
+import {
+  buildDailyPlanWithDetails,
+  getHifzStats,
+  getJuzProgress,
+  getPageProgressGrid,
+  hasAnyHifzProgress,
+} from "@/data/repositories/hifz";
 
 export const getCachedDailyPlan = unstable_cache(
   buildDailyPlanWithDetails,

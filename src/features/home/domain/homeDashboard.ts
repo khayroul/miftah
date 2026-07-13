@@ -16,9 +16,9 @@ import {
   getFahamExposureCandidates,
   getTopFahamWordIds,
 } from "@/data/repositories/faham";
-import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
-import { hasAnyHifzProgress } from "@/lib/hifz/study-progress";
-import { getHifzStats } from "@/lib/hifz/stats";
+import { buildDailyPlanWithDetails } from "@/data/repositories/hifz";
+import { hasAnyHifzProgress } from "@/data/repositories/hifz";
+import { getHifzStats } from "@/data/repositories/hifz";
 import { getReadPageActivityRows } from "@/lib/activityEvents";
 import {
   getUserStreak,
@@ -27,7 +27,7 @@ import {
   recommendHifzPageGoalFromAyahGoal,
 } from "@/lib/activity";
 import type { ActivityType, DailyGoalType } from "@/lib/activity";
-import type { PlanItem } from "@/lib/hifz/scheduler";
+import type { PlanItem } from "@/data/repositories/hifz";
 
 const TOTAL_QURAN_PAGES = 604;
 

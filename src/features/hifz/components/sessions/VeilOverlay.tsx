@@ -1,4 +1,4 @@
-import type { UnveilWord } from "@/lib/hifz/progressive-unveil";
+import type { UnveilWord } from "../../domain/progressive-unveil";
 
 interface VeilOverlayProps {
   words: UnveilWord[];

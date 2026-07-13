@@ -1,7 +1,7 @@
 "use client";
 
-import type { TebukRoundResult } from "@/types/hifz-exercises";
-import { RATING_LABEL_DISPLAY } from "@/lib/hifz/exercise-labels";
+import type { TebukRoundResult } from "../../domain/types";
+import { RATING_LABEL_DISPLAY } from "../../domain/exercise-labels";
 
 interface TebukResultCardProps {
   result: TebukRoundResult;

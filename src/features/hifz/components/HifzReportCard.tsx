@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import type { JuzStat, PageGridEntry, PageGridStatus } from "@/lib/hifz/stats";
-import { JUZ_BOUNDARY_PAGES, JUZ_PAGE_COUNTS } from "@/lib/hifz/constants";
-import { HifzPageActionSheet } from "@/components/HifzPageActionSheet";
+import type { JuzStat, PageGridEntry, PageGridStatus } from "@/data/repositories/hifz";
+import { JUZ_BOUNDARY_PAGES, JUZ_PAGE_COUNTS } from "../domain/constants";
+import { HifzPageActionSheet } from "./HifzPageActionSheet";
 
 interface HifzReportCardProps {
   juzProgress: JuzStat[];

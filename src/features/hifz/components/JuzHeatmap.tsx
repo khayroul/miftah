@@ -1,6 +1,6 @@
 "use client";
 
-import type { JuzStat } from "@/lib/hifz/stats";
+import type { JuzStat } from "@/data/repositories/hifz";
 
 interface JuzHeatmapProps {
   juzProgress: JuzStat[];

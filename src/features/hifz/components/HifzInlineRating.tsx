@@ -11,17 +11,17 @@ import {
   getItemsForPage,
   isQueueComplete,
   clearQueue,
-} from "@/lib/hifz/sessionQueue";
+} from "../domain/sessionQueue";
 import { buildSignInPath } from "@/lib/auth";
-import type { HifzFlowType } from "@/lib/hifz/sessionQueue";
+import type { HifzFlowType } from "../domain/sessionQueue";
 import {
   TasmiSessionUI,
   type AyahRange,
   type TasmiRatingLabel,
   type TasmiSessionResult,
 } from "@/features/tasmi";
-import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
-import { saveResumePoint, clearResumePoint } from "@/lib/hifz/resumePoint";
+import { saveResumePoint, clearResumePoint } from "../domain/resumePoint";
+import { loadHifzTasmiText } from "../domain/tasmiText";
 
 interface HifzInlineRatingProps {
   flowType: HifzFlowType;
@@ -125,51 +125,17 @@ export function HifzInlineRating({
 
     setTasmiLoading(true);
     try {
-      const ayahKeys = pageItems.map((item) => item.ayahKey);
-      const parsed = ayahKeys.map((key) => {
-        const [surah, ayah] = key.split(":").map(Number);
-        return { surah: surah ?? 0, ayah: ayah ?? 0 };
-      });
-
-      const surahNumber = parsed[0]?.surah ?? 0;
-      const startAyah = parsed[0]?.ayah ?? 0;
-      const endAyah = parsed[parsed.length - 1]?.ayah ?? startAyah;
-
-      const supabase = createSupabaseBrowserClient();
       const ayahIds = pageItems.map((item) => item.ayahId);
-      const { data: ayahRows } = await supabase
-        .from("ayat")
-        .select("id, surah_id, ayah_number, text_simple")
-        .in("id", ayahIds)
-        .order("surah_id")
-        .order("ayah_number");
-
-      if (!ayahRows || ayahRows.length === 0) {
+      const tasmiText = await loadHifzTasmiText(ayahIds);
+      if (!tasmiText) {
         setTasmiLoading(false);
         return;
       }
-
-      const expectedText = ayahRows.map((row) => row.text_simple).join(" ");
-
-      // Build per-ayah word ranges for talqin resolution
-      let wordOffset = 0;
-      const ranges: AyahRange[] = ayahRows.map((row) => {
-        const wordCount = row.text_simple.split(/\s+/).filter(Boolean).length;
-        const range: AyahRange = {
-          surah: row.surah_id,
-          ayah: row.ayah_number,
-          startWordIndex: wordOffset,
-          endWordIndex: wordOffset + wordCount - 1,
-        };
-        wordOffset += wordCount;
-        return range;
-      });
-
-      setTasmiExpectedText(expectedText);
-      setTasmiAyahRanges(ranges);
-      setTasmiSurahNumber(surahNumber);
-      setTasmiStartAyah(startAyah);
-      setTasmiEndAyah(endAyah);
+      setTasmiExpectedText(tasmiText.expectedText);
+      setTasmiAyahRanges(tasmiText.ayahRanges);
+      setTasmiSurahNumber(tasmiText.surahNumber);
+      setTasmiStartAyah(tasmiText.startAyah);
+      setTasmiEndAyah(tasmiText.endAyah);
       setTasmiActive(true);
     } catch {
       // Failed to fetch — stay on manual mode
@@ -182,7 +148,6 @@ export function HifzInlineRating({
     setTasmiExpectedText(null);
   }, []);
 
-  /* eslint-disable react-hooks/preserve-manual-memoization */
   const handleRate = useCallback(
     async (rating: 1 | 3) => {
       setSubmitting(true);
@@ -288,10 +253,15 @@ export function HifzInlineRating({
         setSubmitting(false);
       }
     },
-    [buildAlreadyRatedState, flowType, pageNumber, router],
+    [
+      buildAlreadyRatedState,
+      flowType,
+      onPageComplete,
+      onSessionComplete,
+      pageNumber,
+      router,
+    ],
   );
-  /* eslint-enable react-hooks/preserve-manual-memoization */
-
   const handleTasmiEnd = useCallback(
     async (_result: TasmiSessionResult, label: TasmiRatingLabel) => {
       setTasmiActive(false);

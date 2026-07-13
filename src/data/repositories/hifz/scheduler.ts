@@ -73,6 +73,26 @@ async function enrichWithAyahDetails(
     .filter((item): item is PlanItem => item !== null);
 }
 
+export async function getDailyPlanPageNumbers(
+  userId: string,
+): Promise<number[]> {
+  const raw = await getRawDailyPlan(userId);
+  const ayahIds = [...raw.sabqi, ...raw.sabak, ...raw.manzil].map(
+    (item) => item.ayah_id,
+  );
+  if (ayahIds.length === 0) return [];
+
+  const { data, error } = await supabaseServer
+    .from("ayat")
+    .select("page_number")
+    .in("id", ayahIds);
+  if (error) throw error;
+
+  return Array.from(
+    new Set((data ?? []).map((row: { page_number: number }) => row.page_number)),
+  );
+}
+
 export async function buildDailyPlanWithDetails(
   userId: string,
 ): Promise<DailyPlanWithDetails> {

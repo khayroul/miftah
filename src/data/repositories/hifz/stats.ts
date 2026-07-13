@@ -1,5 +1,5 @@
 import { supabaseServer } from "@/lib/supabase-server";
-import { TOTAL_QURAN_PAGES, JUZ_BOUNDARY_PAGES, JUZ_PAGE_COUNTS, pageToJuz } from "@/lib/hifz/constants";
+import { TOTAL_QURAN_PAGES, JUZ_PAGE_COUNTS, pageToJuz } from "@/features/hifz/domain/constants";
 
 export interface JuzStat {
   juz: number;

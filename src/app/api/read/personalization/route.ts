@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getOptionalAuthUser } from "@/lib/auth-server";
-import { getProgressByAyahIds } from "@/lib/hifz/study-progress";
+import { getProgressByAyahIds } from "@/data/repositories/hifz";
 import { getAyatIdentityByPage } from "@/lib/queries";
 
 const searchParamsSchema = z.object({

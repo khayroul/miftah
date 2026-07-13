@@ -3,7 +3,7 @@ import { revalidateTag } from "next/cache";
 import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import type { Grade } from "@/lib/fsrs";
 import { applyRating } from "@/lib/fsrs";
-import { dbRowToCard, cardToDbRow } from "@/lib/hifz/fsrs-bridge";
+import { dbRowToCard, cardToDbRow } from "@/features/hifz/domain/fsrs-bridge";
 import { logVocabReview } from "@/data/repositories/faham-review";
 import {
   fahamRateRequestSchema,

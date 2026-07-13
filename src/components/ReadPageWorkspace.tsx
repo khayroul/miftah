@@ -17,7 +17,7 @@ import { ReadOnlyMushafPageView } from "@/mushaf/components/ReadOnlyMushafPageVi
 import { ReadModeTools } from "@/components/ReadModeTools";
 import { useReadAudio } from "@/components/ReadAudioProvider";
 import type { ReadAudioTrack } from "@/lib/pageAudioTracks";
-import type { HifzQueueResponse } from "@/lib/hifz/queue";
+import type { HifzQueueResponse } from "@/features/hifz";
 import {
   buildQueuePageHref,
   buildRecoveredRatedProgressIds,
@@ -29,7 +29,7 @@ import {
   type HifzFlowType,
   type HifzQueuePagePointer,
   type HifzSessionQueue,
-} from "@/lib/hifz/sessionQueue";
+} from "@/features/hifz";
 import { buildSignInPath } from "@/lib/auth";
 import { rememberLastReadPage } from "@/lib/readingProgressStorage";
 import { useReadMode } from "@/lib/useReadMode";
@@ -38,8 +38,7 @@ import type { ReadMode } from "@/lib/readMode";
 import type { MushafWordTranslationMap } from "@/mushaf/types/mushaf";
 import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
 import type { ReactNode } from "react";
-import { preCacheAudioUrls } from "@/lib/hifz/audioPreCache";
-import type { HifzExerciseFlow } from "@/types/hifz-exercises";
+import { preCacheAudioUrls, type HifzExerciseFlow } from "@/features/hifz";
 import type { MushafPageManifest } from "@/mushaf/types/mushaf";
 import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 import {
@@ -82,7 +81,7 @@ const HifzTasmiOverlay = dynamic(
 
 const HifzInlineRating = dynamic(
   () =>
-    import("@/components/HifzInlineRating").then(
+    import("@/features/hifz/components/HifzInlineRating").then(
       (module) => module.HifzInlineRating,
     ),
   {
@@ -93,7 +92,7 @@ const HifzInlineRating = dynamic(
 
 const HifzMemorizeStepper = dynamic(
   () =>
-    import("@/components/HifzMemorizeStepper").then(
+    import("@/features/hifz/components/HifzMemorizeStepper").then(
       (module) => module.HifzMemorizeStepper,
     ),
   {
@@ -104,7 +103,7 @@ const HifzMemorizeStepper = dynamic(
 
 const HifzSessionBar = dynamic(
   () =>
-    import("@/components/HifzSessionBar").then(
+    import("@/features/hifz/components/HifzSessionBar").then(
       (module) => module.HifzSessionBar,
     ),
   {
@@ -115,7 +114,7 @@ const HifzSessionBar = dynamic(
 
 const HifzSessionComplete = dynamic(
   () =>
-    import("@/components/HifzSessionComplete").then(
+    import("@/features/hifz/components/HifzSessionComplete").then(
       (module) => module.HifzSessionComplete,
     ),
   {
@@ -126,7 +125,7 @@ const HifzSessionComplete = dynamic(
 
 const HifzTebukSession = dynamic(
   () =>
-    import("@/components/hifz/HifzTebukSession").then(
+    import("@/features/hifz/components/sessions/HifzTebukSession").then(
       (module) => module.HifzTebukSession,
     ),
   {
@@ -137,7 +136,7 @@ const HifzTebukSession = dynamic(
 
 const HifzUnveilSession = dynamic(
   () =>
-    import("@/components/hifz/HifzUnveilSession").then(
+    import("@/features/hifz/components/sessions/HifzUnveilSession").then(
       (module) => module.HifzUnveilSession,
     ),
   {

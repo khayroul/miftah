@@ -15,11 +15,11 @@ import {
   type TasmiRatingLabel,
   type TasmiSessionResult,
 } from "@/features/tasmi";
-import { buildUnveilState, revealUpTo } from "@/lib/hifz/progressive-unveil";
-import type { UnveilState } from "@/lib/hifz/progressive-unveil";
-import { getPageWords, buildAyahWordRanges } from "@/lib/hifz/page-words";
-import { VeilOverlay } from "@/components/hifz/VeilOverlay";
-import { UnveilResultCard } from "@/components/hifz/UnveilResultCard";
+import { buildUnveilState, revealUpTo } from "../../domain/progressive-unveil";
+import type { UnveilState } from "../../domain/progressive-unveil";
+import { getPageWords, buildAyahWordRanges } from "../../domain/page-words";
+import { VeilOverlay } from "./VeilOverlay";
+import { UnveilResultCard } from "./UnveilResultCard";
 
 type UnveilPhase = "prompting" | "reciting" | "complete";
 

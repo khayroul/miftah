@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
-import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
-import { buildHifzQueueResponse } from "@/lib/hifz/queue";
+import { buildDailyPlanWithDetails } from "@/data/repositories/hifz";
+import { buildHifzQueueResponse } from "@/features/hifz/domain/queue";
 
 export async function GET(request: Request): Promise<NextResponse> {
   const { searchParams } = new URL(request.url);

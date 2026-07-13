@@ -1,11 +1,14 @@
 import { supabaseServer } from "@/lib/supabase-server";
-import { newCardDbRow } from "./fsrs-bridge";
+import { newCardDbRow } from "@/features/hifz/domain/fsrs-bridge";
 import { isUniqueViolation } from "@/features/faham/server";
 import type { FsrsFields, HifzStatus, StudyProgress } from "@/types/database";
 
 const SABQI_WINDOW_DAYS = 7;
 const SABAK_SIZE = 10;
 const MANZIL_DAILY_LIMIT = 30; // 2 pages × 15 ayat
+
+const STUDY_PROGRESS_COLUMNS =
+  "id, user_id, ayah_id, hifz_status, sabak_started_at, moved_to_sabqi_at, moved_to_manzil_at, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, due, last_review, created_at, updated_at";
 
 export async function hasAnyHifzProgress(userId: string): Promise<boolean> {
   const { count, error } = await supabaseServer
@@ -22,7 +25,7 @@ export async function getOrCreateProgress(
 ): Promise<StudyProgress> {
   const { data } = await supabaseServer
     .from("study_progress")
-    .select("*")
+    .select(STUDY_PROGRESS_COLUMNS)
     .eq("user_id", userId)
     .eq("ayah_id", ayahId)
     .single();
@@ -38,7 +41,7 @@ export async function getOrCreateProgress(
   const { data: created, error } = await supabaseServer
     .from("study_progress")
     .insert(row)
-    .select()
+    .select(STUDY_PROGRESS_COLUMNS)
     .single();
   if (error) throw error;
   return created as StudyProgress;
@@ -49,7 +52,7 @@ export async function getProgressById(
 ): Promise<StudyProgress | null> {
   const { data } = await supabaseServer
     .from("study_progress")
-    .select("*")
+    .select(STUDY_PROGRESS_COLUMNS)
     .eq("id", id)
     .single();
   return data as StudyProgress | null;
@@ -68,7 +71,7 @@ export async function getProgressByAyahIds(
 
   const { data, error } = await supabaseServer
     .from("study_progress")
-    .select("*")
+    .select(STUDY_PROGRESS_COLUMNS)
     .eq("user_id", userId)
     .in("ayah_id", uniqueAyahIds);
   if (error) throw error;
@@ -126,7 +129,7 @@ export async function demoteManzilToSabqi(
   if (error) throw error;
 }
 
-async function promoteSabqiToManzil(userId: string): Promise<number> {
+export async function promoteSabqiToManzil(userId: string): Promise<number> {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - SABQI_WINDOW_DAYS);
   const now = new Date().toISOString();
@@ -148,7 +151,7 @@ async function getSabqi(userId: string): Promise<StudyProgress[]> {
 
   const { data, error } = await supabaseServer
     .from("study_progress")
-    .select("*")
+    .select(STUDY_PROGRESS_COLUMNS)
     .eq("user_id", userId)
     .eq("hifz_status", "sabqi")
     .gte("moved_to_sabqi_at", cutoff.toISOString())
@@ -161,7 +164,7 @@ async function getSabqi(userId: string): Promise<StudyProgress[]> {
 async function getOrCreateSabak(userId: string): Promise<StudyProgress[]> {
   const { data: existing, error: e1 } = await supabaseServer
     .from("study_progress")
-    .select("*")
+    .select(STUDY_PROGRESS_COLUMNS)
     .eq("user_id", userId)
     .eq("hifz_status", "sabak")
     .order("ayah_id", { ascending: true });
@@ -209,7 +212,7 @@ async function getOrCreateSabak(userId: string): Promise<StudyProgress[]> {
 
   const { data: created, error: e4 } = await supabaseServer
     .from("study_progress")
-    .select("*")
+    .select(STUDY_PROGRESS_COLUMNS)
     .eq("user_id", userId)
     .eq("hifz_status", "sabak")
     .order("ayah_id", { ascending: true });
@@ -220,7 +223,7 @@ async function getOrCreateSabak(userId: string): Promise<StudyProgress[]> {
 async function getManzil(userId: string): Promise<StudyProgress[]> {
   const { data, error } = await supabaseServer
     .from("study_progress")
-    .select("*")
+    .select(STUDY_PROGRESS_COLUMNS)
     .eq("user_id", userId)
     .eq("hifz_status", "manzil")
     .lte("due", new Date().toISOString())
@@ -237,6 +240,9 @@ export interface RawDailyPlan {
 }
 
 export async function getRawDailyPlan(userId: string): Promise<RawDailyPlan> {
+  // Correctness-preserving defer: this remains on the read path until an
+  // operator-approved scheduled job invokes promoteSabqiToManzil. Removing it
+  // without that replacement would strand eligible sabqi rows indefinitely.
   await promoteSabqiToManzil(userId);
   const [sabqi, sabak, manzil] = await Promise.all([
     getSabqi(userId),

@@ -1,6 +1,6 @@
 "use client";
 
-import type { TebukPrompt } from "@/types/hifz-exercises";
+import type { TebukPrompt } from "../../domain/types";
 
 interface TebukPromptCardProps {
   prompt: TebukPrompt;

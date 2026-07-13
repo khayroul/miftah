@@ -1,8 +1,8 @@
 "use client";
 
-import type { TebukRoundResult } from "@/types/hifz-exercises";
+import type { TebukRoundResult } from "../../domain/types";
 import type { TasmiRatingLabel } from "@/features/tasmi";
-import { RATING_LABEL_DISPLAY } from "@/lib/hifz/exercise-labels";
+import { RATING_LABEL_DISPLAY } from "../../domain/exercise-labels";
 
 interface TebukSessionSummaryProps {
   rounds: TebukRoundResult[];

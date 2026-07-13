@@ -1,6 +1,6 @@
 // src/lib/hifz/page-words.ts
 import type { MushafLayoutPage } from '@/mushaf/types/mushafLayout';
-import type { PageWord, AyahWordRange } from '@/types/hifz-exercises';
+import type { PageWord, AyahWordRange } from './types';
 
 function parseLocation(location: string): {
   surah: number;

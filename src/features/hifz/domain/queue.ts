@@ -1,5 +1,5 @@
-import type { HifzBlock, HifzFlowType, HifzQueueItem } from "@/lib/hifz/sessionQueue";
-import type { DailyPlanWithDetails, PlanItem } from "@/lib/hifz/scheduler";
+import type { HifzBlock, HifzFlowType, HifzQueueItem } from "./sessionQueue";
+import type { DailyPlanWithDetails, PlanItem } from "@/data/repositories/hifz";
 
 export interface HifzQueueResponse {
   items: HifzQueueItem[];

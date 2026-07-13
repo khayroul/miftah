@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
-import type { TebukPrompt, TebukRoundResult } from "@/types/hifz-exercises";
+import type { TebukPrompt, TebukRoundResult } from "../../domain/types";
 import {
   TalqinPlayer,
   TasmiRecorder,
@@ -13,10 +13,10 @@ import {
   type TasmiRatingLabel,
   type TasmiSessionResult,
 } from "@/features/tasmi";
-import { pickTebukPrompts } from "@/lib/hifz/tebuk";
-import { TebukPromptCard } from "@/components/hifz/TebukPromptCard";
-import { TebukResultCard } from "@/components/hifz/TebukResultCard";
-import { TebukSessionSummary } from "@/components/hifz/TebukSessionSummary";
+import { pickTebukPrompts } from "../../domain/tebuk";
+import { TebukPromptCard } from "./TebukPromptCard";
+import { TebukResultCard } from "./TebukResultCard";
+import { TebukSessionSummary } from "./TebukSessionSummary";
 
 const ROUNDS_PER_SESSION = 3;
 const PROMPT_WORD_COUNT = 4;

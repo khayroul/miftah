@@ -1,12 +1,14 @@
 import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { recomputeAndStoreSnapshot } from "@/features/home/server";
-import { supabaseServer } from "@/lib/supabase-server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
-import { matureCardDbRow } from "@/lib/hifz/fsrs-bridge";
-import { buildDailyPlanWithDetails } from "@/lib/hifz/scheduler";
-import { buildHifzPlanSnapshot } from "@/lib/hifz/queue";
-import { getHifzStats, getJuzProgress } from "@/lib/hifz/stats";
+import {
+  buildDailyPlanWithDetails,
+  getHifzStats,
+  getJuzProgress,
+  importMemorizedProgress,
+} from "@/data/repositories/hifz";
+import { buildHifzPlanSnapshot } from "@/features/hifz/domain/queue";
 import { getAyatUpToPage } from "@/lib/queries";
 
 interface ImportBody {
@@ -48,75 +50,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const ayahIds = ayat.map((a) => a.id);
 
-    // Find existing progress rows to skip manzil items
-    const { data: existing } = await supabaseServer
-      .from("study_progress")
-      .select("ayah_id, hifz_status")
-      .eq("user_id", userId)
-      .in("ayah_id", ayahIds);
-
-    const alreadyManzil = new Set(
-      (existing ?? [])
-        .filter((r) => r.hifz_status === "manzil")
-        .map((r) => r.ayah_id),
-    );
-    const existingMap = new Map(
-      (existing ?? []).map((r) => [r.ayah_id, r.hifz_status]),
-    );
-
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const fsrs = matureCardDbRow();
-
-    // Split into inserts (new) and updates (existing but not manzil)
-    const toInsert: Array<Record<string, unknown>> = [];
-    const toUpdate: number[] = [];
-
-    for (const ayahId of ayahIds) {
-      if (alreadyManzil.has(ayahId)) continue;
-
-      if (existingMap.has(ayahId)) {
-        toUpdate.push(ayahId);
-      } else {
-        toInsert.push({
-          user_id: userId,
-          ayah_id: ayahId,
-          hifz_status: "manzil",
-          sabak_started_at: thirtyDaysAgo.toISOString(),
-          moved_to_sabqi_at: thirtyDaysAgo.toISOString(),
-          moved_to_manzil_at: now.toISOString(),
-          ...fsrs,
-        });
-      }
-    }
-
-    // Batch insert new rows (chunks of 500 for Supabase limits)
-    for (let i = 0; i < toInsert.length; i += 500) {
-      const chunk = toInsert.slice(i, i + 500);
-      const { error } = await supabaseServer
-        .from("study_progress")
-        .insert(chunk);
-      if (error) throw error;
-    }
-
-    // Batch update existing non-manzil rows
-    if (toUpdate.length > 0) {
-      for (let i = 0; i < toUpdate.length; i += 500) {
-        const chunk = toUpdate.slice(i, i + 500);
-        const { error } = await supabaseServer
-          .from("study_progress")
-          .update({
-            hifz_status: "manzil",
-            moved_to_sabqi_at: thirtyDaysAgo.toISOString(),
-            moved_to_manzil_at: now.toISOString(),
-            ...fsrs,
-            updated_at: now.toISOString(),
-          })
-          .eq("user_id", userId)
-          .in("ayah_id", chunk);
-        if (error) throw error;
-      }
-    }
+    const count = await importMemorizedProgress({ ayahIds, userId });
 
     const [plan, stats, juzProgress] = await Promise.all([
       buildDailyPlanWithDetails(userId),
@@ -124,8 +58,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       getJuzProgress(userId),
     ]);
     const snapshot = buildHifzPlanSnapshot(plan);
-    const count = toInsert.length + toUpdate.length;
-
     revalidateTag("hifz", "max");
     revalidateTag("home-dashboard", "max");
     after(() => recomputeAndStoreSnapshot(userId));

@@ -10,13 +10,11 @@ import {
   type TouchEvent,
 } from "react";
 import {
+  calculateHifzRevealStageByAyahKeys,
   getDifficultAyahs,
   toggleDifficultAyah,
-} from "@/lib/hifz/difficultAyahs";
-import {
-  calculateHifzRevealStageByAyahKeys,
   type HifzRevealStage,
-} from "@/lib/hifz/pageReveal";
+} from "@/features/hifz";
 import { useReadMode } from "@/lib/useReadMode";
 import { getAyahKeyFromLocation } from "@/mushaf/lib/mushafGlyphs";
 import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";

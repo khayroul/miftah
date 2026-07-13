@@ -1,21 +1,20 @@
 import { ModeNavigator } from "@/features/home/components/ModeNavigator";
-import { HifzOverview } from "@/components/HifzOverview";
+import { HifzOverview, countUniquePlanItemPages } from "@/features/hifz";
 import { LightweightBreadcrumb } from "@/components/LightweightBreadcrumb";
-import { countUniquePlanItemPages } from "@/lib/hifz/queue";
 import {
   getCachedDailyPlan,
   getCachedHifzStats,
   getCachedJuzProgress,
   getCachedPageProgressGrid,
   getCachedHasAnyHifzProgress,
-} from "@/lib/hifz/cached";
-import { emptyPageGrid } from "@/lib/hifz/stats";
-import type { PageGridEntry } from "@/lib/hifz/stats";
+} from "@/features/hifz/domain/cached";
+import { emptyPageGrid } from "@/data/repositories/hifz";
+import type { PageGridEntry } from "@/data/repositories/hifz";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { getUserStreak } from "@/lib/activity";
-import type { DailyPlanWithDetails } from "@/lib/hifz/scheduler";
-import type { HifzStats, JuzStat } from "@/lib/hifz/stats";
+import type { DailyPlanWithDetails } from "@/data/repositories/hifz";
+import type { HifzStats, JuzStat } from "@/data/repositories/hifz";
 
 export default async function HifzPage() {
   const userPromise = getOptionalAuthUser();

@@ -1,6 +1,6 @@
 import type { TasmiRatingLabel, TasmiSessionResult } from "@/features/tasmi";
 import type { FsrsRating } from "@/types/database";
-import { RATING_LABEL_DISPLAY } from "@/lib/hifz/exercise-labels";
+import { RATING_LABEL_DISPLAY } from "../../domain/exercise-labels";
 
 interface UnveilResultCardProps {
   result: TasmiSessionResult;

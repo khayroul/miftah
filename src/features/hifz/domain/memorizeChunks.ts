@@ -1,4 +1,4 @@
-import type { HifzQueueItem } from "@/lib/hifz/sessionQueue";
+import type { HifzQueueItem } from "./sessionQueue";
 
 export type MemorizeChunkSizeOption = "auto" | 1 | 2 | 3;
 

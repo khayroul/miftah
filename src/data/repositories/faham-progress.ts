@@ -1,5 +1,5 @@
 import { supabaseServer } from "@/data/supabase/server";
-import { newCardDbRow } from "@/lib/hifz/fsrs-bridge";
+import { newCardDbRow } from "@/features/hifz/domain/fsrs-bridge";
 import type { FsrsFields, VocabProgress } from "@/types/database";
 
 const VOCAB_PROGRESS_COLUMNS =

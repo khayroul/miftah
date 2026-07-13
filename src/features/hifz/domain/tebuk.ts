@@ -1,5 +1,5 @@
 import type { MushafLayoutPage } from '@/mushaf/types/mushafLayout';
-import type { TebukPrompt, PageWord } from '@/types/hifz-exercises';
+import type { TebukPrompt, PageWord } from './types';
 import { getPageWords } from './page-words';
 import { normalizeArabic } from '@/features/tasmi';
 

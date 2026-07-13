@@ -2,15 +2,15 @@ import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import { applyRating } from "@/lib/fsrs";
-import { dbRowToCard, cardToDbRow } from "@/lib/hifz/fsrs-bridge";
+import { dbRowToCard, cardToDbRow } from "@/features/hifz/domain/fsrs-bridge";
 import {
   getProgressById,
   updateFsrsFields,
   updateHifzStatus,
   demoteManzilToSabqi,
-} from "@/lib/hifz/study-progress";
-import { logReview } from "@/lib/hifz/review-log";
-import { dispatchGroupedByKey } from "@/lib/hifz/rateBatchDispatch";
+} from "@/data/repositories/hifz";
+import { logReview } from "@/data/repositories/hifz";
+import { dispatchGroupedByKey } from "@/features/hifz/domain/rateBatchDispatch";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { isRecentlyReviewed } from "@/features/faham/server";
 import type { FsrsRating, FsrsState } from "@/types/database";
