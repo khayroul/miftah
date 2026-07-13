@@ -297,7 +297,16 @@ Absence of any repository→feature contract test at a wave gate = **wave FAIL**
 
 ---
 
-## 8. Open questions for operator ratification (max 5)
+## 8. Open questions — RATIFIED (operator 2026-07-13)
+
+**Architecture is RATIFIED. Phase 1 may proceed.** Operator decisions:
+1. **Lay the Phase-2 auth seam NOW** — keep `data/supabase/browser.ts` (anon client) + add unused `data/supabase/rls.ts` session-scoped seam during Phase 1. (Accepted recommendation.)
+2. **`mushaf/` = top-level `src/mushaf/`** — sibling to `features/`, frozen kernel, import-only. (Accepted recommendation.)
+3. **Bot stays at `src/bot/`** — OVERRIDES the draft's original `src/apps/bot/` recommendation: the bot is RETIRED for v1 (RF-1), so it's parked/dead code — don't churn parked code's path/alias. Revisit only if the bot is revived post-v1.
+4. **Sacred mushaf fence = Wave 1 (early)** — relocate the frozen kernel first (move-only, strictest gate) so read/hifz waves sit on the fenced kernel. (Accepted recommendation.)
+5. (Naming collision Q from §1.10 — resolved by the layout: `ui/theme/` for color-mode vs `features/tema/` for the domain.)
+
+### Original questions (for reference)
 
 1. **`lib/supabase.ts` browser anon client (0 consumers today):** keep as `data/supabase/browser.ts` for Phase-2 client-side RLS reads, or **delete now** as dead code? (Recommendation: keep — Phase-2 auth likely needs a session-scoped browser client; deleting then re-adding churns the seam.)
 
