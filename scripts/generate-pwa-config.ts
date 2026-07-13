@@ -1,20 +1,7 @@
-import { writeFileSync, mkdirSync } from "node:fs";
-import { execSync } from "node:child_process";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { MUSHAF_CDN_ASSET_VERSION } from "../src/mushaf/lib/mushafAssetVersion";
 
-const OUTPUT_PATH = path.join(process.cwd(), "public", "pwa-config.json");
-
-function getBuildId(): string {
-  try {
-    return execSync("git rev-parse --short HEAD", { encoding: "utf-8" }).trim();
-  } catch {
-    return "unknown";
-  }
-}
-
-interface PwaConfigEnvironment {
+export interface PwaConfigEnvironment {
+  readonly [key: string]: string | undefined;
   readonly NEXT_PUBLIC_SUPABASE_URL?: string;
   readonly MUSHAF_PAGES_BUCKET?: string;
   readonly MUSHAF_MANIFESTS_BUCKET?: string;
@@ -48,18 +35,4 @@ export function createPwaConfig(
     manifestsBucket,
     appBuildId,
   };
-}
-
-function main(): void {
-  const config = createPwaConfig(getBuildId());
-  mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
-  writeFileSync(OUTPUT_PATH, JSON.stringify(config, null, 2), "utf-8");
-  console.log(
-    `Generated ${OUTPUT_PATH} (version: ${config.cdnAssetVersion}, tema: ${config.temaDataVersion}, faham: ${config.fahamDataVersion}, build: ${config.appBuildId})`,
-  );
-}
-
-const entryPath = process.argv[1];
-if (entryPath && import.meta.url === pathToFileURL(path.resolve(entryPath)).href) {
-  main();
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createPwaConfig } from "./generate-pwa-config";
-import { injectBuildMetadata } from "./inject-build-id";
+import { renderServiceWorker } from "./render-pwa-artifacts";
 import { MUSHAF_CDN_ASSET_VERSION } from "../src/mushaf/lib/mushafAssetVersion";
 import { getRemotePageImageUrl } from "../src/mushaf/lib/mushafAssets";
 
@@ -30,14 +30,17 @@ describe("canonical Mushaf CDN asset version", () => {
     }
   });
 
-  it("feeds service-worker injection from the same canonical version", () => {
-    const injected = injectBuildMetadata(
-      'const BUILD_ID = "__BUILD_ID__";\nconst CDN_ASSET_VERSION = "__CDN_ASSET_VERSION__";',
-      "abc1234",
+  it("feeds service-worker rendering from the same canonical version", () => {
+    const rendered = renderServiceWorker(
+      'const BUILD_ID = "__MIFTAH_BUILD_ID__";\nconst CDN_ASSET_VERSION = "__MIFTAH_CDN_ASSET_VERSION__";',
+      {
+        appBuildId: "abc1234",
+        cdnAssetVersion: MUSHAF_CDN_ASSET_VERSION,
+      },
     );
 
     assert.equal(
-      injected,
+      rendered,
       `const BUILD_ID = "abc1234";\nconst CDN_ASSET_VERSION = "${MUSHAF_CDN_ASSET_VERSION}";`,
     );
   });

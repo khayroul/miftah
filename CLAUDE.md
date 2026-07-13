@@ -17,7 +17,7 @@ This repo is the **canonical Miftah product** (the Genesys `miftah-lab` port is 
 3. **Phase-1 waves are behavior-preserving**: tests + build green AND screenshot diff vs `docs/baseline/2026-07-13/` ≤0.1% changed pixels (pixelmatch, dynamic regions masked). Capture script: `docs/baseline/capture.mjs`.
 4. Supabase MCP `list_tables` row counts are stale estimates — use live `SELECT COUNT(*)` for safety decisions.
 5. Explicit `git add <paths>` only, never `-A`. One mutating actor in this repo at a time.
-6. `npm run build` may churn `public/pwa-config.json` (`appBuildId` only) — revert, don't commit (build-id injection is a known open issue, see HANDOVER).
+6. `public/sw.js` and `public/pwa-config.json` are ignored generated artifacts. `predev`/`prebuild` recreate both from `scripts/sw.template.js` through the fail-closed `scripts/render-pwa-artifacts.ts`; edit the template/renderer, never the outputs.
 
 ## Claude Code Specific
 
