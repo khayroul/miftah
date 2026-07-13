@@ -3,13 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
 import type { TebukPrompt, TebukRoundResult } from "@/types/hifz-exercises";
-import type { TasmiRatingLabel } from "@/lib/tasmi/fsrs-bridge";
-import type { TasmiEvent, TasmiSessionResult } from "@/lib/tasmi/tasmi-session";
-import { TasmiSession } from "@/lib/tasmi/tasmi-session";
-import { TasmiRecorder } from "@/lib/tasmi/tasmi-recorder";
-import { TalqinPlayer } from "@/lib/tasmi/talqin-player";
+import {
+  TalqinPlayer,
+  TasmiRecorder,
+  TasmiSession,
+  tasmiResultToFsrsRating,
+  tasmiResultToLabel,
+  type TasmiEvent,
+  type TasmiRatingLabel,
+  type TasmiSessionResult,
+} from "@/features/tasmi";
 import { pickTebukPrompts } from "@/lib/hifz/tebuk";
-import { tasmiResultToLabel, tasmiResultToFsrsRating } from "@/lib/tasmi/fsrs-bridge";
 import { TebukPromptCard } from "@/components/hifz/TebukPromptCard";
 import { TebukResultCard } from "@/components/hifz/TebukResultCard";
 import { TebukSessionSummary } from "@/components/hifz/TebukSessionSummary";

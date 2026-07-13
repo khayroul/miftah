@@ -1,4 +1,4 @@
-import type { TasmiRatingLabel } from '@/lib/tasmi/fsrs-bridge';
+import type { TasmiRatingLabel } from '@/features/tasmi';
 
 export const RATING_LABEL_DISPLAY: Record<TasmiRatingLabel, { text: string; color: string }> = {
   ulang: { text: 'Ulang', color: 'text-red-600 dark:text-red-400' },

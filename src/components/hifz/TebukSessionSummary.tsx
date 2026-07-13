@@ -1,7 +1,7 @@
 "use client";
 
 import type { TebukRoundResult } from "@/types/hifz-exercises";
-import type { TasmiRatingLabel } from "@/lib/tasmi/fsrs-bridge";
+import type { TasmiRatingLabel } from "@/features/tasmi";
 import { RATING_LABEL_DISPLAY } from "@/lib/hifz/exercise-labels";
 
 interface TebukSessionSummaryProps {

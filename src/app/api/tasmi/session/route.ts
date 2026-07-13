@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getOptionalAuthUser } from "@/lib/auth-server";
-import { supabaseServer } from "@/lib/supabase-server";
+import { saveTasmiSession } from "@/data/repositories/tasmi";
 
 const TasmiSessionSchema = z.object({
   surah_number: z.number().int().min(1).max(114),
@@ -41,22 +41,8 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const { data } = parsed;
 
-  const { error } = await supabaseServer
-    .from("tasmi_sessions")
-    .insert({
-      user_id: user.id,
-      surah_number: data.surah_number,
-      start_ayah: data.start_ayah,
-      end_ayah: data.end_ayah,
-      total_words: data.total_words,
-      words_correct: data.words_correct,
-      accuracy: data.accuracy,
-      talqin_count: data.talqin_count,
-      error_positions: data.error_positions,
-      duration_seconds: data.duration_seconds,
-    });
-
-  if (error) {
+  const saved = await saveTasmiSession(user.id, data);
+  if (!saved) {
     return NextResponse.json(
       { error: "Gagal simpan sesi tasmi'" },
       { status: 500 },

@@ -71,7 +71,7 @@ const ReadJumpControls = dynamic(
 
 const HifzTasmiOverlay = dynamic(
   () =>
-    import("@/components/HifzTasmiOverlay").then(
+    import("@/features/tasmi/components/HifzTasmiOverlay").then(
       (module) => module.HifzTasmiOverlay,
     ),
   {

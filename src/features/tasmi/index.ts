@@ -12,7 +12,33 @@
  *  - Within this feature use relative imports.
  *  - Session writes route through `@/data/repositories/tasmi`, never a client.
  *
- * Exports land here in Wave 3.
  * See docs/superpowers/specs/2026-07-13-target-architecture-DRAFT.md §3.5.
  */
-export {};
+export { HifzTasmiOverlay } from "./components/HifzTasmiOverlay";
+export { TasmiSessionUI } from "./components/TasmiSessionUI";
+export type { AyahRange } from "./components/TasmiSessionUI";
+export { normalizeArabic, tokenizeWords } from "./domain/arabic-normalizer";
+export {
+  getPerAyahRatings,
+  tasmiResultToFsrsRating,
+  tasmiResultToLabel,
+} from "./domain/fsrs-bridge";
+export type { TasmiRatingLabel } from "./domain/fsrs-bridge";
+export { SequenceMatcher } from "./domain/sequence-matcher";
+export type { MatchResult } from "./domain/sequence-matcher";
+export { TalqinPlayer } from "./domain/talqin-player";
+export type {
+  AyahTimestamps,
+  TalqinConfig,
+  WordSegment,
+} from "./domain/talqin-player";
+export { TasmiRecorder } from "./domain/tasmi-recorder";
+export type { RecorderConfig } from "./domain/tasmi-recorder";
+export { TasmiSession } from "./domain/tasmi-session";
+export type {
+  TasmiConfig,
+  TasmiEvent,
+  TasmiEventHandler,
+  TasmiEventType,
+  TasmiSessionResult,
+} from "./domain/tasmi-session";

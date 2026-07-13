@@ -3,20 +3,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
 import type { MushafPageManifest } from "@/mushaf/types/mushaf";
-import type { TasmiEvent, TasmiSessionResult } from "@/lib/tasmi/tasmi-session";
-import type { TasmiRatingLabel } from "@/lib/tasmi/fsrs-bridge";
 import type { FsrsRating } from "@/types/database";
-import { TasmiSession } from "@/lib/tasmi/tasmi-session";
-import { TasmiRecorder } from "@/lib/tasmi/tasmi-recorder";
-import { TalqinPlayer } from "@/lib/tasmi/talqin-player";
+import {
+  getPerAyahRatings,
+  normalizeArabic,
+  TalqinPlayer,
+  TasmiRecorder,
+  TasmiSession,
+  tasmiResultToLabel,
+  type TasmiEvent,
+  type TasmiRatingLabel,
+  type TasmiSessionResult,
+} from "@/features/tasmi";
 import { buildUnveilState, revealUpTo } from "@/lib/hifz/progressive-unveil";
 import type { UnveilState } from "@/lib/hifz/progressive-unveil";
 import { getPageWords, buildAyahWordRanges } from "@/lib/hifz/page-words";
-import {
-  tasmiResultToLabel,
-  getPerAyahRatings,
-} from "@/lib/tasmi/fsrs-bridge";
-import { normalizeArabic } from "@/lib/tasmi/arabic-normalizer";
 import { VeilOverlay } from "@/components/hifz/VeilOverlay";
 import { UnveilResultCard } from "@/components/hifz/UnveilResultCard";
 

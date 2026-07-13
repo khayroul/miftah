@@ -22,10 +22,13 @@ import {
   type MemorizeChunkSizeOption,
   type ChunkSizeSuggestion,
 } from "@/lib/hifz/memorizeChunks";
-import { TasmiSessionUI, type AyahRange } from "@/components/TasmiSessionUI";
+import {
+  TasmiSessionUI,
+  type AyahRange,
+  type TasmiRatingLabel,
+  type TasmiSessionResult,
+} from "@/features/tasmi";
 import { createSupabaseBrowserClient } from "@/lib/supabase-auth";
-import type { TasmiSessionResult } from "@/lib/tasmi/tasmi-session";
-import type { TasmiRatingLabel } from "@/lib/tasmi/fsrs-bridge";
 import { saveResumePoint, clearResumePoint } from "@/lib/hifz/resumePoint";
 
 interface HifzMemorizeStepperProps {

@@ -1,6 +1,5 @@
 // src/types/hifz-exercises.ts
-import type { TasmiSessionResult } from '@/lib/tasmi/tasmi-session';
-import type { TasmiRatingLabel } from '@/lib/tasmi/fsrs-bridge';
+import type { TasmiRatingLabel, TasmiSessionResult } from '@/features/tasmi';
 import type { FsrsRating } from '@/types/database';
 
 /** Supported hifz exercise flows (separate from HifzFlowType which covers memorize/review) */
