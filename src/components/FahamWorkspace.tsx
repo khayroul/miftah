@@ -370,6 +370,12 @@ export function FahamWorkspace({
   const sessionCorrectCountRef = useRef(0);
   const isSyncingRef = useRef(false);
   const prefetchedTierWordLimitRef = useRef<number>(0);
+  // B1a re-entrancy guard: one card may enqueue a rating + advance only ONCE.
+  // Both the auto-advance setTimeout and a manual "Kad seterusnya" click call
+  // handleContinue, and moveToNextCard runs in a low-priority startTransition, so
+  // a stale timer can fire before answerState flushes. This flag closes that
+  // window; it is released when the card actually advances (answerState -> null).
+  const isAdvancingRef = useRef(false);
   const cards = useMemo(() => queueItems(snapshot), [snapshot]);
   const currentCard = cards[currentIndex] ?? null;
   const levelProgress = stats?.levelProgress ?? snapshot.levelProgress;
@@ -1143,6 +1149,15 @@ export function FahamWorkspace({
       return;
     }
 
+    // B1a: re-entrancy guard. If this card is already advancing (the auto-advance
+    // timer fired AND the button was clicked, or vice-versa) do not enqueue the
+    // rating or advance a second time. Released when the card advances (the effect
+    // below, keyed on answerState -> null).
+    if (isAdvancingRef.current) {
+      return;
+    }
+    isAdvancingRef.current = true;
+
     const rating: Extract<FsrsRating, 1 | 3> = answerState.isCorrect ? 3 : 1;
 
     if (currentCard.progressId > 0 || currentCard.word.id > 0) {
@@ -1165,6 +1180,16 @@ export function FahamWorkspace({
       });
     });
   }, [answerState, currentCard, moveToNextCard, startTransition, syncPendingRatings]);
+
+  // B1a: release the re-entrancy guard once the card has actually advanced.
+  // moveToNextCard resets answerState to null on every advance (next card or
+  // session reset); that commit also clears the stale auto-advance timer, so by
+  // the time the guard is released the double-fire window is already closed.
+  useEffect(() => {
+    if (!answerState) {
+      isAdvancingRef.current = false;
+    }
+  }, [answerState]);
 
   // Autoplay correct answer when selection result appears + Auto-continue
   useEffect(() => {

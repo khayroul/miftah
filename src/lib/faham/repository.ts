@@ -9,6 +9,7 @@ import type {
 } from "@/types/database";
 import { getOrCreateVocabProgress } from "./vocab-progress";
 import { buildFahamSourceKey } from "./source-key";
+import { isRecentExposure } from "./idempotency";
 import type {
   FahamCandidateWord,
   FahamDueCard,
@@ -146,17 +147,48 @@ async function getUniqueWordOccurrencesForAyahIds(
 export async function recordVocabExposureEvents(
   userId: string,
   input: FahamExposureInput,
-): Promise<{ recordedWordCount: number; sourceKey: string }> {
+): Promise<{ recordedWordCount: number; sourceKey: string; deduped?: boolean }> {
+  const sourceKey = buildFahamSourceKey(input);
+  const now = new Date();
+
+  // Idempotency guard (B6): best-effort natural-key dedup. The exposure client
+  // retries a lost-response POST (same source_key), which would otherwise bare-
+  // insert a duplicate set of exposure rows. If an exposure for this
+  // (user_id, source_key) was recorded within the dedup window, skip the insert.
+  //
+  // This is BEST-EFFORT only: vocab_exposure_events has no per-event id column,
+  // so this cannot distinguish a network retry (same X-Miftah-Exposure-Event-Id)
+  // from a genuine re-exposure to the same source within the window. Robust
+  // per-event dedup needs a migration — see the RF-2 follow-up:
+  //   ALTER TABLE vocab_exposure_events ADD COLUMN event_id TEXT;
+  //   CREATE UNIQUE INDEX ON vocab_exposure_events (user_id, event_id);
+  // then upsert on (user_id, event_id). Not added here (migrations are out of
+  // scope / backup-gated for this lane).
+  const { data: recentRow } = await supabaseServer
+    .from("vocab_exposure_events")
+    .select("exposed_at")
+    .eq("user_id", userId)
+    .eq("source_key", sourceKey)
+    .order("exposed_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (recentRow && isRecentExposure((recentRow as { exposed_at: string }).exposed_at, now)) {
+    return {
+      deduped: true,
+      recordedWordCount: 0,
+      sourceKey,
+    };
+  }
+
   const words = await getUniqueWordOccurrencesForAyahIds(input.ayahIds);
   if (words.length === 0) {
     return {
       recordedWordCount: 0,
-      sourceKey: buildFahamSourceKey(input),
+      sourceKey,
     };
   }
 
-  const sourceKey = buildFahamSourceKey(input);
-  const exposedAt = new Date().toISOString();
+  const exposedAt = now.toISOString();
   const ayahId =
     input.sourceType === "hifz_ayah" && input.ayahIds.length === 1
       ? input.ayahIds[0]
