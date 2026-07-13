@@ -12,6 +12,23 @@ import {
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+type SessionCookie = {
+  name: string;
+  options: CookieOptions;
+  value: string;
+};
+
+/**
+ * Preserve every batch emitted by Supabase. A refresh can emit more than one
+ * batch, and replacing this collection would drop cookies from an earlier one.
+ */
+export function appendSessionCookies(
+  existingCookies: readonly SessionCookie[],
+  newCookies: readonly SessionCookie[],
+): SessionCookie[] {
+  return [...existingCookies, ...newCookies];
+}
+
 export async function createSupabaseServerClient(): Promise<SupabaseClient> {
   const cookieStore = await cookies();
 
@@ -37,12 +54,7 @@ export async function createSupabaseServerClient(): Promise<SupabaseClient> {
 export async function updateSupabaseSession(
   request: NextRequest,
 ): Promise<NextResponse> {
-  const requestHeaders = buildAuthenticatedRequestHeaders(request.headers, null);
-  let cookiesToSet: Array<{
-    name: string;
-    options: CookieOptions;
-    value: string;
-  }> = [];
+  let cookiesToSet: SessionCookie[] = [];
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -54,11 +66,10 @@ export async function updateSupabaseSession(
           request.cookies.set(name, value);
         }
 
-        cookiesToSet = newCookies.map(({ name, options, value }) => ({
-          name,
-          options,
-          value,
-        }));
+        cookiesToSet = appendSessionCookies(
+          cookiesToSet,
+          newCookies.map(({ name, options, value }) => ({ name, options, value })),
+        );
       },
     },
   });
@@ -68,7 +79,10 @@ export async function updateSupabaseSession(
   } = await supabase.auth.getUser();
   const response = NextResponse.next({
     request: {
-      headers: buildAuthenticatedRequestHeaders(requestHeaders, user?.id ?? null),
+      // Supabase's setAll mutates request.cookies (and therefore the Cookie
+      // header). Build this only after getUser so downstream handlers receive
+      // the rotated token, not the pre-refresh request headers.
+      headers: buildAuthenticatedRequestHeaders(request.headers, user?.id ?? null),
     },
   });
 

@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 
 export const AUTHENTICATED_USER_ID_HEADER = "x-miftah-authenticated-user-id";
 
-type RateLimitDetails = {
+export type RateLimitDetails = {
   limit: number;
   remaining: number;
   reset: number;
+  success: boolean;
 };
 
 /**
@@ -27,13 +28,8 @@ export function buildAuthenticatedRequestHeaders(
   return headers;
 }
 
-/**
- * A rate-limited request may have refreshed its session in middleware. Copy
- * those cookies so the browser never loses a valid token rotation on a 429.
- */
 export function buildRateLimitedResponse(
   { limit, remaining, reset }: RateLimitDetails,
-  sessionResponse: NextResponse,
 ): NextResponse {
   const response = new NextResponse(
     "Panggilan API terlalu kerap. Sila tunggu sebentar.",
@@ -46,10 +42,6 @@ export function buildRateLimitedResponse(
       },
     },
   );
-
-  for (const cookie of sessionResponse.cookies.getAll()) {
-    response.cookies.set(cookie);
-  }
 
   return response;
 }

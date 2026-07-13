@@ -1,32 +1,39 @@
 import type { NextRequest } from "next/server";
 import { updateSupabaseSession } from "@/lib/supabase-auth-server";
 import { checkRateLimit } from "@/lib/ratelimit";
-import { buildRateLimitedResponse } from "@/lib/auth-request-context";
+import { buildRateLimitedResponse, type RateLimitDetails } from "@/lib/auth-request-context";
 
-export async function middleware(request: NextRequest) {
-  const sessionResponsePromise = updateSupabaseSession(request);
+type MiddlewareDependencies = {
+  checkRateLimit: (key: string) => Promise<RateLimitDetails>;
+  updateSupabaseSession: (request: NextRequest) => ReturnType<typeof updateSupabaseSession>;
+};
 
-  // Rate limiting and session validation are independent. Always complete
-  // session refresh first so a 429 cannot discard a rotated refresh token.
-  if (request.nextUrl.pathname.startsWith("/api")) {
-    const ip = request.headers.get("x-forwarded-for") ?? "anonymous";
-    const [sessionResponse, { success, limit, remaining, reset }] = await Promise.all([
-      sessionResponsePromise,
-      checkRateLimit(`ratelimit_api_${ip}`),
-    ]);
+const defaultDependencies: MiddlewareDependencies = {
+  checkRateLimit,
+  updateSupabaseSession,
+};
 
-    if (!success) {
-      return buildRateLimitedResponse(
-        { limit, remaining, reset },
-        sessionResponse,
+export function createMiddleware(dependencies: MiddlewareDependencies = defaultDependencies) {
+  return async function middleware(request: NextRequest) {
+    if (request.nextUrl.pathname.startsWith("/api")) {
+      const ip = request.headers.get("x-forwarded-for") ?? "anonymous";
+      const { success, limit, remaining, reset } = await dependencies.checkRateLimit(
+        `ratelimit_api_${ip}`,
       );
+
+      if (!success) {
+        // Deliberately gate refresh behind the limiter. This means a stale token
+        // is not rotated on 429 responses, but prevents abusive API traffic from
+        // consuming Supabase auth capacity before the limiter rejects it.
+        return buildRateLimitedResponse({ success, limit, remaining, reset });
+      }
     }
 
-    return sessionResponse;
-  }
-
-  return sessionResponsePromise;
+    return dependencies.updateSupabaseSession(request);
+  };
 }
+
+export const middleware = createMiddleware();
 
 export const config = {
   matcher: [
