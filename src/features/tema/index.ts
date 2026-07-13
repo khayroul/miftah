@@ -10,7 +10,8 @@
  *  - Within this feature use relative imports.
  *  - Never import a Supabase client here — consume `@/data/repositories/tema`.
  *
- * Exports land here in Wave 2 (lowest domain risk — first strangler wave).
+ * Route-facing component exports land here in Wave 2 (lowest domain risk —
+ * first strangler wave).
  * See docs/superpowers/specs/2026-07-13-target-architecture-DRAFT.md §3.4.
  */
-export {};
+export { TemaDataFetcher } from "./components/TemaDataFetcher";

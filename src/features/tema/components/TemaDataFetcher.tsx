@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { ThemePageContent } from "@/components/ThemePageContent";
+import { ThemePageContent } from "./ThemePageContent";
 import type { Surah } from "@/types/database";
-import type { AyahWordByWordEntry, ThemeAppearanceChunk } from "@/lib/queries";
+import type { AyahWordByWordEntry } from "@/lib/queries";
+import type { ThemeAppearanceChunk } from "@/data/repositories/tema";
 
 interface TemaApiResponse {
   readonly surahId: number;

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { ModeNavigator } from "@/components/ModeNavigator";
-import { TemaDataFetcher } from "@/components/TemaDataFetcher";
+import { TemaDataFetcher } from "@/features/tema";
 import { getSurah, getSurahs } from "@/lib/queries";
 import type { Surah } from "@/types/database";
 

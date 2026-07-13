@@ -1,12 +1,13 @@
 import { FahamExposureTracker } from "@/components/FahamExposureTracker";
 import { OfflineAwareLink } from "@/components/OfflineAwareLink";
-import { ThemeActionPanel } from "@/components/ThemeActionPanel";
-import { ThemeChunkAyahList } from "@/components/ThemeChunkAyahList";
-import { ThemeChunkProgressTracker } from "@/components/ThemeChunkProgressTracker";
-import { ThemeChunkSelect } from "@/components/ThemeChunkSelect";
-import { ThemeJumpControls } from "@/components/ThemeJumpControls";
-import { resolveThemeChunkLabelBm } from "@/lib/themeLabels";
-import type { AyahWordByWordEntry, ThemeAppearanceChunk } from "@/lib/queries";
+import { ThemeActionPanel } from "./ThemeActionPanel";
+import { ThemeChunkAyahList } from "./ThemeChunkAyahList";
+import { ThemeChunkProgressTracker } from "./ThemeChunkProgressTracker";
+import { ThemeChunkSelect } from "./ThemeChunkSelect";
+import { ThemeJumpControls } from "./ThemeJumpControls";
+import { resolveThemeChunkLabelBm } from "../domain/themeLabels";
+import type { AyahWordByWordEntry } from "@/lib/queries";
+import type { ThemeAppearanceChunk } from "@/data/repositories/tema";
 import type { Surah } from "@/types/database";
 
 export interface ThemePageContentProps {
