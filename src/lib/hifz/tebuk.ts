@@ -1,7 +1,7 @@
 import type { MushafLayoutPage } from '@/mushaf/types/mushafLayout';
 import type { TebukPrompt, PageWord } from '@/types/hifz-exercises';
 import { getPageWords } from './page-words';
-import { normalizeArabic } from '../tasmi/arabic-normalizer';
+import { normalizeArabic } from '@/features/tasmi';
 
 const PROMPT_WORD_COUNT = 4;
 const MIN_AYAH_WORDS = 5;

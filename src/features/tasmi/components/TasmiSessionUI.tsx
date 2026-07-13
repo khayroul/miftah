@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { TasmiSession, type TasmiEvent, type TasmiSessionResult } from "@/lib/tasmi/tasmi-session";
-import { TasmiRecorder } from "@/lib/tasmi/tasmi-recorder";
-import { TalqinPlayer } from "@/lib/tasmi/talqin-player";
-import { tasmiResultToLabel, type TasmiRatingLabel } from "@/lib/tasmi/fsrs-bridge";
+import { TasmiSession, type TasmiEvent, type TasmiSessionResult } from "../domain/tasmi-session";
+import { TasmiRecorder } from "../domain/tasmi-recorder";
+import { TalqinPlayer } from "../domain/talqin-player";
+import { tasmiResultToLabel, type TasmiRatingLabel } from "../domain/fsrs-bridge";
 
 type TasmiStatus = "idle" | "ready" | "listening" | "processing" | "error" | "talqin" | "complete";
 

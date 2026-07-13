@@ -1,5 +1,4 @@
-import type { TasmiSessionResult } from "@/lib/tasmi/tasmi-session";
-import type { TasmiRatingLabel } from "@/lib/tasmi/fsrs-bridge";
+import type { TasmiRatingLabel, TasmiSessionResult } from "@/features/tasmi";
 import type { FsrsRating } from "@/types/database";
 import { RATING_LABEL_DISPLAY } from "@/lib/hifz/exercise-labels";
 

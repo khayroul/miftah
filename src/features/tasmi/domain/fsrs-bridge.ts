@@ -4,7 +4,7 @@
  */
 
 import type { TasmiSessionResult } from './tasmi-session';
-import type { FsrsRating } from '@/types/database';
+import type { FsrsRating } from '../../../types/database';
 
 /** BM labels for tasmi' FSRS mapping */
 export type TasmiRatingLabel = 'ulang' | 'tersangkut' | 'lancar' | 'mantap';
