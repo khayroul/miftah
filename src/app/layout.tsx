@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
-import { ReadingStateSync } from "@/components/ReadingStateSync";
+import { ReadingStateSync } from "@/features/read";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { PwaDebugLoader } from "@/components/PwaDebugLoader";

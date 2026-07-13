@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useReadMode } from "@/lib/useReadMode";
-import type { ReadMode } from "@/lib/readMode";
-import { ModeNavigator } from "@/features/home/components/ModeNavigator";
+import { useReadMode } from "../domain/useReadMode";
+import type { ReadMode } from "../domain/readMode";
+import { ModeNavigator } from "./ModeNavigator";
 import { navigateWithOfflineSupport } from "@/lib/pwa/navigation";
 
 interface ReadModeToolsProps {

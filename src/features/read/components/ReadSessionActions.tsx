@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { rememberLastReadPage } from "@/lib/readingProgressStorage";
-import { useReadingProgressState } from "@/lib/useReadingProgressState";
+import { rememberLastReadPage } from "../domain/readingProgressStorage";
+import { useReadingProgressState } from "../domain/useReadingProgressState";
 import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 
 interface ReadSessionActionsProps {

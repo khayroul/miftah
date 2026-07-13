@@ -1,6 +1,6 @@
 "use client";
 
-import { loadReadingProgress } from "@/lib/readingProgressStorage";
+import { loadReadingProgress } from "@/features/read";
 
 let syncSetUp = false;
 

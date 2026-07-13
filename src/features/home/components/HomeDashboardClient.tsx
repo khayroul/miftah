@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { SurahJumpTarget } from "@/lib/readNavigation";
-import { saveReadMode } from "@/lib/readMode";
-import { findMarkerForPage } from "@/lib/readNavigationUtils";
+import { findMarkerForPage, saveReadMode, useReadingProgressState } from "@/features/read";
 import type { HomeDashboardSnapshot } from "../domain/homeDashboard";
 import { buildHomeHero } from "../domain/homeDashboardHero";
 import {
@@ -13,7 +12,6 @@ import {
   loadHomeDashboardSnapshotCache,
   saveHomeDashboardSnapshotCache,
 } from "../domain/homeDashboardStorage";
-import { useReadingProgressState } from "@/lib/useReadingProgressState";
 import { HomeDashboardSections } from "./HomeDashboardSections";
 import { toneClasses, type ModeCard } from "./HomeModeProgressCard";
 

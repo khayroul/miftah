@@ -1,5 +1,5 @@
 import { FahamWorkspace } from "@/features/faham";
-import { ModeNavigator } from "@/features/home/components/ModeNavigator";
+import { ModeNavigator } from "@/features/read";
 import {
   parseFahamSourcePreset,
   type FahamLevelProgress,

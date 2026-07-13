@@ -1,4 +1,4 @@
-import { ModeNavigator } from "@/features/home/components/ModeNavigator";
+import { ModeNavigator } from "@/features/read";
 import {
   HifzOverview,
   countUniquePlanItemPages,
@@ -13,7 +13,7 @@ import {
   type JuzStat,
   type PageGridEntry,
 } from "@/features/hifz/server";
-import { LightweightBreadcrumb } from "@/components/LightweightBreadcrumb";
+import { LightweightBreadcrumb } from "@/features/read";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { getUserStreak } from "@/lib/activity";
