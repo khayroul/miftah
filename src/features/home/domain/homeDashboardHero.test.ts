@@ -26,7 +26,7 @@ test("prioritizes due hifz over other available actions", () => {
     snapshot: createSnapshot({
       faham: {
         blockedReason: null,
-        coveragePct: 20,
+        exposureProgressPct: 20,
         dueCount: 8,
         encounteredWordCount: 200,
         eligibleNewCount: 10,
@@ -85,7 +85,7 @@ test("falls back to due faham when hifz is not due", () => {
     snapshot: createSnapshot({
       faham: {
         blockedReason: "due_backlog",
-        coveragePct: 10,
+        exposureProgressPct: 10,
         dueCount: 6,
         encounteredWordCount: 120,
         eligibleNewCount: 0,
@@ -126,6 +126,10 @@ test("falls back to due faham when hifz is not due", () => {
   assert.equal(hero.title, "Ulang Faham yang menunggu");
   assert.equal(hero.primaryMode, "faham");
   assert.equal(hero.primaryHref, "/faham");
+  assert.deepEqual(hero.stats[3], {
+    label: "Ditemui",
+    value: "120 / 1000",
+  });
 });
 
 test("continues reading when no due work is present but read progress exists", () => {

@@ -36,7 +36,7 @@ const TOTAL_QURAN_PAGES = 604;
 
 export interface HomeFahamSnapshot {
   blockedReason: "due_backlog" | null;
-  coveragePct: number;
+  exposureProgressPct: number;
   dueCount: number;
   encounteredWordCount: number;
   eligibleNewCount: number;
@@ -180,7 +180,7 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
   if (topWordIds.length === 0) {
     return {
       blockedReason: null,
-      coveragePct: 0,
+      exposureProgressPct: 0,
       dueCount: 0,
       encounteredWordCount: 0,
       eligibleNewCount: 0,
@@ -197,7 +197,7 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
   if (focusWordIds.length === 0) {
     return {
       blockedReason: null,
-      coveragePct: 0,
+      exposureProgressPct: 0,
       dueCount: 0,
       encounteredWordCount: 0,
       eligibleNewCount: 0,
@@ -229,7 +229,10 @@ async function loadFahamSnapshot(userId: string): Promise<HomeFahamSnapshot> {
 
   return {
     blockedReason: plan.blockedReason,
-    coveragePct: percentage(encounteredWordCount, levelProgress.activeWordLimit),
+    exposureProgressPct: percentage(
+      encounteredWordCount,
+      levelProgress.activeWordLimit,
+    ),
     dueCount,
     encounteredWordCount,
     eligibleNewCount: plan.stats.eligibleNewCount,
