@@ -26,8 +26,35 @@ function isConfigured(): boolean {
   return getTasmiServerUrl().length > 0 && getTasmiApiKey().length > 0;
 }
 
+// How long to wait for the transcription server's /health before declaring it
+// unreachable. Kept short so the pre-flight check never stalls the UI.
+const HEALTH_TIMEOUT_MS = 3000;
+
+// A configured server can still be DOWN (VPS offline, redeploying). The client
+// pre-flight must know REACHABILITY, not just that env vars are set — otherwise
+// it drops the reciter into a live mic session that only fails at first upload.
+async function isReachable(serverUrl: string): Promise<boolean> {
+  if (!serverUrl) return false;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${serverUrl}/health`, {
+      method: "GET",
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    return response.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function GET(): Promise<NextResponse> {
-  return NextResponse.json({ configured: isConfigured() });
+  const configured = isConfigured();
+  const reachable = configured ? await isReachable(getTasmiServerUrl()) : false;
+  return NextResponse.json({ configured, reachable });
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
