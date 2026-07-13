@@ -8,7 +8,7 @@
  * `data/supabase/` — the ONLY layer permitted to touch a Supabase client.
  * Features import repositories from here, never a client (spec §2, §4.4).
  *
- * `src/lib/faham/repository.ts` is the reference implementation to replicate.
+ * `src/data/repositories/faham.ts` is the split repository facade to replicate.
  * See docs/superpowers/specs/2026-07-13-target-architecture-DRAFT.md §3.9.
  */
 export {

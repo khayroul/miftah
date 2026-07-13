@@ -5,8 +5,10 @@ import type { Grade } from "@/lib/fsrs";
 import { applyRating } from "@/lib/fsrs";
 import { dbRowToCard, cardToDbRow } from "@/lib/hifz/fsrs-bridge";
 import { logVocabReview } from "@/data/repositories/faham-review";
-import { fahamRateRequestSchema } from "@/lib/faham/schemas";
-import { isRecentlyReviewed } from "@/lib/faham/idempotency";
+import {
+  fahamRateRequestSchema,
+  isRecentlyReviewed,
+} from "@/features/faham/server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import {
   getOrCreateVocabProgress,

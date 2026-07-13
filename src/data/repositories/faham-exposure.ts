@@ -1,8 +1,8 @@
 import { supabaseServer } from "@/data/supabase/server";
 import type { Word } from "@/types/database";
-import { buildFahamSourceKey } from "@/lib/faham/source-key";
-import { isRecentExposure, isUniqueViolation } from "@/lib/faham/idempotency";
-import type { FahamExposureInput } from "@/lib/faham/types";
+import { buildFahamSourceKey } from "@/features/faham/domain/source-key";
+import { isRecentExposure, isUniqueViolation } from "@/features/faham/domain/idempotency";
+import type { FahamExposureInput } from "@/features/faham/domain/types";
 import {
   firstRelation,
   type RepoWordWithOccurrences,

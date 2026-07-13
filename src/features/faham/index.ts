@@ -13,3 +13,5 @@
  * See docs/superpowers/specs/2026-07-13-target-architecture-DRAFT.md §3.3.
  */
 export { FahamExposureTracker } from "./components/FahamExposureTracker";
+export { FahamWorkspace } from "./components/FahamWorkspace";
+export type { FahamLevelProgress } from "./domain/levels";

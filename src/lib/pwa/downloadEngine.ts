@@ -12,7 +12,7 @@ import {
   clearCachedFahamTierVocabPackage,
   getFahamTierVocabPackageMarker,
   prefetchFahamTierVocabPackage,
-} from "@/lib/faham/tierVocabPackage";
+} from "@/features/faham/client";
 import {
   CACHE_DATA,
   CACHE_IMAGES,

@@ -12,7 +12,7 @@ import {
 import { logReview } from "@/lib/hifz/review-log";
 import { dispatchGroupedByKey } from "@/lib/hifz/rateBatchDispatch";
 import { getOptionalAuthUser } from "@/lib/auth-server";
-import { isRecentlyReviewed } from "@/lib/faham/idempotency";
+import { isRecentlyReviewed } from "@/features/faham/server";
 import type { FsrsRating, FsrsState } from "@/types/database";
 import type { Grade } from "@/lib/fsrs";
 import { recordActivityEvent } from "@/lib/activityEvents";

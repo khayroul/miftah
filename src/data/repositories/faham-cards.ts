@@ -1,12 +1,12 @@
 import { supabaseServer } from "@/data/supabase/server";
-import { TOP_FAHAM_WORD_LIMIT } from "@/lib/faham/config";
+import { TOP_FAHAM_WORD_LIMIT } from "@/features/faham/domain/config";
 import type { VocabExposureSummary, VocabProgress } from "@/types/database";
 import { getOrCreateVocabProgress } from "./faham-progress";
 import type {
   FahamCandidateWord,
   FahamDueCard,
   WordWithOccurrences,
-} from "@/lib/faham/types";
+} from "@/features/faham/domain/types";
 import {
   firstRelation,
   getTopFahamWordIds,

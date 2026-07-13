@@ -1,10 +1,7 @@
 import type { FahamSourceType } from "@/types/database";
 import { TOP_FAHAM_WORD_LIMIT } from "./config";
-import {
-  buildFahamLevelProgress,
-  type FahamLevelProgress,
-} from "./levels";
-import type { FahamBuiltMcq, FahamMcqDirectionMode } from "./mcq";
+import { buildFahamLevelProgress } from "./levels";
+import type { FahamMcqDirectionMode } from "./mcq";
 import { buildFahamMcqForWord, normalizeMalayMeaning } from "./mcq";
 import {
   buildFahamQueuePlan,
@@ -22,6 +19,12 @@ import {
   materializeNewFahamCards,
 } from "@/data/repositories/faham";
 import { getFahamLevelState } from "@/data/repositories/faham-levels";
+import type {
+  FahamQueueSnapshot,
+  SerializedFahamCard,
+  SerializedFahamPrimaryReference,
+  SerializedFahamSourceLink,
+} from "./queueTypes";
 
 interface QueueOverrides {
   directionMode?: FahamMcqDirectionMode;
@@ -37,80 +40,6 @@ interface QueueOverrides {
   pauseNewCardsAboveDueCount?: number;
   preferredSources?: FahamSourceType[];
   isRevision?: boolean;
-}
-
-export interface SerializedFahamCard {
-  due: string;
-  exposure?: {
-    distinctContextCount: number;
-    exposureEventCount: number;
-    hifzOccurrenceWeight: number;
-    readingOccurrenceWeight: number;
-    themeOccurrenceWeight: number;
-  };
-  fsrs: {
-    difficulty: number;
-    elapsedDays: number;
-    lapses: number;
-    lastReview: string | null;
-    scheduledDays: number;
-    stability: number;
-  };
-  kind: "due" | "new" | "mastered";
-  mcq: FahamBuiltMcq;
-  mistakeStreak: number;
-  needsReinforcement: boolean;
-  progressId: number;
-  reps: number;
-  sourceContext?: SerializedFahamSourceContext;
-  state: number;
-  word: {
-    frequency: number;
-    id: number;
-    textSimple: string;
-    textUthmani: string;
-    translationBm: string | null;
-    translationEn: string | null;
-    transliteration: string | null;
-  };
-}
-
-export interface SerializedFahamPrimaryReference {
-  ayahNumber: number;
-  href: string | null;
-  label: string;
-  pageNumber: number | null;
-  position: number;
-  surahId: number;
-}
-
-export interface SerializedFahamSourceLink {
-  detail: string;
-  href: string;
-  label: string;
-  type: FahamSourceType;
-}
-
-export interface SerializedFahamSourceContext {
-  primaryReference: SerializedFahamPrimaryReference | null;
-  sources: SerializedFahamSourceLink[];
-}
-
-export interface FahamQueueSnapshot {
-  blockedReason: "due_backlog" | null;
-  due: SerializedFahamCard[];
-  levelProgress: FahamLevelProgress;
-  new: SerializedFahamCard[];
-  mastered: SerializedFahamCard[];
-  learning: SerializedFahamCard[];
-  stats: {
-    dueCount: number;
-    eligibleNewCount: number;
-    focusWordLimit: number;
-    totalCandidateCount: number;
-    masteredCount: number;
-    learningCount: number;
-  };
 }
 
 type FahamDueCard = Awaited<ReturnType<typeof getDueFahamCards>>[number];

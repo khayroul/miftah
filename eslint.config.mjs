@@ -84,7 +84,7 @@ const eslintConfig = defineConfig([
           paths: supabaseClientPaths,
           patterns: [
             {
-              group: ["@/features/*/**"],
+              group: ["@/features/*/**", "!@/features/*/server"],
               message:
                 "Import another feature only through its public barrel `@/features/<name>` — not its internals. Within a feature use relative imports (spec §4.4).",
             },

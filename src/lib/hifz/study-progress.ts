@@ -1,6 +1,6 @@
 import { supabaseServer } from "@/lib/supabase-server";
 import { newCardDbRow } from "./fsrs-bridge";
-import { isUniqueViolation } from "@/lib/faham/idempotency";
+import { isUniqueViolation } from "@/features/faham/server";
 import type { FsrsFields, HifzStatus, StudyProgress } from "@/types/database";
 
 const SABQI_WINDOW_DAYS = 7;

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getFahamStats } from "@/data/repositories/faham";
 import { getFahamLevelState } from "@/data/repositories/faham-levels";
-import { buildFahamLevelProgress } from "@/lib/faham/levels";
+import { buildFahamLevelProgress } from "@/features/faham/server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 
 export async function GET(): Promise<NextResponse> {

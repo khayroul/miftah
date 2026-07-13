@@ -1,8 +1,8 @@
-import { FAHAM_LEVEL_WORD_LIMITS } from "@/lib/faham/config";
+import { FAHAM_LEVEL_WORD_LIMITS } from "@/features/faham/domain/config";
 import {
   deriveFahamLevelState,
   type FahamLevelState,
-} from "@/lib/faham/levels";
+} from "@/features/faham/domain/levels";
 import { supabaseServer } from "@/data/supabase/server";
 import { getTopFahamWordIds } from "./faham-vocabulary";
 

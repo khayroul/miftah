@@ -3,8 +3,8 @@ import { supabaseServer } from "@/data/supabase/server";
 import {
   normalizeMalayMeaning,
   type FahamMcqPoolWord,
-} from "@/lib/faham/mcq";
-import { TOP_FAHAM_WORD_LIMIT } from "@/lib/faham/config";
+} from "@/features/faham/domain/mcq";
+import { TOP_FAHAM_WORD_LIMIT } from "@/features/faham/domain/config";
 import type { Word } from "@/types/database";
 
 export interface AyahLite {

@@ -1,5 +1,5 @@
 import { supabaseServer } from "@/data/supabase/server";
-import { TOP_FAHAM_WORD_LIMIT } from "@/lib/faham/config";
+import { TOP_FAHAM_WORD_LIMIT } from "@/features/faham/domain/config";
 import { getTopFahamWordIds } from "./faham-vocabulary";
 
 export async function getFahamStats(

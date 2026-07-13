@@ -3,7 +3,7 @@ import { revalidateTag } from "next/cache";
 import { recomputeAndStoreSnapshot } from "@/features/home/server";
 import { ZodError } from "zod";
 import { recordVocabExposureEvents } from "@/data/repositories/faham";
-import { fahamExposureSchema } from "@/lib/faham/schemas";
+import { fahamExposureSchema } from "@/features/faham/server";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 
 export async function POST(request: Request): Promise<NextResponse> {
