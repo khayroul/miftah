@@ -4,6 +4,7 @@ import {
   calculateCoverageDeltaPercentage,
   getNextBestWords,
   UNDERSTANDING_RECOMMENDATION_EVIDENCE,
+  type GetNextBestWordsInput,
   type UnderstandingWordCandidate,
 } from "./understandingRecommender";
 
@@ -60,6 +61,20 @@ test("fastest mode ranks by coverage leverage alone", () => {
   assert.equal(result[0].scoreBreakdown.learnability.weighted, 0);
   assert.equal(result[0].scoreBreakdown.context.weighted, 0);
   assert.equal(result[0].scoreBreakdown.grammarKey.weighted, 0);
+});
+
+test("invalid runtime mode falls back to deterministic guided scoring", () => {
+  const runtimeInput: GetNextBestWordsInput = {
+    candidates,
+    denominator: 1000,
+    limit: 3,
+  };
+  Reflect.set(runtimeInput, "mode", "turbo");
+
+  const result = getNextBestWords(runtimeInput);
+
+  assert.deepEqual(result.map((word) => word.wordId), [2, 3, 1]);
+  assert.ok(result.every((word) => word.mode === "guided"));
 });
 
 test("grammar keys recover useful particles without making every particle dominant", () => {
@@ -152,6 +167,50 @@ test("clamps contextual and readiness inputs to a stable zero-to-one range", () 
 
   assert.equal(result.scoreBreakdown.context.normalized, 1);
   assert.equal(result.scoreBreakdown.readiness.normalized, 0);
+});
+
+test("invalid runtime lexical kind uses the conservative unknown weighting", () => {
+  const malformedCandidate: UnderstandingWordCandidate = {
+    frequency: 10,
+    lexicalKind: "content",
+    readiness: 1,
+    wordId: 1,
+  };
+  Reflect.set(malformedCandidate, "lexicalKind", "adverb-ish");
+
+  const [result] = getNextBestWords({
+    candidates: [malformedCandidate],
+    denominator: 100,
+    limit: 1,
+  });
+
+  assert.equal(result.scoreBreakdown.learnability.normalized, 0.6);
+  assert.ok(Number.isFinite(result.score));
+});
+
+test("missing readiness fails closed instead of earning a fully-ready bonus", () => {
+  const [missingReadiness] = getNextBestWords({
+    candidates: [{ frequency: 10, lexicalKind: "content", wordId: 1 }],
+    denominator: 100,
+    limit: 1,
+  });
+  const [knownReady] = getNextBestWords({
+    candidates: [{
+      frequency: 10,
+      lexicalKind: "content",
+      readiness: 1,
+      wordId: 1,
+    }],
+    denominator: 100,
+    limit: 1,
+  });
+
+  assert.deepEqual(missingReadiness.scoreBreakdown.readiness, {
+    normalized: 0,
+    weighted: 0,
+    weight: 0.05,
+  });
+  assert.equal(knownReady.score - missingReadiness.score, 5);
 });
 
 test("coverage delta math reports absolute weighted gain and fails closed", () => {

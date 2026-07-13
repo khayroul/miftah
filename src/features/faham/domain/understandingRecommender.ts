@@ -89,6 +89,15 @@ function clampUnitInterval(value: number | undefined, fallback: number): number 
   return Math.min(1, Math.max(0, value));
 }
 
+function normalizePathMode(value: unknown): UnderstandingPathMode {
+  return value === "fastest" ? "fastest" : "guided";
+}
+
+function normalizeLexicalKind(value: unknown): UnderstandingLexicalKind {
+  if (value === "content" || value === "particle") return value;
+  return "unknown";
+}
+
 function isEligibleCandidate(candidate: UnderstandingWordCandidate): boolean {
   return (
     !candidate.isMastered &&
@@ -119,12 +128,14 @@ function buildScoreBreakdown(
     ),
     grammarKey: makeFactor(candidate.isGrammarKey ? 1 : 0, weights.grammarKey),
     learnability: makeFactor(
-      LEARNABILITY_BY_KIND[candidate.lexicalKind],
+      LEARNABILITY_BY_KIND[normalizeLexicalKind(candidate.lexicalKind)],
       weights.learnability,
     ),
     leverage: makeFactor(candidate.frequency / maxFrequency, weights.leverage),
     readiness: makeFactor(
-      clampUnitInterval(candidate.readiness, 1),
+      // Missing FSRS evidence must not make a word look fully ready: failing
+      // closed avoids overloading the learner until an adapter supplies it.
+      clampUnitInterval(candidate.readiness, 0),
       weights.readiness,
     ),
   };
@@ -175,7 +186,7 @@ export function getNextBestWords({
   candidates,
   denominator,
   limit,
-  mode = "guided",
+  mode: requestedMode = "guided",
 }: GetNextBestWordsInput): RecommendedUnderstandingWord[] {
   if (!Number.isInteger(limit) || limit <= 0) return [];
 
@@ -185,6 +196,7 @@ export function getNextBestWords({
   const maxFrequency = Math.max(
     ...eligibleCandidates.map((candidate) => candidate.frequency),
   );
+  const mode = normalizePathMode(requestedMode);
   const weights = SCORE_WEIGHTS[mode];
 
   const rankedWords = eligibleCandidates
