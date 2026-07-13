@@ -1,7 +1,7 @@
 import type { Context } from "grammy";
 import { InlineKeyboard } from "grammy";
 import { supabaseAdmin } from "../supabase-admin.js";
-import { resolveThemeChunkLabelBm } from "../../lib/themeLabels.js";
+import { resolveThemeChunkLabelBm } from "../../features/tema/domain/themeLabels.js";
 
 export type ThemeViewMode = "summary" | "full";
 const DEFAULT_VIEW_MODE: ThemeViewMode = "summary";

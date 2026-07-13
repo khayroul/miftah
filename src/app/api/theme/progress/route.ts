@@ -3,7 +3,7 @@ import { revalidateTag } from "next/cache";
 import { recomputeAndStoreSnapshot } from "@/lib/homeDashboardDb";
 import { ZodError, z } from "zod";
 import { getOptionalAuthUser } from "@/lib/auth-server";
-import { markThemeChunkProgress } from "@/lib/themeChunkProgress";
+import { markThemeChunkProgress } from "@/data/repositories/tema";
 import { recordActivityEvent } from "@/lib/activityEvents";
 
 const themeProgressSchema = z.object({

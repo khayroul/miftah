@@ -1,25 +1,16 @@
-import { getWordByWordForAyahIds } from "@/lib/queries";
-import type {
-  AyahWordByWordEntry,
-  ThemeAppearanceAyah,
-} from "@/lib/queries";
+import type { AyahWordByWordEntry } from "@/lib/queries";
+import type { ThemeAppearanceAyah } from "@/data/repositories/tema";
 import { ThemeAyahMarker } from "./ThemeAyahMarker";
 
-interface ThemeChunkAyahListAsyncProps {
+interface ThemeChunkAyahListProps {
   ayat: ThemeAppearanceAyah[];
+  wbwByAyahId: Record<number, AyahWordByWordEntry[]>;
 }
 
-export async function ThemeChunkAyahListAsync({
+export function ThemeChunkAyahList({
   ayat,
-}: ThemeChunkAyahListAsyncProps) {
-  let wbwByAyahId: Record<number, AyahWordByWordEntry[]> = {};
-
-  try {
-    wbwByAyahId = await getWordByWordForAyahIds(ayat.map((ayah) => ayah.id));
-  } catch {
-    wbwByAyahId = {};
-  }
-
+  wbwByAyahId,
+}: ThemeChunkAyahListProps) {
   return (
     <div className="space-y-14 pb-8">
       {ayat.map((ayah) => {

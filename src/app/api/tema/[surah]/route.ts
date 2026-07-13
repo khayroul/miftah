@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 
 import {
   getThemeAppearanceChunksBySurah,
-  getWordByWordForAyahIds,
   type ThemeAppearanceChunk,
+} from "@/data/repositories/tema";
+import {
+  getWordByWordForAyahIds,
   type AyahWordByWordEntry,
 } from "@/lib/queries";
 

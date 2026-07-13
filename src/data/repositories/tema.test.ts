@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { themeChunkContentKeyFromChunks } from "./queries";
+import { themeChunkContentKeyFromChunks } from "./tema";
 
 // The bug (RF-5): theme_chunk_progress was keyed by the volatile positional
 // chunk_index. These tests pin the fix — progress is keyed by the STABLE content
