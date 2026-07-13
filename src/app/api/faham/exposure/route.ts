@@ -23,10 +23,19 @@ export async function POST(request: Request): Promise<NextResponse> {
       return NextResponse.json({ ok: false, reason: "unauthenticated" });
     }
 
+    // Consume the client's idempotency token (B6). The client stamps every
+    // exposure POST with a stable per-event id and retries lost-response POSTs
+    // with the SAME id. There is no column to persist it against yet (robust
+    // dedup is a migration follow-up documented in recordVocabExposureEvents),
+    // so the server-side guard is a best-effort natural-key window inside the
+    // repository; the id is read here (previously ignored) and echoed back for
+    // request correlation / future per-event dedup.
+    const eventId = request.headers.get("X-Miftah-Exposure-Event-Id");
+
     const result = await recordVocabExposureEvents(userId, body);
     revalidateTag("home-dashboard", "max");
     after(() => recomputeAndStoreSnapshot(userId));
-    return NextResponse.json({ ok: true, ...result });
+    return NextResponse.json({ eventId, ok: true, ...result });
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(

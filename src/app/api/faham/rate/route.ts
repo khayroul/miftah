@@ -6,6 +6,7 @@ import { applyRating } from "@/lib/fsrs";
 import { dbRowToCard, cardToDbRow } from "@/lib/hifz/fsrs-bridge";
 import { logVocabReview } from "@/lib/faham/review-log";
 import { fahamRateRequestSchema } from "@/lib/faham/schemas";
+import { isRecentlyReviewed } from "@/lib/faham/idempotency";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import {
   getOrCreateVocabProgress,
@@ -43,6 +44,23 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     const now = new Date();
+
+    // Idempotency guard (B1): a duplicate submit of the same review — from the
+    // re-entrant auto-advance timer, a double "Kad seterusnya" click, or a
+    // network retry — arrives within the dedup window. No-op so we don't
+    // re-apply the rating + streak increment and falsely flip is_mastered
+    // (correct_streak >= 2). last_review is null on a card's first-ever rating,
+    // so first ratings are never deduped. Legit re-reviews are minutes+ apart.
+    if (isRecentlyReviewed(progress.last_review, now)) {
+      return NextResponse.json({
+        deduped: true,
+        due: progress.due,
+        ok: true,
+        progressId: progress.id,
+        state: progress.state,
+      });
+    }
+
     const card = dbRowToCard(progress);
     const result = applyRating(card, body.rating as Grade, now);
     const nextCard = result.card;

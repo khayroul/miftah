@@ -1,5 +1,6 @@
 import { supabaseServer } from "@/lib/supabase-server";
 import { newCardDbRow } from "./fsrs-bridge";
+import { isUniqueViolation } from "@/lib/faham/idempotency";
 import type { FsrsFields, HifzStatus, StudyProgress } from "@/types/database";
 
 const SABQI_WINDOW_DAYS = 7;
@@ -198,8 +199,13 @@ async function getOrCreateSabak(userId: string): Promise<StudyProgress[]> {
     ...newCardDbRow(),
   }));
 
+  // B8: two concurrent daily-plan requests can both pass the "no sabak yet"
+  // check above and race to insert the same next batch. UNIQUE(user_id, ayah_id)
+  // makes one insert lose with a 23505 violation. Swallow ONLY that race and fall
+  // through to re-select the winner's rows — a graceful degrade instead of an
+  // unhandled 500. Any other error still propagates.
   const { error: e3 } = await supabaseServer.from("study_progress").insert(rows);
-  if (e3) throw e3;
+  if (e3 && !isUniqueViolation(e3)) throw e3;
 
   const { data: created, error: e4 } = await supabaseServer
     .from("study_progress")

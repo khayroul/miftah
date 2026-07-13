@@ -11,6 +11,7 @@ import {
 } from "@/lib/hifz/study-progress";
 import { logReview } from "@/lib/hifz/review-log";
 import { getOptionalAuthUser } from "@/lib/auth-server";
+import { isRecentlyReviewed } from "@/lib/faham/idempotency";
 import type { FsrsRating, FsrsState } from "@/types/database";
 import type { Grade } from "@/lib/fsrs";
 import { recordActivityEvent } from "@/lib/activityEvents";
@@ -57,13 +58,23 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const userId = user.id;
     const now = new Date();
-    const results: Array<{ progressId: number; ok: boolean }> = [];
+    const results: Array<{ progressId: number; ok: boolean; deduped?: boolean }> = [];
 
     for (const entry of ratings) {
       try {
         const progress = await getProgressById(entry.progressId);
         if (!progress || progress.user_id !== userId) {
           results.push({ progressId: entry.progressId, ok: false });
+          continue;
+        }
+
+        // Idempotency guard (B3): a batch retry after a partial failure re-sends
+        // the whole batch. Entries that already applied on the prior attempt have
+        // last_review within the dedup window — skip them so applyRating isn't
+        // double-applied. last_review is null on a card's first-ever rating, so
+        // first ratings always go through; genuinely-failed entries retry cleanly.
+        if (isRecentlyReviewed(progress.last_review, now)) {
+          results.push({ progressId: entry.progressId, ok: true, deduped: true });
           continue;
         }
 
