@@ -228,19 +228,21 @@ async function getDailyHifzAyahCount(
   today: string,
   eventSummaryAyahCount: number,
 ): Promise<number> {
-  const eventAyahCount = await getDailyHifzAyahCountFromEvents(userId, today).catch(
-    (error: unknown) => {
+  // Independent reads (neither depends on the other's result — only
+  // combined via Math.max below) — fetch concurrently instead of serially.
+  const [eventAyahCount, reviewLogResult] = await Promise.all([
+    getDailyHifzAyahCountFromEvents(userId, today).catch((error: unknown) => {
       console.error("[getDailyActivityCount] Error loading hifz ayah count:", error);
       return eventSummaryAyahCount;
-    },
-  );
-
-  const { data, error } = await supabaseServer
-    .from("review_log")
-    .select("item_id")
-    .eq("user_id", userId)
-    .eq("review_type", "ayah")
-    .gte("reviewed_at", today);
+    }),
+    supabaseServer
+      .from("review_log")
+      .select("item_id")
+      .eq("user_id", userId)
+      .eq("review_type", "ayah")
+      .gte("reviewed_at", today),
+  ]);
+  const { data, error } = reviewLogResult;
 
   if (error) {
     console.error("[getDailyActivityCount] Error counting hifz ayat:", error);
@@ -260,19 +262,21 @@ async function getDailyHifzPageCount(
   userId: string,
   today: string,
 ): Promise<number> {
-  const eventPageCount = await getDailyHifzPageCountFromEvents(userId, today).catch(
-    (error: unknown) => {
+  // Independent reads (neither depends on the other's result — only
+  // combined via Math.max below) — fetch concurrently instead of serially.
+  const [eventPageCount, reviewLogResult] = await Promise.all([
+    getDailyHifzPageCountFromEvents(userId, today).catch((error: unknown) => {
       console.error("[getDailyActivityCount] Error loading hifz page count:", error);
       return 0;
-    },
-  );
-
-  const { data, error } = await supabaseServer
-    .from("review_log")
-    .select("ayat!inner(page_number)")
-    .eq("user_id", userId)
-    .eq("review_type", "ayah")
-    .gte("reviewed_at", today);
+    }),
+    supabaseServer
+      .from("review_log")
+      .select("ayat!inner(page_number)")
+      .eq("user_id", userId)
+      .eq("review_type", "ayah")
+      .gte("reviewed_at", today),
+  ]);
+  const { data, error } = reviewLogResult;
 
   if (error) {
     console.error("[getDailyActivityCount] Error counting hifz pages:", error);
@@ -305,19 +309,23 @@ export async function getDailyActivityCount(
   options?: DailyActivityCountOptions,
 ) {
   const today = todayActivityDateKey();
-  const eventSummary = await getDailyActivityEventSummary(userId, today).catch(
-    (error: unknown) => {
-      console.error("[getDailyActivityCount] Error loading event summary:", error);
-      return null;
-    },
-  );
 
   if (type === "faham") {
-    const { count, error } = await supabaseServer
-      .from("vocab_progress")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .gte("last_review", today);
+    // eventSummary and the vocab_progress count are independent (only
+    // combined via Math.max below) — fetch concurrently instead of
+    // serially.
+    const [eventSummary, fahamCountResult] = await Promise.all([
+      getDailyActivityEventSummary(userId, today).catch((error: unknown) => {
+        console.error("[getDailyActivityCount] Error loading event summary:", error);
+        return null;
+      }),
+      supabaseServer
+        .from("vocab_progress")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("last_review", today),
+    ]);
+    const { count, error } = fahamCountResult;
 
     if (error) {
       console.error("[getDailyActivityCount] Error counting faham:", error);
@@ -326,6 +334,13 @@ export async function getDailyActivityCount(
 
     return Math.max(eventSummary?.fahamWordsCount ?? 0, count || 0);
   }
+
+  const eventSummary = await getDailyActivityEventSummary(userId, today).catch(
+    (error: unknown) => {
+      console.error("[getDailyActivityCount] Error loading event summary:", error);
+      return null;
+    },
+  );
 
   if (type === "read" && eventSummary) {
     return eventSummary.readPagesCount;

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getOptionalAuthUser } from "@/lib/auth-server";
 import { getProgressByAyahIds } from "@/lib/hifz/study-progress";
-import { getAyatByPage } from "@/lib/queries";
+import { getAyatIdentityByPage } from "@/lib/queries";
 
 const searchParamsSchema = z.object({
   page: z.coerce.number().int().min(1).max(604),
@@ -24,7 +24,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       return NextResponse.json({ memorizedAyahKeys: [] });
     }
 
-    const ayatOnPage = await getAyatByPage(parseResult.data.page);
+    const ayatOnPage = await getAyatIdentityByPage(parseResult.data.page);
     if (ayatOnPage.length === 0) {
       return NextResponse.json({ memorizedAyahKeys: [] });
     }

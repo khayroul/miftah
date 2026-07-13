@@ -4,7 +4,12 @@ import "./globals.css";
 import "@/styles/mushaf-live.css";
 
 const arabicText = localFont({
-  src: "../../assets/fonts/UthmanicHafs_V22.ttf",
+  // woff2 re-encode of UthmanicHafs_V22.ttf: 297,700 B -> 106,988 B (64%
+  // smaller on disk, same glyph outlines/metrics — behavior-identical
+  // render). woff2 has had universal browser support since ~2016, so no
+  // ttf fallback entry is carried here (would only add transfer weight).
+  // The source .ttf stays in assets/fonts/ for future re-encodes.
+  src: "../../assets/fonts/UthmanicHafs_V22.woff2",
   variable: "--font-quran-arabic",
   display: "swap",
   preload: false,

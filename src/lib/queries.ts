@@ -79,6 +79,25 @@ export async function getAyatByPage(pageNumber: number): Promise<Ayah[]> {
 }
 
 /**
+ * Fetch only id/surah_id/ayah_number for all ayat on a page — for callers
+ * that key off ayah identity (e.g. re-deriving "surah:ayah" keys) without
+ * paying for the full row's wide text_uthmani/text_simple/display_bm/
+ * translation columns (~862 B/row full vs. a few bytes for these 3 ints).
+ */
+export async function getAyatIdentityByPage(
+  pageNumber: number,
+): Promise<Array<Pick<Ayah, "id" | "surah_id" | "ayah_number">>> {
+  const { data, error } = await supabase
+    .from("ayat")
+    .select("id, surah_id, ayah_number")
+    .eq("page_number", pageNumber)
+    .order("surah_id")
+    .order("ayah_number");
+  if (error) throw error;
+  return data;
+}
+
+/**
  * Fetch all ayat up to (and including) a given page number.
  */
 export async function getAyatUpToPage(upToPage: number): Promise<{ id: number }[]> {

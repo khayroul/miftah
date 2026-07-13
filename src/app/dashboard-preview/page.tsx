@@ -61,8 +61,12 @@ async function loadHifzSnapshot(): Promise<HifzSnapshot | null> {
 
 export default async function DashboardPreviewPage() {
   const userId = process.env.MIFTAH_USER_ID ?? null;
-  const hifzSnapshot = await loadHifzSnapshot();
-  const homeSnapshot = await loadHomeDashboardSnapshot(userId);
+  // These two loads are independent (neither's input depends on the
+  // other's output) — run them concurrently instead of serially.
+  const [hifzSnapshot, homeSnapshot] = await Promise.all([
+    loadHifzSnapshot(),
+    loadHomeDashboardSnapshot(userId),
+  ]);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
