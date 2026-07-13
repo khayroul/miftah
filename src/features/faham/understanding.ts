@@ -1,12 +1,14 @@
 export {
   getCoverageTiers,
   getUnderstandingCoverage,
+  getUnderstandingSnapshot,
   UNDERSTANDING_COVERAGE_EVIDENCE,
   UNDERSTANDING_COVERAGE_TIERS,
 } from "@/data/repositories/understanding";
 export type {
   UnderstandingCoverage,
   UnderstandingCoverageEvidence,
+  UnderstandingSnapshot,
   UnderstandingCoverageTier,
 } from "@/data/repositories/understanding";
 export {

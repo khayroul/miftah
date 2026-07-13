@@ -34,6 +34,11 @@ export interface UnderstandingCoverageTier {
   wordLimit: (typeof UNDERSTANDING_COVERAGE_TIERS)[number];
 }
 
+export interface UnderstandingSnapshot {
+  coverage: UnderstandingCoverage;
+  tiers: UnderstandingCoverageTier[];
+}
+
 interface WordFrequencyRow {
   frequency: number;
   id: number;
@@ -62,6 +67,7 @@ export interface UnderstandingCoverageDataSource {
 
 export interface UnderstandingCoverageService {
   getCoverageTiers(userId: string): Promise<UnderstandingCoverageTier[]>;
+  getUnderstandingSnapshot(userId: string): Promise<UnderstandingSnapshot>;
   getUnderstandingCoverage(userId: string): Promise<UnderstandingCoverage>;
 }
 
@@ -107,6 +113,50 @@ function uniqueKnownMasteredWordIds(
   );
 }
 
+function buildUnderstandingSnapshot(
+  snapshot: GlobalCoverageSnapshot,
+  masteredWordIds: readonly number[],
+): UnderstandingSnapshot {
+  const masteredIds = uniqueKnownMasteredWordIds(
+    masteredWordIds,
+    snapshot.wordFrequencyById,
+  );
+  const masteredFrequency = Array.from(masteredIds).reduce(
+    (total, wordId) =>
+      total + (snapshot.wordFrequencyById.get(wordId) ?? 0),
+    0,
+  );
+  const coverage = {
+    denominator: snapshot.denominator,
+    evidence: UNDERSTANDING_COVERAGE_EVIDENCE,
+    masteredFrequency,
+    masteredWordCount: masteredIds.size,
+    percentage: percentage(masteredFrequency, snapshot.denominator),
+  };
+  const tiers = snapshot.tiers.map((tier) => {
+    const masteredTierWordIds = Array.from(tier.wordIds).filter((wordId) =>
+      masteredIds.has(wordId),
+    );
+    const masteredTierFrequency = masteredTierWordIds.reduce(
+      (total, wordId) =>
+        total + (snapshot.wordFrequencyById.get(wordId) ?? 0),
+      0,
+    );
+
+    return {
+      coveragePercentage: tier.coveragePercentage,
+      evidence: UNDERSTANDING_COVERAGE_EVIDENCE,
+      masteredFrequency: masteredTierFrequency,
+      masteredWordCount: masteredTierWordIds.length,
+      tierFrequency: tier.tierFrequency,
+      wordCount: tier.wordCount,
+      wordLimit: tier.wordLimit,
+    };
+  });
+
+  return { coverage, tiers };
+}
+
 export function createUnderstandingCoverageService(
   dataSource: UnderstandingCoverageDataSource,
 ): UnderstandingCoverageService {
@@ -122,52 +172,26 @@ export function createUnderstandingCoverageService(
     return snapshotPromise;
   }
 
+  async function getUnderstandingSnapshot(
+    userId: string,
+  ): Promise<UnderstandingSnapshot> {
+    const [snapshot, masteredWordIds] = await Promise.all([
+      getSnapshot(),
+      dataSource.loadMasteredWordIds(userId),
+    ]);
+    return buildUnderstandingSnapshot(snapshot, masteredWordIds);
+  }
+
   return {
     async getUnderstandingCoverage(userId: string): Promise<UnderstandingCoverage> {
-      const [snapshot, masteredWordIds] = await Promise.all([
-        getSnapshot(),
-        dataSource.loadMasteredWordIds(userId),
-      ]);
-      const masteredIds = uniqueKnownMasteredWordIds(masteredWordIds, snapshot.wordFrequencyById);
-      const masteredFrequency = Array.from(masteredIds).reduce(
-        (total, wordId) => total + (snapshot.wordFrequencyById.get(wordId) ?? 0),
-        0,
-      );
-
-      return {
-        denominator: snapshot.denominator,
-        evidence: UNDERSTANDING_COVERAGE_EVIDENCE,
-        masteredFrequency,
-        masteredWordCount: masteredIds.size,
-        percentage: percentage(masteredFrequency, snapshot.denominator),
-      };
+      return (await getUnderstandingSnapshot(userId)).coverage;
     },
 
     async getCoverageTiers(userId: string): Promise<UnderstandingCoverageTier[]> {
-      const [snapshot, masteredWordIds] = await Promise.all([
-        getSnapshot(),
-        dataSource.loadMasteredWordIds(userId),
-      ]);
-      const masteredIds = uniqueKnownMasteredWordIds(masteredWordIds, snapshot.wordFrequencyById);
-
-      return snapshot.tiers.map((tier) => {
-        const masteredFrequency = Array.from(tier.wordIds).reduce(
-          (total, wordId) => total + (masteredIds.has(wordId) ? snapshot.wordFrequencyById.get(wordId) ?? 0 : 0),
-          0,
-        );
-        const masteredWordCount = Array.from(tier.wordIds).filter((wordId) => masteredIds.has(wordId)).length;
-
-        return {
-          coveragePercentage: tier.coveragePercentage,
-          evidence: UNDERSTANDING_COVERAGE_EVIDENCE,
-          masteredFrequency,
-          masteredWordCount,
-          tierFrequency: tier.tierFrequency,
-          wordCount: tier.wordCount,
-          wordLimit: tier.wordLimit,
-        };
-      });
+      return (await getUnderstandingSnapshot(userId)).tiers;
     },
+
+    getUnderstandingSnapshot,
   };
 }
 
@@ -183,24 +207,38 @@ function isWordId(value: unknown): value is number {
   return typeof value === "number";
 }
 
+export async function loadPaginatedWordFrequencies(
+  loadPage: (
+    offset: number,
+    endInclusive: number,
+  ) => Promise<readonly unknown[]>,
+  pageSize = GLOBAL_WORD_PAGE_SIZE,
+): Promise<readonly WordFrequencyRow[]> {
+  if (!Number.isInteger(pageSize) || pageSize <= 0) {
+    throw new Error("Understanding word page size must be a positive integer");
+  }
+
+  const words: WordFrequencyRow[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const rawPage = await loadPage(offset, offset + pageSize - 1);
+    words.push(...rawPage.filter(isWordFrequencyRow));
+    if (rawPage.length < pageSize) return words;
+  }
+}
+
 const productionDataSource: UnderstandingCoverageDataSource = {
   async loadGlobalWords(): Promise<readonly WordFrequencyRow[]> {
-    const words: WordFrequencyRow[] = [];
-
-    for (let offset = 0; ; offset += GLOBAL_WORD_PAGE_SIZE) {
+    return loadPaginatedWordFrequencies(async (offset, endInclusive) => {
       const { data, error } = await supabaseServer
         .from("words")
         .select("id, frequency")
         .order("frequency", { ascending: false })
         .order("id", { ascending: true })
-        .range(offset, offset + GLOBAL_WORD_PAGE_SIZE - 1);
+        .range(offset, endInclusive);
       if (error) throw error;
 
-      const rawPage = data ?? [];
-      const page = rawPage.filter(isWordFrequencyRow);
-      words.push(...page);
-      if (rawPage.length < GLOBAL_WORD_PAGE_SIZE) return words;
-    }
+      return data ?? [];
+    });
   },
 
   async loadMasteredWordIds(userId: string): Promise<readonly number[]> {
@@ -218,3 +256,4 @@ const productionService = createUnderstandingCoverageService(productionDataSourc
 
 export const getUnderstandingCoverage = productionService.getUnderstandingCoverage;
 export const getCoverageTiers = productionService.getCoverageTiers;
+export const getUnderstandingSnapshot = productionService.getUnderstandingSnapshot;
