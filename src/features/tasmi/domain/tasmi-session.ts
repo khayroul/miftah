@@ -199,11 +199,19 @@ export class TasmiSession {
     previousLastCorrectIndex: number,
   ): number {
     const rawAdvance = Math.max(0, matchResult.lastCorrectIndex - previousLastCorrectIndex);
-    const omissionsInNewSpan = matchResult.errors.filter(
-      error => error.type === 'omission' && error.position > previousLastCorrectIndex,
+    // Positions the cursor advanced past WITHOUT a correct recitation must not
+    // score: omitted words (skipped) and substituted words (T-01: the cursor
+    // passes an anchored substitution) are errors, not credit. Only errors
+    // INSIDE the newly advanced span subtract — a trailing unanchored
+    // substitution sits beyond lastCorrectIndex and earned no advance.
+    const uncreditedInNewSpan = matchResult.errors.filter(
+      error =>
+        (error.type === 'omission' || error.type === 'substitution') &&
+        error.position > previousLastCorrectIndex &&
+        error.position <= matchResult.lastCorrectIndex,
     ).length;
 
-    return Math.max(0, rawAdvance - omissionsInNewSpan);
+    return Math.max(0, rawAdvance - uncreditedInNewSpan);
   }
 
   private addWordsCorrect(words: number): void {

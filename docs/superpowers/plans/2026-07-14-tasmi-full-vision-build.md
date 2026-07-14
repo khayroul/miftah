@@ -54,13 +54,21 @@ Prerequisite for both modes. No new features — correctness + first-use + iOS.
   operator device (Wave 3).
 
 ### Wave 1 — Mode A: live word-follow highlight (the spec core)
-- [ ] Render the range's Arabic text (RTL, Uthmani font) inside the session; drive a
-  correct/current/error highlight from `match`/`error` word indices.
-- [ ] Phrase-level fallback per the spike (word-level real-time not feasible on CPU).
-- [ ] Fix matcher post-error truncation (audit T-01, `sequence-matcher.ts`) + a
-  producer→consumer boundary test for the normalization↔quran-align index mapping.
-- [ ] Talqin = 3 linked words (spec), not 5.
-- **Gate:** matcher/highlight unit tests; real-render look at the highlight following recitation.
+- [x] **`TasmiTextFollow`** — renders the range's Uthmani text (RTL, `--font-arabic`);
+  recited words fill teal, the next word pulses amber, error positions tint rose;
+  auto-scrolls the current word into view. Wired into the live session view; state
+  driven from `match`/`error` events; reset per session. ✅
+- [x] **Phrase-level follow** per the spike — highlight advances per verified chunk. ✅
+- [x] **T-01 fixed with anchored-cursor semantics** — a mid-chunk substitution no longer
+  discards the rest of the chunk (post-slip words credited, session can complete), while a
+  TRAILING unanchored substitution holds the cursor so talqin corrects the word actually
+  recited wrongly. Scoring subtracts substituted/omitted positions inside the advanced span.
+  Both pre-existing matcher tests pass UNCHANGED + 2 new session tests. ✅
+- [x] **Boundary test** (`TasmiTextFollow.boundary.test.ts`, added to `test:hifz-tasmi`) —
+  locks display↔matcher index alignment incl. tokens that normalize to empty. ✅
+- [x] Talqin = 3 linked words (landed in Wave 0). ✅
+- **Gate status:** tsc 0 · lint 0 · 87/87 · build 34/34 ✅. **REMAINING:** real-render look
+  at the highlight during actual recitation = operator logged-in smoke (Wave 3).
 
 ### Wave 2 — Mode B: juzuk exam
 - [ ] Session-start **exam / practice** toggle.

@@ -6,6 +6,7 @@ import { TasmiRecorder, type TasmiRecorderError } from "../domain/tasmi-recorder
 import { TalqinPlayer } from "../domain/talqin-player";
 import { tasmiResultToLabel, type TasmiRatingLabel } from "../domain/fsrs-bridge";
 import { TasmiSessionResultView } from "./TasmiSessionResultView";
+import { TasmiTextFollow } from "./TasmiTextFollow";
 
 type TasmiStatus =
   | "checking"      // Pre-flight: probing server availability (mount)
@@ -121,6 +122,9 @@ export function TasmiSessionUI({
   const [hint, setHint] = useState<string | null>(null);
   const [midSessionOutage, setMidSessionOutage] = useState(false);
   const [endedEarly, setEndedEarly] = useState(false);
+  // Live word-follow state (Mode A): matcher cursor + accumulated error positions
+  const [followIndex, setFollowIndex] = useState(-1);
+  const [errorPositions, setErrorPositions] = useState<ReadonlySet<number>>(new Set());
 
   const sessionRef = useRef<TasmiSession | null>(null);
   const recorderRef = useRef<TasmiRecorder | null>(null);
@@ -209,6 +213,9 @@ export function TasmiSessionUI({
         setHint(null);
         setProgress(event.data?.progress ?? 0);
         progressRef.current = event.data?.progress ?? 0;
+        if (event.data?.matchResult) {
+          setFollowIndex(event.data.matchResult.lastCorrectIndex);
+        }
         break;
       case "no-speech":
         // Whisper heard nothing usable — NOT a mistake. Gentle nudge only.
@@ -226,6 +233,18 @@ export function TasmiSessionUI({
         setStatus("error");
         setProgress(event.data?.progress ?? 0);
         progressRef.current = event.data?.progress ?? 0;
+        if (event.data?.matchResult) {
+          const { lastCorrectIndex, errors } = event.data.matchResult;
+          setFollowIndex(lastCorrectIndex);
+          if (errors.length > 0) {
+            // Immutable accumulate — error marks persist for the whole session
+            setErrorPositions(prev => {
+              const next = new Set(prev);
+              for (const e of errors) next.add(e.position);
+              return next;
+            });
+          }
+        }
         break;
       case "talqin":
         setStatus("talqin");
@@ -280,6 +299,8 @@ export function TasmiSessionUI({
     progressRef.current = 0;
     setEndedEarly(false);
     setMidSessionOutage(false);
+    setFollowIndex(-1);
+    setErrorPositions(new Set());
 
     // Gesture-unlock ONE shared audio element (inside this tap) and reuse it
     // for every talqin playback. Without this, iOS blocks talqin audio.
@@ -517,6 +538,13 @@ export function TasmiSessionUI({
       {hint ? (
         <p className="text-sm text-amber-600 dark:text-amber-400">{hint}</p>
       ) : null}
+
+      {/* Live word-follow (Mode A): the range's text, filling in as recited */}
+      <TasmiTextFollow
+        expectedText={expectedText}
+        followIndex={followIndex}
+        errorPositions={errorPositions}
+      />
 
       {/* Status indicator */}
       <div className="flex items-center gap-3">

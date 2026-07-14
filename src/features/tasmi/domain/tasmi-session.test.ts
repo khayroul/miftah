@@ -460,6 +460,51 @@ describe('TasmiSession — Honest failure handling', () => {
   });
 });
 
+// ---- Scenario 13: T-01 — recovery after a mid-chunk substitution ----
+
+describe('TasmiSession — T-01 mid-chunk substitution recovery', () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  it('credits correct words recited AFTER a substitution in the same chunk', async () => {
+    // Reciter slips on word 2 (الله) but completes the rest correctly.
+    mockTranscriptionResponses([
+      { normalized_text: 'بسم خطا الرحمن الرحيم' },
+    ]);
+
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+    await session.processAudioChunk(new Blob(['slip-then-recover']));
+
+    const endEvent = events.find(e => e.type === 'session-end');
+    expect(endEvent).toBeDefined();
+    const result = endEvent!.data!.result!;
+    // 3 of 4 words correct; the substituted position is an error, not credit.
+    expect(result.wordsCorrect).toBe(3);
+    expect(result.accuracy).toBe(75);
+    expect(result.errorPositions).toEqual([1]);
+    // The session COMPLETED — post-slip words were not discarded (T-01).
+    expect(events.map(e => e.type)).toContain('complete');
+  });
+
+  it('holds the cursor on a trailing substitution so talqin corrects the wrong word', async () => {
+    mockTranscriptionResponses([
+      { normalized_text: 'بسم خطا' },  // trailing substitution, no anchor after
+      { normalized_text: 'غلط' },      // second consecutive error -> talqin
+    ]);
+
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+    await session.processAudioChunk(new Blob(['chunk1']));
+    await session.processAudioChunk(new Blob(['chunk2']));
+
+    const talqinEvents = events.filter(e => e.type === 'talqin');
+    expect(talqinEvents).toHaveLength(1);
+    // Cursor held at بسم (index 0) -> talqin prompts from الله (index 1),
+    // the word actually recited wrongly — NOT skipped past it.
+    expect(talqinEvents[0].data!.talqinWordIndex).toBe(1);
+  });
+});
+
 // ---- Scenario 12: end() idempotency ----
 
 describe('TasmiSession — end() is idempotent', () => {
