@@ -68,3 +68,59 @@ describe('TalqinPlayer.playRange', () => {
     expect(onEnd).toHaveBeenCalled();
   });
 });
+
+describe('TalqinPlayer.attachAudioElement (iOS gesture unlock)', () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  it('reuses the primed element instead of constructing Audio, across plays', async () => {
+    const onEnd = vi.fn();
+    const player = new TalqinPlayer({ wordsToPlay: 5, onPlaybackEnd: onEnd });
+
+    const constructed = mockAudio(); // spies globalThis.Audio
+    const primed = {
+      currentTime: 0,
+      src: '',
+      play: vi.fn().mockResolvedValue(undefined),
+      pause: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as HTMLAudioElement;
+
+    player.attachAudioElement(primed);
+
+    await player.playRange(2, 1, 0, 3); // no timestamps -> full-ayah path
+    await player.playRange(2, 1, 0, 3); // second play must also reuse it
+
+    expect(primed.play).toHaveBeenCalledTimes(2);
+    expect((primed as { src: string }).src).toContain('002001.mp3');
+    // The gesture-unlocked element must be used — never a fresh Audio()
+    expect(constructed.play).not.toHaveBeenCalled();
+    expect(globalThis.Audio).not.toHaveBeenCalled();
+  });
+
+  it('stop() detaches listeners but keeps the shared element for reuse', async () => {
+    const onEnd = vi.fn();
+    const player = new TalqinPlayer({ wordsToPlay: 5, onPlaybackEnd: onEnd });
+    mockAudio();
+
+    const primed = {
+      currentTime: 0,
+      src: '',
+      play: vi.fn().mockResolvedValue(undefined),
+      pause: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as HTMLAudioElement;
+
+    player.attachAudioElement(primed);
+    await player.playRange(2, 1, 0, 3);
+    player.stop();
+
+    expect(primed.pause).toHaveBeenCalled();
+    expect(primed.removeEventListener).toHaveBeenCalled();
+
+    // Still reusable after stop
+    await player.playRange(2, 1, 0, 3);
+    expect(primed.play).toHaveBeenCalledTimes(2);
+  });
+});

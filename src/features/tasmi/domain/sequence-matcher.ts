@@ -60,6 +60,10 @@ export class SequenceMatcher {
     const errors: MatchResult['errors'] = [];
     let wordsCorrect = 0;
     let expectedPos = fromIndex;
+    // The cursor may only pass an error position when a LATER correct word
+    // anchors it (same rule the omission lookahead already follows). Track the
+    // last position that a correct recitation actually landed on.
+    let lastAnchored = fromIndex - 1;
 
     for (let i = 0; i < transcribedWords.length; i++) {
       if (expectedPos >= this.expectedWords.length) break;
@@ -69,6 +73,7 @@ export class SequenceMatcher {
 
       if (expected === got) {
         wordsCorrect++;
+        lastAnchored = expectedPos;
         expectedPos++;
       } else {
         // Look ahead up to 2 positions for a skip (student omitted words)
@@ -85,6 +90,7 @@ export class SequenceMatcher {
               });
             }
             wordsCorrect++;
+            lastAnchored = expectedPos + la;
             expectedPos += la + 1;
             foundAhead = true;
             break;
@@ -92,18 +98,24 @@ export class SequenceMatcher {
         }
 
         if (!foundAhead) {
+          // T-01: record the substitution and KEEP matching the rest of the
+          // chunk instead of discarding it — a mid-chunk slip no longer
+          // throws away every correct word recited after it. The cursor
+          // (lastIndex) only advances past this position if a later correct
+          // word anchors it; a trailing unanchored substitution holds the
+          // cursor so talqin corrects the word that was actually wrong.
           errors.push({
             position: expectedPos,
             expected,
             got,
             type: 'substitution',
           });
-          break;
+          expectedPos++;
         }
       }
     }
 
-    return { wordsCorrect, lastIndex: expectedPos - 1, errors };
+    return { wordsCorrect, lastIndex: lastAnchored, errors };
   }
 
   /**
@@ -181,8 +193,13 @@ export class SequenceMatcher {
       };
     }
 
-    // No lookback match either — genuine error
-    this._lastCorrectIndex = forward.lastIndex;
+    // No lookback match either — genuine error.
+    // Anchor guard: only advance position when the chunk contained at least one
+    // CORRECT word. Without it, a pure-noise chunk (all substitutions) would
+    // drag the position forward through words the reciter never said.
+    if (forward.wordsCorrect > 0) {
+      this._lastCorrectIndex = forward.lastIndex;
+    }
     return {
       lastCorrectIndex: this._lastCorrectIndex,
       wordsCorrect: forward.wordsCorrect,

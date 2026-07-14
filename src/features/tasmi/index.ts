@@ -17,6 +17,14 @@
 export { loadHifzTasmiOverlay } from "./read-loaders";
 export { TasmiSessionUI } from "./components/TasmiSessionUI";
 export type { AyahRange } from "./components/TasmiSessionUI";
+export { TasmiJuzukExam } from "./components/TasmiJuzukExam";
+export { buildExamRound } from "./domain/juzuk-exam";
+export type {
+  JuzukExamAyahInput,
+  JuzukExamRoundContract,
+} from "./domain/juzuk-exam";
+export { TasmiRecorderError } from "./domain/tasmi-recorder";
+export type { TasmiRecorderErrorKind } from "./domain/tasmi-recorder";
 export { normalizeArabic, tokenizeWords } from "./domain/arabic-normalizer";
 export {
   getPerAyahRatings,

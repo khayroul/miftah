@@ -14,6 +14,13 @@ export interface TasmiConfig {
   silenceThresholdSeconds: number;
   /** Number of consecutive errors before triggering talqin (default: 2) */
   errorThresholdCount: number;
+  /**
+   * Mode B exam/practice toggle (operator vision, clarifier #1).
+   * false = exam mode: mistakes are tracked and scored but NO talqin help is
+   * given (traditional examination — the examiner stays silent).
+   * Default true (practice / Mode A behaviour).
+   */
+  talqinEnabled?: boolean;
 }
 
 export interface TasmiSessionResult {
@@ -36,7 +43,9 @@ export type TasmiEventType =
   | 'listening'       // Mic is active, waiting for speech
   | 'processing'      // Audio chunk sent to server, waiting for response
   | 'match'           // Chunk matched successfully
-  | 'error'           // Recitation error detected
+  | 'error'           // Recitation error detected (a genuine mismatch)
+  | 'no-speech'       // Chunk had no recognisable words — NOT a mistake, no penalty
+  | 'server-unavailable' // Transport failure (down/timeout/401) — NOT a mistake, no penalty
   | 'talqin'          // Talqin triggered — play audio from this position
   | 'complete'        // Student reached end of expected text
   | 'session-end';    // Session ended with results
@@ -65,6 +74,7 @@ export class TasmiSession {
   private isActive: boolean = false;
   private chunkQueue: Blob[] = [];
   private processing: boolean = false;
+  private lastResult: TasmiSessionResult | null = null;
 
   constructor(
     expectedText: string,
@@ -139,16 +149,14 @@ export class TasmiSession {
       );
 
       if (matchResult.wordsTotal === 0 && matchResult.errors.length === 0) {
-        // Empty transcription (Whisper returned nothing) — count as error for talqin
-        this.consecutiveErrors++;
+        // Empty transcription (Whisper heard silence / background noise / a breath)
+        // is NOT a recitation mistake. Do not penalise or advance the error count;
+        // just re-prompt. A genuinely stuck reciter is caught by the silence-timeout
+        // path (onSilenceTimeout), which fires talqin on real inactivity.
         this.eventHandler({
-          type: 'error',
+          type: 'no-speech',
           data: { matchResult, progress: this.matcher.progress },
         });
-
-        if (this.consecutiveErrors >= this.config.errorThresholdCount) {
-          this.triggerTalqin();
-        }
       } else if (matchResult.errors.length === 0) {
         this.consecutiveErrors = 0;
         this.addWordsCorrect(newlyCorrectWords);
@@ -177,11 +185,15 @@ export class TasmiSession {
       }
     } catch (err) {
       console.error('Tasmi transcription error:', err);
-      // Server failure still counts as error — prevents stuck session with no talqin
-      this.consecutiveErrors++;
-      if (this.consecutiveErrors >= this.config.errorThresholdCount) {
-        this.triggerTalqin();
-      }
+      // Transport failure (server down / timeout / non-2xx / network drop). This is
+      // NOT a recitation mistake: do not penalise the reciter or fire talqin for
+      // words they may have said correctly. Surface it honestly and let the UI pause
+      // the session with a "server unavailable" banner + retry.
+      this.eventHandler({
+        type: 'server-unavailable',
+        data: { progress: this.matcher.progress },
+      });
+      return;
     }
 
     if (this.isActive) {
@@ -194,11 +206,19 @@ export class TasmiSession {
     previousLastCorrectIndex: number,
   ): number {
     const rawAdvance = Math.max(0, matchResult.lastCorrectIndex - previousLastCorrectIndex);
-    const omissionsInNewSpan = matchResult.errors.filter(
-      error => error.type === 'omission' && error.position > previousLastCorrectIndex,
+    // Positions the cursor advanced past WITHOUT a correct recitation must not
+    // score: omitted words (skipped) and substituted words (T-01: the cursor
+    // passes an anchored substitution) are errors, not credit. Only errors
+    // INSIDE the newly advanced span subtract — a trailing unanchored
+    // substitution sits beyond lastCorrectIndex and earned no advance.
+    const uncreditedInNewSpan = matchResult.errors.filter(
+      error =>
+        (error.type === 'omission' || error.type === 'substitution') &&
+        error.position > previousLastCorrectIndex &&
+        error.position <= matchResult.lastCorrectIndex,
     ).length;
 
-    return Math.max(0, rawAdvance - omissionsInNewSpan);
+    return Math.max(0, rawAdvance - uncreditedInNewSpan);
   }
 
   private addWordsCorrect(words: number): void {
@@ -220,6 +240,14 @@ export class TasmiSession {
   }
 
   private triggerTalqin(): void {
+    // Exam mode: the examiner stays silent. Mistakes are already tracked in
+    // errorPositions/accuracy; reset the streak so the counter doesn't grow
+    // unbounded, but give no help and count no talqin.
+    if (this.config.talqinEnabled === false) {
+      this.consecutiveErrors = 0;
+      return;
+    }
+
     this.talqinCount++;
     this.consecutiveErrors = 0;
 
@@ -241,6 +269,10 @@ export class TasmiSession {
   }
 
   end(): TasmiSessionResult {
+    // Idempotent: end() is reachable from both the natural-completion path
+    // (matcher.isComplete) and a manual stop. A second call must not re-fire
+    // session-end or recompute a longer duration.
+    if (this.lastResult) return this.lastResult;
     this.isActive = false;
     const durationSeconds = (Date.now() - this.startTime) / 1000;
 
@@ -255,6 +287,7 @@ export class TasmiSession {
       durationSeconds,
     };
 
+    this.lastResult = result;
     this.eventHandler({ type: 'session-end', data: { result } });
     return result;
   }

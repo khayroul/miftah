@@ -218,6 +218,14 @@ export function HifzTodayCard(props: {
       {!hasNew && hasReview ? <p className="mt-3 text-center text-sm text-stone-400 dark:text-stone-500">Tiada halaman baru hari ini</p> : null}
       {hasNew && !hasReview ? <p className="mt-3 text-center text-sm text-stone-400 dark:text-stone-500">Tiada ulangan hari ini</p> : null}
       {props.showStartFresh ? <p className="mt-3 text-center text-sm text-stone-500 dark:text-stone-400">Belum ada jadual hafalan. Pilih jalan mula di atas supaya kami boleh buka sesi yang sesuai untuk anda.</p> : null}
+      <p className="mt-4 text-center text-sm">
+        <a
+          href="/tasmi/juzuk"
+          className="font-medium text-teal-700 underline-offset-4 hover:underline dark:text-teal-300"
+        >
+          Ujian Juzuk (Tasmi&apos; suara) →
+        </a>
+      </p>
     </div>
   );
 }

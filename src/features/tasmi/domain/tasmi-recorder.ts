@@ -5,6 +5,32 @@
 
 import { MicVAD } from '@ricky0123/vad-web';
 
+/** Classified mic-start failure, so the UI can show actionable localized copy
+ * instead of a raw browser DOMException string. */
+export type TasmiRecorderErrorKind = 'permission-denied' | 'no-mic' | 'unknown';
+
+export class TasmiRecorderError extends Error {
+  readonly kind: TasmiRecorderErrorKind;
+
+  constructor(kind: TasmiRecorderErrorKind, message: string) {
+    super(message);
+    this.name = 'TasmiRecorderError';
+    this.kind = kind;
+  }
+}
+
+function classifyMicError(err: unknown): TasmiRecorderError {
+  const name = err instanceof DOMException || err instanceof Error ? err.name : '';
+  const message = err instanceof Error ? err.message : 'Failed to start mic';
+  if (name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError') {
+    return new TasmiRecorderError('permission-denied', message);
+  }
+  if (name === 'NotFoundError' || name === 'DevicesNotFoundError' || name === 'OverconstrainedError') {
+    return new TasmiRecorderError('no-mic', message);
+  }
+  return new TasmiRecorderError('unknown', message);
+}
+
 export interface RecorderConfig {
   /** Seconds of silence before firing onSilenceTimeout (default: 6) */
   silenceTimeoutSeconds: number;
@@ -12,8 +38,8 @@ export interface RecorderConfig {
   onSpeechEnd: (audioBlob: Blob) => void;
   /** Called when silence exceeds threshold */
   onSilenceTimeout: () => void;
-  /** Called on errors */
-  onError: (error: Error) => void;
+  /** Called on errors — always a TasmiRecorderError with a classified kind */
+  onError: (error: TasmiRecorderError) => void;
 }
 
 export class TasmiRecorder {
@@ -51,9 +77,7 @@ export class TasmiRecorder {
       this.isListening = true;
       this.startSilenceTimer();
     } catch (err) {
-      this.config.onError(
-        err instanceof Error ? err : new Error('Failed to start mic')
-      );
+      this.config.onError(classifyMicError(err));
     }
   }
 

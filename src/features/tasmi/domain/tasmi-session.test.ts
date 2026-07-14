@@ -405,6 +405,170 @@ describe('TasmiSession — Scenario 9: Post-end safety', () => {
   });
 });
 
+// ---- Scenario 11: Honest failure handling (no false talqin / no score damage) ----
+
+describe('TasmiSession — Honest failure handling', () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  it('emits server-unavailable (never error/talqin) on transport failure', async () => {
+    mockTranscriptionResponses([
+      new Error('down'),
+      new Error('down'),
+    ]);
+
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+    await session.processAudioChunk(new Blob(['fail1']));
+    await session.processAudioChunk(new Blob(['fail2']));
+
+    // Two server failures must NOT be scored as recitation mistakes or fire talqin.
+    expect(events.filter(e => e.type === 'server-unavailable')).toHaveLength(2);
+    expect(events.filter(e => e.type === 'error')).toHaveLength(0);
+    expect(events.filter(e => e.type === 'talqin')).toHaveLength(0);
+  });
+
+  it('does not degrade the score after a server failure followed by a correct chunk', async () => {
+    mockTranscriptionResponses([
+      new Error('down'),
+      { normalized_text: 'بسم الله الرحمن الرحيم' },
+    ]);
+
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+    await session.processAudioChunk(new Blob(['fail']));
+    await session.processAudioChunk(new Blob(['ok']));
+
+    const result = events.find(e => e.type === 'session-end')!.data!.result!;
+    expect(result.talqinCount).toBe(0);
+    expect(result.accuracy).toBe(100);
+  });
+
+  it('treats empty transcription as no-speech (no penalty, no talqin)', async () => {
+    mockTranscriptionResponses([
+      { normalized_text: '' },
+      { normalized_text: '' },
+    ]);
+
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+    await session.processAudioChunk(new Blob(['silence1']));
+    await session.processAudioChunk(new Blob(['silence2']));
+
+    expect(events.filter(e => e.type === 'no-speech').length).toBeGreaterThanOrEqual(1);
+    expect(events.filter(e => e.type === 'error')).toHaveLength(0);
+    expect(events.filter(e => e.type === 'talqin')).toHaveLength(0);
+  });
+});
+
+// ---- Scenario 13: T-01 — recovery after a mid-chunk substitution ----
+
+describe('TasmiSession — T-01 mid-chunk substitution recovery', () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  it('credits correct words recited AFTER a substitution in the same chunk', async () => {
+    // Reciter slips on word 2 (الله) but completes the rest correctly.
+    mockTranscriptionResponses([
+      { normalized_text: 'بسم خطا الرحمن الرحيم' },
+    ]);
+
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+    await session.processAudioChunk(new Blob(['slip-then-recover']));
+
+    const endEvent = events.find(e => e.type === 'session-end');
+    expect(endEvent).toBeDefined();
+    const result = endEvent!.data!.result!;
+    // 3 of 4 words correct; the substituted position is an error, not credit.
+    expect(result.wordsCorrect).toBe(3);
+    expect(result.accuracy).toBe(75);
+    expect(result.errorPositions).toEqual([1]);
+    // The session COMPLETED — post-slip words were not discarded (T-01).
+    expect(events.map(e => e.type)).toContain('complete');
+  });
+
+  it('holds the cursor on a trailing substitution so talqin corrects the wrong word', async () => {
+    mockTranscriptionResponses([
+      { normalized_text: 'بسم خطا' },  // trailing substitution, no anchor after
+      { normalized_text: 'غلط' },      // second consecutive error -> talqin
+    ]);
+
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+    await session.processAudioChunk(new Blob(['chunk1']));
+    await session.processAudioChunk(new Blob(['chunk2']));
+
+    const talqinEvents = events.filter(e => e.type === 'talqin');
+    expect(talqinEvents).toHaveLength(1);
+    // Cursor held at بسم (index 0) -> talqin prompts from الله (index 1),
+    // the word actually recited wrongly — NOT skipped past it.
+    expect(talqinEvents[0].data!.talqinWordIndex).toBe(1);
+  });
+});
+
+// ---- Scenario 14: Mode B exam mode — talqin suppressed, mistakes still scored ----
+
+describe('TasmiSession — exam mode (talqinEnabled: false)', () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  function collectExamEvents(expectedText: string) {
+    const events: TasmiEvent[] = [];
+    const session = new TasmiSession(expectedText, {
+      serverUrl: 'http://fake:8000',
+      apiKey: 'test',
+      silenceThresholdSeconds: 6,
+      errorThresholdCount: 2,
+      talqinEnabled: false,
+    }, (e) => events.push(e));
+    return { session, events };
+  }
+
+  it('never fires talqin on consecutive errors, but errors are still recorded', async () => {
+    mockTranscriptionResponses([
+      { normalized_text: 'خطا' },
+      { normalized_text: 'غلط' },
+    ]);
+
+    const { session, events } = collectExamEvents(BASMALA);
+    session.start();
+    await session.processAudioChunk(new Blob(['bad1']));
+    await session.processAudioChunk(new Blob(['bad2']));
+
+    expect(events.filter(e => e.type === 'talqin')).toHaveLength(0);
+    expect(events.filter(e => e.type === 'error')).toHaveLength(2);
+
+    const result = session.end();
+    expect(result.talqinCount).toBe(0);
+    expect(result.errorPositions).toEqual([0]);
+  });
+
+  it('never fires talqin on silence timeout', () => {
+    const { session, events } = collectExamEvents(BASMALA);
+    session.start();
+    session.onSilenceTimeout();
+    expect(events.filter(e => e.type === 'talqin')).toHaveLength(0);
+  });
+});
+
+// ---- Scenario 12: end() idempotency ----
+
+describe('TasmiSession — end() is idempotent', () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  it('returns the same result and emits session-end once when called twice', async () => {
+    mockTranscriptionResponses([{ normalized_text: 'بسم الله' }]);
+
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+    await session.processAudioChunk(new Blob(['partial']));
+
+    const first = session.end();
+    const second = session.end();
+
+    expect(second).toBe(first);
+    expect(events.filter(e => e.type === 'session-end')).toHaveLength(1);
+  });
+});
+
 // ---- Scenario 10: resolveAyahFromWordIndex ----
 
 describe('resolveAyahFromWordIndex', () => {
