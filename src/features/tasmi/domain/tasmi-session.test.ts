@@ -505,6 +505,50 @@ describe('TasmiSession — T-01 mid-chunk substitution recovery', () => {
   });
 });
 
+// ---- Scenario 14: Mode B exam mode — talqin suppressed, mistakes still scored ----
+
+describe('TasmiSession — exam mode (talqinEnabled: false)', () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  function collectExamEvents(expectedText: string) {
+    const events: TasmiEvent[] = [];
+    const session = new TasmiSession(expectedText, {
+      serverUrl: 'http://fake:8000',
+      apiKey: 'test',
+      silenceThresholdSeconds: 6,
+      errorThresholdCount: 2,
+      talqinEnabled: false,
+    }, (e) => events.push(e));
+    return { session, events };
+  }
+
+  it('never fires talqin on consecutive errors, but errors are still recorded', async () => {
+    mockTranscriptionResponses([
+      { normalized_text: 'خطا' },
+      { normalized_text: 'غلط' },
+    ]);
+
+    const { session, events } = collectExamEvents(BASMALA);
+    session.start();
+    await session.processAudioChunk(new Blob(['bad1']));
+    await session.processAudioChunk(new Blob(['bad2']));
+
+    expect(events.filter(e => e.type === 'talqin')).toHaveLength(0);
+    expect(events.filter(e => e.type === 'error')).toHaveLength(2);
+
+    const result = session.end();
+    expect(result.talqinCount).toBe(0);
+    expect(result.errorPositions).toEqual([0]);
+  });
+
+  it('never fires talqin on silence timeout', () => {
+    const { session, events } = collectExamEvents(BASMALA);
+    session.start();
+    session.onSilenceTimeout();
+    expect(events.filter(e => e.type === 'talqin')).toHaveLength(0);
+  });
+});
+
 // ---- Scenario 12: end() idempotency ----
 
 describe('TasmiSession — end() is idempotent', () => {

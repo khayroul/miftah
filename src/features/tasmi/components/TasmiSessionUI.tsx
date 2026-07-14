@@ -14,6 +14,7 @@ type TasmiStatus =
   | "unavailable"   // Server not configured/reachable (pre-session or mid-session)
   | "idle"          // Mic error fallback — can retry via intro
   | "ready"         // Mic/VAD warming up
+  | "prompt"        // Mode B: playing the test-ayah start prompt aloud
   | "listening"     // Live: waiting for speech
   | "processing"    // Chunk sent, awaiting transcription
   | "error"         // Genuine recitation mistake detected
@@ -44,6 +45,16 @@ interface TasmiSessionUIProps {
   onSessionEnd: (result: TasmiSessionResult, label: TasmiRatingLabel) => void;
   /** Called when user cancels */
   onCancel: () => void;
+  /**
+   * Mode B exam/practice toggle: false suppresses talqin help (mistakes are
+   * still tracked and scored). Default true (Mode A behaviour).
+   */
+  talqinEnabled?: boolean;
+  /**
+   * Mode B start prompt: when set, this ayah is read aloud after "Mula"
+   * (recorder paused), and listening begins when playback ends.
+   */
+  startPromptAyah?: { surah: number; ayah: number };
 }
 
 const STATUS_LABELS: Record<TasmiStatus, string> = {
@@ -52,6 +63,7 @@ const STATUS_LABELS: Record<TasmiStatus, string> = {
   unavailable: "Pelayan tidak tersedia",
   idle: "Sedia untuk mula",
   ready: "Menyediakan mikrofon...",
+  prompt: "Dengar ayat ujian, kemudian sambung bacaan...",
   listening: "Sedang mendengar...",
   processing: "Menyemak bacaan...",
   error: "Cuba ulang bahagian itu",
@@ -114,6 +126,8 @@ export function TasmiSessionUI({
   ayahRanges,
   onSessionEnd,
   onCancel,
+  talqinEnabled = true,
+  startPromptAyah,
 }: TasmiSessionUIProps) {
   const [status, setStatus] = useState<TasmiStatus>("checking");
   const [progress, setProgress] = useState(0);
@@ -316,6 +330,7 @@ export function TasmiSessionUI({
       serverUrl: TASMI_TRANSCRIBE_ENDPOINT,
       silenceThresholdSeconds: 6,
       errorThresholdCount: 2,
+      talqinEnabled,
     }, handleEvent);
 
     const talqin = new TalqinPlayer({
@@ -358,7 +373,18 @@ export function TasmiSessionUI({
     session.start();
     await recorder.start();
     if (cancelledRef.current) { teardown(); return; }
-  }, [expectedText, handleEvent, teardown]);
+
+    // Mode B: read the test ayah aloud first (mic stays granted but paused),
+    // then the shared onPlaybackEnd resumes the recorder into listening.
+    if (startPromptAyah) {
+      recorder.pause();
+      setStatus("prompt");
+      talqin.playAyah(startPromptAyah.surah, startPromptAyah.ayah).catch(() => {
+        recorderRef.current?.resume();
+        setStatus("listening");
+      });
+    }
+  }, [expectedText, handleEvent, teardown, talqinEnabled, startPromptAyah]);
 
   /** Mid-session outage recovery: re-probe, then resume where the reciter left off. */
   const resumeAfterOutage = useCallback(async () => {
@@ -503,9 +529,17 @@ export function TasmiSessionUI({
           Tasmi&apos; — Semak Bacaan Dengan Suara
         </p>
         <ol className="max-w-sm list-decimal space-y-1 pl-5 text-sm text-stone-600 dark:text-stone-300">
-          <li>Baca dengan suara yang jelas, dari perkataan pertama.</li>
+          {startPromptAyah ? (
+            <li>App akan <span className="font-medium">bacakan ayat ujian</span> dahulu — dengar, kemudian sambung bacaan dari ayat itu hingga habis halaman.</li>
+          ) : (
+            <li>Baca dengan suara yang jelas, dari perkataan pertama.</li>
+          )}
           <li>Berhenti seketika selepas setiap bahagian — app akan semak bacaan anda.</li>
-          <li>Jika tersilap atau tersekat, app akan <span className="font-medium">bacakan beberapa perkataan panduan (talqin)</span>, kemudian tunggu anda menyambung.</li>
+          {talqinEnabled ? (
+            <li>Jika tersilap atau tersekat, app akan <span className="font-medium">bacakan beberapa perkataan panduan (talqin)</span>, kemudian tunggu anda menyambung.</li>
+          ) : (
+            <li><span className="font-medium">Mod ujian:</span> app kekal senyap jika anda tersilap — kesilapan dicatat dalam keputusan, tiada bantuan diberikan.</li>
+          )}
         </ol>
         <p className="text-xs text-stone-500 dark:text-stone-400">
           Mikrofon hanya digunakan semasa sesi ini.
@@ -554,7 +588,7 @@ export function TasmiSessionUI({
               ? "animate-pulse bg-rose-500"
               : status === "processing"
                 ? "animate-pulse bg-amber-500"
-                : status === "talqin"
+                : status === "talqin" || status === "prompt"
                   ? "animate-pulse bg-teal-500"
                   : status === "error"
                     ? "bg-rose-500"

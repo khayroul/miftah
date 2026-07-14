@@ -21,7 +21,7 @@
     "test:reading-progress": "tsx --test src/features/read/domain/readingProgressStorage.test.ts",
     "test:mushaf-view": "tsx --test src/lib/mushafViewState.test.ts",
     "test:page-audio": "tsx --test src/features/read/domain/audio/pageAudioTracks.test.ts",
-    "test:hifz-tasmi": "vitest run src/features/hifz/domain/page-words.test.ts src/features/hifz/domain/progressive-unveil.test.ts src/features/hifz/domain/tebuk.test.ts src/features/tasmi/domain/arabic-normalizer.test.ts src/features/tasmi/domain/sequence-matcher.test.ts src/features/tasmi/domain/talqin-player.test.ts src/features/tasmi/domain/tasmi-session.test.ts src/features/tasmi/components/TasmiTextFollow.boundary.test.ts",
+    "test:hifz-tasmi": "vitest run src/features/hifz/domain/page-words.test.ts src/features/hifz/domain/progressive-unveil.test.ts src/features/hifz/domain/tebuk.test.ts src/features/tasmi/domain/arabic-normalizer.test.ts src/features/tasmi/domain/juzuk-exam.test.ts src/features/tasmi/domain/sequence-matcher.test.ts src/features/tasmi/domain/talqin-player.test.ts src/features/tasmi/domain/tasmi-session.test.ts src/features/tasmi/components/TasmiTextFollow.boundary.test.ts",
     "render:import-official": "python3 scripts/render/import_official_pages.py",
     "render:check-ios-parity": "python3 scripts/render/check_ios_parity.py",
     "render:extract-official-subassets": "python3 scripts/render/extract_official_subassets.py",

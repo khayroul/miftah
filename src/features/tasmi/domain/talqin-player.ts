@@ -219,6 +219,14 @@ export class TalqinPlayer {
   }
 
   /**
+   * Play one whole ayah aloud. Mode B (juzuk exam) uses this as the
+   * read-aloud START prompt for the test ayah.
+   */
+  async playAyah(surah: number, ayah: number): Promise<void> {
+    await this.playFullAyah(surah, ayah);
+  }
+
+  /**
    * Fallback: play full ayah audio without seeking.
    */
   private async playFullAyah(surah: number, ayah: number): Promise<void> {

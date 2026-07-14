@@ -71,11 +71,23 @@ Prerequisite for both modes. No new features — correctness + first-use + iOS.
   at the highlight during actual recitation = operator logged-in smoke (Wave 3).
 
 ### Wave 2 — Mode B: juzuk exam
-- [ ] Session-start **exam / practice** toggle.
-- [ ] Random test-ayah picker within a juz; read-aloud start prompt (reuse
-  `TalqinPlayer.playRange`); recite-to-page-end; **NEXT** loop to the next test ayah.
-- [ ] Exam-mode result/session handling.
-- **Gate:** picker + loop unit tests; end-to-end exam run locally.
+- [x] **Exam/practice toggle** — engine `talqinEnabled` config (exam = silent on mistakes,
+  errors still scored, talqinCount stays 0; silence-timeout also suppressed); session-start
+  toggle UI with per-mode explanation; intro copy adapts. 2 engine tests. ✅
+- [x] **Random test-ayah picker** — `getJuzukExamRound(juz, exclude)` in the data layer
+  (random ayah in juz → span to page end via id-ordered `gte`), `GET /api/tasmi/juzuk-round`
+  (auth-gated, juz 1-30 validated, exclude-list for recent-repeat avoidance). Data
+  assumptions PROVEN against prod read-only: 6,236 ayat, 0 null juz/page, id ordering has
+  0 recitation-order violations; real span checks (juz-1 first ayah → 7 to page end). ✅
+- [x] **Read-aloud start prompt** — `TalqinPlayer.playAyah()` plays the test ayah after
+  "Mula" (recorder paused → resumes into listening on playback end); new `prompt` status. ✅
+- [x] **NEXT loop** — `TasmiJuzukExam` component: juz picker + toggle → round → save →
+  next random test ayah (recent-20 exclusion); `buildExamRound` domain builder (4 tests)
+  mirrors the proven hifz word-offset algorithm; `/tasmi/juzuk` page (requireAuthUser);
+  entry link on the hifz overview card. ✅
+- **Gate status:** tsc 0 · lint 0 · 93/93 · build 36/36 routes ✅ · route smoke: logged-out
+  `/tasmi/juzuk` → 307 sign-in, API → 401 ✅. **REMAINING:** logged-in end-to-end exam run =
+  operator device (Wave 3).
 
 ### Wave 3 — VPS deploy + wire + end-to-end verify  *(operator-gated infra)*
 - [ ] Operator: rotate the leaked credential; redeploy `tasmi-server/` (runbook below).

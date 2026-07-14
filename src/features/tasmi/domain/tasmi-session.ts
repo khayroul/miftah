@@ -14,6 +14,13 @@ export interface TasmiConfig {
   silenceThresholdSeconds: number;
   /** Number of consecutive errors before triggering talqin (default: 2) */
   errorThresholdCount: number;
+  /**
+   * Mode B exam/practice toggle (operator vision, clarifier #1).
+   * false = exam mode: mistakes are tracked and scored but NO talqin help is
+   * given (traditional examination — the examiner stays silent).
+   * Default true (practice / Mode A behaviour).
+   */
+  talqinEnabled?: boolean;
 }
 
 export interface TasmiSessionResult {
@@ -233,6 +240,14 @@ export class TasmiSession {
   }
 
   private triggerTalqin(): void {
+    // Exam mode: the examiner stays silent. Mistakes are already tracked in
+    // errorPositions/accuracy; reset the streak so the counter doesn't grow
+    // unbounded, but give no help and count no talqin.
+    if (this.config.talqinEnabled === false) {
+      this.consecutiveErrors = 0;
+      return;
+    }
+
     this.talqinCount++;
     this.consecutiveErrors = 0;
 
