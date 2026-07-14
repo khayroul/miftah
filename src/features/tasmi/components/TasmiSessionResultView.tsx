@@ -5,6 +5,20 @@ interface TasmiSessionResultViewProps {
   result: TasmiSessionResult;
   onRetry: () => void;
   onSave: () => void;
+  /**
+   * True when the reciter tapped "Hentikan" before reaching the end of the
+   * range. An early stop must NOT be graded/saved as a failed full-range
+   * recitation (accuracy is computed over the WHOLE range), so saving is
+   * disabled and an explanatory note is shown instead.
+   */
+  endedEarly?: boolean;
+}
+
+function formatDuration(totalSeconds: number): string {
+  const s = Math.max(0, Math.round(totalSeconds));
+  const minutes = Math.floor(s / 60);
+  const seconds = s % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 const LABEL_COLORS: Record<TasmiRatingLabel, string> = {
@@ -25,6 +39,7 @@ export function TasmiSessionResultView({
   result,
   onRetry,
   onSave,
+  endedEarly = false,
 }: TasmiSessionResultViewProps) {
   const label = tasmiResultToLabel(result);
 
@@ -45,23 +60,31 @@ export function TasmiSessionResultView({
           <p className="text-lg font-bold">{result.wordsCorrect}/{result.totalWords}</p>
           <p>Perkataan</p>
         </div>
-        <div>
+        <div title="Bilangan kali app membacakan perkataan panduan ketika anda tersekat">
           <p className="text-lg font-bold">{result.talqinCount}</p>
           <p>Talqin</p>
         </div>
         <div>
-          <p className="text-lg font-bold">{Math.round(result.durationSeconds)}s</p>
+          <p className="text-lg font-bold">{formatDuration(result.durationSeconds)}</p>
           <p>Masa</p>
         </div>
       </div>
+      {endedEarly ? (
+        <p className="max-w-xs text-center text-xs text-stone-500 dark:text-stone-400">
+          Sesi dihentikan sebelum tamat — keputusan ini tidak disimpan supaya
+          rekod hafalan anda tidak terjejas. Cuba lagi bila bersedia.
+        </p>
+      ) : null}
       <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={onSave}
-          className="rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
-        >
-          Simpan &amp; Teruskan
-        </button>
+        {!endedEarly ? (
+          <button
+            type="button"
+            onClick={onSave}
+            className="rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
+          >
+            Simpan &amp; Teruskan
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onRetry}

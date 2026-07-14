@@ -29,24 +29,29 @@ Prerequisite for both modes. No new features — correctness + first-use + iOS.
   as recitation mistakes / fire false talqin / degrade the FSRS score. New session events
   `server-unavailable` and `no-speech`; `end()` is idempotent.
   (`src/features/tasmi/domain/tasmi-session.ts` + 4 new tests) ✅ landed, 79/79 green.
-- [ ] **Onboarding + explicit start gesture** — replace mic-auto-start with an intro card
-  ("Baca dengan kuat dari perkataan pertama. Bila tersilap, app bacakan talqin dan tunggu
-  anda sambung.") whose **Mula** tap is the user gesture. (`TasmiSessionUI.tsx`)
-- [ ] **iOS audio + mic unlock in the tap** — prime a reused `HTMLAudioElement` + resume the
-  VAD `AudioContext` inside the Mula handler; reuse the unlocked element for talqin. Without
-  this, talqin never plays on iPhone (the primary PWA target). (`TasmiSessionUI.tsx` +
-  `talqin-player.ts` + `tasmi-recorder.ts`)
-- [ ] **Honest UI states** — handle `server-unavailable` (pause + banner + retry) and
-  `no-speech` (keep listening, gentle hint); render the new `checking`/`intro`/`unavailable`
-  statuses. (`TasmiSessionUI.tsx`)
-- [ ] **Clean lifecycle** — stop the recorder on natural completion; tear down old
-  recorder/talqin before a retry (no double-VAD); cancel-during-init leak guard.
-- [ ] **Mic-permission UX** — localize `NotAllowedError`/`NotFoundError` with actionable BM
-  copy. (`tasmi-recorder.ts` + `TasmiSessionUI.tsx`)
-- [ ] **Don't punish early stop** — manual stop grades only the recited span (or doesn't
-  save). (`tasmi-session.ts` / `useMemorizeSubmission.ts`)
-- **Gate:** `test:hifz-tasmi` + `tsc` + `next build` green; local end-to-end recite loop works
-  against the local server; iOS Safari smoke (operator device) for talqin playback.
+- [x] **Onboarding + explicit start gesture** — mic-auto-start replaced with an intro card
+  (3-step BM explanation incl. talqin gloss + mic-privacy note); **Mula** tap is the user
+  gesture. (`TasmiSessionUI.tsx`) ✅
+- [x] **iOS audio unlock in the tap** — a silent-WAV-primed shared `HTMLAudioElement` is
+  unlocked inside the Mula tap and reused for all talqin via
+  `TalqinPlayer.attachAudioElement()`; contract locked by 2 unit tests. Mic start now also
+  originates from the tap (no mount auto-start). (`TasmiSessionUI.tsx` + `talqin-player.ts`) ✅
+- [x] **Honest UI states** — `server-unavailable` → pause + honest banner ("bacaan anda tidak
+  dikira salah") + "Sambung Semula" resume-after-reprobe; `no-speech` → gentle hint; new
+  `checking`/`intro`/`unavailable` states; pre-flight consumes `{configured, reachable}`. ✅
+- [x] **Clean lifecycle** — recorder+talqin stopped on natural completion AND session-end;
+  `teardown()` before every (re)start so retry can't stack a second VAD; `cancelledRef`
+  aborts in-flight async start; refs assigned before awaits. ✅
+- [x] **Mic-permission UX** — `TasmiRecorderError` with classified kinds
+  (permission-denied / no-mic / unknown) → actionable BM copy. (`tasmi-recorder.ts`) ✅
+- [x] **Don't punish early stop** — manual "Hentikan" before the end marks the result
+  `endedEarly`: not saveable (no FSRS damage), explanatory note shown. Also: m:ss duration,
+  talqin stat glossed, aria-live status announcements. (`TasmiSessionResultView.tsx`) ✅
+- [x] **Talqin = 3 linked words** (spec) — was 5. ✅
+- **Gate status:** `tsc` 0 · lint 0 · 81/81 hifz+tasmi tests · `next build` 34/34 ✅ ·
+  pre-flight E2E verified live (server up → `reachable:true`; killed → `reachable:false` in
+  35ms; restored → true) ✅ · **REMAINING:** logged-in recite loop + iOS talqin smoke =
+  operator device (Wave 3).
 
 ### Wave 1 — Mode A: live word-follow highlight (the spec core)
 - [ ] Render the range's Arabic text (RTL, Uthmani font) inside the session; drive a

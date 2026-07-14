@@ -2,12 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TasmiSession, type TasmiEvent, type TasmiSessionResult } from "../domain/tasmi-session";
-import { TasmiRecorder } from "../domain/tasmi-recorder";
+import { TasmiRecorder, type TasmiRecorderError } from "../domain/tasmi-recorder";
 import { TalqinPlayer } from "../domain/talqin-player";
 import { tasmiResultToLabel, type TasmiRatingLabel } from "../domain/fsrs-bridge";
 import { TasmiSessionResultView } from "./TasmiSessionResultView";
 
-type TasmiStatus = "idle" | "ready" | "listening" | "processing" | "error" | "talqin" | "complete";
+type TasmiStatus =
+  | "checking"      // Pre-flight: probing server availability (mount)
+  | "intro"         // Onboarding card — waiting for the user's "Mula" tap
+  | "unavailable"   // Server not configured/reachable (pre-session or mid-session)
+  | "idle"          // Mic error fallback — can retry via intro
+  | "ready"         // Mic/VAD warming up
+  | "listening"     // Live: waiting for speech
+  | "processing"    // Chunk sent, awaiting transcription
+  | "error"         // Genuine recitation mistake detected
+  | "talqin"        // Playing corrective talqin audio
+  | "complete";     // Range finished
 
 export interface AyahRange {
   surah: number;
@@ -36,16 +46,25 @@ interface TasmiSessionUIProps {
 }
 
 const STATUS_LABELS: Record<TasmiStatus, string> = {
+  checking: "Menyemak pelayan tasmi'...",
+  intro: "Sedia untuk mula",
+  unavailable: "Pelayan tidak tersedia",
   idle: "Sedia untuk mula",
   ready: "Menyediakan mikrofon...",
   listening: "Sedang mendengar...",
   processing: "Menyemak bacaan...",
-  error: "Kesilapan dikesan",
-  talqin: "Memainkan talqin...",
+  error: "Cuba ulang bahagian itu",
+  talqin: "Dengar talqin, kemudian sambung...",
   complete: "Selesai!",
 };
 
 const TASMI_TRANSCRIBE_ENDPOINT = "/api/tasmi/transcribe";
+
+// Minimal valid silent WAV (44-byte header, zero samples). Played inside the
+// "Mula" tap to gesture-unlock the shared HTMLAudioElement for iOS Safari —
+// talqin later reuses that unlocked element (see TalqinPlayer.attachAudioElement).
+const SILENT_WAV_DATA_URI =
+  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
 
 // Module-level cache for quran-align timestamp data (fetched once per page load)
 let alignDataCache: Array<{ surah: number; ayah: number; segments: [number, number, number, number][] }> | null = null;
@@ -75,6 +94,17 @@ function resolveAyahFromWordIndex(
   return { surah: fallbackSurah, ayah: fallbackAyah, localWordIndex: 0 };
 }
 
+function micErrorMessage(error: TasmiRecorderError): string {
+  switch (error.kind) {
+    case "permission-denied":
+      return "Akses mikrofon ditolak. Benarkan mikrofon untuk aplikasi ini dalam tetapan pelayar atau telefon anda, kemudian cuba lagi.";
+    case "no-mic":
+      return "Tiada mikrofon dikesan pada peranti ini.";
+    default:
+      return "Mikrofon tidak dapat dimulakan. Muat semula halaman dan cuba lagi.";
+  }
+}
+
 export function TasmiSessionUI({
   expectedText,
   surahNumber,
@@ -84,14 +114,22 @@ export function TasmiSessionUI({
   onSessionEnd,
   onCancel,
 }: TasmiSessionUIProps) {
-  const [status, setStatus] = useState<TasmiStatus>("idle");
+  const [status, setStatus] = useState<TasmiStatus>("checking");
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<TasmiSessionResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
+  const [midSessionOutage, setMidSessionOutage] = useState(false);
+  const [endedEarly, setEndedEarly] = useState(false);
 
   const sessionRef = useRef<TasmiSession | null>(null);
   const recorderRef = useRef<TasmiRecorder | null>(null);
   const talqinRef = useRef<TalqinPlayer | null>(null);
+  const primedAudioRef = useRef<HTMLAudioElement | null>(null);
+  // Set on unmount/cancel so an in-flight async start can abort cleanly
+  // instead of leaking a live mic that nothing will ever stop.
+  const cancelledRef = useRef(false);
+  const progressRef = useRef(0);
 
   // Keep refs for values used inside handleEvent to avoid stale closures
   const ayahRangesRef = useRef(ayahRanges);
@@ -102,6 +140,58 @@ export function TasmiSessionUI({
     surahRef.current = surahNumber;
     startAyahRef.current = startAyah;
   }, [ayahRanges, surahNumber, startAyah]);
+
+  const teardown = useCallback(() => {
+    recorderRef.current?.stop();
+    recorderRef.current = null;
+    talqinRef.current?.stop();
+    talqinRef.current = null;
+    sessionRef.current = null;
+  }, []);
+
+  /**
+   * Server pre-flight: {configured, reachable} from the Next route (which
+   * probes the transcription server's /health). Returns a status verdict.
+   */
+  const checkServer = useCallback(async (): Promise<"ok" | "unconfigured" | "unreachable"> => {
+    try {
+      const response = await fetch(TASMI_TRANSCRIBE_ENDPOINT, { method: "GET", cache: "no-store" });
+      const payload = (await response.json().catch(() => null)) as
+        | { configured?: boolean; reachable?: boolean }
+        | null;
+      if (!response.ok || payload?.configured !== true) return "unconfigured";
+      if (payload?.reachable !== true) return "unreachable";
+      return "ok";
+    } catch {
+      return "unreachable";
+    }
+  }, []);
+
+  // Mount: probe availability, then show the intro (never auto-start the mic).
+  useEffect(() => {
+    cancelledRef.current = false;
+    let stale = false;
+    void (async () => {
+      const verdict = await checkServer();
+      if (stale || cancelledRef.current) return;
+      if (verdict === "ok") {
+        setStatus("intro");
+      } else {
+        setErrorMsg(
+          verdict === "unconfigured"
+            ? "Pelayan tasmi' belum dikonfigurasikan."
+            : "Pelayan tasmi' tidak dapat dihubungi sekarang. Cuba sebentar lagi.",
+        );
+        setStatus("unavailable");
+      }
+    })();
+    return () => {
+      stale = true;
+      cancelledRef.current = true;
+      recorderRef.current?.stop();
+      talqinRef.current?.stop();
+    };
+  }, [checkServer]);
 
   const handleEvent = useCallback((event: TasmiEvent) => {
     switch (event.type) {
@@ -116,11 +206,26 @@ export function TasmiSessionUI({
         break;
       case "match":
         setStatus("listening");
+        setHint(null);
         setProgress(event.data?.progress ?? 0);
+        progressRef.current = event.data?.progress ?? 0;
+        break;
+      case "no-speech":
+        // Whisper heard nothing usable — NOT a mistake. Gentle nudge only.
+        setHint("Tiada bacaan dikesan — teruskan membaca dengan jelas.");
+        setStatus("listening");
+        break;
+      case "server-unavailable":
+        // Transport failure mid-session — pause honestly, never fake a mistake.
+        recorderRef.current?.pause();
+        setMidSessionOutage(true);
+        setErrorMsg("Pelayan tasmi' terputus. Bacaan anda tidak dikira salah — sambung bila pelayan kembali.");
+        setStatus("unavailable");
         break;
       case "error":
         setStatus("error");
         setProgress(event.data?.progress ?? 0);
+        progressRef.current = event.data?.progress ?? 0;
         break;
       case "talqin":
         setStatus("talqin");
@@ -145,8 +250,14 @@ export function TasmiSessionUI({
       case "complete":
         setStatus("complete");
         setProgress(1);
+        progressRef.current = 1;
+        // Natural completion: the mic must not stay live under the result view.
+        recorderRef.current?.stop();
+        talqinRef.current?.stop();
         break;
       case "session-end":
+        recorderRef.current?.stop();
+        talqinRef.current?.stop();
         if (event.data?.result) {
           setResult(event.data.result);
         }
@@ -154,31 +265,31 @@ export function TasmiSessionUI({
     }
   }, []);
 
+  /**
+   * Start (or restart) a live session. MUST be invoked from a user tap —
+   * the tap is what unlocks audio + mic on iOS Safari.
+   */
   const startSession = useCallback(async () => {
-    try {
-      const configResponse = await fetch(TASMI_TRANSCRIBE_ENDPOINT, {
-        method: "GET",
-        cache: "no-store",
-      });
-      const configPayload = (await configResponse.json().catch(() => null)) as
-        | { configured?: boolean }
-        | null;
+    // Clean slate: tear down any previous run so a retry can never stack a
+    // second live recorder/talqin on top of the first.
+    teardown();
+    setResult(null);
+    setErrorMsg(null);
+    setHint(null);
+    setProgress(0);
+    progressRef.current = 0;
+    setEndedEarly(false);
+    setMidSessionOutage(false);
 
-      if (!configResponse.ok || configPayload?.configured !== true) {
-        setErrorMsg("Pelayan tasmi' belum dikonfigurasikan.");
-        setStatus("idle");
-        return;
-      }
-    } catch {
-      setErrorMsg("Pelayan tasmi' tak dapat dihubungi sekarang.");
-      setStatus("idle");
-      return;
+    // Gesture-unlock ONE shared audio element (inside this tap) and reuse it
+    // for every talqin playback. Without this, iOS blocks talqin audio.
+    if (!primedAudioRef.current && typeof Audio !== "undefined") {
+      const el = new Audio(SILENT_WAV_DATA_URI);
+      el.play().then(() => el.pause()).catch(() => { /* priming is best-effort */ });
+      primedAudioRef.current = el;
     }
 
     setStatus("ready");
-    setProgress(0);
-    setResult(null);
-    setErrorMsg(null);
 
     const session = new TasmiSession(expectedText, {
       serverUrl: TASMI_TRANSCRIBE_ENDPOINT,
@@ -187,17 +298,14 @@ export function TasmiSessionUI({
     }, handleEvent);
 
     const talqin = new TalqinPlayer({
-      wordsToPlay: 5,
+      wordsToPlay: 3, // spec (operator vision): talqin = 3 linked correct words
       onPlaybackEnd: () => {
         recorderRef.current?.resume();
         setStatus("listening");
       },
     });
-
-    // Load word-level timestamps for precise talqin seeking
-    const alignData = await fetchAlignData();
-    if (alignData) {
-      talqin.loadFromRawData(alignData);
+    if (primedAudioRef.current) {
+      talqin.attachAudioElement(primedAudioRef.current);
     }
 
     const recorder = new TasmiRecorder({
@@ -209,42 +317,79 @@ export function TasmiSessionUI({
         session.onSilenceTimeout();
       },
       onError: (err) => {
-        setErrorMsg(err.message);
-        setStatus("idle");
+        setErrorMsg(micErrorMessage(err));
+        setStatus("intro");
       },
     });
 
+    // Assign refs BEFORE the awaits below so unmount/cancel can always stop them.
     sessionRef.current = session;
     recorderRef.current = recorder;
     talqinRef.current = talqin;
 
+    // Load word-level timestamps for precise talqin seeking
+    const alignData = await fetchAlignData();
+    if (cancelledRef.current) { teardown(); return; }
+    if (alignData) {
+      talqin.loadFromRawData(alignData);
+    }
+
     session.start();
     await recorder.start();
-  }, [expectedText, handleEvent]);
+    if (cancelledRef.current) { teardown(); return; }
+  }, [expectedText, handleEvent, teardown]);
+
+  /** Mid-session outage recovery: re-probe, then resume where the reciter left off. */
+  const resumeAfterOutage = useCallback(async () => {
+    setStatus("checking");
+    const verdict = await checkServer();
+    if (cancelledRef.current) return;
+    if (verdict === "ok") {
+      setErrorMsg(null);
+      setMidSessionOutage(false);
+      recorderRef.current?.resume();
+      setStatus("listening");
+    } else {
+      setErrorMsg("Pelayan tasmi' masih tidak dapat dihubungi. Cuba sebentar lagi.");
+      setStatus("unavailable");
+    }
+  }, [checkServer]);
+
+  /** Pre-session unavailable → re-probe and enter intro when healthy. */
+  const recheckServer = useCallback(async () => {
+    setStatus("checking");
+    setErrorMsg(null);
+    const verdict = await checkServer();
+    if (cancelledRef.current) return;
+    if (verdict === "ok") {
+      setStatus("intro");
+    } else {
+      setErrorMsg(
+        verdict === "unconfigured"
+          ? "Pelayan tasmi' belum dikonfigurasikan."
+          : "Pelayan tasmi' tidak dapat dihubungi sekarang. Cuba sebentar lagi.",
+      );
+      setStatus("unavailable");
+    }
+  }, [checkServer]);
 
   const stopSession = useCallback(() => {
+    const stoppedBeforeEnd = progressRef.current < 1;
     recorderRef.current?.stop();
     talqinRef.current?.stop();
     const sessionResult = sessionRef.current?.end();
     if (sessionResult) {
+      setEndedEarly(stoppedBeforeEnd);
       setResult(sessionResult);
       setStatus("complete");
     }
   }, []);
 
-  const hasStartedRef = useRef(false);
-
-  // Auto-start session on mount (guard against React Strict Mode double-mount)
-  useEffect(() => {
-    if (hasStartedRef.current) return;
-    hasStartedRef.current = true;
-    void startSession();
-    return () => {
-      recorderRef.current?.stop();
-      talqinRef.current?.stop();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const handleCancel = useCallback(() => {
+    cancelledRef.current = true;
+    teardown();
+    onCancel();
+  }, [teardown, onCancel]);
 
   const handleSaveResult = useCallback(async () => {
     if (!result) return;
@@ -280,16 +425,97 @@ export function TasmiSessionUI({
     return (
       <TasmiSessionResultView
         result={result}
+        endedEarly={endedEarly}
         onRetry={startSession}
         onSave={handleSaveResult}
       />
     );
   }
 
+  // Pre-flight probe in progress
+  if (status === "checking") {
+    return (
+      <div className="flex flex-col items-center gap-4 rounded-2xl bg-stone-50 p-6 dark:bg-stone-800/50">
+        <div className="h-3 w-3 animate-pulse rounded-full bg-stone-400" />
+        <p role="status" aria-live="polite" className="text-sm font-medium text-stone-700 dark:text-stone-300">
+          {STATUS_LABELS.checking}
+        </p>
+      </div>
+    );
+  }
+
+  // Server unavailable — honest state, never a fake "mistake"
+  if (status === "unavailable") {
+    return (
+      <div className="flex flex-col items-center gap-4 rounded-2xl bg-stone-50 p-6 dark:bg-stone-800/50">
+        <p role="status" aria-live="assertive" className="max-w-sm text-center text-sm text-rose-600 dark:text-rose-400">
+          {errorMsg ?? "Pelayan tasmi' tidak tersedia sekarang."}
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={midSessionOutage ? resumeAfterOutage : recheckServer}
+            className="rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
+          >
+            {midSessionOutage ? "Sambung Semula" : "Semak Semula"}
+          </button>
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="rounded-xl border border-stone-300 bg-white px-5 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
+          >
+            Batal
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Onboarding intro — the "Mula" tap is the iOS gesture unlock + mic start
+  if (status === "intro" || status === "idle") {
+    return (
+      <div className="flex flex-col items-center gap-4 rounded-2xl bg-stone-50 p-6 dark:bg-stone-800/50">
+        {errorMsg ? (
+          <p role="alert" className="max-w-sm text-center text-sm text-rose-600 dark:text-rose-400">{errorMsg}</p>
+        ) : null}
+        <p className="text-sm font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+          Tasmi&apos; — Semak Bacaan Dengan Suara
+        </p>
+        <ol className="max-w-sm list-decimal space-y-1 pl-5 text-sm text-stone-600 dark:text-stone-300">
+          <li>Baca dengan suara yang jelas, dari perkataan pertama.</li>
+          <li>Berhenti seketika selepas setiap bahagian — app akan semak bacaan anda.</li>
+          <li>Jika tersilap atau tersekat, app akan <span className="font-medium">bacakan beberapa perkataan panduan (talqin)</span>, kemudian tunggu anda menyambung.</li>
+        </ol>
+        <p className="text-xs text-stone-500 dark:text-stone-400">
+          Mikrofon hanya digunakan semasa sesi ini.
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={startSession}
+            className="rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
+          >
+            Mula Tasmi&apos;
+          </button>
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="rounded-xl border border-stone-300 bg-white px-5 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
+          >
+            Batal
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center gap-4 rounded-2xl bg-stone-50 p-6 dark:bg-stone-800/50">
       {errorMsg ? (
-        <p className="text-sm text-rose-600 dark:text-rose-400">{errorMsg}</p>
+        <p role="alert" className="text-sm text-rose-600 dark:text-rose-400">{errorMsg}</p>
+      ) : null}
+      {hint ? (
+        <p className="text-sm text-amber-600 dark:text-amber-400">{hint}</p>
       ) : null}
 
       {/* Status indicator */}
@@ -307,37 +533,27 @@ export function TasmiSessionUI({
                     : "bg-stone-400"
           }`}
         />
-        <p className="text-sm font-medium text-stone-700 dark:text-stone-300">
+        <p role="status" aria-live="polite" className="text-sm font-medium text-stone-700 dark:text-stone-300">
           {STATUS_LABELS[status]}
         </p>
       </div>
 
       {/* Progress bar */}
-      {status !== "idle" ? (
-        <div className="w-full max-w-xs">
-          <div className="h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
-            <div
-              className="h-full rounded-full bg-teal-500 transition-all duration-300"
-              style={{ width: `${Math.round(progress * 100)}%` }}
-            />
-          </div>
-          <p className="mt-1 text-center text-xs text-stone-500 dark:text-stone-400">
-            {Math.round(progress * 100)}%
-          </p>
+      <div className="w-full max-w-xs">
+        <div className="h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
+          <div
+            className="h-full rounded-full bg-teal-500 transition-all duration-300"
+            style={{ width: `${Math.round(progress * 100)}%` }}
+          />
         </div>
-      ) : null}
+        <p className="mt-1 text-center text-xs text-stone-500 dark:text-stone-400">
+          {Math.round(progress * 100)}%
+        </p>
+      </div>
 
       {/* Controls */}
       <div className="flex gap-3">
-        {status === "idle" ? (
-          <button
-            type="button"
-            onClick={startSession}
-            className="rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
-          >
-            Mula Tasmi&apos;
-          </button>
-        ) : status !== "complete" ? (
+        {status !== "complete" ? (
           <button
             type="button"
             onClick={stopSession}
@@ -348,11 +564,7 @@ export function TasmiSessionUI({
         ) : null}
         <button
           type="button"
-          onClick={() => {
-            recorderRef.current?.stop();
-            talqinRef.current?.stop();
-            onCancel();
-          }}
+          onClick={handleCancel}
           className="rounded-xl border border-stone-300 bg-white px-5 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
         >
           Batal

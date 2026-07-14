@@ -54,12 +54,39 @@ function buildAudioUrl(surah: number, ayah: number): string {
 
 export class TalqinPlayer {
   private audio: HTMLAudioElement | null = null;
+  private sharedAudio: HTMLAudioElement | null = null;
   private config: TalqinConfig;
   private timestampMap: Map<string, WordSegment[]> = new Map();
   private timeUpdateHandler: (() => void) | null = null;
+  private endedHandler: (() => void) | null = null;
 
   constructor(config: TalqinConfig) {
     this.config = config;
+  }
+
+  /**
+   * Attach a gesture-primed HTMLAudioElement to reuse for all playback.
+   *
+   * iOS Safari only allows .play() on elements unlocked inside a user gesture.
+   * Talqin fires from transcription callbacks / silence timers (never a tap),
+   * so a fresh `new Audio()` there is blocked and the corrective prompt is
+   * silently skipped. The session UI primes ONE element inside the "Mula" tap
+   * and hands it here.
+   */
+  attachAudioElement(element: HTMLAudioElement): void {
+    this.sharedAudio = element;
+  }
+
+  /**
+   * Acquire the playback element for a URL: the primed shared element when
+   * available (iOS-safe), else a fresh Audio (desktop fallback).
+   */
+  private prepareAudio(url: string): HTMLAudioElement {
+    this.stop();
+    const el = this.sharedAudio ?? new Audio();
+    el.src = url;
+    this.audio = el;
+    return el;
   }
 
   /**
@@ -126,24 +153,7 @@ export class TalqinPlayer {
     const startTime = startSegment.startMs / 1000;
     const endTime = endSegment.endMs / 1000;
 
-    this.stop();
-
-    this.audio = new Audio(audioUrl);
-    this.audio.currentTime = startTime;
-
-    this.timeUpdateHandler = () => {
-      if (this.audio && this.audio.currentTime >= endTime) {
-        this.stop();
-        this.config.onPlaybackEnd();
-      }
-    };
-
-    this.audio.addEventListener('timeupdate', this.timeUpdateHandler);
-    this.audio.addEventListener('ended', () => {
-      this.config.onPlaybackEnd();
-    }, { once: true });
-
-    await this.audio.play();
+    await this.playSegment(audioUrl, startTime, endTime);
   }
 
   /**
@@ -180,10 +190,16 @@ export class TalqinPlayer {
     const startTime = startSeg.startMs / 1000;
     const endTime = endSeg.endMs / 1000;
 
-    this.stop();
+    await this.playSegment(audioUrl, startTime, endTime);
+  }
 
-    this.audio = new Audio(audioUrl);
-    this.audio.currentTime = startTime;
+  /**
+   * Shared playback core: play [startTime, endTime] of a URL on the
+   * (possibly gesture-primed) element, firing onPlaybackEnd exactly once.
+   */
+  private async playSegment(url: string, startTime: number, endTime: number): Promise<void> {
+    const el = this.prepareAudio(url);
+    el.currentTime = startTime;
 
     this.timeUpdateHandler = () => {
       if (this.audio && this.audio.currentTime >= endTime) {
@@ -191,28 +207,31 @@ export class TalqinPlayer {
         this.config.onPlaybackEnd();
       }
     };
-
-    this.audio.addEventListener('timeupdate', this.timeUpdateHandler);
-    this.audio.addEventListener('ended', () => {
+    this.endedHandler = () => {
+      this.stop();
       this.config.onPlaybackEnd();
-    }, { once: true });
+    };
 
-    await this.audio.play();
+    el.addEventListener('timeupdate', this.timeUpdateHandler);
+    el.addEventListener('ended', this.endedHandler);
+
+    await el.play();
   }
 
   /**
    * Fallback: play full ayah audio without seeking.
    */
   private async playFullAyah(surah: number, ayah: number): Promise<void> {
-    this.stop();
+    const el = this.prepareAudio(buildAudioUrl(surah, ayah));
+    el.currentTime = 0;
 
-    const audioUrl = buildAudioUrl(surah, ayah);
-    this.audio = new Audio(audioUrl);
-    this.audio.addEventListener('ended', () => {
+    this.endedHandler = () => {
+      this.stop();
       this.config.onPlaybackEnd();
-    }, { once: true });
+    };
+    el.addEventListener('ended', this.endedHandler);
 
-    await this.audio.play();
+    await el.play();
   }
 
   stop(): void {
@@ -222,6 +241,12 @@ export class TalqinPlayer {
         this.audio.removeEventListener('timeupdate', this.timeUpdateHandler);
         this.timeUpdateHandler = null;
       }
+      if (this.endedHandler) {
+        this.audio.removeEventListener('ended', this.endedHandler);
+        this.endedHandler = null;
+      }
+      // The shared element is reused across plays (it carries the iOS gesture
+      // unlock) — never discard it, only detach.
       this.audio = null;
     }
   }
