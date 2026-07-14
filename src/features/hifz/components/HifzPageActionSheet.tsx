@@ -125,7 +125,7 @@ export function HifzPageActionSheet({ entry, onClose }: HifzPageActionSheetProps
                 Tasmi&apos;
               </p>
               <p className="text-xs text-amber-700/70 dark:text-amber-300/60">
-                Uji hafalan — baca dari ingatan, semak bila perlu
+                Uji hafalan — baca dari ingatan, atau baca dengan suara dan app semak
               </p>
             </div>
           </button>

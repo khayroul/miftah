@@ -473,6 +473,7 @@ export function TasmiSessionUI({
       <TasmiSessionResultView
         result={result}
         endedEarly={endedEarly}
+        ayahRanges={ayahRanges}
         onRetry={startSession}
         onSave={handleSaveResult}
       />
