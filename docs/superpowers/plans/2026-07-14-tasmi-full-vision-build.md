@@ -90,10 +90,36 @@ Prerequisite for both modes. No new features — correctness + first-use + iOS.
   operator device (Wave 3).
 
 ### Wave 3 — VPS deploy + wire + end-to-end verify  *(operator-gated infra)*
-- [ ] Operator: rotate the leaked credential; redeploy `tasmi-server/` (runbook below).
-- [ ] Point Vercel env `TASMI_SERVER_URL` + `TASMI_API_KEY` at the new server.
-- [ ] Operator logged-in end-to-end smoke (recite → highlight → talqin → result) on device.
-- **Gate:** live `/health` reachable; real recitation transcribes; talqin plays on iOS.
+- [x] **VPS redeployed and LIVE** (operator + Codex, 2026-07-15). Verified from Tower:
+  `https://tasmi.kaa.business/health` → 200 `{"status":"ok","model":
+  "OdyAsh/faster-whisper-base-ar-quran","beam_size":1,"streaming":true,
+  "stream_protocol":"tasmi-stream-v1","max_concurrent_streams":2}` — i.e. the
+  **Quran-tuned model the spike recommended (Rung 1)**, with streaming. ✅
+- [x] Vercel env wired: production `GET /api/tasmi/transcribe` →
+  `{"configured":true,"reachable":true}`. Tasmi is reachable end-to-end for the
+  first time. `/ws/transcribe` exists and is auth-gated (403 without key). ✅
+- [ ] ⚠️ **Credential rotation still NOT done** (operator deferred 2026-07-15).
+  The leaked VPS credential remains valid. Rotate before public relaunch.
+- [ ] Operator logged-in end-to-end smoke on device (recite → highlight → talqin
+  → result). **The one gate code cannot self-clear.**
+- **Gate:** live `/health` reachable ✅; real recitation transcribes (pending device
+  smoke); talqin plays on iOS (pending device smoke).
+
+### Wave 3.5 — Near-live streaming (Codex, 2026-07-15) — LANDED, unverified on device
+- [x] WebSocket streaming path: `tasmi-stream-v1` protocol, `tasmi-stream-client.ts`,
+  `/api/tasmi/stream-session` (auth-gated), server rewrite + nginx example + README.
+- [x] **Honest degradation preserved**: on stream loss, buffered utterances replay
+  through the batch path (`onUnavailable` → `setStreamMode("fallback")` + BM hint)
+  — recitation is never lost, never scored as a mistake.
+- [x] **Security fix (Codex caught a Tower miss)**: `getTasmiApiKey()` refuses the
+  `NEXT_PUBLIC_` fallback in production, so the long-lived VPS credential can no
+  longer be bundled into browser code.
+- [x] Tower re-verified at `efeccfb1`: tsc 0 · lint 0 · **136/136** hifz+tasmi ·
+  **76/76** pwa. Wave-0/1/2 safety work intact (honest events, iOS audio unlock,
+  endedEarly, Mode B toggle all still present).
+- [ ] **Open:** `max_concurrent_streams: 2` is a hard capacity ceiling — the audit's
+  T-02 (server freezes under concurrent load) is mitigated but not solved; fine for
+  the operator + pilot, NOT for 71 users reciting at once.
 
 ### Wave 4 — Polish + a11y + entry clarity
 - [ ] Result screen: show error **positions** (which ayah/word), `m:ss` duration, tailored
