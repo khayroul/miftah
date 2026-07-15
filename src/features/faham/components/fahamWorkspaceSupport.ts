@@ -4,8 +4,12 @@ import type { FahamMcqDirectionMode } from "../domain/mcq";
 import { FAHAM_PRESET_CONFIGS, type FahamSourcePreset } from "../domain/presets";
 import type { FahamQueueSnapshot, SerializedFahamCard } from "../domain/queue";
 
-const FAHAM_QUEUE_REQUEST_TIMEOUT_MS = 4000;
-const FAHAM_STATS_REQUEST_TIMEOUT_MS = 2500;
+// Generous budgets: a Vercel cold start + mobile RTT can exceed the old
+// 2.5s/4s limits, and an early abort strands the workspace on placeholder
+// dots / missing session cards with no error shown (2026-07-15 field bug,
+// operator iPhone). The aborts exist only to prevent an infinite hang.
+const FAHAM_QUEUE_REQUEST_TIMEOUT_MS = 12000;
+const FAHAM_STATS_REQUEST_TIMEOUT_MS = 12000;
 
 function hashForShuffle(value: string): number {
   let hash = 0;

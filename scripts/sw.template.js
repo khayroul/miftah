@@ -5,7 +5,14 @@ const BUILD_ID = "__MIFTAH_BUILD_ID__";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const CDN_ASSET_VERSION = "__MIFTAH_CDN_ASSET_VERSION__";
 
+// Short-circuit budget used ONLY when a cached copy exists to fall back on:
+// stale-fast beats slow-fresh for repeat visits.
 const NAVIGATION_NETWORK_TIMEOUT_MS = 2500;
+// First visit / uncached route: there is NOTHING to fall back to, so aborting
+// early would serve the offline page to an ONLINE user (2026-07-15 field bug:
+// Vercel cold start + mobile RTT > 2.5s showed "Anda sedang luar talian").
+// Give the network a generous ceiling instead.
+const NAVIGATION_COLD_NETWORK_TIMEOUT_MS = 20000;
 
 const APP_SHELL_CACHE = `app-shell-${BUILD_ID}`;
 const OFFLINE_BUNDLE_CACHE = "miftah-offline-bundle-v1";
@@ -216,12 +223,13 @@ async function cacheFirstTema(request) {
   }
 }
 
-async function fetchAndCacheNavigation(request, navigationKey) {
+async function fetchAndCacheNavigation(
+  request,
+  navigationKey,
+  timeoutMs = NAVIGATION_NETWORK_TIMEOUT_MS,
+) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(
-    () => controller.abort(),
-    NAVIGATION_NETWORK_TIMEOUT_MS,
-  );
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(request, {
@@ -253,15 +261,23 @@ self.addEventListener("fetch", (event) => {
         const navigationKey = navigationKeys[0];
         const navigationCacheNames = [APP_SHELL_CACHE, OFFLINE_BUNDLE_CACHE];
 
+        // Look up the cached fallback FIRST: the network abort budget depends
+        // on whether one exists. No fallback -> aborting early would hand an
+        // online user the offline page (2026-07-15 field bug).
+        const cached = await matchAcrossCaches(
+          navigationCacheNames,
+          navigationKeys,
+          { ignoreSearch: true },
+        );
+        const timeoutMs = cached
+          ? NAVIGATION_NETWORK_TIMEOUT_MS
+          : NAVIGATION_COLD_NETWORK_TIMEOUT_MS;
+
         if (shouldUseNavigationCacheFirst(url)) {
-          const cached = await matchAcrossCaches(
-            navigationCacheNames,
-            navigationKeys,
-            { ignoreSearch: true },
-          );
           const networkPromise = fetchAndCacheNavigation(
             event.request,
             navigationKey,
+            timeoutMs,
           );
 
           if (cached) {
@@ -281,16 +297,12 @@ self.addEventListener("fetch", (event) => {
         const networkResponse = await fetchAndCacheNavigation(
           event.request,
           navigationKey,
+          timeoutMs,
         );
         if (networkResponse) {
           return networkResponse;
         }
 
-        const cached = await matchAcrossCaches(
-          navigationCacheNames,
-          navigationKeys,
-          { ignoreSearch: true },
-        );
         if (cached) {
           return cached;
         }

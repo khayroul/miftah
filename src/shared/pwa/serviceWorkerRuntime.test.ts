@@ -11,6 +11,7 @@ type EventHandler = (event: Record<string, unknown>) => void;
 
 interface RuntimeOptions {
   readonly cacheKeys?: readonly string[];
+  readonly cacheMatch?: (request: unknown) => Promise<Response | undefined>;
   readonly cachePut?: (request: Request, response: Response) => Promise<void>;
   readonly fetch: (request: Request) => Promise<Response>;
 }
@@ -19,8 +20,16 @@ function createRenderedWorkerRuntime(options: RuntimeOptions) {
   const handlers = new Map<string, EventHandler[]>();
   const deletedCaches: string[] = [];
   const cachePutCalls: Array<{ request: Request; response: Response }> = [];
+  const setTimeoutDelays: number[] = [];
+  const spiedSetTimeout = ((
+    callback: (...args: unknown[]) => void,
+    delay?: number,
+  ) => {
+    setTimeoutDelays.push(delay ?? 0);
+    return setTimeout(callback, delay);
+  }) as typeof setTimeout;
   const cache = {
-    match: async () => undefined,
+    match: async (request: unknown) => options.cacheMatch?.(request),
     put: async (request: Request, response: Response) => {
       cachePutCalls.push({ request, response });
       await options.cachePut?.(request, response);
@@ -59,7 +68,7 @@ function createRenderedWorkerRuntime(options: RuntimeOptions) {
     clearTimeout,
     fetch: options.fetch,
     self: workerGlobal,
-    setTimeout,
+    setTimeout: spiedSetTimeout,
   });
 
   async function dispatchFetch(request: Request): Promise<Response> {
@@ -90,7 +99,19 @@ function createRenderedWorkerRuntime(options: RuntimeOptions) {
     await activation;
   }
 
-  return { cachePutCalls, deletedCaches, dispatchActivate, dispatchFetch };
+  return {
+    cachePutCalls,
+    deletedCaches,
+    dispatchActivate,
+    dispatchFetch,
+    setTimeoutDelays,
+  };
+}
+
+/** Request-like navigation event payload (Request cannot be constructed with
+ * mode:"navigate" in Node) — the worker only reads url/mode and forwards it. */
+function navigationRequest(url: string): Request {
+  return { mode: "navigate", url } as unknown as Request;
 }
 
 function audioRequest(headers?: HeadersInit): Request {
@@ -155,6 +176,52 @@ describe("rendered service-worker audio behavior", () => {
     assert.equal(response.status, 503);
     assert.equal(await response.text(), "Network error");
     assert.equal(runtime.cachePutCalls.length, 0);
+  });
+});
+
+describe("rendered service-worker navigation timeouts", () => {
+  it("cold visit (nothing cached): uses the long ceiling and returns a slow network page instead of the offline fallback", async () => {
+    // Field bug 2026-07-15: a Vercel cold start + mobile RTT exceeded the old
+    // fixed 2.5s abort, so ONLINE first-time visitors saw offline.html.
+    const runtime = createRenderedWorkerRuntime({
+      fetch: (request) => {
+        if (String((request as Request).url).includes("offline.html")) {
+          return Promise.resolve(new Response("offline page"));
+        }
+        return new Promise((resolve) =>
+          setTimeout(() => resolve(new Response("fresh page", { status: 200 })), 20),
+        );
+      },
+    });
+
+    const response = await runtime.dispatchFetch(
+      navigationRequest("https://miftah.test/faham"),
+    );
+
+    assert.equal(await response.text(), "fresh page");
+    // The abort budget chosen for an uncached navigation must be the cold
+    // ceiling, never the 2.5s short-circuit (there is nothing to fall back to).
+    assert.ok(runtime.setTimeoutDelays.includes(20000));
+    assert.ok(!runtime.setTimeoutDelays.includes(2500));
+  });
+
+  it("warm visit (cached copy exists): serves the cache instantly and keeps the short revalidation budget", async () => {
+    const cachedShell = new Response("cached shell", { status: 200 });
+    const runtime = createRenderedWorkerRuntime({
+      cacheMatch: async () => cachedShell,
+      fetch: async () => new Response("network shell", { status: 200 }),
+    });
+
+    // "/" is a cache-first navigation route.
+    const response = await runtime.dispatchFetch(
+      navigationRequest("https://miftah.test/"),
+    );
+
+    assert.equal(await response.text(), "cached shell");
+    // With a fallback available, the background revalidation keeps the
+    // short-circuit budget.
+    assert.ok(runtime.setTimeoutDelays.includes(2500));
+    assert.ok(!runtime.setTimeoutDelays.includes(20000));
   });
 });
 
