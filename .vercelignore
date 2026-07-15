@@ -1,11 +1,15 @@
 # Ignore large local artifacts not needed at runtime on Vercel
+# NOTE: directory names WITHOUT a leading slash match at EVERY depth
+# (gitignore semantics). An unanchored `supabase/` silently stripped
+# src/data/supabase (the whole DB client layer) from the 2026-07-15 build.
+# Root-only ignores MUST be anchored with a leading slash.
 assets/ayat/
 assets/pages/
 assets/words/
 assets/manifests/
 assets/fonts/qcf-v2/
 assets/fonts/qcf-v2-woff2/
-test/
+/test/
 .tmp/
 node_modules/
 .next/
@@ -38,7 +42,7 @@ scripts/*
 !scripts/render-pwa-artifacts.ts
 !scripts/sw.template.js
 !scripts/generate-pwa-config.ts
-supabase/
-ops/
-n8n-exports/
-manifests/
+/supabase/
+/ops/
+/n8n-exports/
+/manifests/
