@@ -5,6 +5,8 @@
 
 import { MicVAD } from '@ricky0123/vad-web';
 
+const VAD_REDEMPTION_MS = 700;
+
 /** Classified mic-start failure, so the UI can show actionable localized copy
  * instead of a raw browser DOMException string. */
 export type TasmiRecorderErrorKind = 'permission-denied' | 'no-mic' | 'unknown';
@@ -34,10 +36,18 @@ function classifyMicError(err: unknown): TasmiRecorderError {
 export interface RecorderConfig {
   /** Seconds of silence before firing onSilenceTimeout (default: 6) */
   silenceTimeoutSeconds: number;
+  /** Earlier, visual-only teacher nudge before spoken talqin. */
+  silenceNudgeSeconds?: number;
   /** Called when a speech segment ends — provides audio blob */
   onSpeechEnd: (audioBlob: Blob) => void;
+  /** Optional 16 kHz frame delivery for the near-live streaming transport. */
+  onAudioFrame?: (frame: Float32Array) => void;
+  /** Optional speech boundary signal for the streaming transport. */
+  onSpeechStart?: () => void;
   /** Called when silence exceeds threshold */
   onSilenceTimeout: () => void;
+  /** Called at the softer pre-talqin threshold. */
+  onSilenceNudge?: () => void;
   /** Called on errors — always a TasmiRecorderError with a classified kind */
   onError: (error: TasmiRecorderError) => void;
 }
@@ -45,8 +55,10 @@ export interface RecorderConfig {
 export class TasmiRecorder {
   private vad: MicVAD | null = null;
   private silenceTimer: ReturnType<typeof setTimeout> | null = null;
+  private silenceNudgeTimer: ReturnType<typeof setTimeout> | null = null;
   private config: RecorderConfig;
   private isListening: boolean = false;
+  private speechActive: boolean = false;
   private startAttempt = 0;
 
   constructor(config: RecorderConfig) {
@@ -59,20 +71,43 @@ export class TasmiRecorder {
     try {
       createdVad = await MicVAD.new({
         model: 'v5',
+        startOnLoad: false,
         baseAssetPath: '/',
         onnxWASMBasePath: '/',
         // Tuned for Quran recitation (tajweed has natural pauses between words)
         positiveSpeechThreshold: 0.3,
         negativeSpeechThreshold: 0.15,
         minSpeechMs: 250,
-        redemptionMs: 900,
+        redemptionMs: VAD_REDEMPTION_MS,
+        onFrameProcessed: (_probabilities, frame: Float32Array) => {
+          if (this.isListening) this.config.onAudioFrame?.(frame);
+        },
         onSpeechEnd: (audio: Float32Array) => {
-          this.resetSilenceTimer();
+          this.speechActive = false;
+          // MicVAD emits this only after its redemption window has already
+          // observed silence. Count that time so a configured 4 s prompt
+          // arrives at about 4 s after the reciter actually stopped.
+          this.startSilenceTimer(VAD_REDEMPTION_MS);
           const wavBlob = float32ToWavBlob(audio, 16000);
           this.config.onSpeechEnd(wavBlob);
         },
         onSpeechStart: () => {
-          this.resetSilenceTimer();
+          // Silence means the reciter is idle, not that a long ayah has taken
+          // several seconds. Never allow nudge/talqin timers to run mid-speech.
+          this.speechActive = true;
+          this.clearSilenceTimers();
+        },
+        onSpeechRealStart: () => {
+          // Wait until minSpeechMs is satisfied before opening a server
+          // utterance. A VAD misfire skips this callback, while the server's
+          // pre-roll still preserves the opening 250 ms of real recitation.
+          this.config.onSpeechStart?.();
+        },
+        onVADMisfire: () => {
+          // onSpeechEnd is intentionally skipped for too-short VAD segments.
+          // Restore the idle timers so a cough/noise cannot disable talqin.
+          this.speechActive = false;
+          this.startSilenceTimer(VAD_REDEMPTION_MS);
         },
       });
 
@@ -82,14 +117,15 @@ export class TasmiRecorder {
       }
 
       this.vad = createdVad;
+      this.isListening = true;
       await createdVad.start();
       if (attempt !== this.startAttempt || this.vad !== createdVad) return false;
-      this.isListening = true;
       this.startSilenceTimer();
       return true;
     } catch (err) {
       this.isListening = false;
-      this.clearSilenceTimer();
+      this.speechActive = false;
+      this.clearSilenceTimers();
       const ownsCreatedVad = createdVad !== null && this.vad === createdVad;
       if (ownsCreatedVad) this.vad = null;
       if (ownsCreatedVad && createdVad) {
@@ -104,7 +140,8 @@ export class TasmiRecorder {
   stop(): void {
     this.startAttempt += 1;
     this.isListening = false;
-    this.clearSilenceTimer();
+    this.speechActive = false;
+    this.clearSilenceTimers();
     if (this.vad) {
       const vad = this.vad;
       this.vad = null;
@@ -117,7 +154,8 @@ export class TasmiRecorder {
    */
   pause(): void {
     this.isListening = false;
-    this.clearSilenceTimer();
+    this.speechActive = false;
+    this.clearSilenceTimers();
     if (this.vad) {
       void this.vad.pause().catch((error: unknown) => {
         console.error("[tasmi/recorder] Failed to pause microphone", error);
@@ -132,6 +170,7 @@ export class TasmiRecorder {
     const vad = this.vad;
     if (!vad) return;
     this.isListening = true;
+    this.speechActive = false;
     void vad.start()
       .then(() => {
         if (this.isListening && this.vad === vad) this.startSilenceTimer();
@@ -139,7 +178,7 @@ export class TasmiRecorder {
       .catch((error: unknown) => {
         if (this.vad !== vad) return;
         this.isListening = false;
-        this.clearSilenceTimer();
+        this.clearSilenceTimers();
         this.config.onError(classifyMicError(error));
       });
   }
@@ -152,23 +191,41 @@ export class TasmiRecorder {
     }
   }
 
-  private startSilenceTimer(): void {
-    this.clearSilenceTimer();
-    if (this.isListening) {
+  private startSilenceTimer(alreadySilentMs = 0): void {
+    this.clearSilenceTimers();
+    if (this.isListening && !this.speechActive) {
+      const nudgeSeconds = this.config.silenceNudgeSeconds;
+      if (
+        nudgeSeconds != null &&
+        nudgeSeconds > 0 &&
+        nudgeSeconds < this.config.silenceTimeoutSeconds
+      ) {
+        const nudgeDelayMs = Math.max(
+          0,
+          nudgeSeconds * 1000 - alreadySilentMs,
+        );
+        this.silenceNudgeTimer = setTimeout(() => {
+          if (this.isListening) this.config.onSilenceNudge?.();
+        }, nudgeDelayMs);
+      }
+      const silenceDelayMs = Math.max(
+        0,
+        this.config.silenceTimeoutSeconds * 1000 - alreadySilentMs,
+      );
       this.silenceTimer = setTimeout(() => {
         if (this.isListening) {
           this.config.onSilenceTimeout();
           // Do NOT restart — wait for speech to reset the timer
         }
-      }, this.config.silenceTimeoutSeconds * 1000);
+      }, silenceDelayMs);
     }
   }
 
-  private resetSilenceTimer(): void {
-    this.startSilenceTimer();
-  }
-
-  private clearSilenceTimer(): void {
+  private clearSilenceTimers(): void {
+    if (this.silenceNudgeTimer) {
+      clearTimeout(this.silenceNudgeTimer);
+      this.silenceNudgeTimer = null;
+    }
     if (this.silenceTimer) {
       clearTimeout(this.silenceTimer);
       this.silenceTimer = null;

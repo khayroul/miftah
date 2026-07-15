@@ -1,0 +1,62 @@
+# Install inside nginx's http context (for example
+# /etc/nginx/sites-available/tasmi) and adjust certificate paths as needed.
+
+map $http_upgrade $tasmi_connection_upgrade {
+    default upgrade;
+    '' close;
+}
+
+limit_conn_zone $binary_remote_addr zone=tasmi_ws_per_ip:10m;
+limit_req_zone $binary_remote_addr zone=tasmi_ws_handshake:10m rate=5r/s;
+
+upstream tasmi_backend {
+    server 127.0.0.1:8000;
+    keepalive 8;
+}
+
+server {
+    listen 443 ssl;
+    server_name tasmi.kaa.business;
+
+    ssl_certificate /etc/letsencrypt/live/tasmi.kaa.business/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/tasmi.kaa.business/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    client_max_body_size 5m;
+
+    location = /ws/transcribe {
+        limit_conn tasmi_ws_per_ip 2;
+        limit_req zone=tasmi_ws_handshake burst=5 nodelay;
+
+        proxy_pass http://tasmi_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $tasmi_connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header Origin $http_origin;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_read_timeout 75s;
+        proxy_send_timeout 75s;
+    }
+
+    location / {
+        proxy_pass http://tasmi_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+        proxy_send_timeout 30s;
+    }
+}
+
+server {
+    listen 80;
+    server_name tasmi.kaa.business;
+    return 301 https://$host$request_uri;
+}

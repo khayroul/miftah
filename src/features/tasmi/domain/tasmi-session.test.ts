@@ -405,6 +405,118 @@ describe('TasmiSession — Scenario 9: Post-end safety', () => {
   });
 });
 
+describe('TasmiSession — continuous recognition safety', () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  it('renders tentative hypotheses without changing the final score', () => {
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+
+    session.previewRecognizedText('بسم الله', 'stream:1:partial:1', 200);
+    const result = session.end();
+
+    expect(events.filter(event => event.type === 'hypothesis')).toHaveLength(1);
+    expect(result.wordsCorrect).toBe(0);
+    expect(result.accuracy).toBe(0);
+  });
+
+  it('applies a stable streaming recognition id exactly once', () => {
+    const { session } = collectEvents(BASMALA);
+    session.start();
+
+    session.processRecognizedText('بسم الله', 'stream:1');
+    session.processRecognizedText('بسم الله', 'stream:1');
+    const result = session.end();
+
+    expect(result.wordsCorrect).toBe(2);
+    expect(result.accuracy).toBe(50);
+  });
+
+  it('applies a racing stream final and HTTP fallback with the same id once', async () => {
+    let resolveResponse: ((response: Response) => void) | undefined;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(() => (
+      new Promise<Response>(resolve => {
+        resolveResponse = resolve;
+      })
+    ));
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+
+    const fallback = session.processAudioChunk(
+      new Blob(['fallback']),
+      'stream:1',
+    );
+    session.processRecognizedText('بسم الله', 'stream:1');
+    resolveResponse?.(new Response(JSON.stringify({
+      normalized_text: 'بسم الله',
+    }), { status: 200 }));
+    await fallback;
+    const result = session.end();
+
+    expect(events.filter(event => event.type === 'match')).toHaveLength(1);
+    expect(result.wordsCorrect).toBe(2);
+    expect(result.accuracy).toBe(50);
+  });
+
+  it('forgives a wrong tentative partial when the same utterance final is correct', () => {
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+
+    session.previewRecognizedText('خطا', 'stream:1:partial:1');
+    session.previewRecognizedText('بسم الله', 'stream:1:partial:2');
+    session.processRecognizedText('بسم الله الرحمن الرحيم', 'stream:1');
+
+    const result = events.find(event => event.type === 'session-end')?.data?.result;
+    expect(events.filter(event => event.type === 'hypothesis')).toHaveLength(2);
+    expect(events.filter(event => event.type === 'error')).toHaveLength(0);
+    expect(events.filter(event => event.type === 'talqin')).toHaveLength(0);
+    expect(result?.accuracy).toBe(100);
+  });
+
+  it('retains a confirmed historical error after a later correction', () => {
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+
+    session.processRecognizedText('خطا', 'stream:1');
+    session.processRecognizedText('بسم الله الرحمن الرحيم', 'stream:2');
+
+    const result = events.find(event => event.type === 'session-end')?.data?.result;
+    expect(events.filter(event => event.type === 'error')).toHaveLength(1);
+    expect(result?.errorPositions).toEqual([0]);
+    expect(result?.wordsCorrect).toBe(3);
+    expect(result?.accuracy).toBe(75);
+  });
+
+  it('does not immediately overwrite a confirmed error with listening', () => {
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+
+    session.processRecognizedText('خطا', 'stream:1');
+
+    expect(events.at(-1)?.type).toBe('error');
+  });
+
+  it('does not report an intentional end abort as a server outage', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(globalThis, 'fetch').mockImplementation((_input, init) => (
+      new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          reject(new DOMException('Aborted', 'AbortError'));
+        });
+      })
+    ));
+    const { session, events } = collectEvents(BASMALA);
+    session.start();
+
+    const processing = session.processAudioChunk(new Blob(['pending']));
+    session.end();
+    await processing;
+
+    expect(events.filter(event => event.type === 'server-unavailable')).toHaveLength(0);
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+});
+
 // ---- Scenario 11: Honest failure handling (no false talqin / no score damage) ----
 
 describe('TasmiSession — Honest failure handling', () => {

@@ -30,10 +30,10 @@ fi
 
 # 3. Create install directory
 echo "Setting up $INSTALL_DIR..."
-mkdir -p "$INSTALL_DIR"
+mkdir -p "$INSTALL_DIR/.cache/huggingface"
 
 # 4. Copy app files
-cp main.py normalizer.py requirements.txt "$INSTALL_DIR/"
+cp main.py normalizer.py streaming.py requirements.txt "$INSTALL_DIR/"
 
 # 5. Create venv and install deps
 if [ ! -d "$INSTALL_DIR/venv" ]; then
@@ -52,10 +52,23 @@ if [ ! -f "$ENV_FILE" ]; then
     read -rp "Enter API key for tasmi server: " API_KEY
     cat > "$ENV_FILE" <<EOF
 TASMI_API_KEY=$API_KEY
-WHISPER_MODEL=large-v3
+WHISPER_MODEL=OdyAsh/faster-whisper-base-ar-quran
 WHISPER_DEVICE=cpu
 WHISPER_COMPUTE_TYPE=int8
 WHISPER_CPU_THREADS=2
+WHISPER_BEAM_SIZE=1
+WHISPER_HTTP_VAD_FILTER=true
+WHISPER_STREAM_VAD_FILTER=false
+TASMI_MAX_CONCURRENT_STREAMS=2
+TASMI_MAX_PENDING_INFERENCES=3
+TASMI_STREAM_MAX_PENDING_FINALS=2
+TASMI_STREAM_MAX_PENDING_HANDSHAKES=8
+TASMI_STREAM_MAX_AUDIO_SECONDS=30
+TASMI_STREAM_MIN_PARTIAL_SECONDS=0.8
+TASMI_STREAM_PARTIAL_INTERVAL_SECONDS=0.8
+TASMI_STREAM_IDLE_TIMEOUT_SECONDS=60
+TASMI_STREAM_CONNECTION_TIMEOUT_SECONDS=900
+TASMI_ALLOWED_ORIGINS=https://miftah.app,https://miftah-six.vercel.app
 EOF
     chmod 600 "$ENV_FILE"
     echo "Wrote $ENV_FILE"
@@ -73,20 +86,15 @@ systemctl daemon-reload
 systemctl enable tasmi
 systemctl restart tasmi
 
-# 9. Open firewall port (ufw if available)
-if command -v ufw &>/dev/null; then
-    ufw allow 8000/tcp 2>/dev/null || true
-    echo "Opened port 8000 in ufw."
-fi
-
-# 10. Print status
+# 9. Print status. Uvicorn is loopback-only; publish it through the existing
+# TLS reverse proxy and never expose port 8000 directly.
 echo ""
 echo "=== Setup Complete ==="
 systemctl status tasmi --no-pager || true
 echo ""
 echo "Test with:"
-echo "  curl http://$(hostname -I | awk '{print $1}'):8000/health"
+echo "  curl http://127.0.0.1:8000/health"
 echo ""
-echo "Update Miftah .env.local:"
-echo "  TASMI_SERVER_URL=http://$(hostname -I | awk '{print $1}'):8000"
+echo "Update Miftah server-side environment after configuring HTTPS/WSS:"
+echo "  TASMI_SERVER_URL=https://tasmi.<your-domain>"
 echo "  TASMI_API_KEY=<same key you entered above>"

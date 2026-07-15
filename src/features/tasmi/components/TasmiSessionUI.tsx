@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TasmiSession, type TasmiEvent, type TasmiSessionResult } from "../domain/tasmi-session";
 import { TasmiRecorder, type TasmiRecorderError } from "../domain/tasmi-recorder";
+import { TasmiStreamClient } from "../domain/tasmi-stream-client";
 import { TalqinPlayer } from "../domain/talqin-player";
 import { tasmiResultToLabel, type TasmiRatingLabel } from "../domain/fsrs-bridge";
 import { TasmiSessionResultView } from "./TasmiSessionResultView";
@@ -20,6 +21,8 @@ type TasmiStatus =
   | "error"         // Genuine recitation mistake detected
   | "talqin"        // Playing corrective talqin audio
   | "complete";     // Range finished
+
+type TasmiStreamMode = "connecting" | "live" | "fallback";
 
 export interface AyahRange {
   surah: number;
@@ -139,15 +142,25 @@ export function TasmiSessionUI({
   // Live word-follow state (Mode A): matcher cursor + accumulated error positions
   const [followIndex, setFollowIndex] = useState(-1);
   const [errorPositions, setErrorPositions] = useState<ReadonlySet<number>>(new Set());
+  const [tentativeFollowIndex, setTentativeFollowIndex] = useState<number | null>(null);
+  const [tentativeErrorPositions, setTentativeErrorPositions] = useState<ReadonlySet<number>>(new Set());
+  const [streamMode, setStreamMode] = useState<TasmiStreamMode>("connecting");
+  const [lastStreamInferenceMs, setLastStreamInferenceMs] = useState<number | null>(null);
+  const [lastStreamEndToEndMs, setLastStreamEndToEndMs] = useState<number | null>(null);
 
   const sessionRef = useRef<TasmiSession | null>(null);
   const recorderRef = useRef<TasmiRecorder | null>(null);
+  const streamRef = useRef<TasmiStreamClient | null>(null);
   const talqinRef = useRef<TalqinPlayer | null>(null);
   const primedAudioRef = useRef<HTMLAudioElement | null>(null);
   // Set on unmount/cancel so an in-flight async start can abort cleanly
   // instead of leaking a live mic that nothing will ever stop.
   const cancelledRef = useRef(false);
   const progressRef = useRef(0);
+  const activeStreamUtteranceRef = useRef<number | null>(null);
+  const pendingStreamFallbacksRef = useRef<Map<number, Blob>>(new Map());
+  const pendingRecognitionCountRef = useRef(0);
+  const deferredSilenceRef = useRef(false);
 
   // Keep refs for values used inside handleEvent to avoid stale closures
   const ayahRangesRef = useRef(ayahRanges);
@@ -162,8 +175,15 @@ export function TasmiSessionUI({
   const teardown = useCallback(() => {
     recorderRef.current?.stop();
     recorderRef.current = null;
+    streamRef.current?.close();
+    streamRef.current = null;
+    activeStreamUtteranceRef.current = null;
+    pendingStreamFallbacksRef.current = new Map();
+    pendingRecognitionCountRef.current = 0;
+    deferredSilenceRef.current = false;
     talqinRef.current?.stop();
     talqinRef.current = null;
+    sessionRef.current?.cancel();
     sessionRef.current = null;
   }, []);
 
@@ -206,10 +226,11 @@ export function TasmiSessionUI({
     return () => {
       stale = true;
       cancelledRef.current = true;
-      recorderRef.current?.stop();
-      talqinRef.current?.stop();
+      // A Tasmi stream occupies one of only two VPS worker slots. Always close
+      // it on route change/unmount, including while the ticket request is live.
+      teardown();
     };
-  }, [checkServer]);
+  }, [checkServer, teardown]);
 
   const handleEvent = useCallback((event: TasmiEvent) => {
     switch (event.type) {
@@ -222,9 +243,20 @@ export function TasmiSessionUI({
       case "processing":
         setStatus("processing");
         break;
+      case "hypothesis":
+        setStatus("listening");
+        if (event.data?.matchResult) {
+          setTentativeFollowIndex(event.data.matchResult.lastCorrectIndex);
+          setTentativeErrorPositions(new Set(
+            event.data.matchResult.errors.map(error => error.position),
+          ));
+        }
+        break;
       case "match":
         setStatus("listening");
         setHint(null);
+        setTentativeFollowIndex(null);
+        setTentativeErrorPositions(new Set());
         setProgress(event.data?.progress ?? 0);
         progressRef.current = event.data?.progress ?? 0;
         if (event.data?.matchResult) {
@@ -235,9 +267,12 @@ export function TasmiSessionUI({
         // Whisper heard nothing usable — NOT a mistake. Gentle nudge only.
         setHint("Tiada bacaan dikesan — teruskan membaca dengan jelas.");
         setStatus("listening");
+        setTentativeFollowIndex(null);
+        setTentativeErrorPositions(new Set());
         break;
       case "server-unavailable":
         // Transport failure mid-session — pause honestly, never fake a mistake.
+        deferredSilenceRef.current = false;
         recorderRef.current?.pause();
         setMidSessionOutage(true);
         setErrorMsg("Pelayan tasmi' terputus. Bacaan anda tidak dikira salah — sambung bila pelayan kembali.");
@@ -245,6 +280,8 @@ export function TasmiSessionUI({
         break;
       case "error":
         setStatus("error");
+        setTentativeFollowIndex(null);
+        setTentativeErrorPositions(new Set());
         setProgress(event.data?.progress ?? 0);
         progressRef.current = event.data?.progress ?? 0;
         if (event.data?.matchResult) {
@@ -261,8 +298,13 @@ export function TasmiSessionUI({
         }
         break;
       case "talqin":
+        // If recognition itself crossed the consecutive-error threshold, this
+        // is already the intervention owed to the reciter. Do not immediately
+        // fire a second talqin from a deferred silence timeout.
+        deferredSilenceRef.current = false;
         setStatus("talqin");
         recorderRef.current?.pause();
+        streamRef.current?.pause();
         if (event.data?.talqinWordIndex != null) {
           const ranges = ayahRangesRef.current;
           const surah = surahRef.current;
@@ -275,6 +317,7 @@ export function TasmiSessionUI({
             resolved.ayah,
             resolved.localWordIndex,
           ).catch(() => {
+            streamRef.current?.resume();
             recorderRef.current?.resume();
             setStatus("listening");
           });
@@ -286,10 +329,12 @@ export function TasmiSessionUI({
         progressRef.current = 1;
         // Natural completion: the mic must not stay live under the result view.
         recorderRef.current?.stop();
+        streamRef.current?.close();
         talqinRef.current?.stop();
         break;
       case "session-end":
         recorderRef.current?.stop();
+        streamRef.current?.close();
         talqinRef.current?.stop();
         if (event.data?.result) {
           setResult(event.data.result);
@@ -315,6 +360,12 @@ export function TasmiSessionUI({
     setMidSessionOutage(false);
     setFollowIndex(-1);
     setErrorPositions(new Set());
+    setTentativeFollowIndex(null);
+    setTentativeErrorPositions(new Set());
+    setStreamMode("connecting");
+    setLastStreamInferenceMs(null);
+    setLastStreamEndToEndMs(null);
+    deferredSilenceRef.current = false;
 
     // Gesture-unlock ONE shared audio element (inside this tap) and reuse it
     // for every talqin playback. Without this, iOS blocks talqin audio.
@@ -328,14 +379,31 @@ export function TasmiSessionUI({
 
     const session = new TasmiSession(expectedText, {
       serverUrl: TASMI_TRANSCRIBE_ENDPOINT,
-      silenceThresholdSeconds: 6,
+      silenceThresholdSeconds: 4,
       errorThresholdCount: 2,
       talqinEnabled,
     }, handleEvent);
 
+    const finishRecognition = () => {
+      if (sessionRef.current !== session) return;
+      pendingRecognitionCountRef.current = Math.max(
+        0,
+        pendingRecognitionCountRef.current - 1,
+      );
+      if (
+        pendingRecognitionCountRef.current === 0 &&
+        deferredSilenceRef.current
+      ) {
+        deferredSilenceRef.current = false;
+        session.onSilenceTimeout();
+      }
+    };
+
     const talqin = new TalqinPlayer({
       wordsToPlay: 3, // spec (operator vision): talqin = 3 linked correct words
       onPlaybackEnd: () => {
+        if (talqinRef.current !== talqin || sessionRef.current !== session) return;
+        streamRef.current?.resume();
         recorderRef.current?.resume();
         setStatus("listening");
       },
@@ -344,15 +412,128 @@ export function TasmiSessionUI({
       talqin.attachAudioElement(primedAudioRef.current);
     }
 
+    const stream = new TasmiStreamClient({
+      onHypothesis: hypothesis => {
+        if (sessionRef.current !== session || streamRef.current !== stream) return;
+        const recognitionId = `stream:${hypothesis.utterance_id}`;
+        if (hypothesis.type === "partial") {
+          session.previewRecognizedText(
+            hypothesis.normalized_text,
+            `${recognitionId}:partial:${hypothesis.revision}`,
+            hypothesis.inference_ms,
+          );
+          return;
+        }
+
+        const wasPending = pendingStreamFallbacksRef.current.has(
+          hypothesis.utterance_id,
+        );
+        pendingStreamFallbacksRef.current = new Map(
+          [...pendingStreamFallbacksRef.current]
+            .filter(([utteranceId]) => utteranceId !== hypothesis.utterance_id),
+        );
+        session.processRecognizedText(
+          hypothesis.normalized_text,
+          recognitionId,
+          hypothesis.inference_ms,
+        );
+        if (wasPending) finishRecognition();
+      },
+      onUnavailable: (_reason, pendingUtteranceIds) => {
+        if (sessionRef.current !== session || streamRef.current !== stream) return;
+        setStreamMode("fallback");
+        setHint("Sambungan pantas terputus — semakan diteruskan selepas jeda.");
+        for (const utteranceId of pendingUtteranceIds) {
+          const fallbackBlob = pendingStreamFallbacksRef.current.get(utteranceId);
+          if (fallbackBlob) {
+            void session.processAudioChunk(
+              fallbackBlob,
+              `stream:${utteranceId}`,
+            ).finally(finishRecognition);
+          } else {
+            finishRecognition();
+          }
+        }
+        pendingStreamFallbacksRef.current = new Map(
+          [...pendingStreamFallbacksRef.current]
+            .filter(([utteranceId]) => !pendingUtteranceIds.includes(utteranceId)),
+        );
+      },
+      onMetric: metric => {
+        if (sessionRef.current !== session || streamRef.current !== stream) return;
+        if (metric.inferenceMs != null) setLastStreamInferenceMs(metric.inferenceMs);
+        if (metric.endToEndMs != null) setLastStreamEndToEndMs(metric.endToEndMs);
+      },
+    });
+
     const recorder = new TasmiRecorder({
-      silenceTimeoutSeconds: 6,
+      silenceTimeoutSeconds: 4,
+      silenceNudgeSeconds: 2.5,
       onSpeechEnd: (audioBlob) => {
-        session.processAudioChunk(audioBlob);
+        if (sessionRef.current !== session || recorderRef.current !== recorder) return;
+        const utteranceId = activeStreamUtteranceRef.current;
+        activeStreamUtteranceRef.current = null;
+        let recognitionCounted = false;
+        if (utteranceId !== null && stream.isReady) {
+          pendingStreamFallbacksRef.current = new Map(
+            pendingStreamFallbacksRef.current,
+          ).set(utteranceId, audioBlob);
+          // Count before speech_end is sent. A fast local/test socket can
+          // deliver its final synchronously from send().
+          pendingRecognitionCountRef.current += 1;
+          recognitionCounted = true;
+          if (stream.endUtterance(utteranceId)) {
+            return;
+          }
+          const fallbackAlreadyStarted = !pendingStreamFallbacksRef.current.has(
+            utteranceId,
+          );
+          pendingStreamFallbacksRef.current = new Map(
+            [...pendingStreamFallbacksRef.current]
+              .filter(([pendingId]) => pendingId !== utteranceId),
+          );
+          // A synchronous control-send failure reports the pending ID first;
+          // onUnavailable has already launched its HTTP request in that case.
+          if (fallbackAlreadyStarted) return;
+        }
+        // A stream can fail between speech_start and speech_end. Such an
+        // utterance has an ID but has not yet been counted as pending.
+        if (!recognitionCounted) pendingRecognitionCountRef.current += 1;
+        void session.processAudioChunk(
+          audioBlob,
+          utteranceId === null ? undefined : `stream:${utteranceId}`,
+        ).finally(finishRecognition);
+      },
+      onAudioFrame: frame => {
+        if (sessionRef.current !== session || recorderRef.current !== recorder) return;
+        stream.sendAudioFrame(frame);
+      },
+      onSpeechStart: () => {
+        if (sessionRef.current !== session || recorderRef.current !== recorder) return;
+        deferredSilenceRef.current = false;
+        setStatus("listening");
+        setHint(null);
+        setTentativeFollowIndex(null);
+        setTentativeErrorPositions(new Set());
+        activeStreamUtteranceRef.current = stream.startUtterance();
       },
       onSilenceTimeout: () => {
-        session.onSilenceTimeout();
+        if (sessionRef.current !== session || recorderRef.current !== recorder) return;
+        if (pendingRecognitionCountRef.current === 0) {
+          session.onSilenceTimeout();
+        } else {
+          // Slow ASR delays the teacher prompt; it must not erase it forever.
+          deferredSilenceRef.current = true;
+        }
+      },
+      onSilenceNudge: () => {
+        if (sessionRef.current !== session || recorderRef.current !== recorder) return;
+        if (talqinEnabled && pendingRecognitionCountRef.current === 0) {
+          setHint("Perlukan bantuan? Perkataan seterusnya sedang diserlahkan.");
+        }
       },
       onError: (err) => {
+        if (sessionRef.current !== session || recorderRef.current !== recorder) return;
         setErrorMsg(micErrorMessage(err));
         setStatus("intro");
       },
@@ -361,26 +542,54 @@ export function TasmiSessionUI({
     // Assign refs BEFORE the awaits below so unmount/cancel can always stop them.
     sessionRef.current = session;
     recorderRef.current = recorder;
+    streamRef.current = stream;
     talqinRef.current = talqin;
 
-    // Load word-level timestamps for precise talqin seeking
-    const alignData = await fetchAlignData();
-    if (cancelledRef.current) { teardown(); return; }
-    if (alignData) {
-      talqin.loadFromRawData(alignData);
-    }
-
-    const recorderStarted = await recorder.start();
-    if (cancelledRef.current) { teardown(); return; }
-    if (!recorderStarted) { teardown(); return; }
+    // Activate the session and begin mic/stream work immediately from the user
+    // gesture. Alignment data is useful for talqin but must never delay capture.
     session.start();
+    const recorderStartPromise = recorder.start();
+    void stream.connect().then(connected => {
+      if (
+        cancelledRef.current ||
+        sessionRef.current !== session ||
+        streamRef.current !== stream
+      ) return;
+      setStreamMode(connected ? "live" : "fallback");
+      if (connected) setHint(null);
+    });
+    void fetchAlignData().then(alignData => {
+      if (
+        !cancelledRef.current &&
+        talqinRef.current === talqin &&
+        sessionRef.current === session &&
+        alignData
+      ) talqin.loadFromRawData(alignData);
+    });
+
+    const recorderStarted = await recorderStartPromise;
+    if (
+      cancelledRef.current ||
+      recorderRef.current !== recorder ||
+      sessionRef.current !== session
+    ) {
+      recorder.stop();
+      stream.close();
+      talqin.stop();
+      session.cancel();
+      return;
+    }
+    if (!recorderStarted) { teardown(); return; }
 
     // Mode B: read the test ayah aloud first (mic stays granted but paused),
     // then the shared onPlaybackEnd resumes the recorder into listening.
     if (startPromptAyah) {
       recorder.pause();
+      stream.pause();
       setStatus("prompt");
       talqin.playAyah(startPromptAyah.surah, startPromptAyah.ayah).catch(() => {
+        if (talqinRef.current !== talqin || sessionRef.current !== session) return;
+        streamRef.current?.resume();
         recorderRef.current?.resume();
         setStatus("listening");
       });
@@ -445,7 +654,7 @@ export function TasmiSessionUI({
     const label = tasmiResultToLabel(result);
 
     try {
-      await fetch("/api/tasmi/session", {
+      const response = await fetch("/api/tasmi/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -460,6 +669,7 @@ export function TasmiSessionUI({
           duration_seconds: Math.round(result.durationSeconds),
         }),
       });
+      if (!response.ok) throw new Error("Tasmi session save failed");
     } catch {
       // Non-critical — session result is still usable for FSRS
     }
@@ -536,7 +746,7 @@ export function TasmiSessionUI({
           ) : (
             <li>Baca dengan suara yang jelas, dari perkataan pertama.</li>
           )}
-          <li>Berhenti seketika selepas setiap bahagian — app akan semak bacaan anda.</li>
+          <li>Baca secara semula jadi dan berterusan — app akan mengikuti bacaan anda.</li>
           {talqinEnabled ? (
             <li>Jika tersilap atau tersekat, app akan <span className="font-medium">bacakan beberapa perkataan panduan (talqin)</span>, kemudian tunggu anda menyambung.</li>
           ) : (
@@ -544,7 +754,7 @@ export function TasmiSessionUI({
           )}
         </ol>
         <p className="text-xs text-stone-500 dark:text-stone-400">
-          Mikrofon hanya digunakan semasa sesi ini.
+          Audio diproses sementara semasa sesi ini dan tidak disimpan oleh pelayan tasmi&apos;.
         </p>
         <div className="flex gap-3">
           <button
@@ -579,8 +789,22 @@ export function TasmiSessionUI({
       <TasmiTextFollow
         expectedText={expectedText}
         followIndex={followIndex}
+        tentativeFollowIndex={tentativeFollowIndex}
         errorPositions={errorPositions}
+        tentativeErrorPositions={tentativeErrorPositions}
       />
+
+      <p className={`text-xs font-medium ${
+        streamMode === "live"
+          ? "text-teal-700 dark:text-teal-300"
+          : "text-stone-500 dark:text-stone-400"
+      }`}>
+        {streamMode === "connecting"
+          ? "Menyambung semakan pantas..."
+          : streamMode === "live"
+            ? `Semakan pantas aktif${lastStreamEndToEndMs != null ? ` · jawapan ${(lastStreamEndToEndMs / 1000).toFixed(1)}s` : ""}${lastStreamInferenceMs != null ? ` · model ${(lastStreamInferenceMs / 1000).toFixed(1)}s` : ""}`
+            : "Mod jeda aktif sebagai sandaran"}
+      </p>
 
       {/* Status indicator */}
       <div className="flex items-center gap-3">

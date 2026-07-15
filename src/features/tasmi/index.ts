@@ -42,6 +42,21 @@ export type {
 } from "./domain/talqin-player";
 export { TasmiRecorder } from "./domain/tasmi-recorder";
 export type { RecorderConfig } from "./domain/tasmi-recorder";
+export { TasmiStreamClient } from "./domain/tasmi-stream-client";
+export type {
+  TasmiStreamClientConfig,
+  TasmiStreamMetric,
+  TasmiStreamSocket,
+} from "./domain/tasmi-stream-client";
+export {
+  parseTasmiStreamServerMessage,
+  TASMI_STREAM_PROTOCOL,
+  TASMI_STREAM_SAMPLE_RATE,
+} from "./domain/tasmi-stream-protocol";
+export type {
+  TasmiStreamHypothesis,
+  TasmiStreamServerMessage,
+} from "./domain/tasmi-stream-protocol";
 export { TasmiSession } from "./domain/tasmi-session";
 export type {
   TasmiConfig,

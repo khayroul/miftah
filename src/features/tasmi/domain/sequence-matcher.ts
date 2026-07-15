@@ -24,6 +24,43 @@ export interface MatchResult {
   isClean: boolean;
 }
 
+function allowedWordDistance(expected: string, got: string): number {
+  const shortest = Math.min(expected.length, got.length);
+  const longest = Math.max(expected.length, got.length);
+  if (shortest < 4) return 0;
+  return longest >= 7 ? 2 : 1;
+}
+
+function boundedEditDistance(left: string, right: string, limit: number): number {
+  if (Math.abs(left.length - right.length) > limit) return limit + 1;
+  let previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex++) {
+    const current = [leftIndex];
+    let rowMinimum = leftIndex;
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex++) {
+      const substitutionCost = left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1;
+      const value = Math.min(
+        previous[rightIndex] + 1,
+        current[rightIndex - 1] + 1,
+        previous[rightIndex - 1] + substitutionCost,
+      );
+      current.push(value);
+      rowMinimum = Math.min(rowMinimum, value);
+    }
+    if (rowMinimum > limit) return limit + 1;
+    previous = current;
+  }
+
+  return previous[right.length];
+}
+
+function wordsEquivalent(expected: string, got: string): boolean {
+  if (expected === got) return true;
+  const limit = allowedWordDistance(expected, got);
+  return limit > 0 && boundedEditDistance(expected, got, limit) <= limit;
+}
+
 export class SequenceMatcher {
   private expectedWords: string[];
   private _lastCorrectIndex: number = -1;
@@ -75,6 +112,14 @@ export class SequenceMatcher {
         wordsCorrect++;
         lastAnchored = expectedPos;
         expectedPos++;
+      } else if (
+        expectedPos > 0 &&
+        this.expectedWords[expectedPos - 1] === got
+      ) {
+        // Conservative stutter grace: an immediate exact repeat of the word
+        // just accepted is neither new progress nor a mistake. Keep waiting
+        // for the same expected word. Unrelated insertions still fail below.
+        continue;
       } else {
         // Look ahead up to 2 positions for a skip (student omitted words)
         let foundAhead = false;
@@ -95,6 +140,16 @@ export class SequenceMatcher {
             foundAhead = true;
             break;
           }
+        }
+
+        if (!foundAhead && wordsEquivalent(expected, got)) {
+          // Quran text is fixed, while ASR often varies by one character. Only
+          // accept a conservative fuzzy match AFTER exact lookahead has had a
+          // chance to identify a genuinely skipped word.
+          wordsCorrect++;
+          lastAnchored = expectedPos;
+          expectedPos++;
+          foundAhead = true;
         }
 
         if (!foundAhead) {
@@ -124,7 +179,7 @@ export class SequenceMatcher {
    * If that fails, checks if the student restarted a few words back
    * (common pattern: restart from earlier position to regain flow).
    */
-  matchChunk(transcribedText: string): MatchResult {
+  private evaluateChunk(transcribedText: string, commit: boolean): MatchResult {
     const transcribedWords = tokenizeWords(normalizeArabic(transcribedText));
     if (transcribedWords.length === 0) {
       return {
@@ -141,9 +196,9 @@ export class SequenceMatcher {
 
     // Forward match worked — use it
     if (forward.wordsCorrect > 0 && forward.errors.length === 0) {
-      this._lastCorrectIndex = forward.lastIndex;
+      if (commit) this._lastCorrectIndex = forward.lastIndex;
       return {
-        lastCorrectIndex: this._lastCorrectIndex,
+        lastCorrectIndex: forward.lastIndex,
         wordsCorrect: forward.wordsCorrect,
         wordsTotal: transcribedWords.length,
         errors: forward.errors,
@@ -171,9 +226,9 @@ export class SequenceMatcher {
 
     if (bestLookback && bestLookback.lastIndex > this._lastCorrectIndex) {
       // Student restarted earlier and advanced past previous position — accept it
-      this._lastCorrectIndex = bestLookback.lastIndex;
+      if (commit) this._lastCorrectIndex = bestLookback.lastIndex;
       return {
-        lastCorrectIndex: this._lastCorrectIndex,
+        lastCorrectIndex: bestLookback.lastIndex,
         wordsCorrect: bestLookback.wordsCorrect,
         wordsTotal: transcribedWords.length,
         errors: bestLookback.errors,
@@ -197,16 +252,29 @@ export class SequenceMatcher {
     // Anchor guard: only advance position when the chunk contained at least one
     // CORRECT word. Without it, a pure-noise chunk (all substitutions) would
     // drag the position forward through words the reciter never said.
-    if (forward.wordsCorrect > 0) {
-      this._lastCorrectIndex = forward.lastIndex;
-    }
+    const resolvedLastCorrectIndex = forward.wordsCorrect > 0
+      ? forward.lastIndex
+      : this._lastCorrectIndex;
+    if (commit && forward.wordsCorrect > 0) this._lastCorrectIndex = forward.lastIndex;
     return {
-      lastCorrectIndex: this._lastCorrectIndex,
+      lastCorrectIndex: resolvedLastCorrectIndex,
       wordsCorrect: forward.wordsCorrect,
       wordsTotal: transcribedWords.length,
       errors: forward.errors,
       isClean: forward.errors.length === 0,
     };
+  }
+
+  matchChunk(transcribedText: string): MatchResult {
+    return this.evaluateChunk(transcribedText, true);
+  }
+
+  /**
+   * Evaluate a cumulative streaming hypothesis without advancing or scoring the
+   * real session cursor. Tentative ASR revisions are therefore safe to redraw.
+   */
+  previewChunk(transcribedText: string): MatchResult {
+    return this.evaluateChunk(transcribedText, false);
   }
 
   /**

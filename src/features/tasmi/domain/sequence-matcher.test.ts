@@ -38,6 +38,40 @@ describe('SequenceMatcher', () => {
     expect(m.isComplete).toBe(true);
   });
 
+  it('forgives one or more immediate repeated words as a stutter', () => {
+    const m = new SequenceMatcher(BASMALA);
+
+    const result = m.matchChunk('بسم بسم بسم الله الرحمن الرحيم');
+
+    expect(result.isClean).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.wordsCorrect).toBe(4);
+    expect(m.isComplete).toBe(true);
+  });
+
+  it('forgives a repeated boundary word and then advances normally', () => {
+    const m = new SequenceMatcher(BASMALA);
+    m.matchChunk('بسم الله');
+
+    const result = m.matchChunk('الله الرحمن الرحيم');
+
+    expect(result.isClean).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.wordsCorrect).toBe(2);
+    expect(m.isComplete).toBe(true);
+  });
+
+  it('still reports an unrelated extra word as an error', () => {
+    const m = new SequenceMatcher(BASMALA);
+
+    const result = m.matchChunk('بسم زيادة الله الرحمن الرحيم');
+
+    expect(result.isClean).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({ type: 'substitution', got: 'زياده' }),
+    );
+  });
+
   it('detects substitution error', () => {
     const m = new SequenceMatcher(BASMALA);
     const result = m.matchChunk('بسم الخطأ');
@@ -174,5 +208,43 @@ describe('SequenceMatcher', () => {
     // Should be treated as a forward error since الله ≠ expected word 5 (الحمد)
     const result = m.matchChunk('خطا');
     expect(result.isClean).toBe(false);
+  });
+});
+
+describe('SequenceMatcher streaming preview and conservative fuzzy matching', () => {
+  it('previews cumulative text without mutating the confirmed cursor', () => {
+    const matcher = new SequenceMatcher('بسم الله الرحمن الرحيم');
+
+    const preview = matcher.previewChunk('بسم اللة');
+
+    expect(preview.lastCorrectIndex).toBe(1);
+    expect(preview.errors).toHaveLength(0);
+    expect(matcher.lastCorrectIndex).toBe(-1);
+
+    const committed = matcher.matchChunk('بسم اللة');
+    expect(committed.lastCorrectIndex).toBe(1);
+    expect(matcher.lastCorrectIndex).toBe(1);
+  });
+
+  it('does not fuzzy-accept short Arabic function words', () => {
+    const matcher = new SequenceMatcher('من الناس');
+
+    const result = matcher.matchChunk('ما');
+
+    expect(result.wordsCorrect).toBe(0);
+    expect(result.errors).toEqual([
+      expect.objectContaining({ position: 0, type: 'substitution' }),
+    ]);
+  });
+
+  it('prefers an exact lookahead omission over a fuzzy current-word match', () => {
+    const matcher = new SequenceMatcher('الرحمن الرحيم');
+
+    const result = matcher.matchChunk('الرحيم');
+
+    expect(result.lastCorrectIndex).toBe(1);
+    expect(result.errors).toEqual([
+      expect.objectContaining({ position: 0, type: 'omission' }),
+    ]);
   });
 });

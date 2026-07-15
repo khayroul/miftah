@@ -1,26 +1,14 @@
 import { NextResponse } from "next/server";
 import { getOptionalAuthUser } from "@/features/auth/server";
+import {
+  getTasmiApiKey,
+  getTasmiServerUrl,
+} from "@/features/tasmi/server/config";
 
 export const runtime = "nodejs";
 
 // Reject uploads larger than this before proxying to the transcription server.
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5MB
-
-function getTasmiServerUrl(): string {
-  return (
-    process.env.TASMI_SERVER_URL?.trim() ||
-    process.env.NEXT_PUBLIC_TASMI_SERVER_URL?.trim() ||
-    ""
-  ).replace(/\/$/, "");
-}
-
-function getTasmiApiKey(): string {
-  return (
-    process.env.TASMI_API_KEY?.trim() ||
-    process.env.NEXT_PUBLIC_TASMI_API_KEY?.trim() ||
-    ""
-  );
-}
 
 function isConfigured(): boolean {
   return getTasmiServerUrl().length > 0 && getTasmiApiKey().length > 0;
@@ -116,6 +104,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       headers: { "x-api-key": apiKey },
       body: upstreamForm,
       cache: "no-store",
+      signal: request.signal,
     });
 
     const payload = await response

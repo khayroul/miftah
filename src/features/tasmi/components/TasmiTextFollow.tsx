@@ -22,8 +22,12 @@ interface TasmiTextFollowProps {
   expectedText: string;
   /** Matcher cursor — positions 0..followIndex have been recited */
   followIndex: number;
+  /** Streaming-only cursor; never treated as confirmed scoring progress. */
+  tentativeFollowIndex?: number | null;
   /** Matcher positions flagged as errors (omission/substitution) */
   errorPositions: ReadonlySet<number>;
+  /** Unconfirmed streaming mismatches. Cleared whenever the hypothesis revises. */
+  tentativeErrorPositions?: ReadonlySet<number>;
 }
 
 export interface DisplayWord {
@@ -46,20 +50,33 @@ function wordClass(
   word: DisplayWord,
   followIndex: number,
   errorPositions: ReadonlySet<number>,
+  tentativeFollowIndex: number | null,
+  tentativeErrorPositions: ReadonlySet<number>,
 ): string {
   if (word.matcherIndex === null) {
     return "text-stone-400 dark:text-stone-500";
   }
   const isError = errorPositions.has(word.matcherIndex);
+  const isTentativeError = tentativeErrorPositions.has(word.matcherIndex);
   const isRecited = word.matcherIndex <= followIndex;
-  const isCurrent = word.matcherIndex === followIndex + 1;
+  const isTentativelyRecited = tentativeFollowIndex !== null
+    && word.matcherIndex > followIndex
+    && word.matcherIndex <= tentativeFollowIndex;
+  const activeIndex = Math.max(followIndex, tentativeFollowIndex ?? -1);
+  const isCurrent = word.matcherIndex === activeIndex + 1;
 
   if (isError) {
     // An error position stays visibly marked whether or not the cursor passed it.
     return "rounded bg-rose-100 px-0.5 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300";
   }
+  if (isTentativeError) {
+    return "rounded bg-amber-100 px-0.5 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200";
+  }
   if (isRecited) {
     return "text-teal-700 dark:text-teal-300";
+  }
+  if (isTentativelyRecited) {
+    return "text-teal-500 dark:text-teal-400";
   }
   if (isCurrent) {
     return "animate-pulse rounded bg-amber-100 px-0.5 text-stone-900 dark:bg-amber-900/40 dark:text-stone-100";
@@ -70,7 +87,9 @@ function wordClass(
 export function TasmiTextFollow({
   expectedText,
   followIndex,
+  tentativeFollowIndex = null,
   errorPositions,
+  tentativeErrorPositions = new Set<number>(),
 }: TasmiTextFollowProps) {
   const words = useMemo(() => buildDisplayWords(expectedText), [expectedText]);
   const currentRef = useRef<HTMLSpanElement | null>(null);
@@ -78,7 +97,7 @@ export function TasmiTextFollow({
   // Keep the current word in view as the reciter advances through a long range.
   useEffect(() => {
     currentRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [followIndex]);
+  }, [followIndex, tentativeFollowIndex]);
 
   return (
     <div
@@ -90,8 +109,14 @@ export function TasmiTextFollow({
       {words.map((word, i) => (
         <span
           key={i}
-          ref={word.matcherIndex === followIndex + 1 ? currentRef : undefined}
-          className={`transition-colors duration-300 ${wordClass(word, followIndex, errorPositions)}`}
+          ref={word.matcherIndex === Math.max(followIndex, tentativeFollowIndex ?? -1) + 1 ? currentRef : undefined}
+          className={`transition-colors duration-200 ${wordClass(
+            word,
+            followIndex,
+            errorPositions,
+            tentativeFollowIndex,
+            tentativeErrorPositions,
+          )}`}
         >
           {word.text}
           {i < words.length - 1 ? " " : ""}
