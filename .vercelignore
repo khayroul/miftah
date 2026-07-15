@@ -27,12 +27,17 @@ data/qul/*
 !data/qul/english-wbw-translation.json
 
 # Dev/ops artifacts (keep prebuild scripts for Vercel build)
+# NOTE: prebuild = generate-surah-map + split-translations + copy-layouts +
+# render-pwa-artifacts (which reads sw.template.js). Every file that chain
+# touches MUST be allowlisted here, or the Vercel build fails with
+# ERR_MODULE_NOT_FOUND (exactly what broke the 2026-07-14 deploy).
 scripts/*
 !scripts/generate-surah-map.ts
 !scripts/split-translations.ts
 !scripts/copy-layouts.ts
+!scripts/render-pwa-artifacts.ts
+!scripts/sw.template.js
 !scripts/generate-pwa-config.ts
-!scripts/inject-build-id.ts
 supabase/
 ops/
 n8n-exports/
