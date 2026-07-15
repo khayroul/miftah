@@ -4,10 +4,7 @@ import {
   countUniquePlanItemPages,
   emptyPageGrid,
   getCachedDailyPlan,
-  getCachedHifzStats,
-  getCachedJuzProgress,
-  getCachedPageProgressGrid,
-  getCachedHasAnyHifzProgress,
+  getCachedHifzOverview,
   type DailyPlanWithDetails,
   type HifzStats,
   type JuzStat,
@@ -31,24 +28,24 @@ export default async function HifzPage() {
   let globalStreak = 0;
   let canStartFresh = false;
 
-  // jumpTargets, hasStarted, and streak are all independent of each other
-  const [jumpTargets, hasStarted, streak] = await Promise.all([
+  // jumpTargets, the consolidated overview (has-progress + stats + juz +
+  // grid in ONE view computation), and streak are independent of each other.
+  const [jumpTargets, overview, streak] = await Promise.all([
     jumpTargetsPromise,
-    userId ? getCachedHasAnyHifzProgress(userId) : Promise.resolve(false),
+    userId ? getCachedHifzOverview(userId) : Promise.resolve(null),
     userId ? getUserStreak(userId) : Promise.resolve(null),
   ]);
 
-  if (userId) {
+  if (userId && overview) {
+    const hasStarted = overview.hasProgress;
     canStartFresh = !hasStarted;
     globalStreak = streak?.current_streak ?? 0;
 
     if (hasStarted) {
-      [plan, stats, juzProgress, pageGrid] = await Promise.all([
-        getCachedDailyPlan(userId),
-        getCachedHifzStats(userId),
-        getCachedJuzProgress(userId),
-        getCachedPageProgressGrid(userId),
-      ]);
+      plan = await getCachedDailyPlan(userId);
+      stats = overview.stats;
+      juzProgress = overview.juzProgress;
+      pageGrid = overview.pageGrid;
     } else {
       plan = { sabqi: [], sabak: [], manzil: [] } as DailyPlanWithDetails;
       stats = {

@@ -81,11 +81,22 @@ export async function buildDailyPlanWithDetails(
 ): Promise<DailyPlanWithDetails> {
   const raw = await getRawDailyPlan(userId);
 
-  const [sabqi, sabak, manzil] = await Promise.all([
-    enrichWithAyahDetails(raw.sabqi),
-    enrichWithAyahDetails(raw.sabak),
-    enrichWithAyahDetails(raw.manzil),
+  // ONE ayat round trip for all three buckets (was three parallel queries),
+  // then split the enriched items back by progress-row id.
+  const enriched = await enrichWithAyahDetails([
+    ...raw.sabqi,
+    ...raw.sabak,
+    ...raw.manzil,
   ]);
+  const byProgressId = new Map(enriched.map((item) => [item.progress.id, item]));
+  const pick = (items: StudyProgress[]): PlanItem[] =>
+    items
+      .map((item) => byProgressId.get(item.id))
+      .filter((item): item is PlanItem => item !== undefined);
 
-  return { sabqi, sabak, manzil };
+  return {
+    sabqi: pick(raw.sabqi),
+    sabak: pick(raw.sabak),
+    manzil: pick(raw.manzil),
+  };
 }

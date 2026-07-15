@@ -9,10 +9,12 @@ export type {
 } from "@/features/hifz/domain/types";
 export {
   emptyPageGrid,
+  getHifzOverview,
   getHifzStats,
   getJuzProgress,
   getPageProgressGrid,
 } from "./hifz/stats";
+export type { HifzOverview } from "./hifz/stats";
 export type {
   HifzStats,
   JuzStat,
