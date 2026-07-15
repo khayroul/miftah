@@ -39,7 +39,12 @@ export function createMiddleware(dependencies: MiddlewareDependencies = defaultD
 export const middleware = createMiddleware();
 
 export const config = {
+  // Static/PWA assets must NEVER run this middleware: every match costs a
+  // GoTrue session refresh + rate-limit check. Unexcluded, even /sw.js was
+  // 504-ing through the middleware (2026-07-15 field bug). Pages and /api/*
+  // carry no file extension and none live under these public dirs, so auth
+  // coverage is unchanged.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ttf|woff2?)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sw\\.js|pwa-config\\.json|manifest\\.webmanifest|offline\\.html|icons/|images/|mushaf/|translations/|layouts/|data/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ttf|woff2?|js|mjs|map|json|mp3|wav|onnx|wasm)$).*)",
   ],
 };
