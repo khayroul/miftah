@@ -79,7 +79,10 @@ export class TasmiStreamClient {
   constructor(config: TasmiStreamClientConfig) {
     this.config = {
       ticketEndpoint: config.ticketEndpoint ?? "/api/tasmi/stream-session",
-      fetcher: config.fetcher ?? fetch,
+      // Never store window.fetch directly and invoke it through the config
+      // object: browsers brand-check its receiver and throw "Illegal
+      // invocation" before a request is sent. Keep the native call lexical.
+      fetcher: config.fetcher ?? ((input, init) => fetch(input, init)),
       createSocket: config.createSocket ?? ((url: string) => new WebSocket(url) as TasmiStreamSocket),
       ticketTimeoutMs: config.ticketTimeoutMs ?? 4_000,
       connectTimeoutMs: config.connectTimeoutMs ?? 4_000,

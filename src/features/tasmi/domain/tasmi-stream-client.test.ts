@@ -63,9 +63,40 @@ function finalMessage(
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 describe("TasmiStreamClient", () => {
+  it("calls the default browser fetch without rebinding its receiver", async () => {
+    const socket = new FakeSocket();
+    const browserFetch = vi.fn(function (this: unknown) {
+      if (this !== undefined) {
+        throw new TypeError("Illegal invocation");
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        wsUrl: "wss://tasmi.example/ws/transcribe",
+        ticket: "t".repeat(43),
+        expiresAt: Date.now() + 60_000,
+        protocol: "tasmi-stream-v1",
+      }), { status: 200 }));
+    }) as unknown as typeof fetch;
+    vi.stubGlobal("fetch", browserFetch);
+    const client = new TasmiStreamClient({
+      createSocket: () => socket,
+      onHypothesis: vi.fn(),
+      onUnavailable: vi.fn(),
+    });
+
+    const connected = client.connect();
+    await vi.waitFor(() => expect(socket.onopen).toBeTypeOf("function"));
+    socket.open();
+    socket.message(readyMessage());
+
+    await expect(connected).resolves.toBe(true);
+    expect(browserFetch).toHaveBeenCalledOnce();
+    client.close();
+  });
+
   it("authenticates, batches PCM frames, and emits one final hypothesis", async () => {
     const socket = new FakeSocket();
     const hypotheses = vi.fn();
