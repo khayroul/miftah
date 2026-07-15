@@ -160,12 +160,19 @@ export function HifzUnveilSession({
           cache: "no-store",
         });
         const configPayload = (await configResponse.json().catch(() => null)) as
-          | { configured?: boolean }
+          | { configured?: boolean; reachable?: boolean }
           | null;
 
         if (!configResponse.ok || configPayload?.configured !== true) {
           if (!disposed) {
             setVadError("Pelayan tasmi' belum dikonfigurasikan.");
+            recitingActiveRef.current = false;
+          }
+          return;
+        }
+        if (configPayload.reachable !== true) {
+          if (!disposed) {
+            setVadError("Pelayan tasmi' tak dapat dihubungi sekarang.");
             recitingActiveRef.current = false;
           }
           return;
@@ -210,8 +217,18 @@ export function HifzUnveilSession({
       sessionRef.current = session;
       recorderRef.current = recorder;
 
+      const recorderStarted = await recorder.start();
+      if (disposed) {
+        recorder.stop();
+        return;
+      }
+      if (!recorderStarted) {
+        recitingActiveRef.current = false;
+        sessionRef.current = null;
+        recorderRef.current = null;
+        return;
+      }
       session.start();
-      await recorder.start();
     })();
 
     return () => {

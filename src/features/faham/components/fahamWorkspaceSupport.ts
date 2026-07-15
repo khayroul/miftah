@@ -1,4 +1,8 @@
-import { loadCachedFahamQueue, type CachedFahamQueue } from "../domain/offlineSync";
+import {
+  loadCachedFahamQueue,
+  saveCachedFahamQueue,
+  type CachedFahamQueue,
+} from "../domain/offlineSync";
 import type { FahamLevelProgress } from "../domain/levels";
 import type { FahamMcqDirectionMode } from "../domain/mcq";
 import { FAHAM_PRESET_CONFIGS, type FahamSourcePreset } from "../domain/presets";
@@ -49,13 +53,38 @@ export function countQueueCards(snapshot: FahamQueueSnapshot): number {
   );
 }
 
+export function isRestorableFahamQueue(snapshot: FahamQueueSnapshot): boolean {
+  const cards = [
+    ...snapshot.due,
+    ...snapshot.learning,
+    ...snapshot.new,
+    ...snapshot.mastered,
+  ];
+  // Empty bootstrap snapshots and signed-out preview cards are not sessions.
+  // Restoring either one hides the loading state without giving the learner a
+  // usable deck.
+  return cards.length > 0 && cards.every((card) => card.word.id > 0);
+}
+
+export function saveRestorableCachedQueue(input: {
+  directionMode: FahamMcqDirectionMode;
+  isRevision: boolean;
+  preset: FahamSourcePreset;
+  snapshot: FahamQueueSnapshot;
+}): boolean {
+  if (!isRestorableFahamQueue(input.snapshot)) return false;
+  saveCachedFahamQueue(input);
+  return true;
+}
+
 export function loadMatchingCachedQueue(expected?: {
   directionMode: FahamMcqDirectionMode;
   isRevision: boolean;
   preset: FahamSourcePreset;
 }): CachedFahamQueue | null {
   const cachedQueue = loadCachedFahamQueue();
-  if (!cachedQueue || !expected) return cachedQueue;
+  if (!cachedQueue || !isRestorableFahamQueue(cachedQueue.snapshot)) return null;
+  if (!expected) return cachedQueue;
   return cachedQueue.directionMode === expected.directionMode &&
     cachedQueue.isRevision === expected.isRevision &&
     cachedQueue.preset === expected.preset

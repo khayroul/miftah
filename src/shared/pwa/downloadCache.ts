@@ -87,7 +87,6 @@ export async function cacheOfflineShellAssets(
   for (const path of OFFLINE_SHELL_PATHS) {
     if (await fetchAndCacheWithRetry(path, CACHE_BUNDLE, controller)) insertedCount += 1;
   }
-  if (await cacheRouteDocument("/", controller)) insertedCount += 1;
   return insertedCount;
 }
 

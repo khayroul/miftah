@@ -211,8 +211,8 @@ export function HifzOverview({
 
     openReadPage(
       {
-        actionLabel: "Membuka mod tasmi'",
-        helperText: "Mushaf akan dibuka dengan petunjuk kata pembuka untuk bantu anda menguji hafalan sedia ada.",
+        actionLabel: "Membuka ujian ingatan",
+        helperText: "Mushaf akan dibuka dengan petunjuk kata pembuka untuk bantu anda menguji hafalan sedia ada tanpa semakan suara.",
         pageNumber: page,
       },
       `/read/${page}?mode=hifz&from=hifz&intent=test`,

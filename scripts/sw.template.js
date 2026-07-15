@@ -22,7 +22,6 @@ const AUDIO_CACHE = "miftah-audio-v1";
 const TEMA_DATA_CACHE = "tema-data-v1";
 
 const APP_SHELL_PRECACHE = [
-  "/",
   "/offline.html",
   "/manifest.webmanifest",
   "/pwa-config.json",
@@ -126,12 +125,28 @@ function isTemaRoutePath(pathname) {
   return /^\/read\/surah\/\d+\/themes$/.test(canonicalizePathname(pathname));
 }
 
-function shouldUseNavigationCacheFirst(url) {
+function hasValidTemaChunkQuery(url) {
+  const keys = Array.from(url.searchParams.keys());
+  const chunk = url.searchParams.get("chunk");
   return (
-    url.pathname === "/" ||
-    isReadRoutePath(url.pathname) ||
-    isTemaRoutePath(url.pathname)
+    keys.length === 1 &&
+    keys[0] === "chunk" &&
+    typeof chunk === "string" &&
+    /^[1-9]\d*$/.test(chunk)
   );
+}
+
+function shouldCacheNavigation(url) {
+  // Query-bearing reader URLs carry mode/session state (including Tasmi').
+  // Personalized routes are deliberately network-only. Only the explicit,
+  // offline Quran documents may read/write the navigation caches. Tema's
+  // `chunk` query is safe because it selects client-side data inside one
+  // invariant downloaded shell.
+  if (isReadRoutePath(url.pathname)) return url.search === "";
+  if (isTemaRoutePath(url.pathname)) {
+    return url.search === "" || hasValidTemaChunkQuery(url);
+  }
+  return false;
 }
 
 function normalizeNavigationCacheKey(requestUrl) {
@@ -227,6 +242,7 @@ async function fetchAndCacheNavigation(
   request,
   navigationKey,
   timeoutMs = NAVIGATION_NETWORK_TIMEOUT_MS,
+  shouldCache = true,
 ) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -235,7 +251,13 @@ async function fetchAndCacheNavigation(
     const response = await fetch(request, {
       signal: controller.signal,
     });
-    if (response.ok) {
+    const cacheControl = response.headers.get("cache-control")?.toLowerCase() ?? "";
+    const responseAllowsCaching =
+      response.ok &&
+      !response.redirected &&
+      !cacheControl.includes("private") &&
+      !cacheControl.includes("no-store");
+    if (shouldCache && responseAllowsCaching) {
       const cache = await caches.open(APP_SHELL_CACHE);
       await cache.put(navigationKey, response.clone());
     }
@@ -255,6 +277,20 @@ self.addEventListener("fetch", (event) => {
   // - Reader routes: cache-first + background revalidation for instant page turns
   // - Other routes: network-first with offline fallback
   if (isNavigationRequest(event.request)) {
+    const shouldCache = shouldCacheNavigation(url);
+
+    // Home, Auth, Faham, Hifz, Tasmi', and query-bearing reader flows are
+    // personalized. Never let an old cached document mask their live state.
+    if (!shouldCache) {
+      event.respondWith(
+        fetch(event.request).catch(async () => {
+          const offline = await caches.match("/offline.html");
+          return offline || new Response("Offline", { status: 503 });
+        }),
+      );
+      return;
+    }
+
     event.respondWith(
       (async () => {
         const navigationKeys = buildNavigationCacheKeys(event.request.url);
@@ -273,38 +309,21 @@ self.addEventListener("fetch", (event) => {
           ? NAVIGATION_NETWORK_TIMEOUT_MS
           : NAVIGATION_COLD_NETWORK_TIMEOUT_MS;
 
-        if (shouldUseNavigationCacheFirst(url)) {
-          const networkPromise = fetchAndCacheNavigation(
-            event.request,
-            navigationKey,
-            timeoutMs,
-          );
-
-          if (cached) {
-            event.waitUntil(networkPromise.then(() => undefined));
-            return cached;
-          }
-
-          const networkResponse = await networkPromise;
-          if (networkResponse) {
-            return networkResponse;
-          }
-
-          const offline = await caches.match("/offline.html");
-          return offline || new Response("Offline", { status: 503 });
-        }
-
-        const networkResponse = await fetchAndCacheNavigation(
+        const networkPromise = fetchAndCacheNavigation(
           event.request,
           navigationKey,
           timeoutMs,
+          shouldCache,
         );
-        if (networkResponse) {
-          return networkResponse;
-        }
 
         if (cached) {
+          event.waitUntil(networkPromise.then(() => undefined));
           return cached;
+        }
+
+        const networkResponse = await networkPromise;
+        if (networkResponse) {
+          return networkResponse;
         }
 
         const offline = await caches.match("/offline.html");

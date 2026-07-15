@@ -44,7 +44,7 @@ export function HifzPageActionSheet({ entry, onClose }: HifzPageActionSheetProps
     navigate(`/read/${entry.page}?mode=hifz&from=hifz`);
   }, [entry.page, navigate]);
 
-  const handleTasmi = useCallback(() => {
+  const handleMemoryTest = useCallback(() => {
     navigate(`/read/${entry.page}?mode=hifz&from=hifz&intent=test`);
   }, [entry.page, navigate]);
 
@@ -112,7 +112,7 @@ export function HifzPageActionSheet({ entry, onClose }: HifzPageActionSheetProps
           <button
             type="button"
             disabled={isPending}
-            onClick={handleTasmi}
+            onClick={handleMemoryTest}
             className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-left transition hover:bg-amber-100 disabled:opacity-40 dark:border-amber-800 dark:bg-amber-900/30 dark:hover:bg-amber-900/50"
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white dark:bg-amber-600">
@@ -122,10 +122,10 @@ export function HifzPageActionSheet({ entry, onClose }: HifzPageActionSheetProps
             </div>
             <div>
               <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
-                Tasmi&apos;
+                Uji Ingatan
               </p>
               <p className="text-xs text-amber-700/70 dark:text-amber-300/60">
-                Uji hafalan — baca dari ingatan, atau baca dengan suara dan app semak
+                Uji sendiri tanpa melihat, dengan petunjuk jika anda tersekat
               </p>
             </div>
           </button>

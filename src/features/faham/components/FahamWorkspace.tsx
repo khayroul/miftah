@@ -71,10 +71,12 @@ export function FahamWorkspace({
     isConfigExpanded,
     isHydratingInitialQueue,
     isPending,
+    isRevision,
     masteredCount,
     preset,
     progressPct,
     reloadQueue,
+    refreshStats,
     sessionSummary,
     setIsConfigExpanded,
     setSessionSummary,
@@ -82,6 +84,7 @@ export function FahamWorkspace({
     showCelebration,
     showPreview,
     snapshot,
+    statsStatus,
     syncBadge,
   } = useFahamWorkspaceSession({
     initialPreset,
@@ -175,7 +178,21 @@ export function FahamWorkspace({
         foundCount={foundCount}
         hasLiveStats={hasLiveStats}
         masteredCount={masteredCount}
+        statsStatus={statsStatus}
       />
+
+      {statsStatus === "error" ? (
+        <section className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
+          <p>Statistik Faham tak dapat dimuat. Barisan latihan masih boleh dicuba semula.</p>
+          <button
+            type="button"
+            onClick={() => void refreshStats(false)}
+            className="shrink-0 rounded-xl bg-amber-600 px-4 py-2 font-semibold text-white transition hover:bg-amber-700"
+          >
+            Cuba Statistik Lagi
+          </button>
+        </section>
+      ) : null}
 
       {showPreview && cards.length > 0 ? (
         <FahamQueuePreview
@@ -219,7 +236,7 @@ export function FahamWorkspace({
             Barisan ulang kaji sedang disusun ikut pendedahan dan kad yang due.
           </p>
         </section>
-      ) : showPreview ? null : (
+      ) : cards.length === 0 ? (
         <section className="animate-fade-in-up rounded-3xl border border-stone-200/90 bg-white/88 p-8 text-center shadow-[0_25px_70px_-48px_rgba(28,25,23,0.55)] backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/80">
           <p className="text-2xl font-medium text-stone-900 dark:text-stone-100">
             Belum ada kad Faham buat masa ini.
@@ -228,8 +245,16 @@ export function FahamWorkspace({
             Teruskan membaca atau buka tema dahulu supaya enjin ini mempunyai
             pendedahan yang cukup untuk membuka kad baharu.
           </p>
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => reloadQueue(preset, directionMode, isRevision)}
+            className="mt-5 rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isPending ? "Menyusun Semula..." : "Cuba Susun Semula"}
+          </button>
         </section>
-      )}
+      ) : null}
 
       {isConfigExpanded ? (
         <FahamSourcePicker

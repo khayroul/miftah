@@ -70,7 +70,7 @@ export function HifzFirstRunPanel({
         <PathButton
           active={entryPath === "test"}
           activeClass="border-teal-400 bg-teal-50 text-teal-950 shadow-sm dark:border-teal-500/70 dark:bg-teal-900/25 dark:text-teal-50"
-          description="Buka mod tasmi' pada halaman pilihan tanpa perlu tetapkan pelan penuh dahulu."
+          description="Buka ujian ingatan pada halaman pilihan tanpa perlu tetapkan pelan penuh dahulu."
           inactiveClass="border-stone-200 bg-white/75 text-stone-700 hover:border-teal-200 hover:bg-teal-50/60 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-200 dark:hover:border-teal-500/40 dark:hover:bg-teal-900/15"
           label="Saya mahu uji hafalan sedia ada"
           onClick={() => onEntryPathChange("test")}
@@ -114,7 +114,7 @@ export function HifzFirstRunPanel({
         <PageAction
           accent="teal"
           buttonLabel="Buka Ujian Hafalan"
-          description="Kami akan buka mushaf dalam mod tasmi' dengan petunjuk kata pembuka. Ini sesuai kalau anda mahu semak tahap semasa sebelum tetapkan pelan."
+          description="Kami akan buka mushaf dengan petunjuk kata pembuka. Ini ujian kendiri tanpa semakan suara, sesuai untuk semak tahap semasa sebelum tetapkan pelan."
           disabled={!isValidPageNumber(testPage) || isPending}
           id="test-page"
           onClick={onTest}

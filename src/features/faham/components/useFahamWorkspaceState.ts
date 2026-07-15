@@ -14,6 +14,7 @@ export interface AnswerState {
 }
 
 export type FahamSyncState = "idle" | "syncing" | "offline" | "error";
+export type FahamStatsStatus = "loading" | "ready" | "error" | "unavailable";
 
 export function useFahamWorkspaceState({
   initialQueue,
@@ -33,6 +34,13 @@ export function useFahamWorkspaceState({
   const [isRevision, setIsRevision] = useState(false);
   const [snapshot, setSnapshot] = useState(initialQueue);
   const [stats, setStats] = useState<FahamStats | null>(initialStats);
+  const [statsStatus, setStatsStatus] = useState<FahamStatsStatus>(() =>
+    initialStats
+      ? "ready"
+      : shouldHydrateInitialQueue
+        ? "loading"
+        : "unavailable",
+  );
   const [showCelebration, setShowCelebration] = useState(false);
   const [sessionSummary, setSessionSummary] =
     useState<FahamSessionSummary | null>(null);
@@ -106,8 +114,8 @@ export function useFahamWorkspaceState({
     setDirectionMode, setErrorMessage, setIsConfigExpanded,
     setIsHydratingInitialQueue, setIsRevision, setPendingSyncCount, setPreset,
     setSessionSummary, setShowCelebration, setShowPreview, setSnapshot,
-    setStats, setSyncState, showCelebration, showPreview, snapshot, startTransition,
-    stats, syncBadge, syncPromiseRef,
+    setStats, setStatsStatus, setSyncState, showCelebration, showPreview,
+    snapshot, startTransition, stats, statsStatus, syncBadge, syncPromiseRef,
   };
 }
 

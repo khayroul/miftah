@@ -13,6 +13,7 @@ import type { FahamWorkspaceState } from "./useFahamWorkspaceState";
 export function useFahamStatsController(
   state: FahamWorkspaceState,
   audio: FahamAudioController,
+  shouldFetchInitialStats: boolean,
 ) {
   const applyStats = useCallback(
     (newStats: FahamStats, celebrateMastered: boolean) => {
@@ -27,24 +28,27 @@ export function useFahamStatsController(
       }
       state.prevMasteredRef.current = newStats.mastered;
       state.setStats(newStats);
+      state.setStatsStatus("ready");
     },
     [audio.playFeedbackSound, state.prevMasteredRef, state.setShowCelebration, state.setStats],
   );
 
   const refreshStats = useCallback(
     async (celebrateMastered: boolean) => {
+      state.setStatsStatus("loading");
       try {
         const latest = await requestStats();
         applyStats(latest, celebrateMastered);
         saveCachedFahamStats(latest);
         return latest;
       } catch (error) {
-        console.error(error);
+        console.error("[faham/stats] Failed to refresh workspace stats", error);
         const cached = loadCachedFahamStats();
         if (cached) {
           applyStats(cached.stats, false);
           return cached.stats;
         }
+        state.setStatsStatus("error");
         return null;
       }
     },
@@ -83,8 +87,9 @@ export function useFahamStatsController(
   useEffect(() => {
     // Establish the mastery baseline once. Subsequent refreshes happen only
     // after a completed session or after recovering an offline backlog.
+    if (!shouldFetchInitialStats) return;
     void refreshStats(false);
-  }, [refreshStats]);
+  }, [refreshStats, shouldFetchInitialStats]);
 
   return { applyStats, prefetchTierVocabForWordLimit, refreshStats };
 }

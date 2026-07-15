@@ -2,18 +2,17 @@
 
 /* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps -- shared refs and explicit stable setters preserve the original single-controller lifecycle */
 
-import { useCallback, useEffect } from "react";
-import {
-  loadCachedFahamStats,
-  saveCachedFahamQueue,
-} from "../domain/offlineSync";
+import { useCallback, useEffect, useRef } from "react";
+import { loadCachedFahamStats } from "../domain/offlineSync";
 import { buildOfflineFahamQueueSnapshot } from "../domain/offlineQueue";
 import type { FahamMcqDirectionMode } from "../domain/mcq";
 import type { FahamSourcePreset } from "../domain/presets";
 import {
   countQueueCards,
+  isRestorableFahamQueue,
   loadMatchingCachedQueue,
   requestQueue,
+  saveRestorableCachedQueue,
   type FahamStats,
 } from "./fahamWorkspaceSupport";
 import type { FahamStatsController } from "./useFahamStatsController";
@@ -29,6 +28,11 @@ export function useFahamQueueController(
     shouldHydrateInitialQueue: boolean;
   },
 ) {
+  const levelProgressRef = useRef(state.levelProgress);
+  useEffect(() => {
+    levelProgressRef.current = state.levelProgress;
+  }, [state.levelProgress]);
+
   const resetSessionTracking = useCallback(() => {
     state.sessionCorrectCountRef.current = 0;
   }, [state.sessionCorrectCountRef]);
@@ -52,7 +56,7 @@ export function useFahamQueueController(
         const offline = await buildOfflineFahamQueueSnapshot({
           directionMode: nextDirectionMode,
           isRevision: nextIsRevision,
-          levelProgressHint: state.levelProgress,
+          levelProgressHint: levelProgressRef.current,
           preset: nextPreset,
         });
         if (offline && countQueueCards(offline) > 0)
@@ -60,7 +64,7 @@ export function useFahamQueueController(
         throw error;
       }
     },
-    [state.levelProgress],
+    [levelProgressRef],
   );
 
   const restoreCachedQueue = useCallback(
@@ -107,7 +111,7 @@ export function useFahamQueueController(
         nextIsRevision,
       )
         .then(({ snapshot, source }) => {
-          saveCachedFahamQueue({
+          saveRestorableCachedQueue({
             directionMode: nextDirectionMode,
             isRevision: nextIsRevision,
             preset: nextPreset,
@@ -145,13 +149,27 @@ export function useFahamQueueController(
   };
 
   useEffect(() => {
-    saveCachedFahamQueue({
+    if (
+      !initial.shouldHydrateInitialQueue ||
+      state.isHydratingInitialQueue ||
+      !isRestorableFahamQueue(state.snapshot)
+    ) {
+      return;
+    }
+    saveRestorableCachedQueue({
       directionMode: state.directionMode,
       isRevision: state.isRevision,
       preset: state.preset,
       snapshot: state.snapshot,
     });
-  }, [state.directionMode, state.isRevision, state.preset, state.snapshot]);
+  }, [
+    initial.shouldHydrateInitialQueue,
+    state.directionMode,
+    state.isHydratingInitialQueue,
+    state.isRevision,
+    state.preset,
+    state.snapshot,
+  ]);
 
   useEffect(() => {
     if (!initial.shouldHydrateInitialQueue) return;
@@ -205,7 +223,7 @@ export function useFahamQueueController(
         )
           .then(({ snapshot, source }) => {
             if (cancelled) return;
-            saveCachedFahamQueue({
+            saveRestorableCachedQueue({
               directionMode: "arab_to_bm",
               isRevision: false,
               preset: initial.initialPreset,

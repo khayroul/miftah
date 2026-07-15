@@ -10,6 +10,10 @@ import {
   saveCachedFahamQueue,
   saveCachedFahamStats,
 } from "./offlineSync";
+import {
+  isRestorableFahamQueue,
+  saveRestorableCachedQueue,
+} from "../components/fahamWorkspaceSupport";
 
 function createStorageMock(): Storage {
   const store = new Map<string, string>();
@@ -208,6 +212,39 @@ test("saveCachedFahamQueue keeps synthetic offline cards with negative progress 
   const cached = loadCachedFahamQueue();
   assert.ok(cached);
   assert.equal(cached?.snapshot.new[0]?.progressId, -1);
+});
+
+test("Faham bootstrap ignores empty and signed-out preview queue snapshots", () => {
+  assert.equal(isRestorableFahamQueue(buildSnapshot()), false);
+
+  const offlineCard = buildCard(-1);
+  assert.equal(isRestorableFahamQueue(buildSnapshot([offlineCard])), true);
+
+  const previewCard = {
+    ...offlineCard,
+    word: { ...offlineCard.word, id: -1 },
+  };
+  assert.equal(isRestorableFahamQueue(buildSnapshot([previewCard])), false);
+});
+
+test("an empty server snapshot cannot overwrite a usable cached Faham deck", () => {
+  const usable = buildSnapshot([buildCard(41)]);
+  saveCachedFahamQueue({
+    directionMode: "arab_to_bm",
+    isRevision: false,
+    preset: "mixed",
+    snapshot: usable,
+  });
+
+  const saved = saveRestorableCachedQueue({
+    directionMode: "arab_to_bm",
+    isRevision: false,
+    preset: "mixed",
+    snapshot: buildSnapshot(),
+  });
+
+  assert.equal(saved, false);
+  assert.deepEqual(loadCachedFahamQueue()?.snapshot, usable);
 });
 
 test("saveCachedFahamStats round-trips stats and ignores malformed payload", () => {

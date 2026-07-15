@@ -5,11 +5,11 @@
 import { useCallback, useEffect } from "react";
 import type { FsrsRating } from "@/shared/types/database";
 import { enqueuePendingFahamRating } from "../domain/offlineSync";
-import { saveCachedFahamQueue } from "../domain/offlineSync";
 import {
   CORRECT_ADVANCE_CONFIGS,
   type FahamCorrectAdvanceMode,
 } from "./fahamWorkspaceConfig";
+import { saveRestorableCachedQueue } from "./fahamWorkspaceSupport";
 import type { FahamAudioController } from "./useFahamAudioController";
 import type { FahamQueueController } from "./useFahamQueueController";
 import type { FahamStatsController } from "./useFahamStatsController";
@@ -49,7 +49,7 @@ export function useFahamSessionController(
         state.directionMode,
         state.isRevision,
       );
-      saveCachedFahamQueue({
+      saveRestorableCachedQueue({
         directionMode: state.directionMode,
         isRevision: state.isRevision,
         preset: state.preset,

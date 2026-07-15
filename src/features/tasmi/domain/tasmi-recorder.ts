@@ -47,14 +47,17 @@ export class TasmiRecorder {
   private silenceTimer: ReturnType<typeof setTimeout> | null = null;
   private config: RecorderConfig;
   private isListening: boolean = false;
+  private startAttempt = 0;
 
   constructor(config: RecorderConfig) {
     this.config = config;
   }
 
-  async start(): Promise<void> {
+  async start(): Promise<boolean> {
+    const attempt = ++this.startAttempt;
+    let createdVad: MicVAD | null = null;
     try {
-      this.vad = await MicVAD.new({
+      createdVad = await MicVAD.new({
         model: 'v5',
         baseAssetPath: '/',
         onnxWASMBasePath: '/',
@@ -73,20 +76,39 @@ export class TasmiRecorder {
         },
       });
 
-      this.vad.start();
+      if (attempt !== this.startAttempt) {
+        await this.destroyVad(createdVad, "cancelled microphone start");
+        return false;
+      }
+
+      this.vad = createdVad;
+      await createdVad.start();
+      if (attempt !== this.startAttempt || this.vad !== createdVad) return false;
       this.isListening = true;
       this.startSilenceTimer();
+      return true;
     } catch (err) {
+      this.isListening = false;
+      this.clearSilenceTimer();
+      const ownsCreatedVad = createdVad !== null && this.vad === createdVad;
+      if (ownsCreatedVad) this.vad = null;
+      if (ownsCreatedVad && createdVad) {
+        await this.destroyVad(createdVad, "failed microphone start");
+      }
+      if (attempt !== this.startAttempt) return false;
       this.config.onError(classifyMicError(err));
+      return false;
     }
   }
 
   stop(): void {
+    this.startAttempt += 1;
     this.isListening = false;
     this.clearSilenceTimer();
     if (this.vad) {
-      this.vad.destroy();
+      const vad = this.vad;
       this.vad = null;
+      void this.destroyVad(vad, "stop microphone");
     }
   }
 
@@ -97,7 +119,9 @@ export class TasmiRecorder {
     this.isListening = false;
     this.clearSilenceTimer();
     if (this.vad) {
-      this.vad.pause();
+      void this.vad.pause().catch((error: unknown) => {
+        console.error("[tasmi/recorder] Failed to pause microphone", error);
+      });
     }
   }
 
@@ -105,11 +129,27 @@ export class TasmiRecorder {
    * Resume listening after pause.
    */
   resume(): void {
+    const vad = this.vad;
+    if (!vad) return;
     this.isListening = true;
-    if (this.vad) {
-      this.vad.start();
+    void vad.start()
+      .then(() => {
+        if (this.isListening && this.vad === vad) this.startSilenceTimer();
+      })
+      .catch((error: unknown) => {
+        if (this.vad !== vad) return;
+        this.isListening = false;
+        this.clearSilenceTimer();
+        this.config.onError(classifyMicError(error));
+      });
+  }
+
+  private async destroyVad(vad: MicVAD, action: string): Promise<void> {
+    try {
+      await vad.destroy();
+    } catch (error) {
+      console.error(`[tasmi/recorder] Failed to ${action}`, error);
     }
-    this.startSilenceTimer();
   }
 
   private startSilenceTimer(): void {

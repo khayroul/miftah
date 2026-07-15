@@ -370,9 +370,10 @@ export function TasmiSessionUI({
       talqin.loadFromRawData(alignData);
     }
 
-    session.start();
-    await recorder.start();
+    const recorderStarted = await recorder.start();
     if (cancelledRef.current) { teardown(); return; }
+    if (!recorderStarted) { teardown(); return; }
+    session.start();
 
     // Mode B: read the test ayah aloud first (mic stays granted but paused),
     // then the shared onPlaybackEnd resumes the recorder into listening.

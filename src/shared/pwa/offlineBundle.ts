@@ -6,7 +6,7 @@ export const CACHE_BUNDLE = "miftah-offline-bundle-v1";
 export const TOTAL_PAGES = 604;
 export const TOTAL_TEMA_ENTRIES = 114;
 export const TOTAL_DATA_ENTRIES = TOTAL_PAGES * 3;
-export const TOTAL_ROUTE_ENTRIES = 1 + TOTAL_PAGES + TOTAL_TEMA_ENTRIES;
+export const TOTAL_ROUTE_ENTRIES = TOTAL_PAGES + TOTAL_TEMA_ENTRIES;
 export const TOTAL_FONT_ENTRIES = TOTAL_PAGES + 2;
 
 export const OFFLINE_SHELL_PATHS = [

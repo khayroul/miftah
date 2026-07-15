@@ -131,7 +131,7 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
                   </div>
                 ) : hifzIntent === "test" ? (
                   <div className="inline-flex items-center rounded-full border border-indigo-300 bg-indigo-50 px-3 py-1 text-xs font-semibold tracking-wide text-indigo-900 dark:border-indigo-700/50 dark:bg-indigo-900/30 dark:text-indigo-100">
-                    UJI HAFALAN · Tasmi&apos; + petunjuk kata pertama
+                    UJI INGATAN · Petunjuk kata pertama
                   </div>
                 ) : null}
                 {!hifzFlow && hifzIntent === "new" ? (

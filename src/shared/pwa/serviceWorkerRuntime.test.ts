@@ -195,7 +195,7 @@ describe("rendered service-worker navigation timeouts", () => {
     });
 
     const response = await runtime.dispatchFetch(
-      navigationRequest("https://miftah.test/faham"),
+      navigationRequest("https://miftah.test/read/1"),
     );
 
     assert.equal(await response.text(), "fresh page");
@@ -212,9 +212,9 @@ describe("rendered service-worker navigation timeouts", () => {
       fetch: async () => new Response("network shell", { status: 200 }),
     });
 
-    // "/" is a cache-first navigation route.
+    // A queryless reader document is an explicit offline cache route.
     const response = await runtime.dispatchFetch(
-      navigationRequest("https://miftah.test/"),
+      navigationRequest("https://miftah.test/read/1"),
     );
 
     assert.equal(await response.text(), "cached shell");
@@ -222,6 +222,81 @@ describe("rendered service-worker navigation timeouts", () => {
     // short-circuit budget.
     assert.ok(runtime.setTimeoutDelays.includes(2500));
     assert.ok(!runtime.setTimeoutDelays.includes(20000));
+  });
+
+  it("never serves cached personalized or query-bearing navigation documents", async () => {
+    const networkOnlyUrls = [
+      "https://miftah.test/",
+      "https://miftah.test/faham",
+      "https://miftah.test/hifz",
+      "https://miftah.test/tasmi/juzuk",
+      "https://miftah.test/auth/sign-in?next=%2Ftasmi%2Fjuzuk",
+      "https://miftah.test/read/1?flow=review&qi=0",
+      "https://miftah.test/read/surah/2/themes?chunk=abc",
+      "https://miftah.test/read/surah/2/themes?chunk=3&mode=private",
+    ];
+
+    for (const url of networkOnlyUrls) {
+      const runtime = createRenderedWorkerRuntime({
+        cacheMatch: async () => new Response("stale private page", { status: 200 }),
+        fetch: async () => new Response(`fresh:${url}`, { status: 200 }),
+      });
+
+      const response = await runtime.dispatchFetch(navigationRequest(url));
+
+      assert.equal(await response.text(), `fresh:${url}`);
+      assert.equal(runtime.cachePutCalls.length, 0);
+      assert.ok(!runtime.setTimeoutDelays.includes(2500));
+      assert.ok(!runtime.setTimeoutDelays.includes(20000));
+    }
+  });
+
+  it("serves a downloaded Tema shell for a valid offline chunk selection", async () => {
+    const runtime = createRenderedWorkerRuntime({
+      cacheMatch: async () => new Response("downloaded Tema shell", { status: 200 }),
+      fetch: async () => {
+        throw new TypeError("offline");
+      },
+    });
+
+    const response = await runtime.dispatchFetch(
+      navigationRequest("https://miftah.test/read/surah/2/themes?chunk=3"),
+    );
+
+    assert.equal(await response.text(), "downloaded Tema shell");
+    assert.ok(runtime.setTimeoutDelays.includes(2500));
+  });
+
+  it("does not cache a queryless reader response marked private and no-store", async () => {
+    const runtime = createRenderedWorkerRuntime({
+      fetch: async () =>
+        new Response("private reader", {
+          headers: { "Cache-Control": "private, no-store" },
+          status: 200,
+        }),
+    });
+
+    const response = await runtime.dispatchFetch(
+      navigationRequest("https://miftah.test/read/2"),
+    );
+
+    assert.equal(await response.text(), "private reader");
+    assert.equal(runtime.cachePutCalls.length, 0);
+  });
+
+  it("does not cache a followed redirect under the original reader URL", async () => {
+    const redirectedResponse = new Response("sign in", { status: 200 });
+    Object.defineProperty(redirectedResponse, "redirected", { value: true });
+    const runtime = createRenderedWorkerRuntime({
+      fetch: async () => redirectedResponse,
+    });
+
+    const response = await runtime.dispatchFetch(
+      navigationRequest("https://miftah.test/read/3"),
+    );
+
+    assert.equal(await response.text(), "sign in");
+    assert.equal(runtime.cachePutCalls.length, 0);
   });
 });
 

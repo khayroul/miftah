@@ -30,7 +30,11 @@ export function useFahamWorkspaceSession({
     shouldHydrateInitialQueue,
   });
   const audio = useFahamAudioController(state);
-  const stats = useFahamStatsController(state, audio);
+  const stats = useFahamStatsController(
+    state,
+    audio,
+    shouldHydrateInitialQueue,
+  );
   const sync = useFahamSyncController(state, stats);
   const queue = useFahamQueueController(state, stats, {
     initialPreset,
@@ -66,6 +70,7 @@ export function useFahamWorkspaceSession({
     isConfigExpanded: state.isConfigExpanded,
     isHydratingInitialQueue: state.isHydratingInitialQueue,
     isPending: state.isPending,
+    isRevision: state.isRevision,
     masteredCount: state.masteredCount,
     preset: state.preset,
     progressPct:
@@ -73,6 +78,7 @@ export function useFahamWorkspaceSession({
         ? ((state.currentIndex + 1) / state.cards.length) * 100
         : 0,
     reloadQueue: queue.reloadQueue,
+    refreshStats: stats.refreshStats,
     sessionSummary: state.sessionSummary,
     setIsConfigExpanded: state.setIsConfigExpanded,
     setSessionSummary: state.setSessionSummary,
@@ -80,6 +86,7 @@ export function useFahamWorkspaceSession({
     showCelebration: state.showCelebration,
     showPreview: state.showPreview,
     snapshot: state.snapshot,
+    statsStatus: state.statsStatus,
     syncBadge: state.syncBadge,
   };
 }

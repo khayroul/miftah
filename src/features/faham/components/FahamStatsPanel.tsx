@@ -1,5 +1,16 @@
-function formatMetricValue(value: number | null): string {
-  return value === null ? "..." : value.toLocaleString();
+import type { FahamStatsStatus } from "./useFahamWorkspaceState";
+
+function formatMetricValue(value: number): string {
+  return value.toLocaleString();
+}
+
+function metricValue(
+  value: number,
+  hasLiveStats: boolean,
+  statsStatus: FahamStatsStatus,
+): string {
+  if (hasLiveStats) return formatMetricValue(value);
+  return statsStatus === "loading" ? "..." : "—";
 }
 
 export function FahamStatsPanel({
@@ -7,11 +18,13 @@ export function FahamStatsPanel({
   foundCount,
   hasLiveStats,
   masteredCount,
+  statsStatus,
 }: {
   foundCap: number;
   foundCount: number;
   hasLiveStats: boolean;
   masteredCount: number;
+  statsStatus: FahamStatsStatus;
 }) {
   const foundShare = foundCap > 0 ? Math.min(1, foundCount / foundCap) : 0;
   const masteredShare =
@@ -27,7 +40,7 @@ export function FahamStatsPanel({
             ? `${formatMetricValue(foundCount)}/${formatMetricValue(foundCap)} cap`
             : "Tiada cap"
         }
-        value={formatMetricValue(hasLiveStats ? foundCount : null)}
+        value={metricValue(foundCount, hasLiveStats, statsStatus)}
       />
       <MotivationMetricCard
         label="Dikuasai"
@@ -37,7 +50,7 @@ export function FahamStatsPanel({
             ? `${formatMetricValue(masteredCount)}/${formatMetricValue(foundCount)} ditemui`
             : "Belum mula"
         }
-        value={formatMetricValue(hasLiveStats ? masteredCount : null)}
+        value={metricValue(masteredCount, hasLiveStats, statsStatus)}
       />
     </section>
   );
