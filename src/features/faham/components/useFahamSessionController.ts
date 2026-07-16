@@ -9,6 +9,12 @@ import {
   CORRECT_ADVANCE_CONFIGS,
   type FahamCorrectAdvanceMode,
 } from "./fahamWorkspaceConfig";
+import {
+  beginFahamRetry,
+  fahamRatingForAnswer,
+  recordFahamAnswer,
+  revealFahamAnswer,
+} from "./fahamAnswerFlow";
 import { saveRestorableCachedQueue } from "./fahamWorkspaceSupport";
 import type { FahamAudioController } from "./useFahamAudioController";
 import type { FahamQueueController } from "./useFahamQueueController";
@@ -111,11 +117,49 @@ export function useFahamSessionController(
   ]);
 
   const handleAnswer = (selectedIndex: number) => {
-    if (!state.currentCard || state.answerState || state.isPending) return;
+    const retrying = state.answerState?.phase === "retry";
+    if (
+      !state.currentCard ||
+      (state.answerState && !retrying) ||
+      state.isPending
+    ) {
+      return;
+    }
     const isCorrect = selectedIndex === state.currentCard.mcq.correctIndex;
-    if (isCorrect) state.sessionCorrectCountRef.current += 1;
-    state.setAnswerState({ isCorrect, selectedIndex });
+    const result = recordFahamAnswer({
+      current: state.answerState,
+      isCorrect,
+      selectedIndex,
+    });
+    if (result.shouldIncrementCorrectCount) {
+      state.sessionCorrectCountRef.current += 1;
+    }
+    state.setAnswerState(result.answerState);
     audio.playFeedbackSound(isCorrect ? "correct" : "incorrect");
+  };
+
+  const handleRetry = () => {
+    const retryState = beginFahamRetry(state.answerState);
+    if (!retryState) {
+      return;
+    }
+    state.setAnswerState(retryState);
+    if (state.currentCard) {
+      audio.playWordAudio({
+        autoplayKey: `retry:${state.currentCard.progressId}:2`,
+        explicitUrl: state.currentCard.mcq.promptAudioUrl,
+        lang: state.currentCard.mcq.promptLang,
+        text: state.currentCard.mcq.promptPrimary,
+      });
+    }
+  };
+
+  const handleRevealAnswer = () => {
+    const revealedState = revealFahamAnswer(state.answerState);
+    if (!revealedState) {
+      return;
+    }
+    state.setAnswerState(revealedState);
   };
 
   const handleCorrectAdvanceModeChange = (mode: FahamCorrectAdvanceMode) => {
@@ -127,9 +171,8 @@ export function useFahamSessionController(
     if (!state.currentCard || !state.answerState) return;
     if (state.isAdvancingRef.current) return;
     state.isAdvancingRef.current = true;
-    const rating: Extract<FsrsRating, 1 | 3> = state.answerState.isCorrect
-      ? 3
-      : 1;
+    const rating: Extract<FsrsRating, 1 | 3> =
+      fahamRatingForAnswer(state.answerState);
     if (state.currentCard.progressId > 0 || state.currentCard.word.id > 0) {
       const pending = enqueuePendingFahamRating({
         progressId:
@@ -171,11 +214,17 @@ export function useFahamSessionController(
   ]);
 
   useEffect(() => {
-    if (!state.answerState) state.isAdvancingRef.current = false;
+    if (!state.answerState || state.answerState.phase === "retry") {
+      state.isAdvancingRef.current = false;
+    }
   }, [state.answerState, state.isAdvancingRef]);
 
   useEffect(() => {
-    if (state.currentCard && !state.answerState && !state.sessionSummary)
+    if (
+      state.currentCard &&
+      !state.answerState &&
+      !state.sessionSummary
+    )
       audio.playWordAudio({
         autoplayKey: `prompt:${state.currentCard.progressId}`,
         explicitUrl: state.currentCard.mcq.promptAudioUrl,
@@ -185,7 +234,14 @@ export function useFahamSessionController(
   }, [audio.playWordAudio, state.answerState, state.currentCard, state.sessionSummary]);
 
   useEffect(() => {
-    if (!state.currentCard || !state.answerState) return;
+    if (
+      !state.currentCard ||
+      !state.answerState ||
+      state.answerState.phase !== "feedback" ||
+      !state.answerState.revealAnswer
+    ) {
+      return;
+    }
     const lang =
       state.currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms";
     audio.playWordAudio({
@@ -194,7 +250,12 @@ export function useFahamSessionController(
       lang,
       text: state.currentCard.mcq.answerPrimary,
     });
-    if (!state.answerState.isCorrect) return;
+    if (
+      !state.answerState.initialIsCorrect ||
+      state.answerState.attemptCount !== 1
+    ) {
+      return;
+    }
     const delay = CORRECT_ADVANCE_CONFIGS[state.correctAdvanceMode].delayMs;
     if (delay === null) return;
     const timer = setTimeout(handleContinue, delay);
@@ -225,5 +286,7 @@ export function useFahamSessionController(
     handleAnswer,
     handleContinue,
     handleCorrectAdvanceModeChange,
+    handleRetry,
+    handleRevealAnswer,
   };
 }

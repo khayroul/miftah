@@ -86,7 +86,7 @@ export function AuthStatusButton() {
         href={buildSignInPath(nextPath)}
         className="inline-flex min-h-11 items-center rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 shadow-sm transition hover:bg-amber-100 dark:border-amber-700/50 dark:bg-amber-900/25 dark:text-amber-100 dark:hover:bg-amber-900/40"
       >
-        Sign In
+        Log masuk
       </Link>
     );
   }
@@ -95,7 +95,7 @@ export function AuthStatusButton() {
     typeof user.user_metadata?.display_name === "string" &&
     user.user_metadata.display_name.trim().length > 0
       ? user.user_metadata.display_name.trim()
-      : user.email?.split("@")[0] ?? "User";
+      : user.email?.split("@")[0] ?? "Pengguna";
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
@@ -111,7 +111,7 @@ export function AuthStatusButton() {
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-900 text-xs font-semibold text-stone-50 dark:bg-stone-100 dark:text-stone-900">
           {initial}
         </span>
-        <span>{isPending ? "Signing out..." : "Signed in"}</span>
+        <span>{isPending ? "Sedang log keluar..." : "Telah log masuk"}</span>
         <svg
           className={`h-4 w-4 transition ${menuOpen ? "rotate-180" : ""}`}
           viewBox="0 0 20 20"
@@ -155,7 +155,7 @@ export function AuthStatusButton() {
             }}
             className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 disabled:opacity-60 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
           >
-            {isPending ? "Signing out..." : "Sign Out"}
+            {isPending ? "Sedang log keluar..." : "Log keluar"}
           </button>
         </div>
       ) : null}

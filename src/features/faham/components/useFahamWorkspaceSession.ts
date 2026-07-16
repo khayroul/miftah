@@ -65,6 +65,8 @@ export function useFahamWorkspaceSession({
     handleContinue: session.handleContinue,
     handleCorrectAdvanceModeChange: session.handleCorrectAdvanceModeChange,
     handleManualAudio: audio.handleManualAudio,
+    handleRetry: session.handleRetry,
+    handleRevealAnswer: session.handleRevealAnswer,
     handleToggleAudio: audio.handleToggleAudio,
     hasLiveStats: state.stats !== null,
     isConfigExpanded: state.isConfigExpanded,

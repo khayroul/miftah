@@ -273,7 +273,7 @@ export function HomeDashboardClient({
       title: "Hafal",
       tone: "stone",
       href: "/hifz",
-      buttonLabel: "Buka Hafal Plan",
+      buttonLabel: "Buka Pelan Hafal",
       detail: snapshot.hifz?.nextPageLabel
         ? `Rujukan seterusnya: ${snapshot.hifz.nextPageLabel}`
         : "Belum ada rujukan seterusnya untuk hari ini.",

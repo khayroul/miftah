@@ -65,8 +65,8 @@ export function HifzTasmiOverlay({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="absolute inset-0 z-30 cursor-pointer touch-none focus:outline-none"
-      aria-label="Leret ke bawah untuk buka, ke atas untuk tutup"
+      className="absolute inset-0 z-30 cursor-pointer touch-none rounded-2xl focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-teal-500"
+      aria-label="Leret ke bawah atau ketik untuk membuka teks. Leret ke atas untuk menutup semula."
     >
       {/* Dark overlay — shrinks from top as lines are revealed */}
       <div
@@ -106,7 +106,7 @@ export function HifzTasmiOverlay({
             </svg>
           </div>
           <p className="text-lg font-semibold text-white/90">
-            Leret ke bawah atau klik untuk buka
+            Leret ke bawah atau ketik untuk buka
           </p>
           <p className="text-sm text-white/60">
             Baca dari ingatan, kemudian semak

@@ -1,6 +1,7 @@
 import type { SerializedFahamCard } from "../domain/queue";
 
 function cardKindConfig(kind: SerializedFahamCard["kind"]): {
+  description: string;
   label: string;
   classes: string;
   rowClasses: string;
@@ -9,6 +10,7 @@ function cardKindConfig(kind: SerializedFahamCard["kind"]): {
   switch (kind) {
     case "mastered":
       return {
+        description: "Semak semula untuk kekalkan ingatan",
         label: "Mahir",
         classes:
           "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-300",
@@ -19,6 +21,7 @@ function cardKindConfig(kind: SerializedFahamCard["kind"]): {
       };
     case "due":
       return {
+        description: "Sudah sampai masa untuk diulang",
         label: "Ulang",
         classes:
           "bg-sky-100 text-sky-700 dark:bg-sky-400/20 dark:text-sky-300",
@@ -29,6 +32,7 @@ function cardKindConfig(kind: SerializedFahamCard["kind"]): {
       };
     case "new":
       return {
+        description: "Diuji buat kali pertama",
         label: "Baharu",
         classes:
           "bg-violet-100 text-violet-700 dark:bg-violet-400/20 dark:text-violet-300",
@@ -54,32 +58,51 @@ export function FahamQueuePreview({
   ).length;
 
   return (
-    <section className="animate-fade-in-up rounded-[2rem] border border-stone-200/90 bg-white/88 p-5 shadow-[0_30px_80px_-52px_rgba(41,37,36,0.65)] backdrop-blur-sm sm:p-7 dark:border-stone-700 dark:bg-stone-900/80">
-      <h3 className="mb-1 text-lg font-semibold text-stone-800 dark:text-stone-100">
-        Kad Sesi Ini
-      </h3>
-      <div className="mb-4 flex gap-3 text-xs font-medium">
-        {newCount > 0 ? (
-          <span className="text-violet-600 dark:text-violet-300">
-            {newCount} Baharu
-          </span>
-        ) : null}
-        {dueCount > 0 ? (
-          <span className="text-sky-600 dark:text-sky-300">
-            {dueCount} Ulang
-          </span>
-        ) : null}
-        {masteredCount > 0 ? (
-          <span className="text-emerald-600 dark:text-emerald-300">
-            {masteredCount} Mahir
-          </span>
-        ) : null}
+    <section
+      aria-labelledby="faham-preview-title"
+      className="ui-surface animate-fade-in-up rounded-[2rem] p-5 sm:p-7"
+    >
+      <div className="flex flex-col gap-4 border-b border-border-subtle pb-5 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="ui-eyebrow">Sedia</p>
+          <h3
+            id="faham-preview-title"
+            className="mt-2 text-xl font-semibold text-foreground"
+          >
+            {cards.length} kad untuk sesi ini
+          </h3>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
+            Jawapan disembunyikan supaya cubaan pertama benar-benar menguji
+            ingatan anda.
+          </p>
+        </div>
+        <div
+          aria-label="Ringkasan jenis kad"
+          className="flex flex-wrap gap-2 text-xs font-semibold"
+        >
+          {newCount > 0 ? (
+            <span className="rounded-full bg-violet-100 px-3 py-1.5 text-violet-700 dark:bg-violet-400/20 dark:text-violet-200">
+              {newCount} baharu
+            </span>
+          ) : null}
+          {dueCount > 0 ? (
+            <span className="rounded-full bg-sky-100 px-3 py-1.5 text-sky-700 dark:bg-sky-400/20 dark:text-sky-200">
+              {dueCount} ulang
+            </span>
+          ) : null}
+          {masteredCount > 0 ? (
+            <span className="rounded-full bg-emerald-100 px-3 py-1.5 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-200">
+              {masteredCount} mahir
+            </span>
+          ) : null}
+        </div>
       </div>
-      <div className="space-y-2.5">
+      <ol className="mt-5 space-y-2.5">
         {cards.map((card, index) => {
           const statusConfig = cardKindConfig(card.kind);
+          const reference = card.sourceContext?.primaryReference?.label;
           return (
-            <div
+            <li
               key={card.progressId}
               className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 ${statusConfig.rowClasses}`}
             >
@@ -88,35 +111,30 @@ export function FahamQueuePreview({
               >
                 {index + 1}
               </span>
-              <span
-                dir="rtl"
-                lang="ar"
-                className="min-w-[3rem] font-arabic text-xl text-stone-900 dark:text-stone-50"
-              >
-                {card.word.textUthmani}
-              </span>
-              <span className="text-stone-400 dark:text-stone-600">
-                &mdash;
-              </span>
-              <span className="flex-1 text-sm text-stone-600 dark:text-stone-200">
-                {card.word.translationBm}
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-stone-800 dark:text-stone-100">
+                  {statusConfig.description}
+                </span>
+                <span className="mt-0.5 block text-xs text-stone-500 dark:text-stone-400">
+                  {reference ? `Daripada ayat ${reference}` : "Sumber campuran"}
+                </span>
               </span>
               <span
                 className={`shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider ${statusConfig.classes}`}
               >
                 {statusConfig.label}
               </span>
-            </div>
+            </li>
           );
         })}
-      </div>
-      <div className="mt-6 border-t border-stone-200/60 pt-5 dark:border-stone-700/40">
+      </ol>
+      <div className="mt-6 border-t border-border-subtle pt-5">
         <button
           type="button"
           onClick={onStart}
-          className="w-full rounded-2xl bg-[linear-gradient(135deg,#0d9488,#6366f1)] px-6 py-4 text-lg font-bold tracking-wide text-white shadow-lg transition hover:shadow-xl hover:brightness-110 active:scale-[0.98] dark:bg-[linear-gradient(135deg,#0f766e,#4f46e5)] dark:text-white"
+          className="ui-touch-target w-full touch-manipulation rounded-2xl bg-brand px-6 py-4 text-base font-bold text-white shadow-sm transition-colors hover:bg-brand-strong active:bg-brand-strong dark:text-slate-950"
         >
-          Mula Sesi &rarr;
+          Mula cubaan pertama
         </button>
       </div>
     </section>

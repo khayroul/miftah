@@ -101,14 +101,13 @@ export function TasmiJuzukExam() {
   // ---------- Setup card ----------
   if (!round) {
     return (
-      <div className="flex flex-col items-center gap-5 rounded-2xl bg-stone-50 p-6 dark:bg-stone-800/50">
-        <p className="text-sm font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+      <div className="ui-surface-solid flex flex-col items-center gap-5 rounded-3xl p-5 sm:p-6">
+        <p className="ui-eyebrow">
           Ujian Juzuk — Tasmi&apos;
         </p>
-        <p className="max-w-sm text-center text-sm text-stone-600 dark:text-stone-300">
-          App akan bacakan <span className="font-medium">satu ayat ujian secara rawak</span> daripada
-          juzuk pilihan anda. Sambung bacaan dari ayat itu sehingga habis halaman, kemudian tekan
-          seterusnya untuk ayat ujian yang baharu.
+        <p className="max-w-sm text-center text-sm leading-6 text-muted">
+          Saya akan bacakan <span className="font-semibold text-foreground">satu ayat permulaan secara rawak</span> daripada
+          juzuk pilihan anda. Sambung bacaan sehingga habis halaman.
         </p>
 
         {errorMsg ? (
@@ -117,12 +116,12 @@ export function TasmiJuzukExam() {
           </p>
         ) : null}
 
-        <label className="flex items-center gap-3 text-sm text-stone-700 dark:text-stone-200">
-          Juzuk
+        <label className="flex w-full max-w-sm items-center justify-between gap-3 text-sm font-semibold text-foreground">
+          Pilih juzuk
           <select
             value={juz}
             onChange={e => setJuz(Number(e.target.value))}
-            className="rounded-lg border border-stone-300 bg-white px-3 py-2 dark:border-stone-600 dark:bg-stone-800"
+            className="ui-touch-target cursor-pointer rounded-xl border border-border-strong bg-surface-solid px-3 py-2 text-foreground"
           >
             {JUZ_OPTIONS.map(j => (
               <option key={j} value={j}>Juzuk {j}</option>
@@ -130,46 +129,52 @@ export function TasmiJuzukExam() {
           </select>
         </label>
 
-        <fieldset className="flex gap-2">
-          <legend className="sr-only">Mod sesi</legend>
-          <button
-            type="button"
-            onClick={() => setMode("exam")}
-            aria-pressed={mode === "exam"}
-            className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
-              mode === "exam"
-                ? "bg-teal-600 text-white"
-                : "border border-stone-300 bg-white text-stone-700 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
-            }`}
-          >
-            Mod Ujian
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("practice")}
-            aria-pressed={mode === "practice"}
-            className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
-              mode === "practice"
-                ? "bg-teal-600 text-white"
-                : "border border-stone-300 bg-white text-stone-700 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
-            }`}
-          >
-            Mod Latihan
-          </button>
+        <fieldset className="w-full max-w-sm">
+          <legend className="mb-2 text-sm font-semibold text-foreground">Pilih cara sesi</legend>
+          <div className="grid grid-cols-2 gap-2 rounded-2xl bg-surface-muted p-1.5">
+            <button
+              type="button"
+              onClick={() => setMode("exam")}
+              aria-pressed={mode === "exam"}
+              className={`ui-touch-target cursor-pointer rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
+                mode === "exam"
+                  ? "bg-teal-600 text-white"
+                  : "text-muted hover:bg-surface-solid"
+              }`}
+            >
+              Ujian
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("practice")}
+              aria-pressed={mode === "practice"}
+              className={`ui-touch-target cursor-pointer rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
+                mode === "practice"
+                  ? "bg-teal-600 text-white"
+                  : "text-muted hover:bg-surface-solid"
+              }`}
+            >
+              Latihan
+            </button>
+          </div>
         </fieldset>
-        <p className="text-xs text-stone-500 dark:text-stone-400">
+        <div className="w-full max-w-sm rounded-2xl border border-border-subtle bg-surface px-4 py-3 text-sm leading-6 text-muted">
           {mode === "exam"
-            ? "Ujian: app kekal senyap jika tersilap — kesilapan dicatat, tiada bantuan."
-            : "Latihan: app bacakan perkataan panduan (talqin) bila anda tersekat."}
-        </p>
+            ? "Ujian: teks, tanda kesilapan dan talqin disembunyikan sehingga sesi tamat."
+            : "Latihan: teks diikuti secara langsung dan saya beri talqin apabila anda tersekat."}
+        </div>
 
         <button
           type="button"
           onClick={() => void fetchRound(juz)}
           disabled={loading}
-          className="rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:opacity-60"
+          className="ui-touch-target w-full max-w-sm cursor-pointer rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? "Menyediakan..." : "Mula Ujian"}
+          {loading
+            ? "Menyediakan..."
+            : mode === "exam"
+              ? "Mula Ujian"
+              : "Mula Latihan"}
         </button>
       </div>
     );
@@ -178,8 +183,9 @@ export function TasmiJuzukExam() {
   // ---------- Exam round ----------
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-center text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400">
-        Juzuk {juz} · Halaman {round.pageNumber} · Ayat ujian {round.surahNumber}:{round.startAyah}
+      <p className="ui-eyebrow text-center">
+        Juzuk {juz} · Halaman {round.pageNumber}
+        {mode === "practice" ? ` · Bermula ${round.surahNumber}:${round.startAyah}` : ""}
         {" · "}{mode === "exam" ? "Mod Ujian" : "Mod Latihan"}
       </p>
       <TasmiSessionUI
@@ -190,6 +196,7 @@ export function TasmiJuzukExam() {
         endAyah={round.endAyah}
         ayahRanges={round.ayahRanges}
         talqinEnabled={mode === "practice"}
+        sessionMode={mode}
         startPromptAyah={{ surah: round.surahNumber, ayah: round.startAyah }}
         onSessionEnd={handleSessionEnd}
         onCancel={handleCancel}

@@ -67,10 +67,10 @@ function wordClass(
 
   if (isError) {
     // An error position stays visibly marked whether or not the cursor passed it.
-    return "rounded bg-rose-100 px-0.5 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300";
+    return "rounded bg-rose-100 px-0.5 text-rose-700 underline decoration-2 decoration-rose-500 underline-offset-4 dark:bg-rose-900/40 dark:text-rose-300";
   }
   if (isTentativeError) {
-    return "rounded bg-amber-100 px-0.5 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200";
+    return "rounded bg-amber-100 px-0.5 text-amber-800 underline decoration-dotted decoration-2 underline-offset-4 dark:bg-amber-900/40 dark:text-amber-200";
   }
   if (isRecited) {
     return "text-teal-700 dark:text-teal-300";
@@ -96,32 +96,49 @@ export function TasmiTextFollow({
 
   // Keep the current word in view as the reciter advances through a long range.
   useEffect(() => {
-    currentRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    currentRef.current?.scrollIntoView({
+      block: "nearest",
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
   }, [followIndex, tentativeFollowIndex]);
 
   return (
-    <div
-      dir="rtl"
-      lang="ar"
-      className="max-h-44 w-full overflow-y-auto rounded-xl bg-white/70 px-4 py-3 text-center text-2xl leading-[2.4] dark:bg-stone-900/40"
-      style={{ fontFamily: "var(--font-arabic)" }}
-    >
-      {words.map((word, i) => (
-        <span
-          key={i}
-          ref={word.matcherIndex === Math.max(followIndex, tentativeFollowIndex ?? -1) + 1 ? currentRef : undefined}
-          className={`transition-colors duration-200 ${wordClass(
-            word,
-            followIndex,
-            errorPositions,
-            tentativeFollowIndex,
-            tentativeErrorPositions,
-          )}`}
-        >
-          {word.text}
-          {i < words.length - 1 ? " " : ""}
-        </span>
-      ))}
+    <div className="w-full">
+      <div
+        dir="rtl"
+        lang="ar"
+        aria-label="Teks bacaan yang sedang diikuti"
+        className="max-h-52 w-full overflow-y-auto rounded-2xl border border-border-subtle bg-surface px-4 py-3 text-center text-2xl leading-[2.4]"
+        style={{ fontFamily: "var(--font-arabic)" }}
+      >
+        {words.map((word, i) => (
+          <span
+            key={i}
+            ref={word.matcherIndex === Math.max(followIndex, tentativeFollowIndex ?? -1) + 1 ? currentRef : undefined}
+            className={`transition-colors duration-200 ${wordClass(
+              word,
+              followIndex,
+              errorPositions,
+              tentativeFollowIndex,
+              tentativeErrorPositions,
+            )}`}
+          >
+            {word.text}
+            {i < words.length - 1 ? " " : ""}
+          </span>
+        ))}
+      </div>
+      <div
+        className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted"
+        aria-label="Petunjuk warna teks"
+      >
+        <span><span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full bg-teal-500" />Disahkan</span>
+        <span><span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-500" />Sedang disemak</span>
+        <span><span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full bg-rose-500" />Perlu diulang</span>
+      </div>
     </div>
   );
 }

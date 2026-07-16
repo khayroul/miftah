@@ -66,6 +66,8 @@ export function FahamWorkspace({
     handleContinue,
     handleCorrectAdvanceModeChange,
     handleManualAudio,
+    handleRetry,
+    handleRevealAnswer,
     handleToggleAudio,
     hasLiveStats,
     isConfigExpanded,
@@ -213,6 +215,8 @@ export function FahamWorkspace({
           onAnswer={handleAnswer}
           onContinue={handleContinue}
           onManualAudio={handleManualAudio}
+          onRetry={handleRetry}
+          onRevealAnswer={handleRevealAnswer}
           onToggleAudio={handleToggleAudio}
           onToggleConfig={() => setIsConfigExpanded((value) => !value)}
           progressPct={progressPct}

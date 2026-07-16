@@ -79,68 +79,67 @@ export function HomeModeProgressCard({ card }: { card: ModeCard }) {
 
   return (
     <article
-      className={`animate-fade-in-up flex flex-col rounded-[28px] border p-5 shadow-[0_24px_70px_-42px_rgba(28,25,23,0.42)] backdrop-blur-sm ${classes.border} ${classes.surface}`}
+      className={`animate-fade-in-up flex min-w-0 flex-col rounded-[24px] border p-4 shadow-[0_20px_56px_-42px_rgba(28,25,23,0.42)] backdrop-blur-sm sm:p-5 ${classes.border} ${classes.surface}`}
     >
       <div className="flex-1">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500 dark:text-stone-400">
-              Mod
-            </p>
-            <div className="mt-2 flex items-center gap-2">
-              <h2 className="text-2xl font-medium tracking-tight text-stone-900 dark:text-stone-50">
-                {card.title}
-              </h2>
-              {card.badge ? (
-                <span className="rounded-full border border-amber-300/80 bg-amber-100/80 px-2 py-0.5 text-[11px] font-semibold text-amber-900 dark:border-amber-500/40 dark:bg-amber-900/30 dark:text-amber-200">
-                  {card.badge}
-                </span>
-              ) : null}
-            </div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="truncate text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+              {card.title}
+            </h2>
+            {card.badge ? (
+              <span className="shrink-0 rounded-full border border-amber-300/80 bg-amber-100/80 px-2 py-0.5 text-[10px] font-semibold text-amber-900 dark:border-amber-500/40 dark:bg-amber-900/30 dark:text-amber-200">
+                {card.badge}
+              </span>
+            ) : null}
           </div>
-          <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
+          <p className={`shrink-0 text-sm font-semibold ${classes.value}`}>
             {card.percent}%
           </p>
         </div>
 
-        <div className="mt-6">
-          <div className="space-y-2.5">
-            {card.lines.slice(0, 2).map((line) => (
-              <div
-                key={`${card.title}-${line.label}`}
-                className="flex items-baseline justify-between gap-3"
-              >
-                <p className="text-[11px] uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
-                  {line.label}
-                </p>
-                <p className={`text-sm font-semibold ${classes.value}`}>
-                  {line.value}
-                </p>
-              </div>
-            ))}
-          </div>
+        <div className="mt-4 space-y-3">
+          {card.lines.slice(0, 2).map((line, index) => (
+            <div
+              key={`${card.title}-${line.label}`}
+              className={index === 1 ? "hidden sm:block" : undefined}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">
+                {line.label}
+              </p>
+              <p className={`mt-1 truncate text-sm font-semibold ${classes.value}`}>
+                {line.value}
+              </p>
+            </div>
+          ))}
         </div>
 
-        <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/80 ring-1 ring-stone-900/6 dark:bg-stone-950/70 dark:ring-white/8">
+        <div
+          className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/80 ring-1 ring-stone-900/6 dark:bg-stone-950/70 dark:ring-white/8"
+          role="progressbar"
+          aria-label={`Progres ${card.title}`}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={card.percent}
+        >
           <div
             className={`h-full rounded-full transition-all duration-500 ${classes.bar}`}
             style={{ width: `${card.percent}%` }}
           />
         </div>
         {card.detail ? (
-          <p className="mt-2 text-xs text-stone-600 dark:text-stone-300">
+          <p className="mt-3 hidden text-xs leading-relaxed text-stone-600 md:block dark:text-stone-300">
             {card.detail}
           </p>
         ) : null}
-
       </div>
 
-      <div className="mt-6">
+      <div className="mt-4">
         <OfflineAwareLink
           href={card.href}
           prefetch={shouldPrefetch()}
           onClick={card.onClick}
-          className={`block w-full rounded-xl py-2.5 text-center text-sm font-medium transition ${
+          className={`ui-touch-target flex w-full items-center justify-center rounded-xl px-2 py-2 text-center text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 dark:focus-visible:ring-teal-300 dark:focus-visible:ring-offset-stone-900 ${
             card.tone === "teal"
               ? "bg-teal-800/10 text-teal-900 hover:bg-teal-800/15 dark:bg-teal-300/10 dark:text-teal-200 dark:hover:bg-teal-300/20"
               : card.tone === "amber"
@@ -157,7 +156,7 @@ export function HomeModeProgressCard({ card }: { card: ModeCard }) {
             href={card.secondaryHref}
             prefetch={shouldPrefetch()}
             onClick={card.secondaryOnClick}
-            className="mt-2 block w-full rounded-xl border border-stone-300/80 bg-white/65 py-2.5 text-center text-sm font-medium text-stone-800 transition hover:bg-white/90 dark:border-stone-600 dark:bg-stone-900/55 dark:text-stone-100 dark:hover:bg-stone-800"
+            className="ui-touch-target mt-2 flex w-full items-center justify-center rounded-xl border border-stone-300/80 bg-white/65 px-2 py-2 text-center text-xs font-semibold text-stone-800 transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 dark:border-stone-600 dark:bg-stone-900/55 dark:text-stone-100 dark:hover:bg-stone-800 dark:focus-visible:ring-teal-300 dark:focus-visible:ring-offset-stone-900 sm:text-sm"
           >
             {card.secondaryLabel}
           </OfflineAwareLink>

@@ -48,8 +48,8 @@ const MODE_ITEMS: Array<{
   value: ReadMode;
 }> = [
   { label: "Baca", value: "read" },
-  { label: "Tema", value: "tema" },
   { label: "Faham", value: "faham" },
+  { label: "Tema", value: "tema" },
   { label: "Hafal", value: "hifz" },
 ];
 
@@ -101,7 +101,7 @@ export function ModeNavigator({
   const utilityThemeToggle = showUtilities ? (
     <>
       <span
-        className="mx-1 h-6 w-px shrink-0 bg-stone-200 dark:bg-stone-700"
+        className="mx-0.5 h-6 w-px shrink-0 bg-stone-200 sm:mx-1 dark:bg-stone-700"
         aria-hidden="true"
       />
       <ThemeToggle iconOnly embedded />
@@ -109,12 +109,16 @@ export function ModeNavigator({
   ) : null;
 
   const navigator = (
-    <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-[26px] border border-stone-200 bg-white/92 p-1 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88">
+    <nav
+      aria-label="Navigasi utama Miftah"
+      className="inline-flex max-w-full items-center gap-0.5 overflow-x-auto overscroll-x-contain rounded-[26px] border border-stone-200 bg-white/92 p-1 shadow-sm backdrop-blur-sm sm:gap-1 dark:border-stone-700 dark:bg-stone-900/88"
+    >
       <OfflineAwareLink
         href="/"
         prefetch={false}
         aria-current={highlightHome ? "page" : undefined}
-        className={`mr-0.5 flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-medium transition sm:mr-1 sm:px-3 sm:py-2 sm:text-base ${
+        aria-label="Utama"
+        className={`mr-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 sm:mr-1 sm:text-base dark:focus-visible:ring-teal-300 dark:focus-visible:ring-offset-stone-900 ${
           highlightHome
             ? "bg-stone-900 text-stone-50 shadow-sm dark:bg-stone-100 dark:text-stone-900"
             : "text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
@@ -127,6 +131,7 @@ export function ModeNavigator({
           viewBox="0 0 24 24"
           stroke="currentColor"
           strokeWidth={2}
+          aria-hidden="true"
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
@@ -144,13 +149,14 @@ export function ModeNavigator({
             key={item.value}
             href={href}
             prefetch={false}
+            aria-current={active ? "page" : undefined}
             onClick={(e) => {
               saveReadMode(item.value);
               if (onModeClick) {
                 onModeClick(item.value, e);
               }
             }}
-            className={`flex min-h-11 shrink-0 items-center rounded-full px-3 py-1.5 text-sm font-medium transition sm:px-4 sm:py-2 sm:text-base ${
+            className={`flex min-h-11 shrink-0 items-center rounded-full px-2 py-1.5 text-[13px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 sm:px-4 sm:py-2 sm:text-base dark:focus-visible:ring-teal-300 dark:focus-visible:ring-offset-stone-900 ${
               active
                 ? "bg-stone-900 text-stone-50 shadow-sm dark:bg-stone-100 dark:text-stone-900"
                 : "text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
@@ -161,7 +167,7 @@ export function ModeNavigator({
         );
       })}
       {utilityThemeToggle}
-    </div>
+    </nav>
   );
 
   if (!showUtilities) {

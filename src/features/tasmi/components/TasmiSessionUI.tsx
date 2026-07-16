@@ -6,23 +6,21 @@ import { TasmiRecorder, type TasmiRecorderError } from "../domain/tasmi-recorder
 import { TasmiStreamClient } from "../domain/tasmi-stream-client";
 import { TalqinPlayer } from "../domain/talqin-player";
 import { tasmiResultToLabel, type TasmiRatingLabel } from "../domain/fsrs-bridge";
-import { TasmiSessionResultView } from "./TasmiSessionResultView";
-import { TasmiTextFollow } from "./TasmiTextFollow";
+import {
+  TasmiSessionResultView,
+  type TasmiSaveState,
+} from "./TasmiSessionResultView";
+import {
+  TasmiActiveView,
+  TasmiCheckingView,
+  TasmiIntroView,
+  TasmiUnavailableView,
+  type TasmiSessionMode,
+  type TasmiStatus,
+  type TasmiStreamMode,
+} from "./TasmiSessionViews";
 
-type TasmiStatus =
-  | "checking"      // Pre-flight: probing server availability (mount)
-  | "intro"         // Onboarding card — waiting for the user's "Mula" tap
-  | "unavailable"   // Server not configured/reachable (pre-session or mid-session)
-  | "idle"          // Mic error fallback — can retry via intro
-  | "ready"         // Mic/VAD warming up
-  | "prompt"        // Mode B: playing the test-ayah start prompt aloud
-  | "listening"     // Live: waiting for speech
-  | "processing"    // Chunk sent, awaiting transcription
-  | "error"         // Genuine recitation mistake detected
-  | "talqin"        // Playing corrective talqin audio
-  | "complete";     // Range finished
-
-type TasmiStreamMode = "connecting" | "live" | "fallback";
+export type { TasmiSessionMode } from "./TasmiSessionViews";
 
 export interface AyahRange {
   surah: number;
@@ -54,25 +52,16 @@ interface TasmiSessionUIProps {
    */
   talqinEnabled?: boolean;
   /**
+   * Practice shows word-follow and corrective help. Exam hides the expected
+   * text and immediate mistake cues so the assessment remains authentic.
+   */
+  sessionMode?: TasmiSessionMode;
+  /**
    * Mode B start prompt: when set, this ayah is read aloud after "Mula"
    * (recorder paused), and listening begins when playback ends.
    */
   startPromptAyah?: { surah: number; ayah: number };
 }
-
-const STATUS_LABELS: Record<TasmiStatus, string> = {
-  checking: "Menyemak pelayan tasmi'...",
-  intro: "Sedia untuk mula",
-  unavailable: "Pelayan tidak tersedia",
-  idle: "Sedia untuk mula",
-  ready: "Menyediakan mikrofon...",
-  prompt: "Dengar ayat ujian, kemudian sambung bacaan...",
-  listening: "Sedang mendengar...",
-  processing: "Menyemak bacaan...",
-  error: "Cuba ulang bahagian itu",
-  talqin: "Dengar talqin, kemudian sambung...",
-  complete: "Selesai!",
-};
 
 const TASMI_TRANSCRIBE_ENDPOINT = "/api/tasmi/transcribe";
 
@@ -130,6 +119,7 @@ export function TasmiSessionUI({
   onSessionEnd,
   onCancel,
   talqinEnabled = true,
+  sessionMode = "practice",
   startPromptAyah,
 }: TasmiSessionUIProps) {
   const [status, setStatus] = useState<TasmiStatus>("checking");
@@ -145,8 +135,9 @@ export function TasmiSessionUI({
   const [tentativeFollowIndex, setTentativeFollowIndex] = useState<number | null>(null);
   const [tentativeErrorPositions, setTentativeErrorPositions] = useState<ReadonlySet<number>>(new Set());
   const [streamMode, setStreamMode] = useState<TasmiStreamMode>("connecting");
-  const [lastStreamInferenceMs, setLastStreamInferenceMs] = useState<number | null>(null);
-  const [lastStreamEndToEndMs, setLastStreamEndToEndMs] = useState<number | null>(null);
+  const [saveState, setSaveState] = useState<TasmiSaveState>("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const effectiveTalqinEnabled = sessionMode === "practice" && talqinEnabled;
 
   const sessionRef = useRef<TasmiSession | null>(null);
   const recorderRef = useRef<TasmiRecorder | null>(null);
@@ -166,11 +157,13 @@ export function TasmiSessionUI({
   const ayahRangesRef = useRef(ayahRanges);
   const surahRef = useRef(surahNumber);
   const startAyahRef = useRef(startAyah);
+  const sessionModeRef = useRef(sessionMode);
   useEffect(() => {
     ayahRangesRef.current = ayahRanges;
     surahRef.current = surahNumber;
     startAyahRef.current = startAyah;
-  }, [ayahRanges, surahNumber, startAyah]);
+    sessionModeRef.current = sessionMode;
+  }, [ayahRanges, surahNumber, startAyah, sessionMode]);
 
   const teardown = useCallback(() => {
     recorderRef.current?.stop();
@@ -265,7 +258,11 @@ export function TasmiSessionUI({
         break;
       case "no-speech":
         // Whisper heard nothing usable — NOT a mistake. Gentle nudge only.
-        setHint("Tiada bacaan dikesan — teruskan membaca dengan jelas.");
+        setHint(
+          sessionModeRef.current === "practice"
+            ? "Saya belum mendengar bacaan dengan jelas. Teruskan membaca."
+            : null,
+        );
         setStatus("listening");
         setTentativeFollowIndex(null);
         setTentativeErrorPositions(new Set());
@@ -279,15 +276,17 @@ export function TasmiSessionUI({
         setStatus("unavailable");
         break;
       case "error":
-        setStatus("error");
+        setStatus(sessionModeRef.current === "exam" ? "listening" : "error");
         setTentativeFollowIndex(null);
         setTentativeErrorPositions(new Set());
         setProgress(event.data?.progress ?? 0);
         progressRef.current = event.data?.progress ?? 0;
         if (event.data?.matchResult) {
           const { lastCorrectIndex, errors } = event.data.matchResult;
-          setFollowIndex(lastCorrectIndex);
-          if (errors.length > 0) {
+          if (sessionModeRef.current === "practice") {
+            setFollowIndex(lastCorrectIndex);
+          }
+          if (sessionModeRef.current === "practice" && errors.length > 0) {
             // Immutable accumulate — error marks persist for the whole session
             setErrorPositions(prev => {
               const next = new Set(prev);
@@ -363,8 +362,8 @@ export function TasmiSessionUI({
     setTentativeFollowIndex(null);
     setTentativeErrorPositions(new Set());
     setStreamMode("connecting");
-    setLastStreamInferenceMs(null);
-    setLastStreamEndToEndMs(null);
+    setSaveState("idle");
+    setSaveError(null);
     deferredSilenceRef.current = false;
 
     // Gesture-unlock ONE shared audio element (inside this tap) and reuse it
@@ -381,7 +380,7 @@ export function TasmiSessionUI({
       serverUrl: TASMI_TRANSCRIBE_ENDPOINT,
       silenceThresholdSeconds: 4,
       errorThresholdCount: 2,
-      talqinEnabled,
+      talqinEnabled: effectiveTalqinEnabled,
     }, handleEvent);
 
     const finishRecognition = () => {
@@ -459,11 +458,6 @@ export function TasmiSessionUI({
             .filter(([utteranceId]) => !pendingUtteranceIds.includes(utteranceId)),
         );
       },
-      onMetric: metric => {
-        if (sessionRef.current !== session || streamRef.current !== stream) return;
-        if (metric.inferenceMs != null) setLastStreamInferenceMs(metric.inferenceMs);
-        if (metric.endToEndMs != null) setLastStreamEndToEndMs(metric.endToEndMs);
-      },
     });
 
     const recorder = new TasmiRecorder({
@@ -528,7 +522,7 @@ export function TasmiSessionUI({
       },
       onSilenceNudge: () => {
         if (sessionRef.current !== session || recorderRef.current !== recorder) return;
-        if (talqinEnabled && pendingRecognitionCountRef.current === 0) {
+        if (effectiveTalqinEnabled && pendingRecognitionCountRef.current === 0) {
           setHint("Perlukan bantuan? Perkataan seterusnya sedang diserlahkan.");
         }
       },
@@ -594,7 +588,13 @@ export function TasmiSessionUI({
         setStatus("listening");
       });
     }
-  }, [expectedText, handleEvent, teardown, talqinEnabled, startPromptAyah]);
+  }, [
+    effectiveTalqinEnabled,
+    expectedText,
+    handleEvent,
+    startPromptAyah,
+    teardown,
+  ]);
 
   /** Mid-session outage recovery: re-probe, then resume where the reciter left off. */
   const resumeAfterOutage = useCallback(async () => {
@@ -649,9 +649,11 @@ export function TasmiSessionUI({
   }, [teardown, onCancel]);
 
   const handleSaveResult = useCallback(async () => {
-    if (!result) return;
+    if (!result || saveState === "saving" || saveState === "saved") return;
 
     const label = tasmiResultToLabel(result);
+    setSaveState("saving");
+    setSaveError(null);
 
     try {
       const response = await fetch("/api/tasmi/session", {
@@ -666,16 +668,41 @@ export function TasmiSessionUI({
           accuracy: Math.round(result.accuracy * 100) / 100,
           talqin_count: result.talqinCount,
           error_positions: result.errorPositions,
-          duration_seconds: Math.round(result.durationSeconds),
+          duration_seconds: Math.max(1, Math.round(result.durationSeconds)),
         }),
       });
-      if (!response.ok) throw new Error("Tasmi session save failed");
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as
+          | { error?: unknown }
+          | null;
+        const serverMessage =
+          typeof payload?.error === "string" ? payload.error : null;
+        setSaveError(
+          response.status === 401
+            ? "Log masuk diperlukan sebelum keputusan boleh disimpan."
+            : serverMessage ?? "Keputusan belum dapat disimpan. Cuba sekali lagi.",
+        );
+        setSaveState("error");
+        return;
+      }
     } catch {
-      // Non-critical — session result is still usable for FSRS
+      setSaveError(
+        "Sambungan terputus semasa menyimpan. Keputusan masih ada di skrin ini — cuba simpan semula.",
+      );
+      setSaveState("error");
+      return;
     }
 
+    setSaveState("saved");
     onSessionEnd(result, label);
-  }, [result, surahNumber, startAyah, endAyah, onSessionEnd]);
+  }, [
+    endAyah,
+    onSessionEnd,
+    result,
+    saveState,
+    startAyah,
+    surahNumber,
+  ]);
 
   // ---------- Render ----------
 
@@ -687,177 +714,58 @@ export function TasmiSessionUI({
         ayahRanges={ayahRanges}
         onRetry={startSession}
         onSave={handleSaveResult}
+        saveState={saveState}
+        saveError={saveError}
       />
     );
   }
 
   // Pre-flight probe in progress
   if (status === "checking") {
-    return (
-      <div className="flex flex-col items-center gap-4 rounded-2xl bg-stone-50 p-6 dark:bg-stone-800/50">
-        <div className="h-3 w-3 animate-pulse rounded-full bg-stone-400" />
-        <p role="status" aria-live="polite" className="text-sm font-medium text-stone-700 dark:text-stone-300">
-          {STATUS_LABELS.checking}
-        </p>
-      </div>
-    );
+    return <TasmiCheckingView />;
   }
 
   // Server unavailable — honest state, never a fake "mistake"
   if (status === "unavailable") {
     return (
-      <div className="flex flex-col items-center gap-4 rounded-2xl bg-stone-50 p-6 dark:bg-stone-800/50">
-        <p role="status" aria-live="assertive" className="max-w-sm text-center text-sm text-rose-600 dark:text-rose-400">
-          {errorMsg ?? "Pelayan tasmi' tidak tersedia sekarang."}
-        </p>
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={midSessionOutage ? resumeAfterOutage : recheckServer}
-            className="rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
-          >
-            {midSessionOutage ? "Sambung Semula" : "Semak Semula"}
-          </button>
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="rounded-xl border border-stone-300 bg-white px-5 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
-          >
-            Batal
-          </button>
-        </div>
-      </div>
+      <TasmiUnavailableView
+        errorMsg={errorMsg}
+        midSessionOutage={midSessionOutage}
+        onRetry={midSessionOutage ? resumeAfterOutage : recheckServer}
+        onCancel={handleCancel}
+      />
     );
   }
 
   // Onboarding intro — the "Mula" tap is the iOS gesture unlock + mic start
   if (status === "intro" || status === "idle") {
     return (
-      <div className="flex flex-col items-center gap-4 rounded-2xl bg-stone-50 p-6 dark:bg-stone-800/50">
-        {errorMsg ? (
-          <p role="alert" className="max-w-sm text-center text-sm text-rose-600 dark:text-rose-400">{errorMsg}</p>
-        ) : null}
-        <p className="text-sm font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-          Tasmi&apos; — Semak Bacaan Dengan Suara
-        </p>
-        <ol className="max-w-sm list-decimal space-y-1 pl-5 text-sm text-stone-600 dark:text-stone-300">
-          {startPromptAyah ? (
-            <li>App akan <span className="font-medium">bacakan ayat ujian</span> dahulu — dengar, kemudian sambung bacaan dari ayat itu hingga habis halaman.</li>
-          ) : (
-            <li>Baca dengan suara yang jelas, dari perkataan pertama.</li>
-          )}
-          <li>Baca secara semula jadi dan berterusan — app akan mengikuti bacaan anda.</li>
-          {talqinEnabled ? (
-            <li>Jika tersilap atau tersekat, app akan <span className="font-medium">bacakan beberapa perkataan panduan (talqin)</span>, kemudian tunggu anda menyambung.</li>
-          ) : (
-            <li><span className="font-medium">Mod ujian:</span> app kekal senyap jika anda tersilap — kesilapan dicatat dalam keputusan, tiada bantuan diberikan.</li>
-          )}
-        </ol>
-        <p className="text-xs text-stone-500 dark:text-stone-400">
-          Audio diproses sementara semasa sesi ini dan tidak disimpan oleh pelayan tasmi&apos;.
-        </p>
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={startSession}
-            className="rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
-          >
-            Mula Tasmi&apos;
-          </button>
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="rounded-xl border border-stone-300 bg-white px-5 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
-          >
-            Batal
-          </button>
-        </div>
-      </div>
+      <TasmiIntroView
+        errorMsg={errorMsg}
+        sessionMode={sessionMode}
+        hasStartPrompt={Boolean(startPromptAyah)}
+        talqinEnabled={effectiveTalqinEnabled}
+        onStart={startSession}
+        onCancel={handleCancel}
+      />
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 rounded-2xl bg-stone-50 p-6 dark:bg-stone-800/50">
-      {errorMsg ? (
-        <p role="alert" className="text-sm text-rose-600 dark:text-rose-400">{errorMsg}</p>
-      ) : null}
-      {hint ? (
-        <p className="text-sm text-amber-600 dark:text-amber-400">{hint}</p>
-      ) : null}
-
-      {/* Live word-follow (Mode A): the range's text, filling in as recited */}
-      <TasmiTextFollow
-        expectedText={expectedText}
-        followIndex={followIndex}
-        tentativeFollowIndex={tentativeFollowIndex}
-        errorPositions={errorPositions}
-        tentativeErrorPositions={tentativeErrorPositions}
-      />
-
-      <p className={`text-xs font-medium ${
-        streamMode === "live"
-          ? "text-teal-700 dark:text-teal-300"
-          : "text-stone-500 dark:text-stone-400"
-      }`}>
-        {streamMode === "connecting"
-          ? "Menyambung semakan pantas..."
-          : streamMode === "live"
-            ? `Semakan pantas aktif${lastStreamEndToEndMs != null ? ` · jawapan ${(lastStreamEndToEndMs / 1000).toFixed(1)}s` : ""}${lastStreamInferenceMs != null ? ` · model ${(lastStreamInferenceMs / 1000).toFixed(1)}s` : ""}`
-            : "Mod jeda aktif sebagai sandaran"}
-      </p>
-
-      {/* Status indicator */}
-      <div className="flex items-center gap-3">
-        <div
-          className={`h-3 w-3 rounded-full transition-colors ${
-            status === "listening"
-              ? "animate-pulse bg-rose-500"
-              : status === "processing"
-                ? "animate-pulse bg-amber-500"
-                : status === "talqin" || status === "prompt"
-                  ? "animate-pulse bg-teal-500"
-                  : status === "error"
-                    ? "bg-rose-500"
-                    : "bg-stone-400"
-          }`}
-        />
-        <p role="status" aria-live="polite" className="text-sm font-medium text-stone-700 dark:text-stone-300">
-          {STATUS_LABELS[status]}
-        </p>
-      </div>
-
-      {/* Progress bar */}
-      <div className="w-full max-w-xs">
-        <div className="h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
-          <div
-            className="h-full rounded-full bg-teal-500 transition-all duration-300"
-            style={{ width: `${Math.round(progress * 100)}%` }}
-          />
-        </div>
-        <p className="mt-1 text-center text-xs text-stone-500 dark:text-stone-400">
-          {Math.round(progress * 100)}%
-        </p>
-      </div>
-
-      {/* Controls */}
-      <div className="flex gap-3">
-        {status !== "complete" ? (
-          <button
-            type="button"
-            onClick={stopSession}
-            className="rounded-xl bg-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700"
-          >
-            Hentikan
-          </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={handleCancel}
-          className="rounded-xl border border-stone-300 bg-white px-5 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
-        >
-          Batal
-        </button>
-      </div>
-    </div>
+    <TasmiActiveView
+      errorMsg={errorMsg}
+      hint={hint}
+      sessionMode={sessionMode}
+      streamMode={streamMode}
+      status={status}
+      expectedText={expectedText}
+      followIndex={followIndex}
+      tentativeFollowIndex={tentativeFollowIndex}
+      errorPositions={errorPositions}
+      tentativeErrorPositions={tentativeErrorPositions}
+      progress={progress}
+      onStop={stopSession}
+      onCancel={handleCancel}
+    />
   );
 }

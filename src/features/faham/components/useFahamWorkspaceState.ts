@@ -6,12 +6,10 @@ import type { FahamSourcePreset } from "../domain/presets";
 import type { FahamQueueSnapshot } from "../domain/queue";
 import type { FahamSessionSummary } from "./FahamSessionSummaryModal";
 import type { FahamCorrectAdvanceMode } from "./fahamWorkspaceConfig";
+import type { AnswerState } from "./fahamAnswerFlow";
 import { queueItems, type FahamStats } from "./fahamWorkspaceSupport";
 
-export interface AnswerState {
-  isCorrect: boolean;
-  selectedIndex: number;
-}
+export type { AnswerState } from "./fahamAnswerFlow";
 
 export type FahamSyncState = "idle" | "syncing" | "offline" | "error";
 export type FahamStatsStatus = "loading" | "ready" | "error" | "unavailable";
