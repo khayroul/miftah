@@ -5,6 +5,7 @@ import { TasmiTextFollow } from "./TasmiTextFollow";
 export type TasmiStatus =
   | "checking"
   | "intro"
+  | "busy"
   | "unavailable"
   | "idle"
   | "ready"
@@ -21,6 +22,7 @@ export type TasmiSessionMode = "practice" | "exam";
 const STATUS_LABELS: Record<TasmiStatus, string> = {
   checking: "Menyemak pelayan tasmi'...",
   intro: "Sedia untuk mula",
+  busy: "Tasmi' sedang penuh",
   unavailable: "Pelayan tidak tersedia",
   idle: "Sedia untuk mula",
   ready: "Menyediakan mikrofon...",
@@ -69,6 +71,45 @@ export function TasmiCheckingView() {
       <p role="status" aria-live="polite" className="text-center text-sm font-semibold text-foreground">
         {STATUS_LABELS.checking}
       </p>
+    </div>
+  );
+}
+
+interface TasmiBusyViewProps {
+  onRetry: () => void;
+  onCancel: () => void;
+}
+
+export function TasmiBusyView({ onRetry, onCancel }: TasmiBusyViewProps) {
+  return (
+    <div className="ui-surface-solid flex flex-col items-center gap-4 rounded-3xl p-5 sm:p-6">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7 3v3m10-3v3M5 9h14M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm3 8h6m-6 3h4" />
+        </svg>
+      </div>
+      <div className="max-w-sm space-y-2 text-center">
+        <h2 className="text-base font-semibold text-foreground">Tasmi&apos; sedang penuh</h2>
+        <p role="status" aria-live="assertive" className="text-sm leading-6 text-muted">
+          Semua tempat sedang digunakan oleh pembaca lain. Sesi anda belum bermula dan bacaan tidak dinilai. Cuba semula sebentar lagi.
+        </p>
+      </div>
+      <div className="flex w-full max-w-sm flex-col gap-3 sm:flex-row">
+        <button
+          type="button"
+          onClick={onRetry}
+          className="ui-touch-target flex-1 cursor-pointer rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700"
+        >
+          Cuba Semula
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="ui-touch-target flex-1 cursor-pointer rounded-xl border border-border-strong bg-surface-solid px-5 py-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+        >
+          Kembali
+        </button>
+      </div>
     </div>
   );
 }

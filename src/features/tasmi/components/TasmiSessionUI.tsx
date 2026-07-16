@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { TasmiSession, type TasmiEvent, type TasmiSessionResult } from "../domain/tasmi-session";
 import { TasmiRecorder, type TasmiRecorderError } from "../domain/tasmi-recorder";
 import { TasmiStreamClient } from "../domain/tasmi-stream-client";
+import { TASMI_STREAM_CAPACITY_FULL_CODE } from "../domain/tasmi-stream-protocol";
 import { TalqinPlayer } from "../domain/talqin-player";
 import { tasmiResultToLabel, type TasmiRatingLabel } from "../domain/fsrs-bridge";
 import {
@@ -12,6 +13,7 @@ import {
 } from "./TasmiSessionResultView";
 import {
   TasmiActiveView,
+  TasmiBusyView,
   TasmiCheckingView,
   TasmiIntroView,
   TasmiUnavailableView,
@@ -219,8 +221,8 @@ export function TasmiSessionUI({
     return () => {
       stale = true;
       cancelledRef.current = true;
-      // A Tasmi stream occupies one of only two VPS worker slots. Always close
-      // it on route change/unmount, including while the ticket request is live.
+      // A Tasmi stream occupies one of the bounded VPS worker slots. Always
+      // close it on route change/unmount, including during admission.
       teardown();
     };
   }, [checkServer, teardown]);
@@ -438,8 +440,15 @@ export function TasmiSessionUI({
         );
         if (wasPending) finishRecognition();
       },
-      onUnavailable: (_reason, pendingUtteranceIds) => {
+      onUnavailable: (reason, pendingUtteranceIds) => {
         if (sessionRef.current !== session || streamRef.current !== stream) return;
+        if (reason === TASMI_STREAM_CAPACITY_FULL_CODE) {
+          setErrorMsg(null);
+          setHint(null);
+          setStatus("busy");
+          teardown();
+          return;
+        }
         setStreamMode("fallback");
         setHint("Sambungan pantas terputus — semakan diteruskan selepas jeda.");
         for (const utteranceId of pendingUtteranceIds) {
@@ -539,19 +548,14 @@ export function TasmiSessionUI({
     streamRef.current = stream;
     talqinRef.current = talqin;
 
-    // Activate the session and begin mic/stream work immediately from the user
-    // gesture. Alignment data is useful for talqin but must never delay capture.
-    session.start();
-    const recorderStartPromise = recorder.start();
-    void stream.connect().then(connected => {
-      if (
-        cancelledRef.current ||
-        sessionRef.current !== session ||
-        streamRef.current !== stream
-      ) return;
-      setStreamMode(connected ? "live" : "fallback");
-      if (connected) setHint(null);
+    // Begin mic permission and stream admission from the same user gesture.
+    // Keep the recorder paused and the session inactive until admission is
+    // decided, so a capacity rejection can never be graded or fall back.
+    const recorderStartPromise = recorder.start().then(started => {
+      if (started) recorder.pause();
+      return started;
     });
+    const streamConnectPromise = stream.connect();
     void fetchAlignData().then(alignData => {
       if (
         !cancelledRef.current &&
@@ -561,7 +565,10 @@ export function TasmiSessionUI({
       ) talqin.loadFromRawData(alignData);
     });
 
-    const recorderStarted = await recorderStartPromise;
+    const [recorderStarted, connected] = await Promise.all([
+      recorderStartPromise,
+      streamConnectPromise,
+    ]);
     if (
       cancelledRef.current ||
       recorderRef.current !== recorder ||
@@ -575,6 +582,10 @@ export function TasmiSessionUI({
     }
     if (!recorderStarted) { teardown(); return; }
 
+    setStreamMode(connected ? "live" : "fallback");
+    if (connected) setHint(null);
+    session.start();
+
     // Mode B: read the test ayah aloud first (mic stays granted but paused),
     // then the shared onPlaybackEnd resumes the recorder into listening.
     if (startPromptAyah) {
@@ -587,6 +598,8 @@ export function TasmiSessionUI({
         recorderRef.current?.resume();
         setStatus("listening");
       });
+    } else {
+      recorder.resume();
     }
   }, [
     effectiveTalqinEnabled,
@@ -723,6 +736,12 @@ export function TasmiSessionUI({
   // Pre-flight probe in progress
   if (status === "checking") {
     return <TasmiCheckingView />;
+  }
+
+  // Capacity is a normal busy state, not an outage and never a recitation
+  // failure. Retrying creates a fresh ticket and attempts admission again.
+  if (status === "busy") {
+    return <TasmiBusyView onRetry={startSession} onCancel={handleCancel} />;
   }
 
   // Server unavailable — honest state, never a fake "mistake"

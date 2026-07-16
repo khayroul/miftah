@@ -127,6 +127,30 @@ describe("TasmiStreamClient", () => {
     expect(hypotheses).toHaveBeenCalledWith(expect.objectContaining({ type: "final" }));
   });
 
+  it("reports capacity-full without becoming ready", async () => {
+    const socket = new FakeSocket();
+    const unavailable = vi.fn();
+    const client = new TasmiStreamClient({
+      fetcher: ticketFetcher(),
+      createSocket: () => socket,
+      onHypothesis: vi.fn(),
+      onUnavailable: unavailable,
+    });
+
+    const connected = client.connect();
+    await vi.waitFor(() => expect(socket.onopen).toBeTypeOf("function"));
+    socket.open();
+    socket.message({
+      type: "error",
+      code: "capacity-full",
+      recoverable: false,
+    });
+
+    await expect(connected).resolves.toBe(false);
+    expect(unavailable).toHaveBeenCalledWith("capacity-full", []);
+    expect(client.isReady).toBe(false);
+  });
+
   it("lets the server judge ticket expiry instead of trusting the phone clock", async () => {
     const socket = new FakeSocket();
     const fetcher = vi.fn(async () => new Response(JSON.stringify({

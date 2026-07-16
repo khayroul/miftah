@@ -117,9 +117,10 @@ Prerequisite for both modes. No new features — correctness + first-use + iOS.
 - [x] Tower re-verified at `efeccfb1`: tsc 0 · lint 0 · **136/136** hifz+tasmi ·
   **76/76** pwa. Wave-0/1/2 safety work intact (honest events, iOS audio unlock,
   endedEarly, Mode B toggle all still present).
-- [ ] **Open:** `max_concurrent_streams: 2` is a hard capacity ceiling — the audit's
-  T-02 (server freezes under concurrent load) is mitigated but not solved; fine for
-  the operator + pilot, NOT for 71 users reciting at once.
+- [x] **Pilot guardrail:** `max_concurrent_streams: 1` deliberately admits one live
+  reciter. Additional users receive the dedicated "Tasmi' sedang penuh" state and
+  can retry without starting or grading a session. Raise this limit only after the
+  VPS has been load-tested; this is not capacity for 71 simultaneous reciters.
 
 ### Wave 4 — Polish + a11y + entry clarity
 - [ ] Result screen: show error **positions** (which ayah/word), `m:ss` duration, tailored

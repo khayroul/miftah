@@ -2,9 +2,22 @@ import { describe, expect, it } from "vitest";
 import {
   parseTasmiStreamServerMessage,
   StreamTicketSchema,
+  TASMI_STREAM_CAPACITY_FULL_CODE,
 } from "./tasmi-stream-protocol";
 
 describe("Tasmi stream protocol", () => {
+  it("accepts the typed capacity-full admission response", () => {
+    expect(parseTasmiStreamServerMessage(JSON.stringify({
+      type: "error",
+      code: TASMI_STREAM_CAPACITY_FULL_CODE,
+      recoverable: false,
+    }))).toEqual({
+      type: "error",
+      code: TASMI_STREAM_CAPACITY_FULL_CODE,
+      recoverable: false,
+    });
+  });
+
   it("accepts a bounded final hypothesis", () => {
     const message = parseTasmiStreamServerMessage(JSON.stringify({
       type: "final",

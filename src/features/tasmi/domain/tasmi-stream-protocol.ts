@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const TASMI_STREAM_PROTOCOL = "tasmi-stream-v1" as const;
 export const TASMI_STREAM_SAMPLE_RATE = 16_000 as const;
+export const TASMI_STREAM_CAPACITY_FULL_CODE = "capacity-full" as const;
 
 const HypothesisSchema = z.object({
   type: z.enum(["partial", "final"]),

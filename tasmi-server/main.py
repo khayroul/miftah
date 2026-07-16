@@ -57,7 +57,7 @@ WHISPER_STREAM_VAD_FILTER = _env_bool("WHISPER_STREAM_VAD_FILTER", False)
 
 MAX_UPLOAD_BYTES = int(os.environ.get("TASMI_MAX_UPLOAD_BYTES", str(5 * 1024 * 1024)))
 MAX_HTTP_AUDIO_SECONDS = float(os.environ.get("TASMI_MAX_AUDIO_SECONDS", "30"))
-MAX_CONCURRENT_STREAMS = int(os.environ.get("TASMI_MAX_CONCURRENT_STREAMS", "2"))
+MAX_CONCURRENT_STREAMS = int(os.environ.get("TASMI_MAX_CONCURRENT_STREAMS", "1"))
 MAX_STREAM_SECONDS = float(os.environ.get("TASMI_STREAM_MAX_AUDIO_SECONDS", "30"))
 MIN_PARTIAL_SECONDS = float(os.environ.get("TASMI_STREAM_MIN_PARTIAL_SECONDS", "0.8"))
 PARTIAL_INTERVAL_SECONDS = float(os.environ.get("TASMI_STREAM_PARTIAL_INTERVAL_SECONDS", "0.8"))
@@ -472,6 +472,15 @@ async def websocket_transcribe(websocket: WebSocket):
         try:
             await asyncio.wait_for(stream_slots.acquire(), timeout=0.05)
         except asyncio.TimeoutError:
+            await _send_json(
+                websocket,
+                send_lock,
+                {
+                    "type": "error",
+                    "code": "capacity-full",
+                    "recoverable": False,
+                },
+            )
             await websocket.close(code=1013, reason="All stream slots are busy")
             return
         stream_acquired = True

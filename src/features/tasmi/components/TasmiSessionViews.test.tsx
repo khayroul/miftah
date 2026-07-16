@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import {
   TasmiActiveView,
+  TasmiBusyView,
   type TasmiActiveViewProps,
 } from "./TasmiSessionViews";
 
@@ -52,5 +53,19 @@ describe("TasmiActiveView session-mode integrity", () => {
     }
     expect(markup).toContain("Ada bahagian yang perlu diperbetulkan");
     expect(markup).toContain("Perlu diulang");
+  });
+});
+
+describe("TasmiBusyView", () => {
+  it("explains that capacity is full without grading the recitation", () => {
+    const markup = renderToStaticMarkup(
+      <TasmiBusyView onRetry={vi.fn()} onCancel={vi.fn()} />,
+    );
+
+    expect(markup).toContain("Tasmi&#x27; sedang penuh");
+    expect(markup).toContain("Sesi anda belum bermula");
+    expect(markup).toContain("bacaan tidak dinilai");
+    expect(markup).toContain("Cuba Semula");
+    expect(markup).toContain("Kembali");
   });
 });
