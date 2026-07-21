@@ -1,17 +1,20 @@
+import { getLocale } from "next-intl/server";
 import { HomeDashboardClient } from "@/features/home/components/HomeDashboardClient";
 import { HomeDeferredUi } from "@/features/home/components/HomeDeferredUi";
 import { ModeNavigator } from "@/features/read";
 import { loadDashboardWithDbCache } from "@/features/home/server";
+import type { AppLocale } from "@/i18n/request";
 import { getReadJumpTargets } from "@/lib/readNavigation";
 import { getOptionalAuthUser } from "@/features/auth/server";
 
 export default async function Home() {
   const userPromise = getOptionalAuthUser();
   const jumpTargetsPromise = getReadJumpTargets();
-  const user = await userPromise;
+  const localePromise = getLocale();
+  const [user, locale] = await Promise.all([userPromise, localePromise]);
   const [jumpTargets, initialSnapshot] = await Promise.all([
     jumpTargetsPromise,
-    loadDashboardWithDbCache(user?.id ?? null),
+    loadDashboardWithDbCache(user?.id ?? null, locale as AppLocale),
   ]);
 
   return (

@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import type { FahamStatsStatus } from "./useFahamWorkspaceState";
 
 function formatMetricValue(value: number): string {
@@ -26,6 +29,7 @@ export function FahamStatsPanel({
   masteredCount: number;
   statsStatus: FahamStatsStatus;
 }) {
+  const t = useTranslations("faham.stats");
   const foundShare = foundCap > 0 ? Math.min(1, foundCount / foundCap) : 0;
   const masteredShare =
     foundCount > 0 ? Math.min(1, masteredCount / foundCount) : 0;
@@ -33,22 +37,22 @@ export function FahamStatsPanel({
   return (
     <section className="grid grid-cols-2 gap-2 sm:gap-3">
       <MotivationMetricCard
-        label="Ditemui"
+        label={t("foundLabel")}
         progress={foundShare}
         progressLabel={
           foundCap > 0
-            ? `${formatMetricValue(foundCount)}/${formatMetricValue(foundCap)} cap`
-            : "Tiada cap"
+            ? t("capProgress", { found: formatMetricValue(foundCount), cap: formatMetricValue(foundCap) })
+            : t("noCap")
         }
         value={metricValue(foundCount, hasLiveStats, statsStatus)}
       />
       <MotivationMetricCard
-        label="Dikuasai"
+        label={t("masteredLabel")}
         progress={masteredShare}
         progressLabel={
           foundCount > 0
-            ? `${formatMetricValue(masteredCount)}/${formatMetricValue(foundCount)} ditemui`
-            : "Belum mula"
+            ? t("masteredProgress", { mastered: formatMetricValue(masteredCount), found: formatMetricValue(foundCount) })
+            : t("notStarted")
         }
         value={metricValue(masteredCount, hasLiveStats, statsStatus)}
       />

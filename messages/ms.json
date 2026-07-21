@@ -192,6 +192,107 @@
       "chipAudioRepeat": "Audio repeat"
     }
   },
+  "faham": {
+    "workspace": {
+      "celebrationEyebrow": "Tahniah! +1 Dikuasai",
+      "celebrationTitle": "Perkataan Baru Dikuasai",
+      "dueBacklogNotice": "Kad baharu dijeda sementara kerana baki ulang kaji masih tinggi. Selesaikan kad ulang kaji dahulu, kemudian enjin akan membuka kad baharu semula.",
+      "statsErrorNotice": "Statistik Faham tak dapat dimuat. Barisan latihan masih boleh dicuba semula.",
+      "statsErrorRetry": "Cuba Statistik Lagi",
+      "reloadQueuePending": "Menyusun Semula...",
+      "reloadQueueAction": "Cuba Susun Semula",
+      "emptyQueueTitle": "Belum ada kad Faham buat masa ini.",
+      "emptyQueueDescription": "Teruskan membaca atau buka tema dahulu supaya enjin ini mempunyai pendedahan yang cukup untuk membuka kad baharu.",
+      "hydratingDescription": "Barisan ulang kaji sedang disusun ikut pendedahan dan kad yang due.",
+      "entryContextBadge": "Masuk dari Tema",
+      "entryContextDescription": "Deck ini diutamakan untuk perkataan yang paling kuat muncul dalam tema yang baru anda teroka, supaya faham bergerak terus daripada konteks ayat tadi.",
+      "entryContextHrefLabel": "Kembali ke Tema",
+      "entryContextTitle": "Tema Surah {surah}, Bahagian {chunk}",
+      "setupMessagePreview": "Akaun Diperlukan: Anda sedang menggunakan mod pratonton. Log masuk untuk menyimpan kemajuan anda.",
+      "loadingDescription": "Faham sedang dibuka. Jika ada sesi tersimpan atau data luar talian, ia akan dipaparkan dahulu sementara semakan baharu berjalan."
+    },
+    "study": {
+      "feedbackFirstTry": "Betul pada cubaan pertama.",
+      "feedbackSecondTry": "Betul pada cubaan kedua.",
+      "feedbackIncorrectRetry": "Belum tepat — cuba sekali lagi.",
+      "feedbackIncorrectFinal": "Belum tepat selepas cubaan kedua.",
+      "feedbackReinforce": "Mari kukuhkan pasangan ini.",
+      "retryHint": "Jawapan masih disembunyikan. Dengar soalan semula atau cuba dari ingatan sebelum melihat pasangan yang betul.",
+      "retryAction": "Cuba sekali lagi",
+      "revealAction": "Tunjukkan jawapan",
+      "reinforcementNote": "Perkataan ini akan muncul semula dalam ulang kaji supaya ingatan menjadi lebih kukuh.",
+      "meaningLinkEyebrow": "Hubungan makna",
+      "listenPronunciationAria": "Dengar sebutan {word}",
+      "englishMeaningLabel": "English: {value}",
+      "viewAyahLink": "Lihat ayat {label}",
+      "ayahLabel": "Ayat {label}",
+      "continuePending": "Menyimpan jawapan…",
+      "continueFinish": "Simpan & lihat rumusan",
+      "continueNext": "Simpan & kad seterusnya",
+      "retryingLabel": "Cubaan kedua",
+      "cardCounter": "Kad {current} daripada {total}",
+      "progressAria": "Kemajuan sesi Faham",
+      "audioOn": "Audio hidup",
+      "audioOff": "Audio mati",
+      "settingsLabel": "Tetapan",
+      "retryingNotice": "Jawapan disembunyikan semula. Cuba tanpa melihat bantuan.",
+      "listenPromptAria": "Dengar soalan: {word}",
+      "tapToReplay": "Tekan perkataan untuk dengar semula",
+      "optionsAria": "Pilihan jawapan"
+    },
+    "preview": {
+      "kindMastered": "Mahir",
+      "kindDue": "Ulang",
+      "kindNew": "Baharu",
+      "readyEyebrow": "Sedia",
+      "cardCountTitle": "{count} kad untuk sesi ini",
+      "previewSubtitle": "Jawapan disembunyikan supaya cubaan pertama benar-benar menguji ingatan anda.",
+      "summaryAria": "Ringkasan jenis kad",
+      "newChip": "{count} baharu",
+      "dueChip": "{count} ulang",
+      "masteredChip": "{count} mahir",
+      "fromAyah": "Daripada ayat {label}",
+      "mixedSource": "Sumber campuran",
+      "startAction": "Mula cubaan pertama"
+    },
+    "summary": {
+      "summaryGuidance": "{count, plural, =0 {Semua jawapan tepat pada cubaan pertama. Teruskan dengan sesi pendek seterusnya untuk kekalkan rentak.} =1 {Satu perkataan akan muncul semula dalam ulang kaji supaya ingatan menjadi lebih kukuh.} other {# perkataan akan muncul semula dalam ulang kaji supaya ingatan menjadi lebih kukuh.}}",
+      "sessionCompleteEyebrow": "Sesi selesai",
+      "accuracyTitle": "Ketepatan cubaan pertama",
+      "scoreLine": "{correct} daripada {total} kad",
+      "foundLabel": "Ditemui",
+      "masteredLabel": "Dikuasai",
+      "closeAria": "Tutup rumusan sesi",
+      "nextSessionAction": "Lihat sesi seterusnya"
+    },
+    "sources": {
+      "deckTitle": "Susun deck sesi ini",
+      "deckSourceTitle": "Sumber deck",
+      "deckSourceDescription": "Pilih sumber pendedahan yang paling dekat dengan fokus bacaan anda sekarang.",
+      "directionTitle": "Arah soalan",
+      "paceTitle": "Rentak selepas betul"
+    },
+    "stats": {
+      "foundLabel": "Ditemui",
+      "masteredLabel": "Dikuasai",
+      "capProgress": "{found}/{cap} cap",
+      "noCap": "Tiada cap",
+      "masteredProgress": "{mastered}/{found} ditemui",
+      "notStarted": "Belum mula"
+    },
+    "mcq": {
+      "arabToBm": {
+        "promptLabel": "Perkataan Arab",
+        "promptHint": "Pilih makna BM yang tepat.",
+        "answerLabel": "Makna BM"
+      },
+      "bmToArab": {
+        "promptLabel": "Makna BM",
+        "promptHint": "Pilih perkataan Arab yang tepat.",
+        "answerLabel": "Perkataan Arab"
+      }
+    }
+  },
   "auth": {
     "signIn": "Log masuk",
     "signingOut": "Sedang log keluar...",

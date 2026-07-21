@@ -1,6 +1,26 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { SerializedFahamCard } from "../domain/queue";
 import type { AnswerState } from "./fahamAnswerFlow";
+
+type FahamStudyTranslator = (
+  key: string,
+  values?: Record<string, string | number>,
+) => string;
+
+function resolveMcqLabels(
+  direction: SerializedFahamCard["mcq"]["direction"],
+  tMcq: FahamStudyTranslator,
+): { answerLabel: string; promptHint: string; promptLabel: string } {
+  const group = direction === "arab_to_bm" ? "arabToBm" : "bmToArab";
+  return {
+    answerLabel: tMcq(`${group}.answerLabel`),
+    promptHint: tMcq(`${group}.promptHint`),
+    promptLabel: tMcq(`${group}.promptLabel`),
+  };
+}
 
 interface FahamStudyCardProps {
   answerState: AnswerState | null;
@@ -61,20 +81,23 @@ function optionButtonClassName(params: {
   return interactiveOptionClasses(false);
 }
 
-function feedbackHeading(answerState: AnswerState): string {
+function feedbackHeading(
+  answerState: AnswerState,
+  t: FahamStudyTranslator,
+): string {
   if (answerState.isCorrect && answerState.attemptCount === 1) {
-    return "Betul pada cubaan pertama.";
+    return t("feedbackFirstTry");
   }
   if (answerState.isCorrect) {
-    return "Betul pada cubaan kedua.";
+    return t("feedbackSecondTry");
   }
   if (!answerState.revealAnswer) {
-    return "Belum tepat — cuba sekali lagi.";
+    return t("feedbackIncorrectRetry");
   }
   if (answerState.attemptCount === 2) {
-    return "Belum tepat selepas cubaan kedua.";
+    return t("feedbackIncorrectFinal");
   }
-  return "Mari kukuhkan pasangan ini.";
+  return t("feedbackReinforce");
 }
 
 function AudioIcon({ enabled }: { enabled: boolean }) {
@@ -131,6 +154,8 @@ function FeedbackPanel({
   | "onRetry"
   | "onRevealAnswer"
 >) {
+  const t = useTranslations("faham.study");
+
   if (!answerState || answerState.phase !== "feedback") {
     return null;
   }
@@ -161,14 +186,13 @@ function FeedbackPanel({
             : "text-rose-800 dark:text-rose-200"
         }`}
       >
-        {feedbackHeading(answerState)}
+        {feedbackHeading(answerState, t)}
       </p>
 
       {canRetry ? (
         <>
           <p className="mt-2 text-sm leading-relaxed text-stone-700 dark:text-stone-200">
-            Jawapan masih disembunyikan. Dengar soalan semula atau cuba dari
-            ingatan sebelum melihat pasangan yang betul.
+            {t("retryHint")}
           </p>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             <button
@@ -176,14 +200,14 @@ function FeedbackPanel({
               onClick={onRetry}
               className="ui-touch-target touch-manipulation rounded-xl bg-rose-700 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-rose-800 dark:bg-rose-500 dark:text-rose-950 dark:hover:bg-rose-400"
             >
-              Cuba sekali lagi
+              {t("retryAction")}
             </button>
             <button
               type="button"
               onClick={onRevealAnswer}
               className="ui-touch-target touch-manipulation rounded-xl border border-rose-300 bg-white/75 px-4 py-3 text-sm font-semibold text-rose-800 transition-colors hover:bg-white dark:border-rose-700 dark:bg-rose-950/30 dark:text-rose-100"
             >
-              Tunjukkan jawapan
+              {t("revealAction")}
             </button>
           </div>
         </>
@@ -191,13 +215,12 @@ function FeedbackPanel({
         <>
           {!answerState.initialIsCorrect ? (
             <p className="mt-2 text-sm leading-relaxed text-stone-700 dark:text-stone-200">
-              Perkataan ini akan muncul semula dalam ulang kaji supaya ingatan
-              menjadi lebih kukuh.
+              {t("reinforcementNote")}
             </p>
           ) : null}
 
           <div className="mt-4 rounded-2xl border border-white/70 bg-white/72 p-4 dark:border-white/10 dark:bg-stone-950/25">
-            <p className="ui-eyebrow">Hubungan makna</p>
+            <p className="ui-eyebrow">{t("meaningLinkEyebrow")}</p>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
               <button
                 type="button"
@@ -207,7 +230,7 @@ function FeedbackPanel({
                 className="ui-touch-target touch-manipulation rounded-xl border border-border-subtle bg-surface-solid px-4 py-2 text-center font-arabic text-3xl text-foreground transition-colors hover:bg-surface-muted"
                 dir="rtl"
                 lang="ar"
-                aria-label={`Dengar sebutan ${card.word.textUthmani}`}
+                aria-label={t("listenPronunciationAria", { word: card.word.textUthmani })}
               >
                 {card.word.textUthmani}
               </button>
@@ -228,7 +251,7 @@ function FeedbackPanel({
                 ) : null}
                 {card.word.translationEn ? (
                   <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
-                    English: {card.word.translationEn}
+                    {t("englishMeaningLabel", { value: card.word.translationEn })}
                   </p>
                 ) : null}
               </div>
@@ -244,11 +267,11 @@ function FeedbackPanel({
                     href={card.sourceContext.primaryReference.href}
                     className="ui-touch-target inline-flex items-center rounded-full border border-border-subtle bg-surface-solid px-3 text-xs font-semibold text-foreground transition-colors hover:bg-surface-muted"
                   >
-                    Lihat ayat {card.sourceContext.primaryReference.label}
+                    {t("viewAyahLink", { label: card.sourceContext.primaryReference.label })}
                   </Link>
                 ) : (
                   <span className="inline-flex min-h-11 items-center rounded-full border border-border-subtle bg-surface-solid px-3 text-xs font-semibold text-foreground">
-                    Ayat {card.sourceContext.primaryReference.label}
+                    {t("ayahLabel", { label: card.sourceContext.primaryReference.label })}
                   </span>
                 )
               ) : null}
@@ -272,10 +295,10 @@ function FeedbackPanel({
             className="ui-touch-target mt-4 w-full touch-manipulation rounded-xl bg-brand px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-brand-strong disabled:cursor-wait disabled:opacity-60 dark:text-slate-950"
           >
             {isPending
-              ? "Menyimpan jawapan…"
+              ? t("continuePending")
               : currentIndex + 1 >= cardCount
-                ? "Simpan & lihat rumusan"
-                : "Simpan & kad seterusnya"}
+                ? t("continueFinish")
+                : t("continueNext")}
           </button>
         </>
       )}
@@ -300,6 +323,9 @@ export function FahamStudyCard({
   onToggleConfig,
   progressPct,
 }: FahamStudyCardProps) {
+  const t = useTranslations("faham.study");
+  const tMcq = useTranslations("faham.mcq");
+  const mcqLabels = resolveMcqLabels(card.mcq.direction, tMcq);
   const visibleAnswerState =
     answerState?.phase === "feedback" ? answerState : null;
   const isRetrying = answerState?.phase === "retry";
@@ -313,14 +339,14 @@ export function FahamStudyCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-4 text-sm text-muted">
             <p id="faham-study-title" className="font-semibold text-foreground">
-              {isRetrying ? "Cubaan kedua" : `Kad ${currentIndex + 1} daripada ${cardCount}`}
+              {isRetrying ? t("retryingLabel") : t("cardCounter", { current: currentIndex + 1, total: cardCount })}
             </p>
             <span>{Math.round(progressPct)}%</span>
           </div>
           <div
             className="mt-2 h-2 overflow-hidden rounded-full bg-surface-strong"
             role="progressbar"
-            aria-label="Kemajuan sesi Faham"
+            aria-label={t("progressAria")}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(progressPct)}
@@ -344,7 +370,7 @@ export function FahamStudyCard({
             aria-pressed={audioEnabled}
           >
             <AudioIcon enabled={audioEnabled} />
-            <span>{audioEnabled ? "Audio hidup" : "Audio mati"}</span>
+            <span>{audioEnabled ? t("audioOn") : t("audioOff")}</span>
           </button>
 
           <button
@@ -370,22 +396,22 @@ export function FahamStudyCard({
                 strokeLinecap="round"
               />
             </svg>
-            <span className="sr-only sm:not-sr-only">Tetapan</span>
+            <span className="sr-only sm:not-sr-only">{t("settingsLabel")}</span>
           </button>
         </div>
       </div>
 
       {isRetrying ? (
         <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 dark:border-amber-700/50 dark:bg-amber-950/30 dark:text-amber-100">
-          Jawapan disembunyikan semula. Cuba tanpa melihat bantuan.
+          {t("retryingNotice")}
         </p>
       ) : null}
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="rounded-[1.75rem] border border-teal-200/70 bg-[radial-gradient(circle_at_top,rgba(20,184,166,0.1),transparent_55%),linear-gradient(180deg,rgba(240,253,250,0.92),rgba(255,255,255,0.96))] p-6 dark:border-teal-500/25 dark:bg-[radial-gradient(circle_at_top,rgba(20,184,166,0.15),transparent_55%),linear-gradient(180deg,rgba(17,24,39,0.92),rgba(12,10,9,0.96))]">
-          <p className="ui-eyebrow">{card.mcq.promptLabel}</p>
+          <p className="ui-eyebrow">{mcqLabels.promptLabel}</p>
           <p className="mt-3 text-sm leading-relaxed text-muted">
-            {card.mcq.promptHint}
+            {mcqLabels.promptHint}
           </p>
           <button
             type="button"
@@ -403,16 +429,16 @@ export function FahamStudyCard({
                 ? "font-arabic text-5xl sm:text-6xl"
                 : "text-3xl font-semibold sm:text-4xl"
             }`}
-            aria-label={`Dengar soalan: ${card.mcq.promptPrimary}`}
+            aria-label={t("listenPromptAria", { word: card.mcq.promptPrimary })}
           >
             {card.mcq.promptPrimary}
           </button>
           <p className="mt-2 text-center text-xs text-muted">
-            Tekan perkataan untuk dengar semula
+            {t("tapToReplay")}
           </p>
         </div>
 
-        <div className="space-y-3" aria-label="Pilihan jawapan">
+        <div className="space-y-3" aria-label={t("optionsAria")}>
           {card.mcq.options.map((option, index) => {
             const isSelected =
               visibleAnswerState?.selectedIndex === index;

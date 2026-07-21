@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
+import { getLocale } from "next-intl/server";
 import { getOptionalAuthUser } from "@/features/auth/server";
 import { loadDashboardWithDbCache } from "@/features/home/server";
+import type { AppLocale } from "@/i18n/request";
 
 export async function GET() {
   try {
-    const user = await getOptionalAuthUser();
-    const snapshot = await loadDashboardWithDbCache(user?.id ?? null);
+    const [user, locale] = await Promise.all([
+      getOptionalAuthUser(),
+      getLocale(),
+    ]);
+    const snapshot = await loadDashboardWithDbCache(
+      user?.id ?? null,
+      locale as AppLocale,
+    );
 
     return NextResponse.json(snapshot, {
       headers: {

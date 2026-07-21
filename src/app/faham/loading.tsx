@@ -1,6 +1,9 @@
+import { getTranslations } from "next-intl/server";
 import { ModeNavigator } from "@/features/read";
 
-export default function FahamPageLoading() {
+export default async function FahamPageLoading() {
+  const t = await getTranslations("faham.workspace");
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(180,83,9,0.16),transparent_30%),radial-gradient(circle_at_84%_0%,rgba(20,94,89,0.18),transparent_34%)] dark:bg-[radial-gradient(circle_at_12%_8%,rgba(217,119,6,0.16),transparent_30%),radial-gradient(circle_at_84%_0%,rgba(15,118,110,0.24),transparent_34%)]" />
@@ -27,8 +30,7 @@ export default function FahamPageLoading() {
             </div>
           </div>
           <p className="mt-6 text-sm text-stone-600 dark:text-stone-300">
-            Faham sedang dibuka. Jika ada sesi tersimpan atau data luar talian,
-            ia akan dipaparkan dahulu sementara semakan baharu berjalan.
+            {t("loadingDescription")}
           </p>
         </section>
       </main>

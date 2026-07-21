@@ -1,10 +1,13 @@
 export const dynamic = "force-dynamic";
 
+import { getLocale, getTranslations } from "next-intl/server";
 import { DashboardPreviewClient } from "@/features/home/components/DashboardPreviewClient";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { buildDailyPlanWithDetails } from "@/data/repositories/hifz";
 import { getHifzStats } from "@/data/repositories/hifz";
 import { loadHomeDashboardSnapshot } from "@/features/home/server";
+import type { HomeHeroTranslator } from "@/features/home/domain/homeDashboardHero";
+import type { AppLocale } from "@/i18n/request";
 
 const TOTAL_QURAN_PAGES = 604;
 
@@ -19,16 +22,22 @@ interface HifzSnapshot {
 
 function nextPageLabel(
   plan: Awaited<ReturnType<typeof buildDailyPlanWithDetails>>,
+  t: HomeHeroTranslator,
 ): string | null {
   const nextItem = plan.sabqi[0] ?? plan.sabak[0] ?? plan.manzil[0];
   if (!nextItem) {
     return null;
   }
 
-  return `Halaman ${nextItem.ayah.pageNumber} · ${nextItem.ayah.surahNameTranslit}`;
+  const { pageNumber, surahNameTranslit } = nextItem.ayah;
+  return surahNameTranslit
+    ? t("pageFocusWithSurah", { page: pageNumber, surah: surahNameTranslit })
+    : t("pageFocusPlain", { page: pageNumber });
 }
 
-async function loadHifzSnapshot(): Promise<HifzSnapshot | null> {
+async function loadHifzSnapshot(
+  t: HomeHeroTranslator,
+): Promise<HifzSnapshot | null> {
   const userId = process.env.MIFTAH_USER_ID;
   if (!userId) {
     return null;
@@ -46,7 +55,7 @@ async function loadHifzSnapshot(): Promise<HifzSnapshot | null> {
         100,
         Math.round((stats.totalManzilPages / TOTAL_QURAN_PAGES) * 100),
       ),
-      nextPageLabel: nextPageLabel(plan),
+      nextPageLabel: nextPageLabel(plan, t),
       streak: stats.streak,
       todayPages: new Set(
         [...plan.sabqi, ...plan.sabak, ...plan.manzil].map((item) => item.ayah.pageNumber),
@@ -61,11 +70,15 @@ async function loadHifzSnapshot(): Promise<HifzSnapshot | null> {
 
 export default async function DashboardPreviewPage() {
   const userId = process.env.MIFTAH_USER_ID ?? null;
+  const [locale, t] = await Promise.all([
+    getLocale(),
+    getTranslations("home.hero") as unknown as Promise<HomeHeroTranslator>,
+  ]);
   // These two loads are independent (neither's input depends on the
   // other's output) — run them concurrently instead of serially.
   const [hifzSnapshot, homeSnapshot] = await Promise.all([
-    loadHifzSnapshot(),
-    loadHomeDashboardSnapshot(userId),
+    loadHifzSnapshot(t),
+    loadHomeDashboardSnapshot(userId, locale as AppLocale),
   ]);
 
   return (

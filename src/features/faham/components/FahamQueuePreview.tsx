@@ -1,6 +1,12 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import type { SerializedFahamCard } from "../domain/queue";
 
-function cardKindConfig(kind: SerializedFahamCard["kind"]): {
+function cardKindConfig(
+  kind: SerializedFahamCard["kind"],
+  t: (key: string) => string,
+): {
   label: string;
   classes: string;
   rowClasses: string;
@@ -9,7 +15,7 @@ function cardKindConfig(kind: SerializedFahamCard["kind"]): {
   switch (kind) {
     case "mastered":
       return {
-        label: "Mahir",
+        label: t("kindMastered"),
         classes:
           "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-300",
         rowClasses:
@@ -19,7 +25,7 @@ function cardKindConfig(kind: SerializedFahamCard["kind"]): {
       };
     case "due":
       return {
-        label: "Ulang",
+        label: t("kindDue"),
         classes:
           "bg-sky-100 text-sky-700 dark:bg-sky-400/20 dark:text-sky-300",
         rowClasses:
@@ -29,7 +35,7 @@ function cardKindConfig(kind: SerializedFahamCard["kind"]): {
       };
     case "new":
       return {
-        label: "Baharu",
+        label: t("kindNew"),
         classes:
           "bg-violet-100 text-violet-700 dark:bg-violet-400/20 dark:text-violet-300",
         rowClasses:
@@ -47,6 +53,7 @@ export function FahamQueuePreview({
   cards: SerializedFahamCard[];
   onStart: () => void;
 }) {
+  const t = useTranslations("faham.preview");
   const newCount = cards.filter((card) => card.kind === "new").length;
   const dueCount = cards.filter((card) => card.kind === "due").length;
   const masteredCount = cards.filter(
@@ -60,42 +67,41 @@ export function FahamQueuePreview({
     >
       <div className="flex flex-col gap-4 border-b border-border-subtle pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="ui-eyebrow">Sedia</p>
+          <p className="ui-eyebrow">{t("readyEyebrow")}</p>
           <h3
             id="faham-preview-title"
             className="mt-2 text-xl font-semibold text-foreground"
           >
-            {cards.length} kad untuk sesi ini
+            {t("cardCountTitle", { count: cards.length })}
           </h3>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
-            Jawapan disembunyikan supaya cubaan pertama benar-benar menguji
-            ingatan anda.
+            {t("previewSubtitle")}
           </p>
         </div>
         <div
-          aria-label="Ringkasan jenis kad"
+          aria-label={t("summaryAria")}
           className="flex flex-wrap gap-2 text-xs font-semibold"
         >
           {newCount > 0 ? (
             <span className="rounded-full bg-violet-100 px-3 py-1.5 text-violet-700 dark:bg-violet-400/20 dark:text-violet-200">
-              {newCount} baharu
+              {t("newChip", { count: newCount })}
             </span>
           ) : null}
           {dueCount > 0 ? (
             <span className="rounded-full bg-sky-100 px-3 py-1.5 text-sky-700 dark:bg-sky-400/20 dark:text-sky-200">
-              {dueCount} ulang
+              {t("dueChip", { count: dueCount })}
             </span>
           ) : null}
           {masteredCount > 0 ? (
             <span className="rounded-full bg-emerald-100 px-3 py-1.5 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-200">
-              {masteredCount} mahir
+              {t("masteredChip", { count: masteredCount })}
             </span>
           ) : null}
         </div>
       </div>
       <ol className="mt-5 space-y-2.5">
         {cards.map((card, index) => {
-          const statusConfig = cardKindConfig(card.kind);
+          const statusConfig = cardKindConfig(card.kind, t);
           const reference = card.sourceContext?.primaryReference?.label;
           return (
             <li
@@ -120,7 +126,7 @@ export function FahamQueuePreview({
                   {card.mcq.promptPrimary}
                 </span>
                 <span className="mt-0.5 block text-xs text-stone-500 dark:text-stone-400">
-                  {reference ? `Daripada ayat ${reference}` : "Sumber campuran"}
+                  {reference ? t("fromAyah", { label: reference }) : t("mixedSource")}
                 </span>
               </span>
               <span
@@ -138,7 +144,7 @@ export function FahamQueuePreview({
           onClick={onStart}
           className="ui-touch-target w-full touch-manipulation rounded-2xl bg-brand px-6 py-4 text-base font-bold text-white shadow-sm transition-colors hover:bg-brand-strong active:bg-brand-strong dark:text-slate-950"
         >
-          Mula cubaan pertama
+          {t("startAction")}
         </button>
       </div>
     </section>

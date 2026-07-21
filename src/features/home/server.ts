@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { DEFAULT_LOCALE, type AppLocale } from "@/i18n/request";
 import {
   getHomeStoredDashboardSnapshot,
   storeHomeDashboardSnapshot,
@@ -26,9 +27,10 @@ function hasLegacyFahamCoveragePct(raw: unknown): boolean {
 
 async function loadHomeDashboardSnapshotUncached(
   userId: string | null,
+  locale: AppLocale,
 ): Promise<HomeDashboardSnapshot> {
   const dashboard = await import("./domain/homeDashboard");
-  return dashboard.loadHomeDashboardSnapshotUncached(userId);
+  return dashboard.loadHomeDashboardSnapshotUncached(userId, locale);
 }
 
 /**
@@ -78,9 +80,10 @@ export async function readSnapshotFromDb(
  */
 export async function recomputeAndStoreSnapshot(
   userId: string,
+  locale: AppLocale = DEFAULT_LOCALE,
 ): Promise<void> {
   try {
-    const snapshot = await loadHomeDashboardSnapshotUncached(userId);
+    const snapshot = await loadHomeDashboardSnapshotUncached(userId, locale);
     await storeHomeDashboardSnapshot(userId, snapshot, new Date().toISOString());
   } catch (error) {
     console.error("[homeDashboardDb] recompute failed:", error);
@@ -92,9 +95,10 @@ export async function recomputeAndStoreSnapshot(
  */
 export async function loadDashboardWithDbCache(
   userId: string | null,
+  locale: AppLocale = DEFAULT_LOCALE,
 ): Promise<HomeDashboardSnapshot> {
   if (!userId) {
-    return loadHomeDashboardSnapshot(userId);
+    return loadHomeDashboardSnapshot(userId, locale);
   }
 
   const dbSnapshot = await readSnapshotFromDb(userId);
@@ -102,7 +106,7 @@ export async function loadDashboardWithDbCache(
     return dbSnapshot;
   }
 
-  return loadHomeDashboardSnapshot(userId);
+  return loadHomeDashboardSnapshot(userId, locale);
 }
 
 export const loadHomeDashboardSnapshot = unstable_cache(

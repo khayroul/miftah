@@ -1,3 +1,8 @@
+import { createTranslator } from "next-intl";
+import { DEFAULT_LOCALE, type AppLocale } from "@/i18n/request";
+import type { HomeHeroTranslator } from "./homeDashboardHero";
+import msMessages from "../../../../messages/ms.json";
+import enMessages from "../../../../messages/en.json";
 import {
   getHomeFahamCounts,
   getHomeReadDashboardData,
@@ -33,6 +38,23 @@ import {
 import type { PlanItem } from "@/data/repositories/hifz";
 
 const TOTAL_QURAN_PAGES = 604;
+
+// Locale is threaded in as a plain (serializable) argument rather than
+// resolved here via next-intl/server's getTranslations — this function sits
+// inside the unstable_cache-wrapped call chain (see server.ts), and calling
+// cookies() (which getTranslations does internally, per src/i18n/request.ts)
+// inside an unstable_cache scope is a hard Next.js runtime error. createTranslator
+// is pure and locale-argument-driven, so it's safe here and also makes the
+// cache correctly vary per locale.
+const HERO_MESSAGES_BY_LOCALE = { ms: msMessages, en: enMessages } as const;
+
+function createHeroTranslator(locale: AppLocale): HomeHeroTranslator {
+  return createTranslator({
+    locale,
+    messages: HERO_MESSAGES_BY_LOCALE[locale],
+    namespace: "home.hero",
+  }) as unknown as HomeHeroTranslator;
+}
 
 export interface HomeFahamSnapshot {
   blockedReason: "due_backlog" | null;
@@ -118,12 +140,16 @@ function resolveNextPlanEntry(
 
 function nextPageLabel(
   nextEntry: { block: "sabqi" | "sabak" | "manzil"; item: PlanItem } | null,
+  t: HomeHeroTranslator,
 ): string | null {
   if (!nextEntry) {
     return null;
   }
 
-  return `Halaman ${nextEntry.item.ayah.pageNumber} · ${nextEntry.item.ayah.surahNameTranslit}`;
+  const { pageNumber, surahNameTranslit } = nextEntry.item.ayah;
+  return surahNameTranslit
+    ? t("pageFocusWithSurah", { page: pageNumber, surah: surahNameTranslit })
+    : t("pageFocusPlain", { page: pageNumber });
 }
 
 function countUniquePlanPages(plan: Awaited<ReturnType<typeof buildDailyPlanWithDetails>>): number {
@@ -132,7 +158,10 @@ function countUniquePlanPages(plan: Awaited<ReturnType<typeof buildDailyPlanWith
   ).size;
 }
 
-async function loadHifzSnapshot(userId: string): Promise<HomeHifzSnapshot> {
+async function loadHifzSnapshot(
+  userId: string,
+  t: HomeHeroTranslator,
+): Promise<HomeHifzSnapshot> {
   const hasStarted = await hasAnyHifzProgress(userId);
   if (!hasStarted) {
     return {
@@ -160,7 +189,7 @@ async function loadHifzSnapshot(userId: string): Promise<HomeHifzSnapshot> {
     nextAyahKey: nextEntry
       ? `${nextEntry.item.ayah.surahId}:${nextEntry.item.ayah.ayahNumber}`
       : null,
-    nextPageLabel: nextPageLabel(nextEntry),
+    nextPageLabel: nextPageLabel(nextEntry, t),
     nextBlock: nextEntry?.block ?? null,
     nextPage: nextEntry?.item.ayah.pageNumber ?? null,
     streak: stats.streak,
@@ -367,6 +396,7 @@ async function loadSafely<T>(
 
 export async function loadHomeDashboardSnapshotUncached(
   userId: string | null,
+  locale: AppLocale = DEFAULT_LOCALE,
 ): Promise<HomeDashboardSnapshot> {
   if (!userId) {
     return {
@@ -378,9 +408,10 @@ export async function loadHomeDashboardSnapshotUncached(
     };
   }
 
+  const t = createHeroTranslator(locale);
   const [faham, hifz, read, tema, activity] = await Promise.all([
     loadSafely("home faham snapshot", () => loadFahamSnapshot(userId)),
-    loadSafely("home hifz snapshot", () => loadHifzSnapshot(userId)),
+    loadSafely("home hifz snapshot", () => loadHifzSnapshot(userId, t)),
     loadSafely("home read snapshot", () => loadReadSnapshot(userId)),
     loadSafely("home tema snapshot", () => loadTemaSnapshot(userId)),
     loadSafely("home activity snapshot", () => loadActivitySnapshot(userId)),

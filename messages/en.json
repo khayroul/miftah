@@ -192,6 +192,107 @@
       "chipAudioRepeat": "Audio repeat"
     }
   },
+  "faham": {
+    "workspace": {
+      "celebrationEyebrow": "Congrats! +1 Mastered",
+      "celebrationTitle": "New Word Mastered",
+      "dueBacklogNotice": "New cards are paused for a moment because your review backlog is still high. Clear the review cards first, then the engine will unlock new cards again.",
+      "statsErrorNotice": "Faham stats couldn't load. The practice queue can still be retried.",
+      "statsErrorRetry": "Retry Stats",
+      "reloadQueuePending": "Rebuilding...",
+      "reloadQueueAction": "Rebuild Queue",
+      "emptyQueueTitle": "No Faham cards right now.",
+      "emptyQueueDescription": "Keep reading or open a theme first so this engine has enough exposure to unlock new cards.",
+      "hydratingDescription": "The review queue is being arranged by exposure and due cards.",
+      "entryContextBadge": "Entered from Theme",
+      "entryContextDescription": "This deck is prioritized for the words that appear most strongly in the theme you just explored, so Faham carries straight on from that verse's context.",
+      "entryContextHrefLabel": "Back to Theme",
+      "entryContextTitle": "Surah {surah} Theme, Part {chunk}",
+      "setupMessagePreview": "Account Required: You're using preview mode. Sign in to save your progress.",
+      "loadingDescription": "Faham is opening. If there's a saved session or offline data, it will show first while a fresh check runs."
+    },
+    "study": {
+      "feedbackFirstTry": "Correct on the first try.",
+      "feedbackSecondTry": "Correct on the second try.",
+      "feedbackIncorrectRetry": "Not quite — try again.",
+      "feedbackIncorrectFinal": "Not quite after the second try.",
+      "feedbackReinforce": "Let's reinforce this pair.",
+      "retryHint": "The answer is still hidden. Listen to the question again or try from memory before revealing the correct pair.",
+      "retryAction": "Try again",
+      "revealAction": "Show answer",
+      "reinforcementNote": "This word will come up again in review so the memory sticks better.",
+      "meaningLinkEyebrow": "Meaning link",
+      "listenPronunciationAria": "Listen to the pronunciation of {word}",
+      "englishMeaningLabel": "English: {value}",
+      "viewAyahLink": "View verse {label}",
+      "ayahLabel": "Verse {label}",
+      "continuePending": "Saving your answer…",
+      "continueFinish": "Save & view summary",
+      "continueNext": "Save & next card",
+      "retryingLabel": "Second try",
+      "cardCounter": "Card {current} of {total}",
+      "progressAria": "Faham session progress",
+      "audioOn": "Audio on",
+      "audioOff": "Audio off",
+      "settingsLabel": "Settings",
+      "retryingNotice": "The answer is hidden again. Try without looking at the hints.",
+      "listenPromptAria": "Listen to the question: {word}",
+      "tapToReplay": "Tap the word to hear it again",
+      "optionsAria": "Answer options"
+    },
+    "preview": {
+      "kindMastered": "Mastered",
+      "kindDue": "Review",
+      "kindNew": "New",
+      "readyEyebrow": "Ready",
+      "cardCountTitle": "{count, plural, one {# card} other {# cards}} for this session",
+      "previewSubtitle": "Answers are hidden so the first try genuinely tests your memory.",
+      "summaryAria": "Card type summary",
+      "newChip": "{count} new",
+      "dueChip": "{count} due",
+      "masteredChip": "{count} mastered",
+      "fromAyah": "From verse {label}",
+      "mixedSource": "Mixed sources",
+      "startAction": "Start first try"
+    },
+    "summary": {
+      "summaryGuidance": "{count, plural, =0 {All answers were correct on the first try. Continue with a short session next to keep up the momentum.} =1 {One word will come up again in review so the memory sticks better.} other {# words will come up again in review so the memory sticks better.}}",
+      "sessionCompleteEyebrow": "Session complete",
+      "accuracyTitle": "First-try accuracy",
+      "scoreLine": "{correct} out of {total} cards",
+      "foundLabel": "Discovered",
+      "masteredLabel": "Mastered",
+      "closeAria": "Close session summary",
+      "nextSessionAction": "View next session"
+    },
+    "sources": {
+      "deckTitle": "Arrange this session's deck",
+      "deckSourceTitle": "Deck source",
+      "deckSourceDescription": "Choose the exposure source closest to your current reading focus.",
+      "directionTitle": "Question direction",
+      "paceTitle": "Pace after a correct answer"
+    },
+    "stats": {
+      "foundLabel": "Discovered",
+      "masteredLabel": "Mastered",
+      "capProgress": "{found}/{cap} cap",
+      "noCap": "No cap",
+      "masteredProgress": "{mastered}/{found} discovered",
+      "notStarted": "Not started"
+    },
+    "mcq": {
+      "arabToBm": {
+        "promptLabel": "Arabic word",
+        "promptHint": "Choose the correct Malay meaning.",
+        "answerLabel": "Malay meaning"
+      },
+      "bmToArab": {
+        "promptLabel": "Malay meaning",
+        "promptHint": "Choose the correct Arabic word.",
+        "answerLabel": "Arabic word"
+      }
+    }
+  },
   "auth": {
     "signIn": "Sign in",
     "signingOut": "Signing out...",

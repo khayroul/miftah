@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 import type { FahamQueueSnapshot } from "../domain/queue";
 import type { FahamSourcePreset } from "../domain/presets";
 import { FahamQueuePreview } from "./FahamQueuePreview";
@@ -51,6 +52,7 @@ export function FahamWorkspace({
   setupMessage = null,
   shouldHydrateInitialQueue = false,
 }: FahamWorkspaceProps) {
+  const t = useTranslations("faham.workspace");
   const {
     answerState,
     audioEnabled,
@@ -106,8 +108,8 @@ export function FahamWorkspace({
               </svg>
             </div>
             <div className="text-left">
-              <p className="text-sm font-bold uppercase tracking-widest text-emerald-600 sm:text-base dark:text-emerald-400">Tahniah! +1 Dikuasai</p>
-              <p className="text-base font-bold text-emerald-950 sm:text-lg dark:text-emerald-50">Perkataan Baru Dikuasai</p>
+              <p className="text-sm font-bold uppercase tracking-widest text-emerald-600 sm:text-base dark:text-emerald-400">{t("celebrationEyebrow")}</p>
+              <p className="text-base font-bold text-emerald-950 sm:text-lg dark:text-emerald-50">{t("celebrationTitle")}</p>
             </div>
           </div>
         </div>
@@ -159,9 +161,7 @@ export function FahamWorkspace({
 
       {snapshot.blockedReason === "due_backlog" && !isHydratingInitialQueue ? (
         <section className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
-          Kad baharu dijeda sementara kerana baki ulang kaji masih tinggi.
-          Selesaikan kad ulang kaji dahulu, kemudian enjin akan membuka kad
-          baharu semula.
+          {t("dueBacklogNotice")}
         </section>
       ) : null}
 
@@ -185,13 +185,13 @@ export function FahamWorkspace({
 
       {statsStatus === "error" ? (
         <section className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
-          <p>Statistik Faham tak dapat dimuat. Barisan latihan masih boleh dicuba semula.</p>
+          <p>{t("statsErrorNotice")}</p>
           <button
             type="button"
             onClick={() => void refreshStats(false)}
             className="shrink-0 rounded-xl bg-amber-600 px-4 py-2 font-semibold text-white transition hover:bg-amber-700"
           >
-            Cuba Statistik Lagi
+            {t("statsErrorRetry")}
           </button>
         </section>
       ) : null}
@@ -237,17 +237,16 @@ export function FahamWorkspace({
             </div>
           </div>
           <p className="mt-6 text-sm text-stone-600 dark:text-stone-300">
-            Barisan ulang kaji sedang disusun ikut pendedahan dan kad yang due.
+            {t("hydratingDescription")}
           </p>
         </section>
       ) : cards.length === 0 ? (
         <section className="animate-fade-in-up rounded-3xl border border-stone-200/90 bg-white/88 p-8 text-center shadow-[0_25px_70px_-48px_rgba(28,25,23,0.55)] backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/80">
           <p className="text-2xl font-medium text-stone-900 dark:text-stone-100">
-            Belum ada kad Faham buat masa ini.
+            {t("emptyQueueTitle")}
           </p>
           <p className="mt-2 text-base text-stone-600 dark:text-stone-300">
-            Teruskan membaca atau buka tema dahulu supaya enjin ini mempunyai
-            pendedahan yang cukup untuk membuka kad baharu.
+            {t("emptyQueueDescription")}
           </p>
           <button
             type="button"
@@ -255,7 +254,7 @@ export function FahamWorkspace({
             onClick={() => reloadQueue(preset, directionMode, isRevision)}
             className="mt-5 rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isPending ? "Menyusun Semula..." : "Cuba Susun Semula"}
+            {isPending ? t("reloadQueuePending") : t("reloadQueueAction")}
           </button>
         </section>
       ) : null}

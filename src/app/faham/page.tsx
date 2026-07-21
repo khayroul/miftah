@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { FahamWorkspace } from "@/features/faham";
 import { ModeNavigator } from "@/features/read";
 import {
@@ -47,10 +48,12 @@ function buildQuranWordAudioUrl(
 }
 
 export default async function FahamPage(props: FahamPageProps) {
-  const [user, resolvedSearchParams, jumpTargets] = await Promise.all([
+  const [user, resolvedSearchParams, jumpTargets, t, tMcq] = await Promise.all([
     getOptionalAuthUser(),
     props.searchParams,
     getReadJumpTargets(),
+    getTranslations("faham.workspace"),
+    getTranslations("faham.mcq"),
   ]);
   const userId = user?.id;
   const initialPreset = parseFahamSourcePreset(pickQueryValue(resolvedSearchParams.preset));
@@ -60,12 +63,11 @@ export default async function FahamPage(props: FahamPageProps) {
   const entryContext =
     initialPreset === "theme" && sourceSurah && sourceChunk
       ? {
-          badge: "Masuk dari Tema",
-          description:
-            "Deck ini diutamakan untuk perkataan yang paling kuat muncul dalam tema yang baru anda teroka, supaya faham bergerak terus daripada konteks ayat tadi.",
+          badge: t("entryContextBadge"),
+          description: t("entryContextDescription"),
           href: `/read/surah/${sourceSurah}/themes?chunk=${sourceChunk}`,
-          hrefLabel: "Kembali ke Tema",
-          title: `Tema Surah ${sourceSurah}, Bahagian ${sourceChunk}`,
+          hrefLabel: t("entryContextHrefLabel"),
+          title: t("entryContextTitle", { surah: sourceSurah, chunk: sourceChunk }),
         }
       : null;
   const defaultLevelProgress: FahamLevelProgress = {
@@ -101,7 +103,7 @@ export default async function FahamPage(props: FahamPageProps) {
   const shouldHydrateInitialQueue = Boolean(userId);
 
   if (!userId) {
-    setupMessage = "Akaun Diperlukan: Anda sedang menggunakan mod pratonton. Log masuk untuk menyimpan kemajuan anda.";
+    setupMessage = t("setupMessagePreview");
     initialQueue.new = [
       {
         due: new Date().toISOString(),
@@ -115,7 +117,7 @@ export default async function FahamPage(props: FahamPageProps) {
         },
         kind: "new",
         mcq: {
-          answerLabel: "Makna BM",
+          answerLabel: tMcq("arabToBm.answerLabel"),
           answerPrimary: "Dengan nama",
           answerSecondary: null,
           correctIndex: 0,
@@ -127,8 +129,8 @@ export default async function FahamPage(props: FahamPageProps) {
             { dir: "ltr", lang: "ms", value: "Raja" },
           ],
           promptDir: "rtl",
-          promptHint: "Pilih makna BM paling tepat untuk perkataan Arab ini.",
-          promptLabel: "Perkataan Arab",
+          promptHint: tMcq("arabToBm.promptHint"),
+          promptLabel: tMcq("arabToBm.promptLabel"),
           promptLang: "ar",
           promptPrimary: "بِسْمِ",
           promptSecondary: "bis'mi",
@@ -163,7 +165,7 @@ export default async function FahamPage(props: FahamPageProps) {
         },
         kind: "new",
         mcq: {
-          answerLabel: "Makna BM",
+          answerLabel: tMcq("arabToBm.answerLabel"),
           answerPrimary: "Agama/Pembalasan",
           answerSecondary: null,
           correctIndex: 1,
@@ -175,8 +177,8 @@ export default async function FahamPage(props: FahamPageProps) {
             { dir: "ltr", lang: "ms", value: "Tuhan" },
           ],
           promptDir: "rtl",
-          promptHint: "Pilih makna BM paling tepat untuk perkataan Arab ini.",
-          promptLabel: "Perkataan Arab",
+          promptHint: tMcq("arabToBm.promptHint"),
+          promptLabel: tMcq("arabToBm.promptLabel"),
           promptLang: "ar",
           promptPrimary: "ٱلدِّينِ",
           promptSecondary: "al-dini",

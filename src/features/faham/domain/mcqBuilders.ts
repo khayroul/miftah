@@ -57,6 +57,12 @@ function buildArabicToMalayMcq(
     return null;
   }
 
+  // answerLabel/promptLabel/promptHint below are retained for payload
+  // compatibility (offline-cached MCQs and bot code still carry these
+  // fields) but are no longer read for rendering — FahamStudyCard now
+  // resolves the displayed label/hint by `direction` via i18n keys under
+  // faham.mcq.* so a locale switch after caching doesn't show a stale
+  // language. Do not remove these fields or rely on their values for UI.
   return {
     answerLabel: "Makna BM",
     answerPrimary: correctMeaning,
@@ -116,6 +122,8 @@ function buildMalayToArabicMcq(
     return null;
   }
 
+  // See the comment on buildArabicToMalayMcq's return above: these label
+  // fields are payload-compat only, not used for rendering.
   return {
     answerLabel: "Perkataan Arab",
     answerPrimary: correctArabic,

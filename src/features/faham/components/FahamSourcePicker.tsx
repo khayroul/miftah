@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import type { FahamMcqDirectionMode } from "../domain/mcq";
 import {
   FAHAM_PRESET_CONFIGS,
@@ -29,13 +32,15 @@ export function FahamSourcePicker({
   ) => void;
   preset: FahamSourcePreset;
 }) {
+  const t = useTranslations("faham.sources");
+
   return (
     <section className="rounded-[2rem] border border-stone-200/85 bg-white/85 p-5 shadow-[0_30px_80px_-52px_rgba(41,37,36,0.4)] backdrop-blur-sm sm:p-7 dark:border-stone-600/70 dark:bg-stone-950/88">
       <aside className="animate-in fade-in slide-in-from-top-2 rounded-[1.75rem] border border-stone-200/80 bg-white/80 p-5 shadow-xl backdrop-blur-md duration-300 dark:border-white/10 dark:bg-stone-900/88">
         <div className="space-y-5">
           <div className="flex items-center justify-between">
             <p className="text-sm font-bold uppercase tracking-[0.22em] text-stone-500 sm:text-base dark:text-stone-200">
-              Susun deck sesi ini
+              {t("deckTitle")}
             </p>
             <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm font-bold text-stone-600 sm:text-base dark:border-white/10 dark:bg-white/10 dark:text-stone-100">
               {FAHAM_PRESET_CONFIGS[preset].shortLabel}
@@ -46,11 +51,10 @@ export function FahamSourcePicker({
             <div className="space-y-4">
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.2em] text-stone-500 sm:text-base dark:text-stone-200">
-                  Sumber deck
+                  {t("deckSourceTitle")}
                 </p>
                 <p className="mt-1 text-sm text-stone-600 sm:text-base dark:text-stone-100">
-                  Pilih sumber pendedahan yang paling dekat dengan fokus bacaan
-                  anda sekarang.
+                  {t("deckSourceDescription")}
                 </p>
               </div>
 
@@ -85,7 +89,7 @@ export function FahamSourcePicker({
             <div className="space-y-4 border-t border-stone-200/80 pt-5 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0 dark:border-white/10">
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.2em] text-stone-500 sm:text-base dark:text-stone-200">
-                  Arah soalan
+                  {t("directionTitle")}
                 </p>
                 <p className="mt-1 text-sm text-stone-600 sm:text-base dark:text-stone-100">
                   {DIRECTION_CONFIGS[directionMode].helper}
@@ -124,7 +128,7 @@ export function FahamSourcePicker({
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-bold uppercase tracking-[0.22em] text-stone-500 sm:text-base dark:text-stone-200">
-                      Rentak selepas betul
+                      {t("paceTitle")}
                     </p>
                     <p className="mt-1 text-sm text-stone-600 sm:text-base dark:text-stone-100">
                       {CORRECT_ADVANCE_CONFIGS[correctAdvanceMode].helper}
