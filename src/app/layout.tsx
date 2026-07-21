@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getTranslations } from "next-intl/server";
 import localFont from "next/font/local";
 import "./globals.css";
 import "@/styles/mushaf-live.css";
@@ -15,10 +17,13 @@ const arabicText = localFont({
   preload: false,
 });
 
-export const metadata: Metadata = {
-  title: "Miftah — مفتاح",
-  description: "Memorize the Quran by understanding, not just repetition.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return {
+    title: "Miftah — مفتاح",
+    description: t("description"),
+  };
+}
 
 import { ReadingStateSync } from "@/features/read";
 import { FahamPwaDebugLoader } from "@/features/faham/client-debug";
@@ -28,13 +33,15 @@ import {
   UpdateBanner,
 } from "@/shared/pwa/components";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+
   return (
-    <html lang="ms" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -72,12 +79,14 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body className={`${arabicText.variable} antialiased`}>
-        <ServiceWorkerRegistrar />
-        <ReadingStateSync />
-        <OfflineIndicator />
-        <UpdateBanner />
-        <FahamPwaDebugLoader />
-        {children}
+        <NextIntlClientProvider>
+          <ServiceWorkerRegistrar />
+          <ReadingStateSync />
+          <OfflineIndicator />
+          <UpdateBanner />
+          <FahamPwaDebugLoader />
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );
