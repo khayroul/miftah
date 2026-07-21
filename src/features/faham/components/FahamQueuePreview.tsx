@@ -1,7 +1,6 @@
 import type { SerializedFahamCard } from "../domain/queue";
 
 function cardKindConfig(kind: SerializedFahamCard["kind"]): {
-  description: string;
   label: string;
   classes: string;
   rowClasses: string;
@@ -10,7 +9,6 @@ function cardKindConfig(kind: SerializedFahamCard["kind"]): {
   switch (kind) {
     case "mastered":
       return {
-        description: "Semak semula untuk kekalkan ingatan",
         label: "Mahir",
         classes:
           "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-300",
@@ -21,7 +19,6 @@ function cardKindConfig(kind: SerializedFahamCard["kind"]): {
       };
     case "due":
       return {
-        description: "Sudah sampai masa untuk diulang",
         label: "Ulang",
         classes:
           "bg-sky-100 text-sky-700 dark:bg-sky-400/20 dark:text-sky-300",
@@ -32,7 +29,6 @@ function cardKindConfig(kind: SerializedFahamCard["kind"]): {
       };
     case "new":
       return {
-        description: "Diuji buat kali pertama",
         label: "Baharu",
         classes:
           "bg-violet-100 text-violet-700 dark:bg-violet-400/20 dark:text-violet-300",
@@ -112,8 +108,16 @@ export function FahamQueuePreview({
                 {index + 1}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-stone-800 dark:text-stone-100">
-                  {statusConfig.description}
+                <span
+                  dir={card.mcq.promptDir}
+                  lang={card.mcq.promptLang}
+                  className={`block truncate text-stone-800 dark:text-stone-100 ${
+                    card.mcq.promptLang === "ar"
+                      ? "font-arabic text-xl leading-snug"
+                      : "text-sm font-semibold"
+                  }`}
+                >
+                  {card.mcq.promptPrimary}
                 </span>
                 <span className="mt-0.5 block text-xs text-stone-500 dark:text-stone-400">
                   {reference ? `Daripada ayat ${reference}` : "Sumber campuran"}
