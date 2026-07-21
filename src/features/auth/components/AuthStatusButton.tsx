@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
   createSupabaseBrowserClient,
@@ -15,6 +16,7 @@ function shouldRefreshForAuthEvent(event: AuthChangeEvent): boolean {
 }
 
 export function AuthStatusButton() {
+  const t = useTranslations("auth");
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -86,7 +88,7 @@ export function AuthStatusButton() {
         href={buildSignInPath(nextPath)}
         className="inline-flex min-h-11 items-center rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 shadow-sm transition hover:bg-amber-100 dark:border-amber-700/50 dark:bg-amber-900/25 dark:text-amber-100 dark:hover:bg-amber-900/40"
       >
-        Log masuk
+        {t("signIn")}
       </Link>
     );
   }
@@ -95,7 +97,7 @@ export function AuthStatusButton() {
     typeof user.user_metadata?.display_name === "string" &&
     user.user_metadata.display_name.trim().length > 0
       ? user.user_metadata.display_name.trim()
-      : user.email?.split("@")[0] ?? "Pengguna";
+      : user.email?.split("@")[0] ?? t("defaultUserName");
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
@@ -111,7 +113,7 @@ export function AuthStatusButton() {
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-900 text-xs font-semibold text-stone-50 dark:bg-stone-100 dark:text-stone-900">
           {initial}
         </span>
-        <span>{isPending ? "Sedang log keluar..." : "Telah log masuk"}</span>
+        <span>{isPending ? t("signingOut") : t("signedIn")}</span>
         <svg
           className={`h-4 w-4 transition ${menuOpen ? "rotate-180" : ""}`}
           viewBox="0 0 20 20"
@@ -129,7 +131,7 @@ export function AuthStatusButton() {
       {menuOpen ? (
         <div className="absolute right-0 z-20 mt-2 w-64 rounded-3xl border border-stone-200 bg-white/98 p-3 shadow-[0_24px_80px_-40px_rgba(28,25,23,0.55)] backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/96">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
-            Akaun
+            {t("accountLabel")}
           </p>
           <p className="mt-3 text-sm font-medium text-stone-900 dark:text-stone-50">
             {displayName}
@@ -155,7 +157,7 @@ export function AuthStatusButton() {
             }}
             className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 disabled:opacity-60 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
           >
-            {isPending ? "Sedang log keluar..." : "Log keluar"}
+            {isPending ? t("signingOut") : t("signOut")}
           </button>
         </div>
       ) : null}

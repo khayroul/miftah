@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import type { SurahJumpTarget } from "@/lib/readNavigation";
 import { findMarkerForPage, saveReadMode, useReadingProgressState } from "@/features/read";
 import type { HomeDashboardSnapshot } from "../domain/homeDashboard";
-import { buildHomeHero } from "../domain/homeDashboardHero";
+import { buildHomeHero, type HomeHeroTranslator } from "../domain/homeDashboardHero";
 import {
   emptyHomeDashboardSnapshot,
   hasHomeDashboardData,
@@ -16,6 +17,11 @@ import { HomeDashboardSections } from "./HomeDashboardSections";
 import { toneClasses, type ModeCard } from "./HomeModeProgressCard";
 
 const TOTAL_QURAN_PAGES = 604;
+
+const INTL_LOCALE_BY_APP_LOCALE: Record<string, string> = {
+  en: "en-US",
+  ms: "ms-MY",
+};
 
 interface HomeDashboardClientProps {
   authUserId: string | null;
@@ -32,17 +38,21 @@ function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, Math.round(value)));
 }
 
-function formatActivityDate(value: string | null): string {
+function formatActivityDate(
+  t: HomeHeroTranslator,
+  intlLocale: string,
+  value: string | null,
+): string {
   if (!value) {
-    return "Belum ada aktiviti";
+    return t("noActivityYet");
   }
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return "Aktiviti baru";
+    return t("newActivity");
   }
 
-  return new Intl.DateTimeFormat("ms-MY", {
+  return new Intl.DateTimeFormat(intlLocale, {
     day: "numeric",
     month: "short",
   }).format(date);
@@ -85,6 +95,11 @@ export function HomeDashboardClient({
   surahTargets,
 }: HomeDashboardClientProps) {
   const router = useRouter();
+  const locale = useLocale();
+  const intlLocale = INTL_LOCALE_BY_APP_LOCALE[locale] ?? "ms-MY";
+  const tHero = useTranslations("home.hero");
+  const tDash = useTranslations("home.dashboard");
+  const tNav = useTranslations("nav");
   const [snapshot, setSnapshot] = useState<HomeDashboardSnapshot>(initialSnapshot);
   const [migratingHifzGoal, startMigratingHifzGoal] = useTransition();
   const [submittingHifzGoalMigration, setSubmittingHifzGoalMigration] =
@@ -136,6 +151,8 @@ export function HomeDashboardClient({
     (uniquePagesLifetime / TOTAL_QURAN_PAGES) * 100,
   );
   const formattedLastRead = formatActivityDate(
+    tDash,
+    intlLocale,
     readSnapshot?.lastReadAt ?? readingState.lastReadAt,
   );
   const activeSurah = useMemo(() => {
@@ -152,7 +169,7 @@ export function HomeDashboardClient({
   const currentFahamCap = snapshot.faham?.focusWordLimit ?? 1000;
   const nextFahamCapLabel = fahamLevel?.nextWordLimit
     ? `${Math.round(fahamLevel.nextWordLimit / 1000)}k`
-    : "seterusnya";
+    : tDash("nextCapFallback");
   const hifzReadTargetPage = snapshot.hifz?.nextPage ?? continuePage;
   const hifzReadHref = buildHifzMushafHref({
     page: hifzReadTargetPage,
@@ -167,6 +184,7 @@ export function HomeDashboardClient({
       formattedLastRead,
       hifzReadHref,
       snapshot,
+      t: tHero as unknown as HomeHeroTranslator,
     });
   const heroClasses = toneClasses(homeHero.tone);
   const activitySnapshot = useMemo(() => {
@@ -189,112 +207,120 @@ export function HomeDashboardClient({
     {
       lines: [
         {
-          label: "Liputan",
-          value: `${uniquePagesLifetime} / ${TOTAL_QURAN_PAGES} halaman`,
+          label: tDash("statCoverage"),
+          value: `${uniquePagesLifetime} / ${TOTAL_QURAN_PAGES} ${tDash("unitPages")}`,
         },
         {
-          label: "7 Hari",
-          value: `${uniquePages7d} halaman`,
+          label: tDash("stat7Days"),
+          value: tHero("pagesCount", { count: uniquePages7d }),
         },
       ],
       percent: readingPositionPct,
-      title: "Baca",
+      title: tNav("read"),
       tone: "teal",
       href: `/read/${continuePage}`,
-      buttonLabel: continuePage > 1 ? "Sambung Baca" : "Mula Baca",
+      buttonLabel:
+        continuePage > 1
+          ? tHero("primaryLabelContinueRead")
+          : tHero("primaryLabelStartRead"),
     },
     {
       lines: snapshot.faham
         ? [
             {
-              label: "Ditemui",
+              label: tHero("statDiscovered"),
               value: `${snapshot.faham.encounteredWordCount} / ${snapshot.faham.focusWordLimit}`,
             },
             {
-              label: "Mahir",
+              label: tHero("statMastered"),
               value: `${snapshot.faham.masteredWordCount} / ${snapshot.faham.encounteredWordCount}`,
             },
           ]
         : [
-            { label: "Ditemui", value: `0 / ${currentFahamCap}` },
-            { label: "Mahir", value: "0 / 0" },
+            { label: tHero("statDiscovered"), value: `0 / ${currentFahamCap}` },
+            { label: tHero("statMastered"), value: "0 / 0" },
           ],
       badge: fahamLevel ? `L${fahamLevel.activeLevel}` : undefined,
       detail: fahamLevel
         ? fahamLevel.isMaxLevel
-          ? "Tahap maksimum dibuka."
-          : `L${fahamLevel.nextLevel} akan buka cap ke ${nextFahamCapLabel} perkataan.`
+          ? tDash("maxLevelUnlocked")
+          : tDash("nextLevelUnlock", {
+              level: fahamLevel.nextLevel ?? fahamLevel.activeLevel + 1,
+              cap: nextFahamCapLabel,
+            })
         : undefined,
       percent: snapshot.faham?.exposureProgressPct ?? 0,
-      title: "Faham",
+      title: tNav("faham"),
       tone: "amber",
       href: "/faham",
-      buttonLabel: snapshot.faham?.dueCount ? "Mula Ulang Kaji" : "Buka Faham",
+      buttonLabel: snapshot.faham?.dueCount
+        ? tHero("primaryLabelStartReview")
+        : tHero("primaryLabelOpenFaham"),
     },
     {
       lines: snapshot.tema && snapshot.tema.totalChunks > 0
         ? [
             {
-              label: "Diteroka",
+              label: tDash("statExplored"),
               value: `${snapshot.tema.exploredCount} / ${snapshot.tema.totalChunks}`,
             },
             {
-              label: "Selesai",
+              label: tHero("statDone"),
               value: `${snapshot.tema.completedCount}`,
             },
           ]
         : [
-            { label: "Diteroka", value: "0 / 0" },
-            { label: "Selesai", value: "0" },
+            { label: tDash("statExplored"), value: "0 / 0" },
+            { label: tHero("statDone"), value: "0" },
           ],
       percent: snapshot.tema?.exploredPct ?? 0,
-      title: "Tema",
+      title: tNav("tema"),
       tone: "indigo",
       href: `/read/surah/${activeSurahId}/themes`,
-      buttonLabel: "Teroka Tema",
+      buttonLabel: tHero("primaryLabelExploreTema"),
     },
     {
       lines: snapshot.hifz
         ? [
             {
-              label: "Manzil",
-              value: `${snapshot.hifz.totalManzilPages} halaman`,
+              label: tDash("statManzil"),
+              value: tHero("pagesCount", { count: snapshot.hifz.totalManzilPages }),
             },
             {
-              label: "Ulangan Hari Ini",
-              value: `${snapshot.hifz.dueTodayPages} halaman`,
+              label: tDash("statTodayReview"),
+              value: tHero("pagesCount", { count: snapshot.hifz.dueTodayPages }),
             },
           ]
         : [
-            { label: "Manzil", value: "0 halaman" },
-            { label: "Ulangan Hari Ini", value: "0 halaman" },
+            { label: tDash("statManzil"), value: tHero("pagesCount", { count: 0 }) },
+            { label: tDash("statTodayReview"), value: tHero("pagesCount", { count: 0 }) },
           ],
       percent: snapshot.hifz?.manzilCoveragePct ?? 0,
-      title: "Hafal",
+      title: tNav("hifz"),
       tone: "stone",
       href: "/hifz",
-      buttonLabel: "Buka Pelan Hafal",
+      buttonLabel: tDash("primaryLabelOpenHifzPlan"),
       detail: snapshot.hifz?.nextPageLabel
-        ? `Rujukan seterusnya: ${snapshot.hifz.nextPageLabel}`
-        : "Belum ada rujukan seterusnya untuk hari ini.",
+        ? tDash("nextReferenceLabel", { label: snapshot.hifz.nextPageLabel })
+        : tDash("noNextReferenceToday"),
       onClick: () => saveReadMode("hifz"),
       secondaryHref: hifzReadHref,
-      secondaryLabel: "Teruskan di Mushaf",
+      secondaryLabel: tHero("primaryLabelContinueMushaf"),
       secondaryOnClick: () => saveReadMode("hifz"),
     },
   ];
   const goalTypeLabel =
     activitySnapshot?.dailyGoalType === "faham_words"
-      ? "perkataan"
+      ? tDash("unitWords")
       : activitySnapshot?.dailyGoalType === "read_pages"
-        ? "halaman"
+        ? tDash("unitPages")
         : activitySnapshot?.dailyGoalType === "hifz_ayat"
-          ? "ayat"
+          ? tDash("unitAyat")
           : activitySnapshot?.dailyGoalType === "hifz_pages"
-            ? "halaman"
+            ? tDash("unitPages")
           : activitySnapshot?.dailyGoalType === "theme_chunks"
-            ? "tema"
-            : "halaman";
+            ? tDash("unitTema")
+            : tDash("unitPages");
   const activitySummaryLabel = `${activitySnapshot?.todayProgress ?? 0} / ${
     activitySnapshot?.dailyGoalCount ?? 10
   } ${goalTypeLabel}`;
@@ -323,7 +349,7 @@ export function HomeDashboardClient({
 
       if (!response.ok) {
         setHifzGoalMigrationError(
-          payload?.error ?? "Tak dapat tukar sasaran Hafal kepada halaman sekarang.",
+          payload?.error ?? tDash("migrateHifzGoalError"),
         );
         return;
       }
@@ -339,9 +365,7 @@ export function HomeDashboardClient({
         router.refresh();
       });
     } catch {
-      setHifzGoalMigrationError(
-        "Tak dapat tukar sasaran Hafal kepada halaman sekarang.",
-      );
+      setHifzGoalMigrationError(tDash("migrateHifzGoalError"));
     } finally {
       setSubmittingHifzGoalMigration(false);
     }

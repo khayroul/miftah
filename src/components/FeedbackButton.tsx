@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 const SUCCESS_VISIBILITY_MS = 5000;
 
 export function FeedbackButton() {
+  const t = useTranslations("feedback");
   const feedbackHidden = false;
   const feedbackOffsetPx = 24;
   const pathname = usePathname();
@@ -103,7 +105,7 @@ export function FeedbackButton() {
       showSuccessToast();
     } catch (error) {
       console.error(error);
-      setErrorMessage("Maaf, ralat berlaku semasa menghantar maklum balas.");
+      setErrorMessage(t("errorMessage"));
     } finally {
       setIsSending(false);
     }
@@ -112,13 +114,13 @@ export function FeedbackButton() {
   const formContent = (
     <>
       <h3 className="mb-3 text-sm font-semibold text-stone-900 dark:text-stone-100">
-        Hantar Maklum Balas
+        {t("title")}
       </h3>
       <form onSubmit={handleSubmit}>
         <textarea
           autoFocus
           className="mb-3 w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-400 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100 dark:focus:ring-stone-600"
-          placeholder="Ada pepijat atau cadangan?"
+          placeholder={t("placeholder")}
           rows={4}
           value={feedback}
           onChange={(event) => setFeedback(event.target.value)}
@@ -134,14 +136,14 @@ export function FeedbackButton() {
             onClick={handleClose}
             className="px-3 py-1.5 text-xs font-medium text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
           >
-            Batal
+            {t("cancel")}
           </button>
           <button
             type="submit"
             disabled={isSending || !feedback.trim()}
             className="rounded-lg bg-stone-900 px-4 py-1.5 text-xs font-medium text-white transition hover:bg-stone-800 disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
           >
-            {isSending ? "Menghantar..." : "Hantar"}
+            {isSending ? t("sending") : t("send")}
           </button>
         </div>
       </form>
@@ -182,10 +184,10 @@ export function FeedbackButton() {
         </div>
         <div>
           <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
-            Maklum balas diterima
+            {t("successTitle")}
           </p>
           <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
-            Terima kasih. Kami sudah simpan maklum balas anda.
+            {t("successBody")}
           </p>
         </div>
       </div>
@@ -208,10 +210,10 @@ export function FeedbackButton() {
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
-                  Maklum balas ringkas
+                  {t("sheetTitle")}
                 </p>
                 <p className="text-xs text-stone-500 dark:text-stone-400">
-                  Kongsi pepijat atau cadangan tanpa tinggalkan bacaan.
+                  {t("sheetSubtitle")}
                 </p>
               </div>
               <button
@@ -219,7 +221,7 @@ export function FeedbackButton() {
                 onClick={handleClose}
                 className="inline-flex min-h-10 items-center rounded-full border border-stone-300 px-3 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
               >
-                Tutup
+                {t("close")}
               </button>
             </div>
             {formContent}
@@ -241,7 +243,7 @@ export function FeedbackButton() {
           type="button"
           onClick={handleToggle}
           className={triggerClassName}
-          title="Beri Maklum Balas"
+          title={t("triggerTitle")}
         >
           <svg
             className={isMobileReadSurface ? "h-4 w-4" : "h-6 w-6"}
@@ -256,7 +258,7 @@ export function FeedbackButton() {
               d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
             />
           </svg>
-          {isMobileReadSurface ? <span>Maklum Balas</span> : null}
+          {isMobileReadSurface ? <span>{t("triggerLabelMobile")}</span> : null}
         </button>
       </div>
     </>

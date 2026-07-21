@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 
 export type CardTone = "amber" | "indigo" | "stone" | "teal";
@@ -75,6 +76,7 @@ export function shouldPrefetch(): boolean {
 }
 
 export function HomeModeProgressCard({ card }: { card: ModeCard }) {
+  const t = useTranslations("home.modeCard");
   const classes = toneClasses(card.tone);
 
   return (
@@ -117,7 +119,7 @@ export function HomeModeProgressCard({ card }: { card: ModeCard }) {
         <div
           className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/80 ring-1 ring-stone-900/6 dark:bg-stone-950/70 dark:ring-white/8"
           role="progressbar"
-          aria-label={`Progres ${card.title}`}
+          aria-label={t("progressAriaLabel", { title: card.title })}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={card.percent}

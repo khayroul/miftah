@@ -1,7 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildHomeHero } from "./homeDashboardHero";
+import { createTranslator } from "next-intl";
+import { buildHomeHero, type HomeHeroTranslator } from "./homeDashboardHero";
 import type { HomeDashboardSnapshot } from "./homeDashboard";
+import messages from "../../../../messages/ms.json";
+
+// `createTranslator` returns a strictly-keyed Translator (keys narrowed to the
+// "home.hero" namespace's literal message keys). `buildHomeHero` accepts the
+// intentionally looser `HomeHeroTranslator` shape so the domain module doesn't
+// need to depend on next-intl's generated message types. The cast bridges the
+// two — behavior is identical, only the static key-checking is narrower on
+// the `createTranslator` side (which is fine: our call sites below use real
+// keys from messages/ms.json).
+const t = createTranslator({
+  locale: "ms",
+  messages,
+  namespace: "home.hero",
+}) as unknown as HomeHeroTranslator;
 
 function createSnapshot(
   overrides: Partial<HomeDashboardSnapshot> = {},
@@ -68,6 +83,7 @@ test("prioritizes due hifz over other available actions", () => {
         uniquePagesLifetime: 12,
       },
     }),
+    t,
   });
 
   assert.equal(hero.title, "Ulang hafalan yang due");
@@ -121,6 +137,7 @@ test("falls back to due faham when hifz is not due", () => {
         totalManzilPages: 0,
       },
     }),
+    t,
   });
 
   assert.equal(hero.title, "Ulang Faham yang menunggu");
@@ -147,6 +164,7 @@ test("continues reading when no due work is present but read progress exists", (
         uniquePagesLifetime: 30,
       },
     }),
+    t,
   });
 
   assert.equal(hero.title, "Sambung bacaan terakhir");
@@ -162,6 +180,7 @@ test("guides zero-state users toward a first reading session", () => {
     formattedLastRead: "Belum ada aktiviti",
     hifzReadHref: "/read/1?mode=hifz&from=dashboard",
     snapshot: createSnapshot(),
+    t,
   });
 
   assert.equal(hero.isZeroState, true);

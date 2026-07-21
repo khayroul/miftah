@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export type CardTone = "teal" | "amber" | "indigo" | "stone";
 
@@ -69,6 +70,7 @@ export function DashboardPreviewModeCard({
 }: {
   card: ModeCard;
 }) {
+  const t = useTranslations("home.preview");
   const classes = toneClasses(card.tone);
 
   return (
@@ -78,7 +80,7 @@ export function DashboardPreviewModeCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500 dark:text-stone-400">
-            {card.previewOnly ? "Proposal" : "Live"}
+            {card.previewOnly ? t("badgeProposal") : t("badgeLive")}
           </p>
           <h2 className="mt-2 text-2xl font-medium tracking-tight text-stone-900 dark:text-stone-50">
             {card.title}
@@ -87,7 +89,7 @@ export function DashboardPreviewModeCard({
         <span
           className={`rounded-full border px-3 py-1 text-[11px] font-medium ${classes.chip}`}
         >
-          {card.previewOnly ? "Cadangan metric" : "Siap dipakai"}
+          {card.previewOnly ? t("chipSampleMetric") : t("chipReadyToUse")}
         </span>
       </div>
 

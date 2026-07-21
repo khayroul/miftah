@@ -1,9 +1,11 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useOnlineStatus } from "../offlineDetection";
 import { useEffect, useRef, useState } from "react";
 
 export function OfflineIndicator() {
+  const t = useTranslations("pwa");
   const isOnline = useOnlineStatus();
   const [showReconnected, setShowReconnected] = useState(false);
   const wasOfflineRef = useRef(false);
@@ -38,7 +40,7 @@ export function OfflineIndicator() {
         color: "#ffffff",
       }}
     >
-      {isOnline ? "Kembali dalam talian" : "Luar talian"}
+      {isOnline ? t("offlineIndicatorOnline") : t("offlineIndicatorOffline")}
     </div>
   );
 }

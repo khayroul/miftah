@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import type { HomeDashboardSnapshot } from "../domain/homeDashboard";
 import {
   DashboardPreviewModeCard,
@@ -8,6 +9,11 @@ import {
 } from "./DashboardPreviewModeCard";
 
 const TOTAL_QURAN_PAGES = 604;
+
+const INTL_LOCALE_BY_APP_LOCALE: Record<string, string> = {
+  en: "en-US",
+  ms: "ms-MY",
+};
 
 interface HifzSnapshot {
   dueTodayPages: number;
@@ -26,17 +32,21 @@ function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, Math.round(value)));
 }
 
-function formatActivityDate(value: string | null): string {
+function formatActivityDate(
+  t: (key: string, values?: Record<string, string | number | Date>) => string,
+  intlLocale: string,
+  value: string | null,
+): string {
   if (!value) {
-    return "Belum ada aktiviti";
+    return t("noActivityYet");
   }
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return "Aktiviti baru";
+    return t("newActivity");
   }
 
-  return new Intl.DateTimeFormat("ms-MY", {
+  return new Intl.DateTimeFormat(intlLocale, {
     day: "numeric",
     month: "short",
   }).format(date);
@@ -46,74 +56,87 @@ export function DashboardPreviewClient({
   hifzSnapshot,
   homeSnapshot,
 }: DashboardPreviewClientProps) {
+  const locale = useLocale();
+  const intlLocale = INTL_LOCALE_BY_APP_LOCALE[locale] ?? "ms-MY";
+  const tDash = useTranslations("home.dashboard");
+  const tNav = useTranslations("nav");
+  const tSections = useTranslations("home.sections");
+  const t = useTranslations("home.preview");
   const continuePage = homeSnapshot.read?.lastPage ?? 1;
   const readingPositionPct = clampPercent(
     homeSnapshot.read?.uniquePagesLifetime
       ? (homeSnapshot.read.uniquePagesLifetime / TOTAL_QURAN_PAGES) * 100
       : 0,
   );
-  const formattedLastRead = formatActivityDate(homeSnapshot.read?.lastReadAt ?? null);
+  const formattedLastRead = formatActivityDate(
+    tDash,
+    intlLocale,
+    homeSnapshot.read?.lastReadAt ?? null,
+  );
   const hifzCoveragePct = hifzSnapshot?.manzilCoveragePct ?? 0;
   const hifzTodayPages = hifzSnapshot?.todayPages ?? 0;
   const hifzDueTodayPages = hifzSnapshot?.dueTodayPages ?? 0;
 
   const modeCards: ModeCard[] = [
     {
-      ctaLabel: homeSnapshot.read?.lastPage ? "Sambung baca" : "Mulakan bacaan",
+      ctaLabel: homeSnapshot.read?.lastPage
+        ? t("ctaContinueReading")
+        : t("ctaStartReading"),
       helper: homeSnapshot.read?.lastPage
-        ? `Gunakan snapshot server supaya nombor baca kekal konsisten merentas device. Aktiviti terakhir ${formattedLastRead}.`
-        : "Mushaf kekal minimal. Fokus utama ialah terus masuk baca tanpa bookmark dan tanpa panel utiliti di atas halaman.",
+        ? t("readHelperWithActivity", { activity: formattedLastRead })
+        : t("readHelperEmpty"),
       href: `/read/${continuePage}`,
-      inside: ["Mushaf", "Continue", "Utility hub"],
+      inside: [t("chipMushaf"), t("chipContinue"), t("chipUtilityHub")],
       metricLabel: homeSnapshot.read?.lastPage
-        ? `${homeSnapshot.read.uniquePages7d} halaman dalam 7 hari`
-        : "Belum ada rekod bacaan",
-      metricValue: homeSnapshot.read?.lastPage ? `p. ${homeSnapshot.read.lastPage}` : "Baru",
+        ? t("pagesIn7Days", { count: homeSnapshot.read.uniquePages7d })
+        : t("noReadingRecord"),
+      metricValue: homeSnapshot.read?.lastPage ? `p. ${homeSnapshot.read.lastPage}` : t("newLabel"),
       percent: readingPositionPct,
-      title: "Baca",
+      title: tNav("read"),
       tone: "teal",
     },
     {
-      ctaLabel: "Buka engine WBW",
-      helper:
-        "Saya faham mod ini sebagai engine hafalan kata demi kata: padankan perkataan Arab dengan makna BM, buat recall, kemudian reveal jawapan sedikit demi sedikit.",
+      ctaLabel: t("ctaOpenWbwEngine"),
+      helper: t("fahamHelper"),
       href: `/read/${continuePage}`,
-      inside: ["Recall", "Reveal", "Padanan BM"],
-      metricLabel: "Contoh progress hafalan WBW",
+      inside: [t("chipRecall"), t("chipReveal"), t("chipPadananBm")],
+      metricLabel: t("sampleWbwProgress"),
       metricValue: "36%",
       percent: 36,
       previewOnly: true,
-      title: "Faham",
+      title: tNav("faham"),
       tone: "amber",
     },
     {
-      ctaLabel: "Buka navigator tema",
-      helper:
-        "Tema patut jadi laluan sendiri, bukan ditenggelamkan di bawah Faham. Track chunk yang sudah diteroka ikut surah.",
+      ctaLabel: t("ctaOpenThemeNavigator"),
+      helper: t("temaHelper"),
       href: "/read/surah/2/themes",
-      inside: ["Chunk", "Ayat kunci", "Alur surah"],
-      metricLabel: "Contoh progress tema",
+      inside: [t("chipChunk"), t("chipAyatKunci"), t("chipAlurSurah")],
+      metricLabel: t("sampleTemaProgress"),
       metricValue: "22%",
       percent: 22,
       previewOnly: true,
-      title: "Tema",
+      title: tNav("tema"),
       tone: "indigo",
     },
     {
-      ctaLabel: "Masuk papan hafal",
+      ctaLabel: t("ctaEnterHifzBoard"),
       helper:
         hifzSnapshot && hifzTodayPages > 0
-          ? `${hifzTodayPages} halaman aktif hari ini merentas Sabak, Sabqi, dan Manzil. ${hifzDueTodayPages} halaman daripadanya sudah due sekarang.`
-          : "Hafal patut kekal sebagai workspace tersendiri dengan fokus Sabak, Sabqi, dan Manzil.",
+          ? t("hifzHelperActive", {
+              todayPages: hifzTodayPages,
+              duePages: hifzDueTodayPages,
+            })
+          : t("hifzHelperEmpty"),
       href: "/hifz",
-      inside: ["Sabak", "Sabqi", "Manzil"],
+      inside: [t("chipSabak"), t("chipSabqi"), t("chipManzil")],
       metricLabel:
         hifzSnapshot && hifzSnapshot.totalManzilPages > 0
-          ? `${hifzSnapshot.totalManzilPages} halaman sudah stabil di Manzil`
-          : "Belum ada data hafalan stabil",
+          ? t("manzilStablePages", { count: hifzSnapshot.totalManzilPages })
+          : t("noStableHifzData"),
       metricValue: `${hifzCoveragePct}%`,
       percent: hifzCoveragePct,
-      title: "Hafal",
+      title: tNav("hifz"),
       tone: "stone",
     },
   ];
@@ -124,38 +147,36 @@ export function DashboardPreviewClient({
         <div className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
           <div className="space-y-6">
             <div className="inline-flex items-center rounded-full border border-teal-900/15 bg-teal-950/6 px-3 py-1 text-xs font-medium tracking-wide text-teal-900 dark:border-teal-300/20 dark:bg-teal-900/35 dark:text-teal-100">
-              Visual Proposal · Dashboard depan rumah
+              {t("eyebrow")}
             </div>
 
             <div className="space-y-3">
               <h1 className="max-w-3xl text-4xl font-medium leading-tight tracking-tight text-stone-900 sm:text-5xl dark:text-stone-50">
-                Papan pemuka yang terus jawab:
+                {t("headlineLine1")}
                 <span className="block text-teal-900 dark:text-teal-200">
-                  sambung di mana, fokus apa, mode mana patut dibuka.
+                  {t("headlineLine2")}
                 </span>
               </h1>
               <p className="max-w-2xl text-base leading-relaxed text-stone-600 sm:text-lg dark:text-stone-300">
-                Saya cadangkan muka depan jadi hub yang ringkas tetapi jelas.
-                Reading mode kekal suci dan minimal, manakala dashboard jadi
-                tempat ringkasan progres merentas Baca, Faham, Tema, dan Hafal.
+                {t("introParagraph")}
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2 text-xs text-stone-700 dark:text-stone-200">
               <span className="rounded-full border border-stone-300 bg-stone-100 px-3 py-1 dark:border-stone-600 dark:bg-stone-800">
-                Baca
+                {tNav("read")}
               </span>
               <span className="rounded-full border border-stone-300 bg-stone-100 px-3 py-1 dark:border-stone-600 dark:bg-stone-800">
-                Faham
+                {tNav("faham")}
               </span>
               <span className="rounded-full border border-stone-300 bg-stone-100 px-3 py-1 dark:border-stone-600 dark:bg-stone-800">
-                Tema
+                {tNav("tema")}
               </span>
               <span className="rounded-full border border-stone-300 bg-stone-100 px-3 py-1 dark:border-stone-600 dark:bg-stone-800">
-                Hafal
+                {tNav("hifz")}
               </span>
               <span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-amber-900 dark:border-amber-600 dark:bg-amber-950/50 dark:text-amber-100">
-                Tadabbur later
+                {t("tadabburLaterChip")}
               </span>
             </div>
 
@@ -165,20 +186,20 @@ export function DashboardPreviewClient({
                 prefetch={false}
                 className="rounded-xl bg-teal-900 px-5 py-2.5 text-sm font-medium text-teal-50 transition hover:bg-teal-800 dark:bg-teal-700 dark:hover:bg-teal-600"
               >
-                Masuk Baca
+                {t("enterRead")}
               </Link>
               <Link
                 href="/hifz"
                 className="rounded-xl border border-stone-300 bg-white px-5 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
               >
-                Masuk Hafal
+                {t("enterHifz")}
               </Link>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-2xl border border-stone-200/80 bg-stone-50/90 px-4 py-3 dark:border-stone-700 dark:bg-stone-900/80">
                   <p className="text-xs uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
-                    Last page
+                    {t("lastPageLabel")}
                   </p>
                   <p className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
                   {homeSnapshot.read?.lastPage ? `p. ${homeSnapshot.read.lastPage}` : "p. 1"}
@@ -186,7 +207,7 @@ export function DashboardPreviewClient({
                 </div>
               <div className="rounded-2xl border border-stone-200/80 bg-stone-50/90 px-4 py-3 dark:border-stone-700 dark:bg-stone-900/80">
                 <p className="text-xs uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
-                  Bacaan terakhir
+                  {t("lastReadingLabel")}
                 </p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
                   {formattedLastRead}
@@ -194,7 +215,7 @@ export function DashboardPreviewClient({
               </div>
               <div className="rounded-2xl border border-stone-200/80 bg-stone-50/90 px-4 py-3 dark:border-stone-700 dark:bg-stone-900/80">
                 <p className="text-xs uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
-                  Due hafal
+                  {t("dueHifzLabel")}
                 </p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
                   {hifzDueTodayPages}
@@ -202,10 +223,10 @@ export function DashboardPreviewClient({
               </div>
               <div className="rounded-2xl border border-stone-200/80 bg-stone-50/90 px-4 py-3 dark:border-stone-700 dark:bg-stone-900/80">
                   <p className="text-xs uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
-                    Streak
+                    {tSections("streakLabel")}
                   </p>
                   <p className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
-                  {homeSnapshot.activity?.streak ?? 0} hari
+                  {tSections("streakDaysValue", { count: homeSnapshot.activity?.streak ?? 0 })}
                   </p>
                 </div>
             </div>
@@ -214,7 +235,7 @@ export function DashboardPreviewClient({
           <aside className="rounded-[28px] border border-stone-200/80 bg-stone-50/90 p-4 dark:border-stone-700 dark:bg-stone-950/60">
             <div className="rounded-[24px] bg-[radial-gradient(circle_at_top_left,rgba(20,94,89,0.12),transparent_48%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(245,245,244,0.92))] p-4 dark:bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.14),transparent_48%),linear-gradient(180deg,rgba(28,25,23,0.96),rgba(12,10,9,0.92))]">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500 dark:text-stone-400">
-                Cadangan flow hari ini
+                {t("suggestedFlowTitle")}
               </p>
               <div className="mt-5 space-y-3">
                 <Link
@@ -223,15 +244,15 @@ export function DashboardPreviewClient({
                   className="block rounded-2xl border border-teal-900/10 bg-white/92 px-4 py-4 transition hover:bg-white dark:border-teal-300/10 dark:bg-stone-900/80 dark:hover:bg-stone-900"
                 >
                   <p className="text-xs uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
-                    1. Sambung baca
+                    {t("step1Label")}
                   </p>
                   <p className="mt-1 text-lg font-medium text-stone-900 dark:text-stone-100">
                     {homeSnapshot.read?.lastPage
-                      ? `Teruskan di page ${homeSnapshot.read.lastPage}`
-                      : "Mulakan dari page 1"}
+                      ? t("continueAtPage", { page: homeSnapshot.read.lastPage })
+                      : t("startAtPage1")}
                   </p>
                   <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
-                    Masuk terus ke mushaf tanpa toolbar utiliti penuh di hadapan mata.
+                    {t("step1Helper")}
                   </p>
                 </Link>
 
@@ -240,17 +261,17 @@ export function DashboardPreviewClient({
                   className="block rounded-2xl border border-stone-900/8 bg-white/92 px-4 py-4 transition hover:bg-white dark:border-white/8 dark:bg-stone-900/80 dark:hover:bg-stone-900"
                 >
                   <p className="text-xs uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
-                    2. Fokus hafal
+                    {t("step2Label")}
                   </p>
                   <p className="mt-1 text-lg font-medium text-stone-900 dark:text-stone-100">
                     {hifzTodayPages > 0
-                      ? `${hifzTodayPages} halaman dalam sesi hari ini`
-                      : "Buka sesi Sabak, Sabqi, Manzil"}
+                      ? t("pagesInTodaySession", { count: hifzTodayPages })
+                      : t("openSabakSabqiManzil")}
                   </p>
                   <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
                     {hifzSnapshot?.nextPageLabel
-                      ? `Halaman seterusnya: ${hifzSnapshot.nextPageLabel}`
-                      : "Ringkasan harian dan queue review duduk di satu tempat."}
+                      ? t("nextPageLabel", { label: hifzSnapshot.nextPageLabel })
+                      : t("step2Helper")}
                   </p>
                 </Link>
 
@@ -260,24 +281,20 @@ export function DashboardPreviewClient({
                   className="block rounded-2xl border border-stone-900/8 bg-white/92 px-4 py-4 transition hover:bg-white dark:border-white/8 dark:bg-stone-900/80 dark:hover:bg-stone-900"
                 >
                   <p className="text-xs uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
-                    3. Utility layer
+                    {t("step3Label")}
                   </p>
                   <p className="mt-1 text-lg font-medium text-stone-900 dark:text-stone-100">
-                    Jump dan audio duduk di luar mushaf
+                    {t("jumpAudioOutside")}
                   </p>
                   <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
-                    Saya bayangkan ia sebagai popup pada desktop dan halaman
-                    perantara pada mobile supaya reading mode kekal suci.
+                    {t("step3Helper")}
                   </p>
                 </Link>
               </div>
             </div>
 
             <p className="px-2 pb-1 pt-4 text-xs leading-relaxed text-stone-500 dark:text-stone-400">
-              Nota: kad Baca dan Hafal menggunakan signal sebenar yang sudah ada.
-              Faham dan Tema masih proposal metric. Bookmark sudah
-              dikeluarkan daripada cadangan ini, dan jump/audio diposisikan
-              semula sebagai utility layer.
+              {t("footerNote")}
             </p>
           </aside>
         </div>
@@ -295,31 +312,28 @@ export function DashboardPreviewClient({
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-900 dark:text-teal-200">
-              Utility layer
+              {t("utilityLayerEyebrow")}
             </p>
             <h2 className="mt-2 text-3xl font-medium tracking-tight text-stone-900 dark:text-stone-50">
-              Jump dan audio tidak duduk dalam mushaf.
+              {t("utilityLayerTitle")}
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-stone-700 dark:text-stone-300">
-              Saya setuju dua benda ini patut keluar daripada permukaan utama.
-              Untuk desktop, ia boleh muncul sebagai popup atau slide-over.
-              Untuk mobile, saya lebih suka halaman perantara yang jelas supaya
-              paparan mushaf tetap bersih.
+              {t("utilityLayerParagraph")}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2 text-xs text-teal-950 dark:text-teal-100">
             <span className="rounded-full border border-teal-900/15 bg-teal-100/85 px-3 py-1 dark:border-teal-200/18 dark:bg-teal-900/40">
-              Jump to Page
+              {t("chipJumpToPage")}
             </span>
             <span className="rounded-full border border-teal-900/15 bg-teal-100/85 px-3 py-1 dark:border-teal-200/18 dark:bg-teal-900/40">
-              Jump to Surah
+              {t("chipJumpToSurah")}
             </span>
             <span className="rounded-full border border-teal-900/15 bg-teal-100/85 px-3 py-1 dark:border-teal-200/18 dark:bg-teal-900/40">
-              Jump to Juz
+              {t("chipJumpToJuz")}
             </span>
             <span className="rounded-full border border-teal-900/15 bg-teal-100/85 px-3 py-1 dark:border-teal-200/18 dark:bg-teal-900/40">
-              Audio repeat
+              {t("chipAudioRepeat")}
             </span>
           </div>
         </div>
@@ -329,28 +343,27 @@ export function DashboardPreviewClient({
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-900 dark:text-amber-200">
-              Layer kemudian
+              {t("laterLayerEyebrow")}
             </p>
             <h2 className="mt-2 text-3xl font-medium tracking-tight text-stone-900 dark:text-stone-50">
               Tadabbur
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-stone-700 dark:text-stone-300">
-              Kalau mahu ruang untuk tafsir, hadith, dan renungan, saya rasa
-              perkataan terbaik ialah <span className="font-semibold">Tadabbur</span>.
-              Tetapi saya tidak akan letak ia sebagai kad utama dulu. Lebih baik
-              ia muncul selepas mode Faham dan Tema sudah matang.
+              {t.rich("tadabburParagraph", {
+                em: (chunks) => <span className="font-semibold">{chunks}</span>,
+              })}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2 text-xs text-amber-950 dark:text-amber-100">
             <span className="rounded-full border border-amber-900/15 bg-amber-100/85 px-3 py-1 dark:border-amber-200/18 dark:bg-amber-900/40">
-              Tafsir ringkas
+              {t("tafsirRingkas")}
             </span>
             <span className="rounded-full border border-amber-900/15 bg-amber-100/85 px-3 py-1 dark:border-amber-200/18 dark:bg-amber-900/40">
-              Hadith sokongan
+              {t("hadithSokongan")}
             </span>
             <span className="rounded-full border border-amber-900/15 bg-amber-100/85 px-3 py-1 dark:border-amber-200/18 dark:bg-amber-900/40">
-              Renungan
+              {t("renungan")}
             </span>
           </div>
         </div>

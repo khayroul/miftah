@@ -3,6 +3,11 @@ import type { ReadMode } from "@/features/read";
 
 type HeroTone = "teal" | "amber" | "indigo" | "stone";
 
+export type HomeHeroTranslator = (
+  key: string,
+  values?: Record<string, string | number | Date>,
+) => string;
+
 interface HomeHeroStat {
   label: string;
   value: string;
@@ -30,6 +35,7 @@ interface BuildHomeHeroInput {
   formattedLastRead: string;
   hifzReadHref: string;
   snapshot: HomeDashboardSnapshot;
+  t: HomeHeroTranslator;
 }
 
 function formatMinutes(value: number): string {
@@ -101,14 +107,27 @@ function hasTemaProgress(snapshot: HomeDashboardSnapshot): boolean {
 }
 
 function buildReadFocus(
+  t: HomeHeroTranslator,
   continuePage: number,
   activeSurahName: string | null,
 ): string {
   if (activeSurahName) {
-    return `Halaman ${continuePage} · ${activeSurahName}`;
+    return t("pageFocusWithSurah", { page: continuePage, surah: activeSurahName });
   }
 
-  return `Halaman ${continuePage}`;
+  return t("pageFocusPlain", { page: continuePage });
+}
+
+function buildModeValue(
+  t: HomeHeroTranslator,
+  mode: string,
+  suffix: string | null,
+): string {
+  if (!suffix) {
+    return mode;
+  }
+
+  return t("modeCompound", { mode, suffix });
 }
 
 export function buildHomeHero({
@@ -118,12 +137,13 @@ export function buildHomeHero({
   formattedLastRead,
   hifzReadHref,
   snapshot,
+  t,
 }: BuildHomeHeroInput): HomeHeroAction {
   const hifz = snapshot.hifz;
   const faham = snapshot.faham;
   const tema = snapshot.tema;
   const themeHref = buildThemeHref(activeSurahId);
-  const readFocus = buildReadFocus(continuePage, activeSurahName);
+  const readFocus = buildReadFocus(t, continuePage, activeSurahName);
   const hasAnyProgress =
     hasReadProgress(snapshot, continuePage) ||
     hasFahamProgress(snapshot) ||
@@ -135,36 +155,39 @@ export function buildHomeHero({
     const blockLabel = formatHifzBlock(hifz.nextBlock);
 
     return {
-      badge: "Tindakan hari ini",
-      description: `Mulakan dengan ${focus}. Ada ${hifz.dueTodayPages} halaman ulangan yang sudah due, jadi ini patut didahulukan sebelum mod lain.`,
+      badge: t("badgeTodayAction"),
+      description: t("dueHifzDescription", {
+        focus,
+        count: hifz.dueTodayPages,
+      }),
       isZeroState: false,
       primaryHref: hifzReadHref,
-      primaryLabel: "Teruskan di Mushaf",
+      primaryLabel: t("primaryLabelContinueMushaf"),
       primaryMode: "hifz",
       secondaryHref: "/hifz",
-      secondaryLabel: "Lihat Hafal Plan",
+      secondaryLabel: t("secondaryLabelViewHifzPlan"),
       secondaryMode: "hifz",
       stats: [
         {
-          label: "Mod",
-          value: blockLabel ? `Hafal · ${blockLabel}` : "Hafal",
+          label: t("statMode"),
+          value: buildModeValue(t, t("modeHifz"), blockLabel),
         },
         {
-          label: "Fokus",
+          label: t("statFocus"),
           value: focus,
         },
         {
-          label: "Anggaran",
+          label: t("statEstimate"),
           value: formatMinutes(
             estimateMinutes(hifz.dueTodayPages, 3, 6, 24),
           ),
         },
         {
-          label: "Due",
-          value: `${hifz.dueTodayPages} halaman`,
+          label: t("statDue"),
+          value: t("pagesCount", { count: hifz.dueTodayPages }),
         },
       ],
-      title: "Ulang hafalan yang due",
+      title: t("dueHifzTitle"),
       tone: "stone",
     };
   }
@@ -173,39 +196,39 @@ export function buildHomeHero({
     const levelLabel = `L${faham.levelProgress.activeLevel}`;
 
     return {
-      badge: "Tindakan hari ini",
+      badge: t("badgeTodayAction"),
       description:
         faham.blockedReason === "due_backlog"
-          ? `Ada ${faham.dueCount} perkataan due sekarang. Selesaikan backlog ini dahulu supaya perkataan baru boleh dibuka semula.`
-          : `Ada ${faham.dueCount} perkataan due sekarang. Review ringkas ini biasanya cara paling cepat untuk hidupkan semula rutin harian.`,
+          ? t("dueFahamDescriptionBacklog", { count: faham.dueCount })
+          : t("dueFahamDescriptionDefault", { count: faham.dueCount }),
       isZeroState: false,
       primaryHref: "/faham",
-      primaryLabel: "Mula Ulang Kaji",
+      primaryLabel: t("primaryLabelStartReview"),
       primaryMode: "faham",
       secondaryHref: `/read/${continuePage}`,
-      secondaryLabel: "Buka Mushaf",
+      secondaryLabel: t("secondaryLabelOpenMushaf"),
       secondaryMode: "read",
       stats: [
         {
-          label: "Mod",
-          value: `Faham · ${levelLabel}`,
+          label: t("statMode"),
+          value: buildModeValue(t, t("modeFaham"), levelLabel),
         },
         {
-          label: "Fokus",
-          value: `${faham.dueCount} perkataan due`,
+          label: t("statFocus"),
+          value: t("wordsDueCount", { count: faham.dueCount }),
         },
         {
-          label: "Anggaran",
+          label: t("statEstimate"),
           value: formatMinutes(
             estimateMinutes(faham.dueCount, 0.8, 5, 18),
           ),
         },
         {
-          label: "Ditemui",
+          label: t("statDiscovered"),
           value: `${faham.encounteredWordCount} / ${faham.focusWordLimit}`,
         },
       ],
-      title: "Ulang Faham yang menunggu",
+      title: t("dueFahamTitle"),
       tone: "amber",
     };
   }
@@ -215,175 +238,182 @@ export function buildHomeHero({
     const blockLabel = formatHifzBlock(hifz.nextBlock);
 
     return {
-      badge: "Cadangan seterusnya",
-      description: `Pelan hafalan hari ini sudah tersedia. Sambung dari ${focus} supaya Sabak, Sabqi, dan Manzil bergerak tanpa perlu fikir langkah seterusnya.`,
+      badge: t("badgeNextSuggestion"),
+      description: t("continueHifzDescription", { focus }),
       isZeroState: false,
       primaryHref: hifzReadHref,
-      primaryLabel: "Sambung Hafal",
+      primaryLabel: t("primaryLabelContinueHifz"),
       primaryMode: "hifz",
       secondaryHref: "/hifz",
-      secondaryLabel: "Lihat Hafal Plan",
+      secondaryLabel: t("secondaryLabelViewHifzPlan"),
       secondaryMode: "hifz",
       stats: [
         {
-          label: "Mod",
-          value: blockLabel ? `Hafal · ${blockLabel}` : "Hafal",
+          label: t("statMode"),
+          value: buildModeValue(t, t("modeHifz"), blockLabel),
         },
         {
-          label: "Fokus",
+          label: t("statFocus"),
           value: focus,
         },
         {
-          label: "Anggaran",
+          label: t("statEstimate"),
           value: formatMinutes(
             estimateMinutes(hifz.todayPages, 3, 6, 20),
           ),
         },
         {
-          label: "Hari ini",
-          value: `${hifz.todayPages} halaman aktif`,
+          label: t("statToday"),
+          value: t("activePagesCount", { count: hifz.todayPages }),
         },
       ],
-      title: "Teruskan hafalan hari ini",
+      title: t("continueHifzTitle"),
       tone: "stone",
     };
   }
 
   if (hasReadProgress(snapshot, continuePage)) {
     return {
-      badge: "Cadangan seterusnya",
+      badge: t("badgeNextSuggestion"),
       description: activeSurahName
-        ? `Sambung dari ${readFocus}. Ini cara paling ringan untuk kembali masuk ke ritma harian anda.`
-        : `Sambung dari halaman ${continuePage}. Bacaan terakhir anda masih tersedia untuk diteruskan tanpa banyak langkah.`,
+        ? t("continueReadDescriptionWithSurah", { focus: readFocus })
+        : t("continueReadDescriptionDefault", { page: continuePage }),
       isZeroState: false,
       primaryHref: `/read/${continuePage}`,
-      primaryLabel: continuePage > 1 ? "Sambung Baca" : "Mula Baca",
+      primaryLabel:
+        continuePage > 1
+          ? t("primaryLabelContinueRead")
+          : t("primaryLabelStartRead"),
       primaryMode: "read",
       secondaryHref: themeHref,
-      secondaryLabel: "Teroka Tema Surah",
+      secondaryLabel: t("secondaryLabelExploreSurahThemes"),
       secondaryMode: "tema",
       stats: [
         {
-          label: "Mod",
-          value: "Baca",
+          label: t("statMode"),
+          value: t("modeRead"),
         },
         {
-          label: "Fokus",
+          label: t("statFocus"),
           value: readFocus,
         },
         {
-          label: "Anggaran",
+          label: t("statEstimate"),
           value: formatMinutes(6),
         },
         {
-          label: "Aktiviti",
+          label: t("statActivity"),
           value: formattedLastRead,
         },
       ],
-      title: "Sambung bacaan terakhir",
+      title: t("continueReadTitle"),
       tone: "teal",
     };
   }
 
   if (faham && (faham.eligibleNewCount > 0 || faham.encounteredWordCount > 0)) {
     return {
-      badge: "Cadangan seterusnya",
-      description: `Anda sudah mula membina asas Faham. Teruskan dengan perkataan yang paling berguna supaya bacaan selepas ini terasa lebih hidup.`,
+      badge: t("badgeNextSuggestion"),
+      description: t("buildFahamDescription"),
       isZeroState: false,
       primaryHref: "/faham",
-      primaryLabel: "Buka Faham",
+      primaryLabel: t("primaryLabelOpenFaham"),
       primaryMode: "faham",
       secondaryHref: `/read/${continuePage}`,
-      secondaryLabel: "Masuk Mushaf",
+      secondaryLabel: t("secondaryLabelEnterMushaf"),
       secondaryMode: "read",
       stats: [
         {
-          label: "Mod",
-          value: `Faham · L${faham.levelProgress.activeLevel}`,
+          label: t("statMode"),
+          value: buildModeValue(
+            t,
+            t("modeFaham"),
+            `L${faham.levelProgress.activeLevel}`,
+          ),
         },
         {
-          label: "Fokus",
-          value: `${faham.eligibleNewCount} perkataan sedia dibuka`,
+          label: t("statFocus"),
+          value: t("wordsReadyCount", { count: faham.eligibleNewCount }),
         },
         {
-          label: "Anggaran",
+          label: t("statEstimate"),
           value: formatMinutes(7),
         },
         {
-          label: "Mahir",
-          value: `${faham.masteredWordCount} perkataan`,
+          label: t("statMastered"),
+          value: t("wordsCount", { count: faham.masteredWordCount }),
         },
       ],
-      title: "Bina kefahaman bacaan",
+      title: t("buildFahamTitle"),
       tone: "amber",
     };
   }
 
   if (tema && (tema.exploredCount > 0 || tema.completedCount > 0)) {
     return {
-      badge: "Cadangan seterusnya",
-      description: `Tema surah sudah mula diteroka. Sambung dari sini jika anda mahu faham alur dan idea utama sebelum kembali membaca.`,
+      badge: t("badgeNextSuggestion"),
+      description: t("continueTemaDescription"),
       isZeroState: false,
       primaryHref: themeHref,
-      primaryLabel: "Teroka Tema",
+      primaryLabel: t("primaryLabelExploreTema"),
       primaryMode: "tema",
       secondaryHref: `/read/${continuePage}`,
-      secondaryLabel: "Buka Mushaf",
+      secondaryLabel: t("secondaryLabelOpenMushaf"),
       secondaryMode: "read",
       stats: [
         {
-          label: "Mod",
-          value: "Tema",
+          label: t("statMode"),
+          value: t("modeTema"),
         },
         {
-          label: "Fokus",
-          value: `${tema.exploredCount} chunk diteroka`,
+          label: t("statFocus"),
+          value: t("chunksExploredCount", { count: tema.exploredCount }),
         },
         {
-          label: "Anggaran",
+          label: t("statEstimate"),
           value: formatMinutes(5),
         },
         {
-          label: "Selesai",
-          value: `${tema.completedCount} chunk`,
+          label: t("statDone"),
+          value: t("chunksCount", { count: tema.completedCount }),
         },
       ],
-      title: "Sambung tema surah semasa",
+      title: t("continueTemaTitle"),
       tone: "indigo",
     };
   }
 
   return {
-    badge: hasAnyProgress ? "Cadangan seterusnya" : "Mulakan di sini",
+    badge: hasAnyProgress ? t("badgeNextSuggestion") : t("badgeStartHere"),
     description: hasAnyProgress
-      ? "Teruskan dengan satu halaman dahulu. Selepas itu Miftah akan kembali mengesyorkan langkah paling berguna berdasarkan progres sebenar anda."
-      : "Mulakan dengan satu halaman dahulu. Selepas sesi pertama, Miftah akan mula cadangkan Faham, Tema, dan Hafal ikut progres sebenar anda.",
+      ? t("zeroStateDescriptionProgress")
+      : t("zeroStateDescriptionZero"),
     isZeroState: !hasAnyProgress,
     primaryHref: `/read/${continuePage}`,
-    primaryLabel: "Mula Baca",
+    primaryLabel: t("primaryLabelStartRead"),
     primaryMode: "read",
     secondaryHref: "/faham",
-    secondaryLabel: "Lihat Mod Faham",
+    secondaryLabel: t("secondaryLabelViewFahamMode"),
     secondaryMode: "faham",
     stats: [
       {
-        label: "Langkah 1",
-        value: `Baca ${readFocus}`,
+        label: t("statStep1"),
+        value: t("stepReadFocus", { focus: readFocus }),
       },
       {
-        label: "Langkah 2",
-        value: "Biarkan Miftah pilih fokus seterusnya",
+        label: t("statStep2"),
+        value: t("stepChooseNext"),
       },
       {
-        label: "Anggaran",
+        label: t("statEstimate"),
         value: formatMinutes(8),
       },
       {
-        label: "Hasil",
-        value: "Empat mod akan mula dipandu oleh progres anda",
+        label: t("statResult"),
+        value: t("resultFourModes"),
       },
     ],
-    title: "Mulakan dengan satu tindakan yang jelas",
+    title: t("zeroStateTitle"),
     tone: "teal",
   };
 }
