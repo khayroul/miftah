@@ -103,15 +103,11 @@ export function ModeNavigator({
     return marker?.id ?? fallbackThemeSurahId;
   }, [fallbackThemeSurahId, readPage, surahTargets]);
 
-  const utilityThemeToggle = showUtilities ? (
-    <>
-      <span
-        className="mx-0.5 h-6 w-px shrink-0 bg-stone-200 sm:mx-1 dark:bg-stone-700"
-        aria-hidden="true"
-      />
+  const utilitiesPill = showUtilities ? (
+    <div className="inline-flex shrink-0 items-center gap-0.5 rounded-[26px] border border-stone-200 bg-white/92 p-1 shadow-sm backdrop-blur-sm sm:gap-1 dark:border-stone-700 dark:bg-stone-900/88">
       <ThemeToggle iconOnly embedded />
       <LanguageToggle />
-    </>
+    </div>
   ) : null;
 
   const navigator = (
@@ -172,7 +168,6 @@ export function ModeNavigator({
           </OfflineAwareLink>
         );
       })}
-      {utilityThemeToggle}
     </nav>
   );
 
@@ -180,13 +175,20 @@ export function ModeNavigator({
     return <div className="flex w-full justify-start sm:justify-center">{navigator}</div>;
   }
 
+  const navigatorRow = (
+    <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:justify-center">
+      {navigator}
+      {utilitiesPill}
+    </div>
+  );
+
   if (!showAuthStatus) {
-    return <div className="flex w-full justify-start sm:justify-center">{navigator}</div>;
+    return navigatorRow;
   }
 
   return (
     <div className="flex w-full flex-col items-center gap-3">
-      <div className="flex w-full justify-start sm:justify-center">{navigator}</div>
+      {navigatorRow}
       <div className="flex w-full justify-center">
         <AuthStatusButton />
       </div>
