@@ -79,7 +79,7 @@ export function useFahamAudioController(state: FahamWorkspaceState) {
   const playWordAudio = useCallback(
     (params: {
       text: string;
-      lang: "ar" | "ms";
+      lang: "ar" | "ms" | "en";
       explicitUrl?: string | null;
       autoplayKey?: string;
     }) => {
@@ -121,7 +121,7 @@ export function useFahamAudioController(state: FahamWorkspaceState) {
     });
   };
   const handleManualAudio = (
-    lang: "ar" | "ms",
+    lang: "ar" | "ms" | "en",
     text: string,
     explicitUrl?: string | null,
   ) => playWordAudio({ explicitUrl, lang, text });

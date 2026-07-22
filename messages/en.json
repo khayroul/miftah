@@ -432,6 +432,7 @@
       "meaningLinkEyebrow": "Meaning link",
       "listenPronunciationAria": "Listen to the pronunciation of {word}",
       "englishMeaningLabel": "English: {value}",
+      "malayMeaningLabel": "Malay: {value}",
       "viewAyahLink": "View verse {label}",
       "ayahLabel": "Verse {label}",
       "continuePending": "Saving your answer…",
@@ -549,11 +550,11 @@
     "mcq": {
       "arabToBm": {
         "promptLabel": "Arabic word",
-        "promptHint": "Choose the correct Malay meaning.",
-        "answerLabel": "Malay meaning"
+        "promptHint": "Choose the correct meaning.",
+        "answerLabel": "Meaning"
       },
       "bmToArab": {
-        "promptLabel": "Malay meaning",
+        "promptLabel": "Meaning",
         "promptHint": "Choose the correct Arabic word.",
         "answerLabel": "Arabic word"
       }

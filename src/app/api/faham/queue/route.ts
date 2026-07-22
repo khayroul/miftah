@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getLocale } from "next-intl/server";
 import { ZodError } from "zod";
 import {
   buildFahamQueueSnapshot,
@@ -22,8 +23,16 @@ export async function POST(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // The MEANING language follows the request locale (NEXT_LOCALE cookie),
+    // resolved server-side via getLocale() — same pattern as the home
+    // dashboard route. An explicit body.meaningLocale wins (used by the client
+    // and by tests); otherwise the cookie locale decides ms vs en.
+    const requestLocale = await getLocale();
+    const meaningLocale = body.meaningLocale ?? (requestLocale === "en" ? "en" : "ms");
+
     const snapshot = await buildFahamQueueSnapshot(userId, {
       directionMode: body.directionMode,
+      meaningLocale,
       dueLimit: body.dueLimit,
       minDistinctContextCount: body.minDistinctContextCount,
       minExposureEventCount: body.minExposureEventCount,

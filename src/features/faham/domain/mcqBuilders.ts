@@ -5,9 +5,10 @@ import {
   deterministicOrder,
   hashSeed,
   normalizeArabicText,
-  normalizeMalayMeaning,
+  normalizeMeaning,
+  poolWordMeaning,
   scoreArabicDistractor,
-  scoreMalayDistractor,
+  scoreMeaningDistractor,
   selectDistractors,
 } from "./mcqSelection";
 import type {
@@ -15,16 +16,35 @@ import type {
   FahamMcqDirection,
   FahamMcqDirectionMode,
   FahamMcqPoolWord,
+  FahamMeaningLocale,
 } from "./mcqTypes";
 import type { WordWithOccurrences } from "./types";
+
+/** The meaning-side translation of a Word in the requested language. */
+function wordMeaningFor(
+  word: WordWithOccurrences,
+  meaningLocale: FahamMeaningLocale,
+): string | null {
+  return meaningLocale === "en" ? word.translation_en : word.translation_bm;
+}
+
+/** The OTHER-language gloss, shown as `answerSecondary`/`promptSecondary`. */
+function crossGlossFor(
+  word: WordWithOccurrences,
+  meaningLocale: FahamMeaningLocale,
+): string | null {
+  const gloss = meaningLocale === "en" ? word.translation_bm : word.translation_en;
+  return gloss?.trim() || null;
+}
 
 function buildArabicToMalayMcq(
   word: WordWithOccurrences,
   pool: FahamMcqPoolWord[],
   optionCount: number,
   attemptSeed: string | number,
+  meaningLocale: FahamMeaningLocale,
 ): FahamBuiltMcq | null {
-  const correctMeaning = normalizeMalayMeaning(word.translation_bm);
+  const correctMeaning = normalizeMeaning(wordMeaningFor(word, meaningLocale));
   const correctArabic = normalizeArabicText(word.text_uthmani);
   if (!correctMeaning || !correctArabic) {
     return null;
@@ -35,8 +55,10 @@ function buildArabicToMalayMcq(
     correctWord: word,
     count: distractorCount,
     pool,
-    scoreCandidate: scoreMalayDistractor,
-    toChoiceValue: (candidate) => normalizeMalayMeaning(candidate.translationBm),
+    scoreCandidate: (correctWord, candidate) =>
+      scoreMeaningDistractor(correctWord, candidate, meaningLocale),
+    toChoiceValue: (candidate) =>
+      normalizeMeaning(poolWordMeaning(candidate, meaningLocale)),
     correctChoiceValue: correctMeaning,
   });
   if (distractors.length < distractorCount) {
@@ -46,10 +68,14 @@ function buildArabicToMalayMcq(
   const selectedDistractors = distractors.slice(0, distractorCount);
   // Fold the per-attempt seed into the ordering key so repeated words do not
   // keep the same option positions. The correct index comes from this same
-  // deterministic array, keeping server and client builds synchronized.
+  // deterministic array, keeping server and client builds synchronized. The
+  // seed prefix is parameterized by meaningLocale ("bm-options" for ms —
+  // unchanged so MS output stays byte-identical to pre-change — "en-options"
+  // for en) so MS and EN sessions get independent-but-deterministic orders.
+  const optionSeedPrefix = meaningLocale === "en" ? "en-options" : "bm-options";
   const optionValues = deterministicOrder(
     [correctMeaning, ...selectedDistractors],
-    `bm-options:${word.id}:${attemptSeed}`,
+    `${optionSeedPrefix}:${word.id}:${attemptSeed}`,
     (item) => item,
   );
   const correctIndex = optionValues.findIndex((item) => item === correctMeaning);
@@ -66,12 +92,12 @@ function buildArabicToMalayMcq(
   return {
     answerLabel: "Makna BM",
     answerPrimary: correctMeaning,
-    answerSecondary: word.translation_en?.trim() || null,
+    answerSecondary: crossGlossFor(word, meaningLocale),
     correctIndex,
     direction: "arab_to_bm",
     options: optionValues.map((value) => ({
       dir: "ltr",
-      lang: "ms",
+      lang: meaningLocale,
       value,
     })),
     promptAudioUrl: getAudioUrlForKey(getAudioKey(word, pool)),
@@ -81,7 +107,10 @@ function buildArabicToMalayMcq(
     promptLang: "ar",
     promptPrimary: correctArabic,
     promptSecondary: word.transliteration?.trim() || null,
-    answerAudioUrl: getMalayAudioUrl(correctMeaning),
+    // Answer audio is a Malay TTS asset only; there is no English guide voice,
+    // so EN meanings degrade to no answer audio (the null is handled by the
+    // audio controller — it never falls back to Malay TTS for a non-"ms" lang).
+    answerAudioUrl: meaningLocale === "ms" ? getMalayAudioUrl(correctMeaning) : null,
     whyThisSet: buildWhyThisSetNotes(word, "arab_to_bm"),
   };
 }
@@ -91,8 +120,9 @@ function buildMalayToArabicMcq(
   pool: FahamMcqPoolWord[],
   optionCount: number,
   attemptSeed: string | number,
+  meaningLocale: FahamMeaningLocale,
 ): FahamBuiltMcq | null {
-  const correctMeaning = normalizeMalayMeaning(word.translation_bm);
+  const correctMeaning = normalizeMeaning(wordMeaningFor(word, meaningLocale));
   const correctArabic = normalizeArabicText(word.text_uthmani);
   if (!correctMeaning || !correctArabic) {
     return null;
@@ -103,7 +133,8 @@ function buildMalayToArabicMcq(
     correctWord: word,
     count: distractorCount,
     pool,
-    scoreCandidate: scoreArabicDistractor,
+    scoreCandidate: (correctWord, candidate) =>
+      scoreArabicDistractor(correctWord, candidate, meaningLocale),
     toChoiceValue: (candidate) => normalizeArabicText(candidate.textUthmani),
     correctChoiceValue: correctArabic,
   });
@@ -135,13 +166,15 @@ function buildMalayToArabicMcq(
       lang: "ar",
       value,
     })),
-    promptAudioUrl: getMalayAudioUrl(correctMeaning),
+    // The prompt is the meaning here; Malay TTS only, so EN meaning prompts
+    // degrade to no prompt audio.
+    promptAudioUrl: meaningLocale === "ms" ? getMalayAudioUrl(correctMeaning) : null,
     promptDir: "ltr",
     promptHint: "Pilih perkataan Arab yang tepat.",
     promptLabel: "Makna BM",
-    promptLang: "ms",
+    promptLang: meaningLocale,
     promptPrimary: correctMeaning,
-    promptSecondary: word.translation_en?.trim() || null,
+    promptSecondary: crossGlossFor(word, meaningLocale),
     answerAudioUrl: getAudioUrlForKey(getAudioKey(word, pool)),
     whyThisSet: buildWhyThisSetNotes(word, "bm_to_arab"),
   };
@@ -168,13 +201,14 @@ export function buildFahamMcqForWord(
   directionMode: FahamMcqDirectionMode,
   optionCount = 4,
   attemptSeed: string | number = 0,
+  meaningLocale: FahamMeaningLocale = "ms",
 ): FahamBuiltMcq | null {
   const directions = resolveDirectionOrder(word, directionMode, attemptSeed);
 
   for (const direction of directions) {
     const built = direction === "arab_to_bm"
-      ? buildArabicToMalayMcq(word, pool, optionCount, attemptSeed)
-      : buildMalayToArabicMcq(word, pool, optionCount, attemptSeed);
+      ? buildArabicToMalayMcq(word, pool, optionCount, attemptSeed, meaningLocale)
+      : buildMalayToArabicMcq(word, pool, optionCount, attemptSeed, meaningLocale);
     if (built) {
       return built;
     }

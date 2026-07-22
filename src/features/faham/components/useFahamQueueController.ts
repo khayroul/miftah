@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { loadCachedFahamStats } from "../domain/offlineSync";
 import { buildOfflineFahamQueueSnapshot } from "../domain/offlineQueue";
-import type { FahamMcqDirectionMode } from "../domain/mcq";
+import type { FahamMcqDirectionMode, FahamMeaningLocale } from "../domain/mcq";
 import type { FahamSourcePreset } from "../domain/presets";
 import {
   countQueueCards,
@@ -51,12 +51,14 @@ export function useFahamQueueController(
             nextPreset,
             nextDirectionMode,
             nextIsRevision,
+            state.meaningLocale,
           ),
           source: "remote" as const,
         };
       } catch (error) {
         const offline = await buildOfflineFahamQueueSnapshot({
           directionMode: nextDirectionMode,
+          meaningLocale: state.meaningLocale,
           isRevision: nextIsRevision,
           levelProgressHint: levelProgressRef.current,
           preset: nextPreset,
@@ -66,7 +68,7 @@ export function useFahamQueueController(
         throw error;
       }
     },
-    [levelProgressRef],
+    [levelProgressRef, state.meaningLocale],
   );
 
   const restoreCachedQueue = useCallback(
@@ -76,6 +78,7 @@ export function useFahamQueueController(
         clearSessionSummary?: boolean;
         expectedConfig?: {
           directionMode: FahamMcqDirectionMode;
+          meaningLocale: FahamMeaningLocale;
           isRevision: boolean;
           preset: FahamSourcePreset;
         };
@@ -115,6 +118,7 @@ export function useFahamQueueController(
         .then(({ snapshot, source }) => {
           saveRestorableCachedQueue({
             directionMode: nextDirectionMode,
+            meaningLocale: state.meaningLocale,
             isRevision: nextIsRevision,
             preset: nextPreset,
             snapshot,
@@ -160,6 +164,7 @@ export function useFahamQueueController(
     }
     saveRestorableCachedQueue({
       directionMode: state.directionMode,
+      meaningLocale: state.meaningLocale,
       isRevision: state.isRevision,
       preset: state.preset,
       snapshot: state.snapshot,
@@ -167,6 +172,7 @@ export function useFahamQueueController(
   }, [
     initial.shouldHydrateInitialQueue,
     state.directionMode,
+    state.meaningLocale,
     state.isHydratingInitialQueue,
     state.isRevision,
     state.preset,
@@ -179,6 +185,7 @@ export function useFahamQueueController(
     const bootstrap = async () => {
       const config = {
         directionMode: "arab_to_bm" as const,
+        meaningLocale: state.meaningLocale,
         isRevision: false,
         preset: initial.initialPreset,
       };
@@ -193,6 +200,7 @@ export function useFahamQueueController(
         if (cachedStats) stats.applyStats(cachedStats.stats, false);
         const offline = await buildOfflineFahamQueueSnapshot({
           directionMode: config.directionMode,
+          meaningLocale: config.meaningLocale,
           isRevision: config.isRevision,
           levelProgressHint:
             cachedStats?.stats.levelProgress ??
@@ -227,6 +235,7 @@ export function useFahamQueueController(
             if (cancelled) return;
             saveRestorableCachedQueue({
               directionMode: "arab_to_bm",
+              meaningLocale: state.meaningLocale,
               isRevision: false,
               preset: initial.initialPreset,
               snapshot,

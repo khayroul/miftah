@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { SerializedFahamCard } from "../domain/queue";
 import type { SerializedFahamSourceLink } from "../domain/queueTypes";
 import type { AnswerState } from "./fahamAnswerFlow";
@@ -85,7 +85,7 @@ interface FahamStudyCardProps {
   onAnswer: (index: number) => void;
   onContinue: () => void;
   onManualAudio: (
-    lang: "ar" | "ms",
+    lang: "ar" | "ms" | "en",
     text: string,
     explicitUrl?: string | null,
   ) => void;
@@ -207,6 +207,7 @@ function FeedbackPanel({
   | "onRevealAnswer"
 >) {
   const t = useTranslations("faham.study");
+  const locale = useLocale();
 
   if (!answerState || answerState.phase !== "feedback") {
     return null;
@@ -221,6 +222,19 @@ function FeedbackPanel({
     card.mcq.direction === "arab_to_bm"
       ? card.mcq.promptAudioUrl
       : card.mcq.answerAudioUrl;
+  // The reveal panel's meaning follows the app locale: in EN mode the English
+  // meaning is the headline and Malay becomes the small cross-gloss (mirror of
+  // MS mode, where BM is the headline and English is the gloss).
+  const meaningIsEnglish = locale === "en";
+  const primaryMeaning = meaningIsEnglish
+    ? card.word.translationEn ?? card.word.translationBm ?? card.mcq.answerPrimary
+    : card.word.translationBm ?? card.mcq.answerPrimary;
+  const glossValue = meaningIsEnglish
+    ? card.word.translationBm
+    : card.word.translationEn;
+  const glossLabelKey = meaningIsEnglish
+    ? "malayMeaningLabel"
+    : "englishMeaningLabel";
 
   return (
     <div
@@ -294,16 +308,16 @@ function FeedbackPanel({
               </span>
               <div className="min-w-0 flex-1 text-center sm:text-left">
                 <p className="text-base font-semibold text-stone-900 dark:text-stone-100">
-                  {card.word.translationBm ?? card.mcq.answerPrimary}
+                  {primaryMeaning}
                 </p>
                 {card.word.transliteration ? (
                   <p className="mt-0.5 text-sm text-stone-600 dark:text-stone-300">
                     {card.word.transliteration}
                   </p>
                 ) : null}
-                {card.word.translationEn ? (
+                {glossValue ? (
                   <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
-                    {t("englishMeaningLabel", { value: card.word.translationEn })}
+                    {t(glossLabelKey, { value: glossValue })}
                   </p>
                 ) : null}
               </div>

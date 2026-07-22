@@ -1,8 +1,8 @@
 import type { FahamSourceType } from "@/shared/types/database";
 import { TOP_FAHAM_WORD_LIMIT } from "./config";
 import { buildFahamLevelProgress } from "./levels";
-import type { FahamMcqDirectionMode } from "./mcq";
-import { buildFahamMcqForWord, normalizeMalayMeaning } from "./mcq";
+import type { FahamMcqDirectionMode, FahamMeaningLocale } from "./mcq";
+import { buildFahamMcqForWord, normalizeMalayMeaning, normalizeMeaning } from "./mcq";
 import {
   buildFahamQueuePlan,
   normalizeFahamEngineConfig,
@@ -28,6 +28,7 @@ import type {
 
 interface QueueOverrides {
   directionMode?: FahamMcqDirectionMode;
+  meaningLocale?: FahamMeaningLocale;
   dueLimit?: number;
   sessionSize?: number;
   minDistinctContextCount?: number;
@@ -175,16 +176,24 @@ function serializeCard(
   kind: "due" | "new" | "mastered",
   mcqPool: Awaited<ReturnType<typeof getFahamMcqWordPool>>,
   directionMode: FahamMcqDirectionMode,
+  meaningLocale: FahamMeaningLocale,
 ): SerializedFahamCard | null {
-  const translationBm = normalizeMalayMeaning(card.word.translation_bm);
+  // Symmetric drop-guard: drop the card only when the SELECTED meaning
+  // language's translation is missing. In MS mode this is byte-identical to
+  // the old translation_bm check; in EN mode a word with an English meaning
+  // (translation_en is 100%-covered) survives even if translation_bm is null.
+  const selectedMeaning = normalizeMeaning(
+    meaningLocale === "en" ? card.word.translation_en : card.word.translation_bm,
+  );
   const mcq = buildFahamMcqForWord(
     card.word,
     mcqPool,
     directionMode,
     4,
     card.progress.reps,
+    meaningLocale,
   );
-  if (!translationBm || !mcq) {
+  if (!selectedMeaning || !mcq) {
     return null;
   }
 
@@ -214,7 +223,7 @@ function serializeCard(
       id: card.word.id,
       textSimple: card.word.text_simple,
       textUthmani: card.word.text_uthmani,
-      translationBm,
+      translationBm: normalizeMalayMeaning(card.word.translation_bm),
       translationEn: card.word.translation_en,
       transliteration: card.word.transliteration,
     },
@@ -256,25 +265,26 @@ export async function buildFahamQueueSnapshot(
   ]);
 
   const directionMode = overrides.directionMode ?? "arab_to_bm";
+  const meaningLocale: FahamMeaningLocale = overrides.meaningLocale ?? "ms";
   const candidateByWordId = new Map(
     plan.newCandidates.map((candidate) => [candidate.word.id, candidate]),
   );
 
   const surfacedDueCards = plan.dueCards
-    .map((card) => serializeCard(card, "due", mcqPool, directionMode))
+    .map((card) => serializeCard(card, "due", mcqPool, directionMode, meaningLocale))
     .filter((card): card is SerializedFahamCard => card !== null);
 
   const surfacedMasteredCards = plan.masteredCards
-    .map((card) => serializeCard(card, "mastered", mcqPool, directionMode))
+    .map((card) => serializeCard(card, "mastered", mcqPool, directionMode, meaningLocale))
     .filter((card): card is SerializedFahamCard => card !== null);
 
   const surfacedLearningCards = (plan.learningCards ?? [])
-    .map((card) => serializeCard(card, "due", mcqPool, directionMode))
+    .map((card) => serializeCard(card, "due", mcqPool, directionMode, meaningLocale))
     .filter((card): card is SerializedFahamCard => card !== null);
 
   const surfacedNewCards: SerializedFahamCard[] = [];
   for (const card of newCards) {
-    const serialized = serializeCard(card, "new", mcqPool, directionMode);
+    const serialized = serializeCard(card, "new", mcqPool, directionMode, meaningLocale);
     if (!serialized) {
       continue;
     }
@@ -341,15 +351,15 @@ export async function buildFahamQueueSnapshot(
 
     for (const card of learningPool) {
       if (fallbackQueue.length >= config.sessionSize) break;
-      pushUnique(serializeCard(card, "due", mcqPool, directionMode));
+      pushUnique(serializeCard(card, "due", mcqPool, directionMode, meaningLocale));
     }
     for (const card of dueCardsPool) {
       if (fallbackQueue.length >= config.sessionSize) break;
-      pushUnique(serializeCard(card, "due", mcqPool, directionMode));
+      pushUnique(serializeCard(card, "due", mcqPool, directionMode, meaningLocale));
     }
     for (const card of masteredPool) {
       if (fallbackQueue.length >= config.sessionSize) break;
-      pushUnique(serializeCard(card, "mastered", mcqPool, directionMode));
+      pushUnique(serializeCard(card, "mastered", mcqPool, directionMode, meaningLocale));
     }
 
     if (fallbackQueue.length < config.sessionSize) {
@@ -360,7 +370,7 @@ export async function buildFahamQueueSnapshot(
       );
       for (const card of bootstrapCards) {
         if (fallbackQueue.length >= config.sessionSize) break;
-        pushUnique(serializeCard(card, "new", mcqPool, directionMode));
+        pushUnique(serializeCard(card, "new", mcqPool, directionMode, meaningLocale));
       }
     }
 

@@ -59,6 +59,7 @@ export function useFahamSessionController(
       );
       saveRestorableCachedQueue({
         directionMode: state.directionMode,
+        meaningLocale: state.meaningLocale,
         isRevision: state.isRevision,
         preset: state.preset,
         snapshot: result.snapshot,
@@ -245,8 +246,15 @@ export function useFahamSessionController(
     ) {
       return;
     }
+    // The answer side for bm_to_arab is Arabic; for arab_to_bm it is the
+    // meaning, whose language matches the options' lang ("ms" | "en"). Deriving
+    // it (instead of hardcoding "ms") means an English meaning passes lang
+    // "en", so playWordAudio does NOT synthesize a Malay TTS URL — English
+    // answers degrade to no audio (there is no English guide voice).
     const lang =
-      state.currentCard.mcq.direction === "bm_to_arab" ? "ar" : "ms";
+      state.currentCard.mcq.direction === "bm_to_arab"
+        ? "ar"
+        : state.currentCard.mcq.options[0]?.lang ?? "ms";
     audio.playWordAudio({
       autoplayKey: `answer:${state.currentCard.progressId}`,
       explicitUrl: state.currentCard.mcq.answerAudioUrl,

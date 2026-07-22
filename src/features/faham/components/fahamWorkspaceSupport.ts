@@ -4,7 +4,7 @@ import {
   type CachedFahamQueue,
 } from "../domain/offlineSync";
 import type { FahamLevelProgress } from "../domain/levels";
-import type { FahamMcqDirectionMode } from "../domain/mcq";
+import type { FahamMcqDirectionMode, FahamMeaningLocale } from "../domain/mcq";
 import { FAHAM_PRESET_CONFIGS, type FahamSourcePreset } from "../domain/presets";
 import type { FahamQueueSnapshot, SerializedFahamCard } from "../domain/queue";
 
@@ -68,6 +68,7 @@ export function isRestorableFahamQueue(snapshot: FahamQueueSnapshot): boolean {
 
 export function saveRestorableCachedQueue(input: {
   directionMode: FahamMcqDirectionMode;
+  meaningLocale: FahamMeaningLocale;
   isRevision: boolean;
   preset: FahamSourcePreset;
   snapshot: FahamQueueSnapshot;
@@ -79,6 +80,7 @@ export function saveRestorableCachedQueue(input: {
 
 export function loadMatchingCachedQueue(expected?: {
   directionMode: FahamMcqDirectionMode;
+  meaningLocale: FahamMeaningLocale;
   isRevision: boolean;
   preset: FahamSourcePreset;
 }): CachedFahamQueue | null {
@@ -86,6 +88,7 @@ export function loadMatchingCachedQueue(expected?: {
   if (!cachedQueue || !isRestorableFahamQueue(cachedQueue.snapshot)) return null;
   if (!expected) return cachedQueue;
   return cachedQueue.directionMode === expected.directionMode &&
+    cachedQueue.meaningLocale === expected.meaningLocale &&
     cachedQueue.isRevision === expected.isRevision &&
     cachedQueue.preset === expected.preset
     ? cachedQueue
@@ -96,6 +99,7 @@ export async function requestQueue(
   preset: FahamSourcePreset,
   directionMode: FahamMcqDirectionMode,
   isRevision = false,
+  meaningLocale: FahamMeaningLocale = "ms",
   timeoutMs = FAHAM_QUEUE_REQUEST_TIMEOUT_MS,
 ): Promise<FahamQueueSnapshot> {
   const controller = new AbortController();
@@ -105,6 +109,7 @@ export async function requestQueue(
     response = await fetch("/api/faham/queue", {
       body: JSON.stringify({
         directionMode,
+        meaningLocale,
         preferredSources: FAHAM_PRESET_CONFIGS[preset].preferredSources,
         isRevision,
       }),

@@ -1,6 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { fahamRateRequestSchema } from "./schemas";
+import { fahamQueueRequestSchema, fahamRateRequestSchema } from "./schemas";
+
+test("fahamQueueRequestSchema accepts a meaningLocale of en or ms", () => {
+  assert.equal(fahamQueueRequestSchema.parse({ meaningLocale: "en" }).meaningLocale, "en");
+  assert.equal(fahamQueueRequestSchema.parse({ meaningLocale: "ms" }).meaningLocale, "ms");
+  // meaningLocale is optional — absent is valid.
+  assert.equal(fahamQueueRequestSchema.parse({}).meaningLocale, undefined);
+});
+
+test("fahamQueueRequestSchema rejects an unknown meaningLocale", () => {
+  assert.throws(() => fahamQueueRequestSchema.parse({ meaningLocale: "ar" }));
+});
 
 test("fahamRateRequestSchema accepts progressId payload", () => {
   const parsed = fahamRateRequestSchema.parse({

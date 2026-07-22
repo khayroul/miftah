@@ -1,7 +1,7 @@
 "use client";
 
 import type { FahamLevelProgress } from "./levels";
-import type { FahamMcqDirectionMode } from "./mcq";
+import type { FahamMcqDirectionMode, FahamMeaningLocale } from "./mcq";
 import type { FahamQueueSnapshot } from "./queue";
 import type { FahamSourcePreset } from "./presets";
 import {
@@ -11,11 +11,16 @@ import {
   parseJson,
 } from "./offlineSyncStorage";
 
-const LS_KEY_QUEUE_CACHE = "miftah:faham:queue-cache:v1";
+// v2: the cached queue now carries `meaningLocale`. Bumping the key orphans
+// every pre-change (v1, Malay-only) cache so a stale Malay deck can never be
+// restored into an English session — belt-and-suspenders with the
+// meaningLocale validation + match performed on load.
+const LS_KEY_QUEUE_CACHE = "miftah:faham:queue-cache:v2";
 const LS_KEY_STATS_CACHE = "miftah:faham:stats-cache:v1";
 
 export interface CachedFahamQueue {
   directionMode: FahamMcqDirectionMode;
+  meaningLocale: FahamMeaningLocale;
   isRevision: boolean;
   preset: FahamSourcePreset;
   savedAt: number;
@@ -107,6 +112,7 @@ function isFahamQueueSnapshot(value: unknown): value is FahamQueueSnapshot {
 
 export function saveCachedFahamQueue(input: {
   directionMode: FahamMcqDirectionMode;
+  meaningLocale: FahamMeaningLocale;
   isRevision: boolean;
   preset: FahamSourcePreset;
   snapshot: FahamQueueSnapshot;
@@ -118,6 +124,7 @@ export function saveCachedFahamQueue(input: {
 
   const payload: CachedFahamQueue = {
     directionMode: input.directionMode,
+    meaningLocale: input.meaningLocale,
     isRevision: input.isRevision,
     preset: input.preset,
     savedAt: Date.now(),
@@ -148,6 +155,7 @@ export function loadCachedFahamQueue(): CachedFahamQueue | null {
   }
 
   const directionMode = parsed.directionMode;
+  const meaningLocale = parsed.meaningLocale;
   const isRevision = parsed.isRevision;
   const preset = parsed.preset;
   const savedAt = parsed.savedAt;
@@ -157,6 +165,7 @@ export function loadCachedFahamQueue(): CachedFahamQueue | null {
     (directionMode !== "arab_to_bm" &&
       directionMode !== "bm_to_arab" &&
       directionMode !== "mixed") ||
+    (meaningLocale !== "ms" && meaningLocale !== "en") ||
     typeof isRevision !== "boolean" ||
     (preset !== "mixed" &&
       preset !== "reading" &&
@@ -171,6 +180,7 @@ export function loadCachedFahamQueue(): CachedFahamQueue | null {
 
   return {
     directionMode,
+    meaningLocale,
     isRevision,
     preset,
     savedAt,

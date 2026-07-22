@@ -114,6 +114,7 @@ const exposureSignals: FahamExposureSignal[] = [
 test("buildOfflineFahamQueueSnapshotFromTierPayload builds new cards with source metadata", () => {
   const snapshot = buildOfflineFahamQueueSnapshotFromTierPayload({
     directionMode: "arab_to_bm",
+    meaningLocale: "ms",
     exposureSignals,
     isRevision: false,
     levelProgressHint,
@@ -146,6 +147,7 @@ test("buildOfflineFahamQueueSnapshotFromTierPayload builds new cards with source
 test("buildOfflineFahamQueueSnapshotFromTierPayload maps revision mode cards into due bucket", () => {
   const snapshot = buildOfflineFahamQueueSnapshotFromTierPayload({
     directionMode: "mixed",
+    meaningLocale: "ms",
     exposureSignals,
     isRevision: true,
     payload: tierPayload,
@@ -156,5 +158,24 @@ test("buildOfflineFahamQueueSnapshotFromTierPayload maps revision mode cards int
   assert.equal(snapshot.new.length, 0);
   assert.equal(snapshot.stats.dueCount, snapshot.due.length);
   assert.ok(snapshot.due.every((card) => card.kind === "due"));
+});
+
+test("EN meaningLocale: offline rebuild produces English-lang options", () => {
+  const snapshot = buildOfflineFahamQueueSnapshotFromTierPayload({
+    directionMode: "arab_to_bm",
+    meaningLocale: "en",
+    exposureSignals,
+    isRevision: false,
+    levelProgressHint,
+    payload: tierPayload,
+    preset: "theme",
+  });
+
+  assert.ok(snapshot.new.length > 0);
+  for (const card of snapshot.new) {
+    assert.ok(card.mcq.options.every((option) => option.lang === "en"));
+    // Answer audio degrades to null for English meanings.
+    assert.equal(card.mcq.answerAudioUrl, null);
+  }
 });
 

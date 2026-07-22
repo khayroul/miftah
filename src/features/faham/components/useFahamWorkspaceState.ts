@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useRef, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
-import type { FahamMcqDirectionMode } from "../domain/mcq";
+import { useLocale, useTranslations } from "next-intl";
+import type { FahamMcqDirectionMode, FahamMeaningLocale } from "../domain/mcq";
 import type { FahamSourcePreset } from "../domain/presets";
 import type { FahamQueueSnapshot } from "../domain/queue";
 import type { FahamSessionSummary } from "./FahamSessionSummaryModal";
@@ -80,6 +80,13 @@ export function useFahamWorkspaceState({
   const prefetchedTierWordLimitRef = useRef(0);
   const isAdvancingRef = useRef(false);
 
+  // The MEANING language follows the app locale (NEXT_LOCALE cookie). Both the
+  // server queue build (getLocale) and the client rebuild/cache-key read the
+  // same cookie, so they agree; this value seeds requestQueue, the offline
+  // rebuild, and the cache match/key.
+  const locale = useLocale();
+  const meaningLocale: FahamMeaningLocale = locale === "en" ? "en" : "ms";
+
   const cards = useMemo(() => queueItems(snapshot), [snapshot]);
   const currentCard = cards[currentIndex] ?? null;
   const levelProgress = stats?.levelProgress ?? snapshot.levelProgress;
@@ -107,7 +114,7 @@ export function useFahamWorkspaceState({
     activeAudioRef, answerState, audioEnabled, cards, correctAdvanceMode,
     currentCard, currentIndex, directionMode, errorMessage, foundCount,
     isAdvancingRef, isConfigExpanded, isHydratingInitialQueue, isPending,
-    isRevision, isSyncingRef, lastAutoplayKeyRef, levelProgress,
+    isRevision, isSyncingRef, lastAutoplayKeyRef, levelProgress, meaningLocale,
     masteredCount, pendingSyncCount, prefetchedTierWordLimitRef, preset,
     prevMasteredRef, sessionCorrectCountRef, sessionSummary,
     setAnswerState, setAudioEnabled, setCorrectAdvanceMode, setCurrentIndex,

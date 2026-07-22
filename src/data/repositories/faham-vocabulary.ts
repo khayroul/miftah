@@ -232,6 +232,7 @@ export async function getFahamMcqWordPool(
       textSimple: row.text_simple,
       textUthmani: normalizedArabic,
       translationBm: normalizedMeaning,
+      translationEn: row.translation_en,
       transliteration: row.transliteration,
     });
   }

@@ -1,5 +1,9 @@
 import type { Word } from "@/shared/types/database";
-import type { FahamMcqDirection, FahamMcqPoolWord } from "./mcqTypes";
+import type {
+  FahamMcqDirection,
+  FahamMcqPoolWord,
+  FahamMeaningLocale,
+} from "./mcqTypes";
 
 function collapseWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
@@ -84,13 +88,35 @@ export function normalizeArabicText(value: string | null | undefined): string | 
   return normalized.length > 0 ? normalized : null;
 }
 
-export function normalizeMalayMeaning(value: string | null | undefined): string | null {
+// Meaning-language-agnostic: the normalization (whitespace-collapse, empty →
+// null) is identical whether the meaning is Malay or English, so this is the
+// canonical function. `normalizeMalayMeaning` is retained as a thin alias for
+// the many call sites (and tests) that still import the old name.
+export function normalizeMeaning(value: string | null | undefined): string | null {
   if (!value) {
     return null;
   }
 
   const normalized = collapseWhitespace(value);
   return normalized.length > 0 ? normalized : null;
+}
+
+/** @deprecated Use {@link normalizeMeaning}. Kept as a thin alias. */
+export function normalizeMalayMeaning(value: string | null | undefined): string | null {
+  return normalizeMeaning(value);
+}
+
+/** The raw meaning-side translation for a Word in the requested language. */
+function wordMeaning(word: Word, meaningLocale: FahamMeaningLocale): string | null {
+  return meaningLocale === "en" ? word.translation_en : word.translation_bm;
+}
+
+/** The raw meaning-side translation for a pool candidate in the requested language. */
+export function poolWordMeaning(
+  candidate: FahamMcqPoolWord,
+  meaningLocale: FahamMeaningLocale,
+): string | null {
+  return meaningLocale === "en" ? candidate.translationEn : candidate.translationBm;
 }
 
 function meaningOverlapPenalty(correctMeaning: string, candidateMeaning: string): number {
@@ -100,9 +126,18 @@ function meaningOverlapPenalty(correctMeaning: string, candidateMeaning: string)
   return candidateTokens.filter((token) => correctSet.has(token)).length * 7;
 }
 
-export function scoreMalayDistractor(correctWord: Word, candidate: FahamMcqPoolWord): number {
-  const correctMeaning = normalizeMalayMeaning(correctWord.translation_bm);
-  const candidateMeaning = normalizeMalayMeaning(candidate.translationBm);
+// Language-agnostic distractor scorer for the MEANING side. The signals
+// (pos / length / token-count / frequency / abstract-pos / comma / overlap)
+// are all language-neutral; only WHICH translation the candidate exposes
+// depends on `meaningLocale`. `scoreMalayDistractor` is retained as a thin
+// alias hardcoding "ms" so existing call sites keep byte-identical behavior.
+export function scoreMeaningDistractor(
+  correctWord: Word,
+  candidate: FahamMcqPoolWord,
+  meaningLocale: FahamMeaningLocale,
+): number {
+  const correctMeaning = normalizeMeaning(wordMeaning(correctWord, meaningLocale));
+  const candidateMeaning = normalizeMeaning(poolWordMeaning(candidate, meaningLocale));
   if (!correctMeaning || !candidateMeaning) {
     return Number.NEGATIVE_INFINITY;
   }
@@ -123,15 +158,24 @@ export function scoreMalayDistractor(correctWord: Word, candidate: FahamMcqPoolW
   );
 }
 
-export function scoreArabicDistractor(correctWord: Word, candidate: FahamMcqPoolWord): number {
+/** @deprecated Use {@link scoreMeaningDistractor}. Thin alias hardcoding "ms". */
+export function scoreMalayDistractor(correctWord: Word, candidate: FahamMcqPoolWord): number {
+  return scoreMeaningDistractor(correctWord, candidate, "ms");
+}
+
+export function scoreArabicDistractor(
+  correctWord: Word,
+  candidate: FahamMcqPoolWord,
+  meaningLocale: FahamMeaningLocale = "ms",
+): number {
   const correctArabic = normalizeArabicText(correctWord.text_uthmani);
   const candidateArabic = normalizeArabicText(candidate.textUthmani);
   if (!correctArabic || !candidateArabic) {
     return Number.NEGATIVE_INFINITY;
   }
 
-  const correctMeaning = normalizeMalayMeaning(correctWord.translation_bm);
-  const candidateMeaning = normalizeMalayMeaning(candidate.translationBm);
+  const correctMeaning = normalizeMeaning(wordMeaning(correctWord, meaningLocale));
+  const candidateMeaning = normalizeMeaning(poolWordMeaning(candidate, meaningLocale));
   const sameRoot = Boolean(correctWord.root && candidate.root && correctWord.root === candidate.root);
   const sameLemma = Boolean(
     correctWord.lemma && candidate.lemma && correctWord.lemma === candidate.lemma,

@@ -187,6 +187,7 @@ test("saveCachedFahamQueue round-trips queue settings and snapshot", () => {
   const snapshot = buildSnapshot();
   saveCachedFahamQueue({
     directionMode: "mixed",
+    meaningLocale: "en",
     isRevision: true,
     preset: "theme",
     snapshot,
@@ -195,15 +196,36 @@ test("saveCachedFahamQueue round-trips queue settings and snapshot", () => {
   const cached = loadCachedFahamQueue();
   assert.ok(cached);
   assert.equal(cached?.directionMode, "mixed");
+  assert.equal(cached?.meaningLocale, "en");
   assert.equal(cached?.isRevision, true);
   assert.equal(cached?.preset, "theme");
   assert.deepEqual(cached?.snapshot, snapshot);
+});
+
+test("loadCachedFahamQueue rejects a cached payload missing meaningLocale", () => {
+  const snapshot = buildSnapshot([buildCard(31)]);
+  // Simulate a payload written by a build before meaningLocale existed (no
+  // meaningLocale field). Even at the v2 key, the load-time validation must
+  // reject it rather than serve a Malay deck into a possibly-English session.
+  storage.setItem(
+    "miftah:faham:queue-cache:v2",
+    JSON.stringify({
+      directionMode: "arab_to_bm",
+      isRevision: false,
+      preset: "mixed",
+      savedAt: Date.now(),
+      snapshot,
+    }),
+  );
+
+  assert.equal(loadCachedFahamQueue(), null);
 });
 
 test("saveCachedFahamQueue keeps synthetic offline cards with negative progress ids", () => {
   const snapshot = buildSnapshot([buildCard(-1)]);
   saveCachedFahamQueue({
     directionMode: "arab_to_bm",
+    meaningLocale: "ms",
     isRevision: false,
     preset: "reading",
     snapshot,
@@ -231,6 +253,7 @@ test("an empty server snapshot cannot overwrite a usable cached Faham deck", () 
   const usable = buildSnapshot([buildCard(41)]);
   saveCachedFahamQueue({
     directionMode: "arab_to_bm",
+    meaningLocale: "ms",
     isRevision: false,
     preset: "mixed",
     snapshot: usable,
@@ -238,6 +261,7 @@ test("an empty server snapshot cannot overwrite a usable cached Faham deck", () 
 
   const saved = saveRestorableCachedQueue({
     directionMode: "arab_to_bm",
+    meaningLocale: "ms",
     isRevision: false,
     preset: "mixed",
     snapshot: buildSnapshot(),

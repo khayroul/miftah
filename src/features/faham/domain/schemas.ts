@@ -33,6 +33,7 @@ export const fahamExposureSchema = z.discriminatedUnion("sourceType", [
 
 export const fahamQueueRequestSchema = z.object({
   directionMode: fahamDirectionEnum.optional(),
+  meaningLocale: z.enum(["ms", "en"]).optional(),
   dueLimit: z.number().int().min(1).max(100).optional(),
   minDistinctContextCount: z.number().int().min(1).max(5).optional(),
   minExposureEventCount: z.number().int().min(1).max(10).optional(),

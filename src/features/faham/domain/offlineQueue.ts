@@ -5,9 +5,10 @@ import { loadFahamExposureSignals, type FahamExposureSignal } from "./exposureSy
 import type { FahamLevelProgress } from "./levels";
 import {
   buildFahamMcqForWord,
-  normalizeMalayMeaning,
+  normalizeMeaning,
   type FahamMcqDirectionMode,
   type FahamMcqPoolWord,
+  type FahamMeaningLocale,
 } from "./mcq";
 import type {
   FahamQueueSnapshot,
@@ -167,6 +168,7 @@ function toPoolWord(
     textSimple: word.textSimple,
     textUthmani: word.textUthmani,
     translationBm: word.translationBm,
+    translationEn: word.translationEn,
     transliteration: word.transliteration,
   };
 }
@@ -193,8 +195,11 @@ function scoreWordForOfflineQueue(
   word: CachedFahamTierVocabPayload["words"][number],
   exposureSignals: FahamExposureSignal[],
   sourceWeights: Record<string, number>,
+  meaningLocale: FahamMeaningLocale,
 ): number {
-  const normalizedMeaning = normalizeMalayMeaning(word.translationBm);
+  const normalizedMeaning = normalizeMeaning(
+    meaningLocale === "en" ? word.translationEn : word.translationBm,
+  );
   if (!normalizedMeaning) {
     return Number.NEGATIVE_INFINITY;
   }
@@ -216,6 +221,7 @@ function scoreWordForOfflineQueue(
 
 export function buildOfflineFahamQueueSnapshotFromTierPayload(params: {
   directionMode: FahamMcqDirectionMode;
+  meaningLocale: FahamMeaningLocale;
   exposureSignals?: FahamExposureSignal[];
   isRevision: boolean;
   levelProgressHint?: FahamLevelProgress | null;
@@ -231,7 +237,12 @@ export function buildOfflineFahamQueueSnapshotFromTierPayload(params: {
 
   const rankedWords = params.payload.words
     .map((word) => ({
-      score: scoreWordForOfflineQueue(word, exposureSignals, sourceWeights),
+      score: scoreWordForOfflineQueue(
+        word,
+        exposureSignals,
+        sourceWeights,
+        params.meaningLocale,
+      ),
       word,
     }))
     .filter((entry) => Number.isFinite(entry.score))
@@ -249,7 +260,14 @@ export function buildOfflineFahamQueueSnapshotFromTierPayload(params: {
     }
 
     const word = toWordWithOccurrences(entry.word);
-    const mcq = buildFahamMcqForWord(word, pool, params.directionMode, 4, nowIso);
+    const mcq = buildFahamMcqForWord(
+      word,
+      pool,
+      params.directionMode,
+      4,
+      nowIso,
+      params.meaningLocale,
+    );
     if (!mcq) {
       continue;
     }
@@ -308,6 +326,7 @@ export function buildOfflineFahamQueueSnapshotFromTierPayload(params: {
 
 export async function buildOfflineFahamQueueSnapshot(params: {
   directionMode: FahamMcqDirectionMode;
+  meaningLocale: FahamMeaningLocale;
   isRevision: boolean;
   levelProgressHint?: FahamLevelProgress | null;
   preset: FahamSourcePreset;
@@ -325,6 +344,7 @@ export async function buildOfflineFahamQueueSnapshot(params: {
 
     return buildOfflineFahamQueueSnapshotFromTierPayload({
       directionMode: params.directionMode,
+      meaningLocale: params.meaningLocale,
       exposureSignals: loadFahamExposureSignals(),
       isRevision: params.isRevision,
       levelProgressHint: params.levelProgressHint,

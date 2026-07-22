@@ -34,6 +34,7 @@ function buildPoolWord(overrides: Partial<FahamMcqPoolWord> = {}): FahamMcqPoolW
     textSimple: "الهدى",
     textUthmani: "الْهُدَى",
     translationBm: "petunjuk",
+    translationEn: null,
     transliteration: "al-huda",
     ...overrides,
   };
@@ -280,4 +281,134 @@ test("B8: mixed direction alternates across attemptSeed instead of pinning forev
   }
 
   assert.equal(directions.size, 2, "expected both directions to appear across repeated attempts");
+});
+
+// --- meaningLocale="en": full English answer options -----------------------
+
+// A fixed fixture shared by the meaningLocale tests below. buildWord's default
+// already carries translation_en "book".
+function englishFixture() {
+  const word = buildWord({ id: 55, translation_bm: "kitab", translation_en: "book" });
+  // Distinct textUthmani/root/lemma per pool word so BOTH directions can build
+  // (bm_to_arab needs distinct Arabic distractors). The arab_to_bm output —
+  // and the MS golden below — is independent of these Arabic fields, which
+  // only feed the bm_to_arab (scoreArabicDistractor) path.
+  const pool = [
+    buildPoolWord({ id: 2, translationBm: "petunjuk", translationEn: "guidance", frequency: 130, textUthmani: "النُّور", root: "نور", lemma: "نور" }),
+    buildPoolWord({ id: 3, translationBm: "rahmat", translationEn: "mercy", frequency: 90, textUthmani: "الرَّحْمَة", root: "رحم", lemma: "رحمة" }),
+    buildPoolWord({ id: 6, translationBm: "hamba", translationEn: "servant", frequency: 140, textUthmani: "الْعَبْد", root: "عبد", lemma: "عبد" }),
+    buildPoolWord({ id: 8, translationBm: "cahaya", translationEn: "light", frequency: 145, textUthmani: "الضِّيَاء", root: "ضوأ", lemma: "ضياء" }),
+    buildPoolWord({ id: 9, translationBm: "ilmu", translationEn: "knowledge", frequency: 128, textUthmani: "الْعِلْم", root: "علم", lemma: "علم" }),
+  ];
+  return { word, pool };
+}
+
+test("EN mode: arab_to_bm options are built from translationEn with lang 'en'", () => {
+  const { word, pool } = englishFixture();
+  const mcq = buildFahamMcqForWord(word, pool, "arab_to_bm", 4, 7, "en");
+
+  assert.ok(mcq);
+  assert.equal(mcq!.direction, "arab_to_bm");
+  // Every option renders as English, never Malay.
+  assert.ok(mcq!.options.every((option) => option.lang === "en"));
+  // The correct option is the English meaning; the Malay meaning is the gloss.
+  assert.equal(mcq!.options[mcq!.correctIndex].value, "book");
+  assert.equal(mcq!.answerPrimary, "book");
+  assert.equal(mcq!.answerSecondary, "kitab");
+  // The distractor VALUES come from the pool's English translations, not Malay.
+  const values = mcq!.options.map((option) => option.value);
+  assert.ok(values.every((value) => !["petunjuk", "rahmat", "hamba", "cahaya", "ilmu", "kitab"].includes(value)));
+  // No English guide voice exists → answer audio degrades to null.
+  assert.equal(mcq!.answerAudioUrl, null);
+});
+
+test("EN mode: bm_to_arab prompt is the English meaning with no prompt audio", () => {
+  const { word, pool } = englishFixture();
+  const mcq = buildFahamMcqForWord(word, pool, "bm_to_arab", 4, 7, "en");
+
+  assert.ok(mcq);
+  assert.equal(mcq!.direction, "bm_to_arab");
+  assert.equal(mcq!.promptLang, "en");
+  assert.equal(mcq!.promptPrimary, "book");
+  assert.equal(mcq!.promptSecondary, "kitab");
+  // Prompt is an English meaning → Malay TTS is not synthesized.
+  assert.equal(mcq!.promptAudioUrl, null);
+  // Arabic options are unaffected by meaningLocale.
+  assert.ok(mcq!.options.every((option) => option.lang === "ar"));
+});
+
+test("EN mode: same inputs produce byte-identical MCQs twice (determinism)", () => {
+  const { word, pool } = englishFixture();
+  const first = buildFahamMcqForWord(word, pool, "arab_to_bm", 4, 7, "en");
+  const second = buildFahamMcqForWord(word, pool, "arab_to_bm", 4, 7, "en");
+
+  assert.ok(first);
+  assert.deepEqual(first, second);
+});
+
+test("EN mode: drop-rule fires when the selected (English) translation is missing", () => {
+  const { pool } = englishFixture();
+  // A word with a Malay meaning but NO English meaning must not build in EN
+  // mode (symmetric drop-guard), even though it would build fine in MS mode.
+  const word = buildWord({ id: 55, translation_bm: "kitab", translation_en: null });
+
+  assert.equal(buildFahamMcqForWord(word, pool, "arab_to_bm", 4, 7, "en"), null);
+  assert.ok(buildFahamMcqForWord(word, pool, "arab_to_bm", 4, 7, "ms"));
+});
+
+test("EN and MS orderings are independent (different option sets/seeds)", () => {
+  const { word, pool } = englishFixture();
+  const ms = buildFahamMcqForWord(word, pool, "arab_to_bm", 4, 7, "ms");
+  const en = buildFahamMcqForWord(word, pool, "arab_to_bm", 4, 7, "en");
+
+  assert.ok(ms);
+  assert.ok(en);
+  assert.ok(ms!.options.every((option) => option.lang === "ms"));
+  assert.ok(en!.options.every((option) => option.lang === "en"));
+});
+
+// --- MS-mode regression guard (the critical assertion) ----------------------
+
+test("MS mode output is byte-identical to the pinned pre-change golden", () => {
+  const { word, pool } = englishFixture();
+  const ms = buildFahamMcqForWord(word, pool, "arab_to_bm", 4, 7, "ms");
+
+  // Golden captured from the builder for this exact fixture. Any future change
+  // that perturbs MS-mode option ordering, seed, lang, or answer audio breaks
+  // this — the guard the meaningLocale generalization must never regress.
+  assert.deepEqual(ms, {
+    answerLabel: "Makna BM",
+    answerPrimary: "kitab",
+    answerSecondary: "book",
+    correctIndex: 2,
+    direction: "arab_to_bm",
+    options: [
+      { dir: "ltr", lang: "ms", value: "ilmu" },
+      { dir: "ltr", lang: "ms", value: "hamba" },
+      { dir: "ltr", lang: "ms", value: "kitab" },
+      { dir: "ltr", lang: "ms", value: "cahaya" },
+    ],
+    promptAudioUrl: null,
+    promptDir: "rtl",
+    promptHint: "Pilih makna BM yang tepat.",
+    promptLabel: "Perkataan Arab",
+    promptLang: "ar",
+    promptPrimary: "الْكِتَاب",
+    promptSecondary: "al-kitab",
+    answerAudioUrl: "/api/audio/tts?text=kitab&lang=ms&voice=male&v=2",
+    whyThisSet: [
+      "Pilihan diutamakan daripada kelas kata noun yang serupa.",
+      "Makna dipilih hampir sama panjang supaya jawapan tidak terlalu menonjol.",
+      "Partikel dan kata fungsi ditolak ke bawah supaya gangguan lebih bermakna.",
+    ],
+  });
+});
+
+test("MS mode is the default meaningLocale (omitted arg === explicit 'ms')", () => {
+  const { word, pool } = englishFixture();
+  const explicit = buildFahamMcqForWord(word, pool, "arab_to_bm", 4, 7, "ms");
+  const defaulted = buildFahamMcqForWord(word, pool, "arab_to_bm", 4, 7);
+
+  assert.ok(explicit);
+  assert.deepEqual(defaulted, explicit);
 });
