@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
 import type { MushafPageManifest } from "@/mushaf/types/mushaf";
 import type { FsrsRating } from "@/shared/types/database";
@@ -54,6 +55,7 @@ export function HifzUnveilSession({
   onComplete,
   onExit,
 }: HifzUnveilSessionProps) {
+  const tErrors = useTranslations("hifz.errors");
   const [phase, setPhase] = useState<UnveilPhase>("prompting");
   const [unveilState, setUnveilState] = useState<UnveilState>(() =>
     buildUnveilState(layout, manifest),
@@ -165,21 +167,21 @@ export function HifzUnveilSession({
 
         if (!configResponse.ok || configPayload?.configured !== true) {
           if (!disposed) {
-            setVadError("Pelayan tasmi' belum dikonfigurasikan.");
+            setVadError(tErrors("tasmiNotConfigured"));
             recitingActiveRef.current = false;
           }
           return;
         }
         if (configPayload.reachable !== true) {
           if (!disposed) {
-            setVadError("Pelayan tasmi' tak dapat dihubungi sekarang.");
+            setVadError(tErrors("tasmiUnreachable"));
             recitingActiveRef.current = false;
           }
           return;
         }
       } catch {
         if (!disposed) {
-          setVadError("Pelayan tasmi' tak dapat dihubungi sekarang.");
+          setVadError(tErrors("tasmiUnreachable"));
           recitingActiveRef.current = false;
         }
         return;

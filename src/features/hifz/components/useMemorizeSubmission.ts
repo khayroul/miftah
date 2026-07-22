@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { AyahRange, TasmiRatingLabel, TasmiSessionResult } from "@/features/tasmi";
 import {
   advanceQueue,
@@ -49,9 +50,12 @@ interface SubmissionOptions {
   setCurrentChunkIndex: (index: number) => void;
 }
 
+type SubmitChunkTranslator = (key: string) => string;
+
 async function submitChunk(
   chunk: MemorizeChunk,
   rating: 1 | 3,
+  tErrors: SubmitChunkTranslator,
 ): Promise<MemorizeFlowError | null> {
   const ratings = chunk.items.map((item) => ({
     progressId: item.progressId,
@@ -73,13 +77,11 @@ async function submitChunk(
   )) {
     return rateResponse.status === 401
       ? {
-          message: "Sesi hafalan perlukan akaun aktif. Log masuk dahulu kemudian buka semula dari Hafal.",
+          message: tErrors("signInRequired"),
           requiresSignIn: true,
         }
       : {
-          message:
-            ratePayload?.error ??
-            "Markah hafalan tak dapat disimpan sekarang. Cuba lagi sekali.",
+          message: ratePayload?.error ?? tErrors("ratingSaveFailed"),
         };
   }
 
@@ -94,13 +96,11 @@ async function submitChunk(
   if (!markResponse.ok || markPayload?.ok !== true) {
     return markResponse.status === 401
       ? {
-          message: "Sesi hafalan perlukan akaun aktif. Log masuk dahulu kemudian buka semula dari Hafal.",
+          message: tErrors("signInRequired"),
           requiresSignIn: true,
         }
       : {
-          message:
-            markPayload?.error ??
-            "Status hafalan tak dapat disimpan sekarang. Cuba lagi sekali.",
+          message: markPayload?.error ?? tErrors("statusSaveFailed"),
         };
   }
   return null;
@@ -108,6 +108,7 @@ async function submitChunk(
 
 export function useMemorizeSubmission(options: SubmissionOptions) {
   const router = useRouter();
+  const tErrors = useTranslations("hifz.errors");
   const [complete, setComplete] = useState(false);
   const [errorState, setErrorState] = useState<MemorizeFlowError | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -140,7 +141,7 @@ export function useMemorizeSubmission(options: SubmissionOptions) {
       const updated = advanceQueue("memorize");
       if (!updated) {
         setErrorState({
-          message: "Sesi hafalan tak dapat disambung. Kembali ke Hafal dan buka semula sesi ini.",
+          message: tErrors("queueAdvanceFailed"),
         });
         setSubmitting(false);
         return;
@@ -161,7 +162,7 @@ export function useMemorizeSubmission(options: SubmissionOptions) {
       if (recordConfidence === null) setSubmitting(false);
       router.push(buildQueuePageHref("memorize", nextPage, updated.currentPageIndex));
     },
-    [options, router],
+    [options, router, tErrors],
   );
 
   const startTasmi = useCallback(async () => {
@@ -195,7 +196,7 @@ export function useMemorizeSubmission(options: SubmissionOptions) {
       if (!chunk || chunk.items.length === 0) return;
       setSubmitting(true);
       try {
-        const error = await submitChunk(chunk, label === "ulang" ? 1 : 3);
+        const error = await submitChunk(chunk, label === "ulang" ? 1 : 3, tErrors);
         if (error) {
           setErrorState(error);
           setSubmitting(false);
@@ -203,11 +204,11 @@ export function useMemorizeSubmission(options: SubmissionOptions) {
         }
         finishChunk(null);
       } catch {
-        setErrorState({ message: "Simpanan hafalan gagal sekarang. Cuba lagi sekali." });
+        setErrorState({ message: tErrors("saveFailedGeneric") });
         setSubmitting(false);
       }
     },
-    [finishChunk, options.currentChunk],
+    [finishChunk, options.currentChunk, tErrors],
   );
 
   const handleRate = useCallback(
@@ -217,7 +218,7 @@ export function useMemorizeSubmission(options: SubmissionOptions) {
       try {
         const queue = loadQueue("memorize");
         if (!queue) {
-          setErrorState({ message: "Sesi hafalan ini sudah tamat atau hilang. Buka semula dari Hafal." });
+          setErrorState({ message: tErrors("sessionExpired") });
           setSubmitting(false);
           return;
         }
@@ -230,7 +231,7 @@ export function useMemorizeSubmission(options: SubmissionOptions) {
         }
         const chunk = options.currentChunk;
         if (!chunk || chunk.items.length === 0) {
-          setErrorState({ message: "Chunk hafalan ini sudah hilang daripada sesi semasa. Kembali ke Hafal dan buka semula." });
+          setErrorState({ message: tErrors("chunkGoneFromSession") });
           setSubmitting(false);
           return;
         }
@@ -255,7 +256,7 @@ export function useMemorizeSubmission(options: SubmissionOptions) {
           setSubmitting(false);
           return;
         }
-        const error = await submitChunk(chunk, 3);
+        const error = await submitChunk(chunk, 3, tErrors);
         if (error) {
           setErrorState(error);
           setSubmitting(false);
@@ -263,11 +264,11 @@ export function useMemorizeSubmission(options: SubmissionOptions) {
         }
         finishChunk(true);
       } catch {
-        setErrorState({ message: "Simpanan hafalan gagal sekarang. Cuba lagi sekali." });
+        setErrorState({ message: tErrors("saveFailedGeneric") });
         setSubmitting(false);
       }
     },
-    [finishChunk, options],
+    [finishChunk, options, tErrors],
   );
 
   const handleTasmiCancel = useCallback(() => {

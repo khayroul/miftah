@@ -87,7 +87,7 @@ function MotivationMetricCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-500 sm:text-xs dark:text-stone-400">
+          <p className="truncate text-[11px] font-bold uppercase tracking-[0.2em] text-stone-500 sm:text-xs dark:text-stone-400">
             {label}
           </p>
           <p

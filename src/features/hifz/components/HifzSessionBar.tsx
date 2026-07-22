@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface HifzSessionBarProps {
   flow: "memorize" | "review";
@@ -31,8 +32,9 @@ export function HifzSessionBar({
     return () => clearInterval(interval);
   }, [startTime]);
 
+  const t = useTranslations("hifz.sessionBar");
   const progressPct = totalPages > 0 ? (completedPages / totalPages) * 100 : 0;
-  const label = flow === "memorize" ? "Hafal" : "Ulang Kaji";
+  const label = flow === "memorize" ? t("memorizeLabel") : t("reviewLabel");
 
   return (
     <div className="fixed inset-x-0 top-0 z-40 border-b border-stone-200/60 bg-white/90 backdrop-blur-sm dark:border-stone-700/60 dark:bg-stone-900/90">

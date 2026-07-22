@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { buildSignInPath } from "@/features/auth";
 import {
   TasmiSessionUI,
@@ -38,6 +41,9 @@ interface HifzInlineRatingViewProps {
 }
 
 export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
+  const t = useTranslations("hifz.inlineRatingView");
+  const tAuth = useTranslations("auth");
+  const tErrors = useTranslations("hifz.errors");
   const bottomStyle = {
     bottom: props.bottomOffsetPx,
     maxHeight: `calc(100dvh - ${props.bottomOffsetPx}px - 0.75rem)`,
@@ -52,17 +58,18 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
         style={bottomStyle}
         role="status"
       >
-        <p className="ui-eyebrow">Disimpan</p>
-        <p className="mt-2 text-xl font-bold text-foreground">Alhamdulillah</p>
+        <p className="ui-eyebrow">{t("savedEyebrow")}</p>
+        <p className="mt-2 text-xl font-bold text-foreground">{t("savedHeading")}</p>
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted">
-          Sesi {props.flowType === "memorize" ? "hafalan" : "ulangan"} selesai.
-          Buka Hafal untuk lihat ulang kaji dan cadangan seterusnya.
+          {t("savedBody", {
+            flow: props.flowType === "memorize" ? t("flowMemorizeWord") : t("flowReviewWord"),
+          })}
         </p>
         <a
           href="/hifz"
           className="ui-touch-target mt-4 inline-flex items-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-strong dark:text-slate-950"
         >
-          Lihat langkah seterusnya
+          {t("viewNextCta")}
         </a>
       </div>
     );
@@ -75,7 +82,7 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
         style={bottomStyle}
         role="alert"
       >
-        <p className="text-sm font-semibold text-danger">Sesi tergendala</p>
+        <p className="text-sm font-semibold text-danger">{t("errorTitle")}</p>
         <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted">
           {props.error.message}
         </p>
@@ -85,7 +92,7 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
               href={props.error.continueHref}
               className="ui-touch-target inline-flex items-center rounded-xl bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-strong dark:text-slate-950"
             >
-              {props.error.continueLabel ?? "Teruskan sesi"}
+              {props.error.continueLabel ?? tErrors("continueSessionDefault")}
             </a>
           ) : null}
           {props.error.requiresSignIn ? (
@@ -93,14 +100,14 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
               href={buildSignInPath("/hifz")}
               className="ui-touch-target inline-flex items-center rounded-xl bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-strong dark:text-slate-950"
             >
-              Log masuk
+              {tAuth("signIn")}
             </a>
           ) : null}
           <a
             href="/hifz"
             className="ui-touch-target inline-flex items-center rounded-xl border border-border-strong bg-surface-solid px-5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-muted"
           >
-            Kembali ke Hafal
+            {t("backCta")}
           </a>
         </div>
       </div>
@@ -111,7 +118,7 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
     return (
       <div className={panelClasses} style={bottomStyle}>
         <div className="mx-auto max-w-3xl">
-          <p className="ui-eyebrow mb-3 text-center">Semakan suara</p>
+          <p className="ui-eyebrow mb-3 text-center">{t("tasmiEyebrow")}</p>
           <TasmiSessionUI
             expectedText={props.tasmiExpectedText}
             surahNumber={props.tasmiSurahNumber}
@@ -132,17 +139,17 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
       <div className="mx-auto max-w-2xl">
         <div className="text-center">
           <p className="ui-eyebrow">
-            {tasmiOnly ? "Uji tanpa melihat" : "Nilai ingatan"}
+            {tasmiOnly ? t("testOnlyEyebrow") : t("rateEyebrow")}
           </p>
           <p className="mt-2 text-sm font-semibold text-foreground">
             {tasmiOnly
-              ? "Baca halaman ini dari ingatan."
-              : "Bagaimana bacaan tanpa melihat tadi?"}
+              ? t("testOnlyPrompt")
+              : t("ratePrompt")}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-muted">
             {tasmiOnly
-              ? "Gunakan Tasmi’ jika anda mahu semakan suara serta bantuan ketika tersekat."
-              : "Pilih dengan jujur supaya ulang kaji seterusnya sesuai dengan keadaan ingatan anda."}
+              ? t("testOnlyHint")
+              : t("rateHint")}
           </p>
         </div>
 
@@ -154,7 +161,7 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
               onClick={() => props.handleRate(3)}
               className="ui-touch-target touch-manipulation rounded-xl bg-brand px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-brand-strong disabled:cursor-wait disabled:opacity-60 dark:text-slate-950"
             >
-              {props.submitting ? "Menyimpan…" : "Lancar — simpan"}
+              {props.submitting ? t("rateFluentSaving") : t("rateFluentCta")}
             </button>
             <button
               type="button"
@@ -162,7 +169,7 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
               onClick={() => props.handleRate(1)}
               className="ui-touch-target touch-manipulation rounded-xl border border-rose-300 bg-rose-50 px-6 py-3 text-base font-semibold text-rose-800 transition-colors hover:bg-rose-100 disabled:cursor-wait disabled:opacity-60 dark:border-rose-800 dark:bg-rose-950/35 dark:text-rose-100"
             >
-              Lupa — perlu ulang
+              {t("rateForgotCta")}
             </button>
           </div>
         ) : null}
@@ -176,8 +183,8 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
           }`}
         >
           {props.tasmiLoading
-            ? "Menyediakan semakan suara…"
-            : "Semak dengan Tasmi’"}
+            ? t("tasmiPreparing")
+            : t("tasmiCta")}
         </button>
       </div>
     </div>

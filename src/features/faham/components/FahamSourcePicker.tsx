@@ -4,11 +4,14 @@ import { useTranslations } from "next-intl";
 import type { FahamMcqDirectionMode } from "../domain/mcq";
 import {
   FAHAM_PRESET_CONFIGS,
+  resolveFahamPresetDisplay,
   type FahamSourcePreset,
 } from "../domain/presets";
 import {
   CORRECT_ADVANCE_CONFIGS,
-  DIRECTION_CONFIGS,
+  FAHAM_MCQ_DIRECTION_MODES,
+  resolveFahamCorrectAdvanceDisplay,
+  resolveFahamDirectionDisplay,
   type FahamCorrectAdvanceMode,
 } from "./fahamWorkspaceConfig";
 
@@ -33,6 +36,9 @@ export function FahamSourcePicker({
   preset: FahamSourcePreset;
 }) {
   const t = useTranslations("faham.sources");
+  const currentPreset = resolveFahamPresetDisplay(preset, t);
+  const currentDirection = resolveFahamDirectionDisplay(directionMode, t);
+  const currentCorrectAdvance = resolveFahamCorrectAdvanceDisplay(correctAdvanceMode, t);
 
   return (
     <section className="rounded-[2rem] border border-stone-200/85 bg-white/85 p-5 shadow-[0_30px_80px_-52px_rgba(41,37,36,0.4)] backdrop-blur-sm sm:p-7 dark:border-stone-600/70 dark:bg-stone-950/88">
@@ -43,7 +49,7 @@ export function FahamSourcePicker({
               {t("deckTitle")}
             </p>
             <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm font-bold text-stone-600 sm:text-base dark:border-white/10 dark:bg-white/10 dark:text-stone-100">
-              {FAHAM_PRESET_CONFIGS[preset].shortLabel}
+              {currentPreset.shortLabel}
             </span>
           </div>
 
@@ -74,7 +80,7 @@ export function FahamSourcePicker({
                             : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100 dark:border-white/10 dark:bg-white/8 dark:text-stone-100 dark:hover:bg-white/14"
                         }`}
                       >
-                        {FAHAM_PRESET_CONFIGS[key].label}
+                        {resolveFahamPresetDisplay(key, t).label}
                       </button>
                     );
                   },
@@ -82,7 +88,7 @@ export function FahamSourcePicker({
               </div>
 
               <div className="rounded-xl border border-stone-200/80 bg-white/60 p-3 text-sm leading-relaxed text-stone-600 sm:text-base dark:border-white/10 dark:bg-white/8 dark:text-stone-100">
-                {FAHAM_PRESET_CONFIGS[preset].helper}
+                {currentPreset.helper}
               </div>
             </div>
 
@@ -92,14 +98,15 @@ export function FahamSourcePicker({
                   {t("directionTitle")}
                 </p>
                 <p className="mt-1 text-sm text-stone-600 sm:text-base dark:text-stone-100">
-                  {DIRECTION_CONFIGS[directionMode].helper}
+                  {currentDirection.helper}
                 </p>
               </div>
 
               <div className="grid gap-2">
-                {(Object.keys(DIRECTION_CONFIGS) as FahamMcqDirectionMode[]).map(
+                {FAHAM_MCQ_DIRECTION_MODES.map(
                   (key) => {
                     const active = directionMode === key;
+                    const display = resolveFahamDirectionDisplay(key, t);
                     return (
                       <button
                         key={key}
@@ -113,10 +120,10 @@ export function FahamSourcePicker({
                         }`}
                       >
                         <div className="text-sm font-bold sm:text-base">
-                          {DIRECTION_CONFIGS[key].label}
+                          {display.label}
                         </div>
                         <div className="mt-0.5 text-sm leading-tight text-stone-500 sm:text-base dark:text-stone-200">
-                          {DIRECTION_CONFIGS[key].shortLabel}
+                          {display.shortLabel}
                         </div>
                       </button>
                     );
@@ -131,11 +138,11 @@ export function FahamSourcePicker({
                       {t("paceTitle")}
                     </p>
                     <p className="mt-1 text-sm text-stone-600 sm:text-base dark:text-stone-100">
-                      {CORRECT_ADVANCE_CONFIGS[correctAdvanceMode].helper}
+                      {currentCorrectAdvance.helper}
                     </p>
                   </div>
                   <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm font-bold text-stone-600 sm:text-base dark:border-white/10 dark:bg-white/10 dark:text-stone-100">
-                    {CORRECT_ADVANCE_CONFIGS[correctAdvanceMode].shortLabel}
+                    {currentCorrectAdvance.shortLabel}
                   </span>
                 </div>
 
@@ -146,6 +153,7 @@ export function FahamSourcePicker({
                     ) as FahamCorrectAdvanceMode[]
                   ).map((mode) => {
                     const active = correctAdvanceMode === mode;
+                    const display = resolveFahamCorrectAdvanceDisplay(mode, t);
                     return (
                       <button
                         key={mode}
@@ -158,10 +166,10 @@ export function FahamSourcePicker({
                         }`}
                       >
                         <div className="text-sm font-bold sm:text-base">
-                          {CORRECT_ADVANCE_CONFIGS[mode].label}
+                          {display.label}
                         </div>
                         <div className="mt-0.5 text-sm leading-tight text-stone-500 sm:text-base dark:text-stone-200">
-                          {CORRECT_ADVANCE_CONFIGS[mode].shortLabel}
+                          {display.shortLabel}
                         </div>
                       </button>
                     );

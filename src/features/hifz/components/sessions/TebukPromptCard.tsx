@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { TebukPrompt } from "../../domain/types";
 
 interface TebukPromptCardProps {
@@ -11,6 +12,8 @@ interface TebukPromptCardProps {
   onReplay: () => void;
 }
 
+const PROMPT_WORD_COUNT = 4;
+
 export function TebukPromptCard({
   prompt,
   pageNumber,
@@ -19,6 +22,7 @@ export function TebukPromptCard({
   isRevealed,
   onReplay,
 }: TebukPromptCardProps) {
+  const t = useTranslations("hifz.tebuk");
   const qcfFamily = `"QCF2 P${String(pageNumber).padStart(3, "0")}"`;
   const glyphs = prompt.promptWords.map((w) => w.qpcV2).join("");
 
@@ -27,11 +31,11 @@ export function TebukPromptCard({
       {/* Round indicator */}
       <div className="flex items-center justify-between border-b border-stone-100 px-5 py-3 dark:border-stone-800">
         <span className="text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400">
-          Tebuk {roundNumber}/{totalRounds}
+          {t("roundIndicator", { round: roundNumber, total: totalRounds })}
         </span>
         {isRevealed && (
           <span className="text-xs text-stone-500 dark:text-stone-400">
-            Surah {prompt.surah} : Ayat {prompt.ayah}
+            {t("surahAyahLabel", { surah: prompt.surah, ayah: prompt.ayah })}
           </span>
         )}
       </div>
@@ -39,7 +43,7 @@ export function TebukPromptCard({
       {/* QCF glyph display */}
       <div className="px-5 py-6">
         <p className="text-center text-sm text-stone-500 dark:text-stone-400 mb-3">
-          Sambung selepas 4 perkataan ini:
+          {t("continueAfterWords", { count: PROMPT_WORD_COUNT })}
         </p>
         <div
           dir="rtl"
@@ -66,7 +70,7 @@ export function TebukPromptCard({
           >
             <path d="M8 5v14l11-7z" />
           </svg>
-          Ulang dengar
+          {t("replayCta")}
         </button>
       </div>
     </div>

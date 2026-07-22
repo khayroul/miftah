@@ -1,7 +1,8 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { TebukRoundResult } from "../../domain/types";
-import { RATING_LABEL_DISPLAY } from "../../domain/exercise-labels";
+import { resolveRatingLabelDisplay } from "../../domain/exercise-labels";
 
 interface TebukResultCardProps {
   result: TebukRoundResult;
@@ -16,7 +17,10 @@ export function TebukResultCard({
   isLastRound,
   onNext,
 }: TebukResultCardProps) {
-  const labelDisplay = RATING_LABEL_DISPLAY[result.label];
+  const t = useTranslations("hifz.tebuk");
+  const tOverlays = useTranslations("hifz.sessionOverlays");
+  const tRatingLabel = useTranslations("hifz.ratingLabel");
+  const labelDisplay = resolveRatingLabelDisplay(result.label, tRatingLabel);
   const accuracy = Math.round(result.tasmiResult.accuracy);
 
   return (
@@ -24,7 +28,7 @@ export function TebukResultCard({
       {/* Header */}
       <div className="border-b border-stone-100 px-5 py-3 dark:border-stone-800">
         <span className="text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400">
-          Pusingan {roundNumber}
+          {t("roundLabel", { round: roundNumber })}
         </span>
       </div>
 
@@ -35,7 +39,7 @@ export function TebukResultCard({
             {accuracy}%
           </p>
           <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
-            Ketepatan
+            {tOverlays("accuracyLabel")}
           </p>
         </div>
 
@@ -44,7 +48,7 @@ export function TebukResultCard({
             {result.tasmiResult.talqinCount}
           </p>
           <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
-            Talqin
+            {tOverlays("talqinLabel")}
           </p>
         </div>
 
@@ -53,7 +57,7 @@ export function TebukResultCard({
             {labelDisplay.text}
           </p>
           <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
-            Penilaian
+            {t("assessmentLabel")}
           </p>
         </div>
       </div>
@@ -65,7 +69,7 @@ export function TebukResultCard({
           onClick={onNext}
           className="w-full rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 active:bg-teal-800"
         >
-          {isLastRound ? "Lihat Keputusan" : "Seterusnya \u2192"}
+          {isLastRound ? t("viewResultsCta") : t("nextCta")}
         </button>
       </div>
     </div>

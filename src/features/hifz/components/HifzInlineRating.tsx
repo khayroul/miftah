@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   areAllProgressIdsRated,
   buildQueuePageHref,
@@ -52,6 +53,7 @@ export function HifzInlineRating({
   onPageComplete,
 }: HifzInlineRatingProps) {
   const router = useRouter();
+  const tErrors = useTranslations("hifz.errors");
   const [submitting, setSubmitting] = useState(false);
   const [complete, setComplete] = useState(false);
   const [errorState, setErrorState] = useState<HifzInlineRatingError | null>(null);
@@ -73,28 +75,28 @@ export function HifzInlineRating({
     (queuePageIndex: number, activePageNumber: number | undefined): HifzInlineRatingError => ({
       message:
         activePageNumber && activePageNumber !== pageNumber
-          ? "Halaman ini sudah ditandakan dalam sesi semasa. Sambung pada halaman aktif untuk elak rekod berganda."
-          : "Halaman ini sudah ditandakan dalam sesi semasa.",
+          ? tErrors("alreadyMarkedOtherActive")
+          : tErrors("alreadyMarkedSamePage"),
       continueHref:
         activePageNumber && activePageNumber !== pageNumber
           ? buildQueuePageHref(flowType, activePageNumber, queuePageIndex)
           : undefined,
-      continueLabel: "Teruskan Sesi",
+      continueLabel: tErrors("continueSession"),
     }),
-    [flowType, pageNumber],
+    [flowType, pageNumber, tErrors],
   );
   const initialFlowError = useMemo<HifzInlineRatingError | null>(() => {
     const queue = loadQueue(flowType);
     if (!queue) {
       return {
-        message: "Sesi hafalan ini sudah tamat atau hilang. Buka semula dari Hafal.",
+        message: tErrors("sessionExpired"),
       };
     }
 
     const pageItems = getItemsForPage(queue, pageNumber);
     if (pageItems.length === 0) {
       return {
-        message: "Halaman ini tiada dalam sesi hafalan semasa. Kembali ke Hafal untuk sambung semula.",
+        message: tErrors("pageNotInSession"),
       };
     }
 
@@ -106,7 +108,7 @@ export function HifzInlineRating({
     }
 
     return null;
-  }, [buildAlreadyRatedState, flowType, pageNumber]);
+  }, [buildAlreadyRatedState, flowType, pageNumber, tErrors]);
   const displayedError: HifzInlineRatingError | null = errorState ?? initialFlowError;
 
   const startTasmi = useCallback(async () => {
@@ -149,7 +151,7 @@ export function HifzInlineRating({
         const queue = loadQueue(flowType);
         if (!queue) {
           setErrorState({
-            message: "Sesi hafalan ini sudah tamat atau hilang. Buka semula dari Hafal.",
+            message: tErrors("sessionExpired"),
           });
           setSubmitting(false);
           return false;
@@ -158,7 +160,7 @@ export function HifzInlineRating({
         const pageItems = getItemsForPage(queue, pageNumber);
         if (pageItems.length === 0) {
           setErrorState({
-            message: "Halaman ini tiada dalam sesi hafalan semasa. Kembali ke Hafal untuk sambung semula.",
+            message: tErrors("pageNotInSession"),
           });
           setSubmitting(false);
           return false;
@@ -200,13 +202,11 @@ export function HifzInlineRating({
           setErrorState(
             response.status === 401
               ? {
-                  message: "Sesi hafalan perlukan akaun aktif. Log masuk dahulu kemudian buka semula dari Hafal.",
+                  message: tErrors("signInRequired"),
                   requiresSignIn: true,
                 }
               : {
-                  message:
-                    payload?.error ??
-                    "Markah hafalan tak dapat disimpan sekarang. Cuba lagi sekali.",
+                  message: payload?.error ?? tErrors("ratingSaveFailed"),
                 },
           );
           setSubmitting(false);
@@ -221,7 +221,7 @@ export function HifzInlineRating({
         const updated = advanceQueue(flowType);
         if (!updated) {
           setErrorState({
-            message: "Sesi hafalan tak dapat disambung. Kembali ke Hafal dan buka semula sesi ini.",
+            message: tErrors("queueAdvanceFailed"),
           });
           setSubmitting(false);
           return false;
@@ -244,7 +244,7 @@ export function HifzInlineRating({
         return true;
       } catch {
         setErrorState({
-          message: "Simpanan hafalan gagal sekarang. Cuba lagi sekali.",
+          message: tErrors("saveFailedGeneric"),
         });
         setSubmitting(false);
         return false;
@@ -257,6 +257,7 @@ export function HifzInlineRating({
       onSessionComplete,
       pageNumber,
       router,
+      tErrors,
     ],
   );
   const handleTasmiEnd = useCallback(

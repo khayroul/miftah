@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   TasmiSessionUI,
   type AyahRange,
@@ -22,47 +23,57 @@ export interface MemorizeFlowError {
   continueLabel?: string;
 }
 
-const STEPS: Array<{
+type MemorizePanelTranslator = (
+  key: string,
+  values?: Record<string, string | number>,
+) => string;
+
+// STEPS/CHUNK_SIZE_OPTIONS are built inside the component (not at module
+// scope) because useTranslations() is a hook and must run in render.
+function buildSteps(t: MemorizePanelTranslator): Array<{
   step: MemorizeStep;
   label: string;
   description: string;
   nextLabel: string;
-}> = [
-  {
-    step: 1,
-    label: "Dengar & baca",
-    description: "Ikut mushaf sambil dengar chunk ini.",
-    nextLabel: "Saya sudah dengar",
-  },
-  {
-    step: 2,
-    label: "Cuba sendiri",
-    description: "Baca kuat bersama audio sehingga alirannya terasa biasa.",
-    nextLabel: "Sedia uji tanpa melihat",
-  },
-  {
-    step: 3,
-    label: "Tutup & uji",
-    description: "Baca tanpa melihat. Gunakan Tasmi’ jika mahu semakan suara.",
-    nextLabel: "Saya sudah cuba",
-  },
-  {
-    step: 4,
-    label: "Nilai ingatan",
-    description: "Jawab berdasarkan cubaan tanpa melihat tadi.",
-    nextLabel: "",
-  },
-];
+}> {
+  return [
+    {
+      step: 1,
+      label: t("step1Label"),
+      description: t("step1Description"),
+      nextLabel: t("step1Next"),
+    },
+    {
+      step: 2,
+      label: t("step2Label"),
+      description: t("step2Description"),
+      nextLabel: t("step2Next"),
+    },
+    {
+      step: 3,
+      label: t("step3Label"),
+      description: t("step3Description"),
+      nextLabel: t("step3Next"),
+    },
+    {
+      step: 4,
+      label: t("step4Label"),
+      description: t("step4Description"),
+      nextLabel: "",
+    },
+  ];
+}
 
-const CHUNK_SIZE_OPTIONS: Array<{
-  label: string;
-  value: MemorizeChunkSizeOption;
-}> = [
-  { label: "Auto", value: "auto" },
-  { label: "1 ayat", value: 1 },
-  { label: "2 ayat", value: 2 },
-  { label: "3 ayat", value: 3 },
-];
+function buildChunkSizeOptions(
+  t: MemorizePanelTranslator,
+): Array<{ label: string; value: MemorizeChunkSizeOption }> {
+  return [
+    { label: t("chunkSizeAuto"), value: "auto" },
+    { label: t("chunkSizeOption", { count: 1 }), value: 1 },
+    { label: t("chunkSizeOption", { count: 2 }), value: 2 },
+    { label: t("chunkSizeOption", { count: 3 }), value: 3 },
+  ];
+}
 
 interface HifzMemorizePanelProps {
   autoAdvancing: boolean;
@@ -104,23 +115,25 @@ interface HifzMemorizePanelProps {
   tasmiSurahNumber: number;
 }
 
-function describeChunk(chunk: MemorizeChunk | null): string {
+function describeChunk(chunk: MemorizeChunk | null, t: MemorizePanelTranslator): string {
   const first = chunk?.items[0];
-  if (!first) return "Tiada ayat";
+  if (!first) return t("describeChunkEmpty");
   const last = chunk.items[chunk.items.length - 1] ?? first;
   return first.ayahKey === last.ayahKey
-    ? `Ayat ${first.ayahKey}`
-    : `Ayat ${first.ayahKey}–${last.ayahKey}`;
+    ? t("describeChunkSingle", { key: first.ayahKey })
+    : t("describeChunkRange", { start: first.ayahKey, end: last.ayahKey });
 }
 
 export function HifzMemorizePanel(props: HifzMemorizePanelProps) {
   const { setPanelElement } = props;
+  const t = useTranslations("hifz.memorizePanel");
   if (props.complete) return <CompletionPanel {...props} />;
   if (props.error) return <ErrorPanel {...props} error={props.error} />;
 
+  const STEPS = buildSteps(t);
   const stepInfo = STEPS[props.currentStep - 1];
   const restartLabel =
-    props.currentStep === 3 ? "Dengar semula" : "Main semula";
+    props.currentStep === 3 ? t("restartListen") : t("restartPlay");
 
   return (
     <div
@@ -137,8 +150,10 @@ export function HifzMemorizePanel(props: HifzMemorizePanelProps) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="ui-eyebrow">
-              Chunk {props.chunkCount > 0 ? props.currentChunkIndex + 1 : 0}{" "}
-              daripada {props.chunkCount}
+              {t("chunkCounter", {
+                current: props.chunkCount > 0 ? props.currentChunkIndex + 1 : 0,
+                total: props.chunkCount,
+              })}
             </p>
             <h2 className="mt-1 text-lg font-semibold text-foreground">
               {stepInfo.label}
@@ -155,9 +170,9 @@ export function HifzMemorizePanel(props: HifzMemorizePanelProps) {
             aria-expanded={props.showChunkSize}
           >
             <span className="hidden max-w-40 truncate sm:inline">
-              {describeChunk(props.currentChunk)}
+              {describeChunk(props.currentChunk, t)}
             </span>
-            <span>Saiz</span>
+            <span>{t("sizeToggle")}</span>
             <svg
               aria-hidden="true"
               className={`h-4 w-4 transition-transform ${
@@ -179,7 +194,7 @@ export function HifzMemorizePanel(props: HifzMemorizePanelProps) {
 
         <div
           className="mt-4 grid grid-cols-4 gap-2"
-          aria-label={`Langkah ${props.currentStep} daripada 4`}
+          aria-label={t("stepAria", { step: props.currentStep })}
         >
           {STEPS.map((step) => {
             const complete = step.step < props.currentStep;
@@ -209,7 +224,7 @@ export function HifzMemorizePanel(props: HifzMemorizePanelProps) {
             className="mt-3 animate-pulse text-center text-sm font-semibold text-warning"
             aria-live="polite"
           >
-            Audio selesai. Membuka langkah seterusnya…
+            {t("autoAdvancing")}
           </p>
         ) : null}
 
@@ -235,8 +250,8 @@ export function HifzMemorizePanel(props: HifzMemorizePanelProps) {
             className="ui-touch-target mt-4 w-full touch-manipulation rounded-xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-800 transition-colors hover:bg-rose-100 disabled:cursor-wait disabled:opacity-60 dark:border-rose-800 dark:bg-rose-950/35 dark:text-rose-100 dark:hover:bg-rose-950/55"
           >
             {props.tasmiLoading
-              ? "Menyediakan semakan suara…"
-              : "Semak bacaan dengan Tasmi’"}
+              ? t("tasmiPreparing")
+              : t("tasmiCta")}
           </button>
         ) : null}
 
@@ -255,10 +270,12 @@ export function HifzMemorizePanel(props: HifzMemorizePanelProps) {
 }
 
 function ChunkSizeControls(props: HifzMemorizePanelProps) {
+  const t = useTranslations("hifz.memorizePanel");
+  const CHUNK_SIZE_OPTIONS = buildChunkSizeOptions(t);
   return (
     <div className="mt-4 rounded-2xl border border-border-subtle bg-surface-muted p-3">
       <p className="text-sm font-semibold text-foreground">
-        Berapa banyak ayat setiap chunk?
+        {t("chunkSizePrompt")}
       </p>
       <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {CHUNK_SIZE_OPTIONS.map((option) => (
@@ -282,21 +299,21 @@ function ChunkSizeControls(props: HifzMemorizePanelProps) {
         <div className="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 dark:bg-amber-950/30">
           <p className="min-w-0 flex-1 text-xs text-amber-900 dark:text-amber-100">
             {props.chunkSuggestion === "smaller"
-              ? "Nampak sukar? Cuba chunk lebih kecil."
-              : "Aliran semakin baik. Cuba chunk lebih besar."}
+              ? t("suggestionSmaller")
+              : t("suggestionBigger")}
           </p>
           <button
             type="button"
             onClick={props.onApplySuggestion}
             className="ui-touch-target shrink-0 rounded-lg bg-amber-600 px-3 text-xs font-semibold text-white transition-colors hover:bg-amber-700"
           >
-            Cuba
+            {t("suggestionApply")}
           </button>
           <button
             type="button"
             onClick={props.onDismissSuggestion}
             className="ui-touch-target inline-flex shrink-0 items-center justify-center rounded-lg text-amber-800 transition-colors hover:bg-amber-100 dark:text-amber-100 dark:hover:bg-amber-900/50"
-            aria-label="Abaikan cadangan saiz chunk"
+            aria-label={t("dismissSuggestionAria")}
           >
             <svg
               aria-hidden="true"
@@ -321,6 +338,7 @@ function StepActions(
     restartLabel: string;
   },
 ) {
+  const t = useTranslations("hifz.memorizePanel");
   return (
     <div className="mt-4">
       <div
@@ -340,7 +358,7 @@ function StepActions(
           onClick={props.onChunkPause}
           className="ui-touch-target touch-manipulation rounded-xl border border-border-subtle bg-surface-solid px-3 text-sm font-semibold text-muted transition-colors hover:bg-surface-muted hover:text-foreground"
         >
-          Jeda audio
+          {t("pauseAudio")}
         </button>
         {props.currentStep > 1 ? (
           <button
@@ -348,7 +366,7 @@ function StepActions(
             onClick={props.onBack}
             className="ui-touch-target touch-manipulation rounded-xl border border-border-subtle bg-surface-solid px-3 text-sm font-semibold text-muted transition-colors hover:bg-surface-muted hover:text-foreground"
           >
-            Langkah lalu
+            {t("backStep")}
           </button>
         ) : null}
       </div>
@@ -364,7 +382,7 @@ function StepActions(
       <div className="mt-3 flex items-center justify-between border-t border-border-subtle pt-2">
         <ArrowButton
           disabled={props.currentChunkIndex === 0}
-          label="Chunk sebelum"
+          label={t("jumpPrevAria")}
           direction="back"
           onClick={() => props.onJumpToChunk(props.currentChunkIndex - 1)}
         />
@@ -372,11 +390,11 @@ function StepActions(
           href="/hifz"
           className="ui-touch-target inline-flex items-center rounded-xl px-3 text-xs font-semibold text-muted transition-colors hover:bg-surface-muted hover:text-foreground"
         >
-          Simpan tempat & keluar
+          {t("exitSaveCta")}
         </a>
         <ArrowButton
           disabled={props.currentChunkIndex >= props.chunkCount - 1}
-          label="Chunk seterusnya"
+          label={t("jumpNextAria")}
           direction="forward"
           onClick={() => props.onJumpToChunk(props.currentChunkIndex + 1)}
         />
@@ -418,10 +436,11 @@ function ArrowButton(props: {
 }
 
 function RatingButtons(props: HifzMemorizePanelProps) {
+  const t = useTranslations("hifz.memorizePanel");
   return (
     <div className="mt-4">
       <p className="text-center text-sm font-medium text-muted">
-        Bagaimana cubaan tanpa melihat tadi?
+        {t("ratingPrompt")}
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <button
@@ -430,7 +449,7 @@ function RatingButtons(props: HifzMemorizePanelProps) {
           onClick={() => props.onRate(true)}
           className="ui-touch-target touch-manipulation rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-strong disabled:cursor-wait disabled:opacity-60 dark:text-slate-950"
         >
-          {props.submitting ? "Menyimpan…" : "Yakin — simpan chunk"}
+          {props.submitting ? t("ratingConfidentSaving") : t("ratingConfidentCta")}
         </button>
         <button
           type="button"
@@ -438,7 +457,7 @@ function RatingButtons(props: HifzMemorizePanelProps) {
           onClick={() => props.onRate(false)}
           className="ui-touch-target touch-manipulation rounded-xl border border-border-strong bg-surface-solid px-5 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-surface-muted disabled:opacity-60"
         >
-          Belum yakin — ulang lagi
+          {t("ratingUnsureCta")}
         </button>
       </div>
     </div>
@@ -447,6 +466,7 @@ function RatingButtons(props: HifzMemorizePanelProps) {
 
 function CompletionPanel(props: HifzMemorizePanelProps) {
   const { bottomOffsetPx, setPanelElement } = props;
+  const t = useTranslations("hifz.memorizePanel");
   return (
     <div
       ref={setPanelElement}
@@ -456,17 +476,16 @@ function CompletionPanel(props: HifzMemorizePanelProps) {
         maxHeight: `calc(100dvh - ${bottomOffsetPx}px - 0.75rem)`,
       }}
     >
-      <p className="ui-eyebrow">Disimpan</p>
-      <p className="mt-2 text-xl font-bold text-foreground">Alhamdulillah</p>
+      <p className="ui-eyebrow">{t("completeEyebrow")}</p>
+      <p className="mt-2 text-xl font-bold text-foreground">{t("completeHeading")}</p>
       <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted">
-        Sesi hafalan selesai. Kembali ke Hafal untuk lihat ulang kaji dan
-        cadangan seterusnya.
+        {t("completeBody")}
       </p>
       <a
         href="/hifz"
         className="ui-touch-target mt-4 inline-flex items-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-strong dark:text-slate-950"
       >
-        Lihat langkah seterusnya
+        {t("completeCta")}
       </a>
     </div>
   );
@@ -476,6 +495,9 @@ function ErrorPanel(
   props: HifzMemorizePanelProps & { error: MemorizeFlowError },
 ) {
   const { bottomOffsetPx, error, setPanelElement } = props;
+  const t = useTranslations("hifz.memorizePanel");
+  const tErrors = useTranslations("hifz.errors");
+  const tAuth = useTranslations("auth");
   return (
     <div
       ref={setPanelElement}
@@ -485,7 +507,7 @@ function ErrorPanel(
         maxHeight: `calc(100dvh - ${bottomOffsetPx}px - 0.75rem)`,
       }}
     >
-      <p className="text-sm font-semibold text-danger">Sesi tergendala</p>
+      <p className="text-sm font-semibold text-danger">{t("errorTitle")}</p>
       <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted">
         {error.message}
       </p>
@@ -495,7 +517,7 @@ function ErrorPanel(
             href={error.continueHref}
             className="ui-touch-target inline-flex items-center rounded-xl bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-strong dark:text-slate-950"
           >
-            {error.continueLabel ?? "Teruskan sesi"}
+            {error.continueLabel ?? tErrors("continueSessionDefault")}
           </a>
         ) : null}
         {error.requiresSignIn ? (
@@ -503,14 +525,14 @@ function ErrorPanel(
             href={buildSignInPath("/hifz")}
             className="ui-touch-target inline-flex items-center rounded-xl bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-strong dark:text-slate-950"
           >
-            Log masuk
+            {tAuth("signIn")}
           </a>
         ) : null}
         <a
           href="/hifz"
           className="ui-touch-target inline-flex items-center rounded-xl border border-border-strong bg-surface-solid px-5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-muted"
         >
-          Kembali ke Hafal
+          {t("errorBackCta")}
         </a>
       </div>
     </div>

@@ -47,10 +47,31 @@ export interface SerializedFahamPrimaryReference {
 }
 
 export interface SerializedFahamSourceLink {
-  detail: string;
   href: string;
-  label: string;
   type: import("@/shared/types/database").FahamSourceType;
+  // Structured data for render-time i18n resolution (the same pattern as
+  // FahamStudyCard.tsx's resolveMcqLabels): builders populate only ids/
+  // numbers here, and the render site (FahamStudyCard's
+  // resolveSourceLinkDisplay) composes the localized label/detail text.
+  // `origin` disambiguates the two builders' distinct phrasing —
+  // "offline" (offlineQueue.ts, tier-package fallback, no ayah
+  // cross-reference available) vs "online" (queueBuilder.ts, may cite the
+  // exact ayah via ayahReferenceLabel).
+  origin: "offline" | "online";
+  pageNumber?: number | null;
+  surahId?: number | null;
+  themeChunkIndex?: number | null;
+  ayahReferenceLabel?: string | null;
+  /**
+   * @deprecated Pre-rendered Malay display strings, kept only so queue
+   * snapshots cached (localStorage/IndexedDB) before this structured-field
+   * migration still render something on restore. New builders no longer
+   * populate these; resolveSourceLinkDisplay() falls back to them only when
+   * the structured fields above are absent.
+   */
+  detail?: string;
+  /** @deprecated see `detail` */
+  label?: string;
 }
 
 export interface SerializedFahamSourceContext {

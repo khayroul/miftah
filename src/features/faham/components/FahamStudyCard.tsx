@@ -3,12 +3,64 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { SerializedFahamCard } from "../domain/queue";
+import type { SerializedFahamSourceLink } from "../domain/queueTypes";
 import type { AnswerState } from "./fahamAnswerFlow";
 
 type FahamStudyTranslator = (
   key: string,
   values?: Record<string, string | number>,
 ) => string;
+
+/**
+ * Resolves a source-link badge's label/detail at render time from its
+ * structured fields (pageNumber/surahId/themeChunkIndex/ayahReferenceLabel/
+ * origin) — mirrors resolveMcqLabels below. Falls back to the deprecated
+ * pre-rendered `label`/`detail` strings only for queue snapshots cached
+ * (localStorage/IndexedDB) before this structured-field migration, where the
+ * structured fields are absent.
+ */
+function resolveSourceLinkDisplay(
+  source: SerializedFahamSourceLink,
+  t: FahamStudyTranslator,
+): { detail: string; label: string } {
+  if (source.type === "reading_page" && source.pageNumber) {
+    const label = t("sourceReadingPageLabel", { page: source.pageNumber });
+    if (source.origin === "online") {
+      const detail = source.ayahReferenceLabel
+        ? t("sourceReadingPageDetailWithAyah", { ayah: source.ayahReferenceLabel })
+        : t("sourceReadingPageDetailOnlinePlain", { page: source.pageNumber });
+      return { detail, label };
+    }
+    return { detail: t("sourceReadingPageDetailOffline", { page: source.pageNumber }), label };
+  }
+
+  if (source.type === "theme_chunk" && source.surahId && source.themeChunkIndex) {
+    const values = { chunk: source.themeChunkIndex, surah: source.surahId };
+    return {
+      detail: t("sourceThemeChunkDetail", values),
+      label: t("sourceThemeChunkLabel", values),
+    };
+  }
+
+  if (source.type === "hifz_ayah") {
+    if (source.origin === "online" && source.ayahReferenceLabel) {
+      const values = { ref: source.ayahReferenceLabel };
+      return {
+        detail: t("sourceHifzAyahDetailWithRef", values),
+        label: t("sourceHifzAyahLabelWithRef", values),
+      };
+    }
+    return {
+      detail: t("sourceHifzAyahDetailPlain"),
+      label: t("sourceHifzAyahLabelPlain"),
+    };
+  }
+
+  // Legacy cached payload built before the structured-field migration —
+  // no structured fields to resolve from, so fall back to whatever was
+  // pre-rendered and cached at the time.
+  return { detail: source.detail ?? "", label: source.label ?? "" };
+}
 
 function resolveMcqLabels(
   direction: SerializedFahamCard["mcq"]["direction"],
@@ -275,16 +327,19 @@ function FeedbackPanel({
                   </span>
                 )
               ) : null}
-              {card.sourceContext?.sources.map((source) => (
-                <Link
-                  key={`${card.progressId}-${source.type}-${source.href}`}
-                  href={source.href}
-                  className="ui-touch-target inline-flex items-center rounded-full border border-border-subtle bg-surface-solid px-3 text-xs font-semibold text-foreground transition-colors hover:bg-surface-muted"
-                  title={source.detail}
-                >
-                  {source.label}
-                </Link>
-              ))}
+              {card.sourceContext?.sources.map((source) => {
+                const display = resolveSourceLinkDisplay(source, t);
+                return (
+                  <Link
+                    key={`${card.progressId}-${source.type}-${source.href}`}
+                    href={source.href}
+                    className="ui-touch-target inline-flex items-center rounded-full border border-border-subtle bg-surface-solid px-3 text-xs font-semibold text-foreground transition-colors hover:bg-surface-muted"
+                    title={display.detail}
+                  >
+                    {display.label}
+                  </Link>
+                );
+              })}
             </div>
           )}
 

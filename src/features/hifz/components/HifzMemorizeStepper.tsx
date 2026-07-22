@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   areAllProgressIdsRated,
   buildQueuePageHref,
@@ -49,6 +50,7 @@ export function HifzMemorizeStepper({
   onSessionComplete,
   onPageComplete,
 }: HifzMemorizeStepperProps) {
+  const tErrors = useTranslations("hifz.errors");
   const [currentStep, setCurrentStep] = useState<MemorizeStep>(1);
   const [chunkSize, setChunkSize] = useState<MemorizeChunkSizeOption>("auto");
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
@@ -65,15 +67,15 @@ export function HifzMemorizeStepper({
     (queuePageIndex: number, activePageNumber: number | undefined): MemorizeFlowError => ({
       message:
         activePageNumber && activePageNumber !== pageNumber
-          ? "Halaman ini sudah ditandakan dalam sesi hafalan semasa. Sambung pada halaman aktif untuk elak rekod berganda."
-          : "Chunk ini sudah ditandakan dalam sesi hafalan semasa.",
+          ? tErrors("chunkAlreadyMarkedOtherActive")
+          : tErrors("chunkAlreadyMarkedSamePage"),
       continueHref:
         activePageNumber && activePageNumber !== pageNumber
           ? buildQueuePageHref("memorize", activePageNumber, queuePageIndex)
           : undefined,
-      continueLabel: "Teruskan Sesi",
+      continueLabel: tErrors("continueSession"),
     }),
-    [pageNumber],
+    [pageNumber, tErrors],
   );
 
   const pageItems = useMemo(() => {
@@ -118,13 +120,13 @@ export function HifzMemorizeStepper({
     const queue = loadQueue("memorize");
     if (!queue) {
       return {
-        message: "Sesi hafalan ini sudah tamat atau hilang. Buka semula dari Hafal.",
+        message: tErrors("sessionExpired"),
       };
     }
 
     if (getItemsForPage(queue, pageNumber).length === 0) {
       return {
-        message: "Halaman ini tiada dalam sesi hafalan semasa. Kembali ke Hafal untuk sambung semula.",
+        message: tErrors("pageNotInSession"),
       };
     }
 
@@ -136,7 +138,7 @@ export function HifzMemorizeStepper({
     }
 
     return null;
-  }, [buildAlreadyRatedState, pageNumber]);
+  }, [buildAlreadyRatedState, pageNumber, tErrors]);
   const goToStep = useCallback(
     (step: MemorizeStep) => {
       setCurrentStep(step);

@@ -2,24 +2,18 @@
 
 import { useCallback, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { PageGridEntry, PageGridStatus } from "../domain/types";
+import { useTranslations } from "next-intl";
+import type { PageGridEntry } from "../domain/types";
 
 interface HifzPageActionSheetProps {
   entry: PageGridEntry;
   onClose: () => void;
 }
 
-const STATUS_LABELS: Record<PageGridStatus, string> = {
-  "not-started": "Belum mula",
-  sabak: "Sabak",
-  sabqi: "Sabqi",
-  manzil: "Manzil",
-  due: "Perlu ulang",
-  overdue: "Tertunggak",
-};
-
 export function HifzPageActionSheet({ entry, onClose }: HifzPageActionSheetProps) {
   const router = useRouter();
+  const t = useTranslations("hifz.pageActionSheet");
+  const tStatus = useTranslations("hifz.status");
   const [isPending, startTransition] = useTransition();
 
   // Close on Escape
@@ -53,14 +47,14 @@ export function HifzPageActionSheet({ entry, onClose }: HifzPageActionSheetProps
       className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
       role="dialog"
       aria-modal="true"
-      aria-label={`Pilihan untuk halaman ${entry.page}`}
+      aria-label={t("dialogAria", { page: entry.page })}
     >
       {/* Backdrop */}
       <button
         type="button"
         className="absolute inset-0 bg-stone-950/40 backdrop-blur-sm"
         onClick={onClose}
-        aria-label="Tutup"
+        aria-label={t("close")}
         tabIndex={-1}
       />
 
@@ -69,17 +63,21 @@ export function HifzPageActionSheet({ entry, onClose }: HifzPageActionSheetProps
         <div className="mb-5 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
-              Halaman {entry.page} · Juz {entry.juz}
+              {t("headerPageJuz", { page: entry.page, juz: entry.juz })}
             </p>
             <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
-              {STATUS_LABELS[entry.status]}
+              {tStatus(
+                entry.status === "not-started"
+                  ? "notStarted"
+                  : entry.status,
+              )}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg p-2 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600 dark:text-stone-500 dark:hover:bg-stone-800 dark:hover:text-stone-300"
-            aria-label="Tutup"
+            aria-label={t("close")}
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -101,10 +99,10 @@ export function HifzPageActionSheet({ entry, onClose }: HifzPageActionSheetProps
             </div>
             <div>
               <p className="text-sm font-semibold text-teal-900 dark:text-teal-100">
-                Baca
+                {t("bacaTitle")}
               </p>
               <p className="text-xs text-teal-700/70 dark:text-teal-300/60">
-                Buka mushaf untuk membaca dan menghafal
+                {t("bacaDescription")}
               </p>
             </div>
           </button>
@@ -122,10 +120,10 @@ export function HifzPageActionSheet({ entry, onClose }: HifzPageActionSheetProps
             </div>
             <div>
               <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
-                Uji Ingatan
+                {t("testTitle")}
               </p>
               <p className="text-xs text-amber-700/70 dark:text-amber-300/60">
-                Uji sendiri tanpa melihat, dengan petunjuk jika anda tersekat
+                {t("testDescription")}
               </p>
             </div>
           </button>

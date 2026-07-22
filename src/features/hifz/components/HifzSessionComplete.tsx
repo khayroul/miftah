@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface HifzSessionCompleteProps {
   flow: "memorize" | "review";
@@ -33,11 +34,10 @@ export function HifzSessionComplete({
   timeElapsedMs,
 }: HifzSessionCompleteProps) {
   const router = useRouter();
-  const label = flow === "memorize" ? "hafalan" : "ulang kaji";
+  const t = useTranslations("hifz.sessionComplete");
+  const label = flow === "memorize" ? t("flowMemorize") : t("flowReview");
   const guidance =
-    flow === "memorize"
-      ? "Rekod sesi telah disimpan. Kembali ke Hafal untuk lihat ayat yang perlu dikukuhkan selepas ini."
-      : "Ulang kaji telah disimpan. Kembali ke Hafal untuk lihat tugasan yang masih perlu diberi perhatian.";
+    flow === "memorize" ? t("guidanceMemorize") : t("guidanceReview");
 
   return (
     <div
@@ -77,15 +77,15 @@ export function HifzSessionComplete({
             />
           </svg>
         </div>
-        <p className="ui-eyebrow mt-4">Sesi disimpan</p>
+        <p className="ui-eyebrow mt-4">{t("eyebrow")}</p>
         <h2
           id="hifz-session-complete-title"
           className="mt-2 text-2xl font-bold text-foreground"
         >
-          Alhamdulillah!
+          {t("heading")}
         </h2>
         <p className="mt-2 text-sm text-muted">
-          Sesi {label} selesai
+          {t("summary", { flow: label })}
         </p>
 
         <div className="mt-6 grid grid-cols-2 gap-3 text-center">
@@ -94,7 +94,7 @@ export function HifzSessionComplete({
               {pagesCompleted}
             </p>
             <p className="mt-1 text-xs font-medium text-muted">
-              Halaman
+              {t("statPages")}
             </p>
           </div>
           <div className="rounded-2xl bg-surface-muted px-3 py-4">
@@ -102,7 +102,7 @@ export function HifzSessionComplete({
               {formatDuration(timeElapsedMs)}
             </p>
             <p className="mt-1 text-xs font-medium text-muted">
-              Masa
+              {t("statTime")}
             </p>
           </div>
         </div>
@@ -119,7 +119,7 @@ export function HifzSessionComplete({
           onClick={() => router.push("/hifz")}
           className="ui-touch-target mt-6 w-full touch-manipulation rounded-xl bg-brand px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-brand-strong dark:text-slate-950"
         >
-          Lihat langkah seterusnya
+          {t("cta")}
         </button>
       </div>
 

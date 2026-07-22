@@ -1,6 +1,9 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import type { TasmiRatingLabel, TasmiSessionResult } from "@/features/tasmi";
 import type { FsrsRating } from "@/shared/types/database";
-import { RATING_LABEL_DISPLAY } from "../../domain/exercise-labels";
+import { resolveRatingLabelDisplay } from "../../domain/exercise-labels";
 
 interface UnveilResultCardProps {
   result: TasmiSessionResult;
@@ -27,7 +30,10 @@ export function UnveilResultCard({
   pageNumber,
   onDone,
 }: UnveilResultCardProps) {
-  const display = RATING_LABEL_DISPLAY[label];
+  const t = useTranslations("hifz.unveil");
+  const tOverlays = useTranslations("hifz.sessionOverlays");
+  const tRatingLabel = useTranslations("hifz.ratingLabel");
+  const display = resolveRatingLabelDisplay(label, tRatingLabel);
   const accuracyRounded = Math.round(result.accuracy);
 
   return (
@@ -35,7 +41,7 @@ export function UnveilResultCard({
       {/* Header */}
       <div className="border-b border-stone-100 px-6 py-4 dark:border-stone-800">
         <p className="text-xs font-medium uppercase tracking-wide text-stone-400 dark:text-stone-500">
-          Buka Tabir · Halaman {pageNumber}
+          {t("resultHeading", { page: pageNumber })}
         </p>
         <p className={`mt-1 text-xl font-bold ${display.color}`}>
           {display.text}
@@ -48,19 +54,19 @@ export function UnveilResultCard({
           <p className="text-lg font-bold text-stone-900 dark:text-stone-100">
             {accuracyRounded}%
           </p>
-          <p className="text-xs text-stone-500 dark:text-stone-400">Ketepatan</p>
+          <p className="text-xs text-stone-500 dark:text-stone-400">{tOverlays("accuracyLabel")}</p>
         </div>
         <div className="px-4 py-3 text-center">
           <p className="text-lg font-bold text-stone-900 dark:text-stone-100">
             {result.talqinCount}
           </p>
-          <p className="text-xs text-stone-500 dark:text-stone-400">Talqin</p>
+          <p className="text-xs text-stone-500 dark:text-stone-400">{tOverlays("talqinLabel")}</p>
         </div>
         <div className="px-4 py-3 text-center">
           <p className="text-lg font-bold text-stone-900 dark:text-stone-100">
             {formatDuration(result.durationSeconds)}
           </p>
-          <p className="text-xs text-stone-500 dark:text-stone-400">Masa</p>
+          <p className="text-xs text-stone-500 dark:text-stone-400">{t("timeLabel")}</p>
         </div>
       </div>
 
@@ -68,11 +74,11 @@ export function UnveilResultCard({
       {ayahRatings.length > 0 && (
         <div className="border-t border-stone-100 px-6 py-3 dark:border-stone-800">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-400 dark:text-stone-500">
-            Per Ayat
+            {t("perAyahLabel")}
           </p>
           <ul className="space-y-1">
             {ayahRatings.map(({ ayahKey, label: ayahLabel }) => {
-              const ayahDisplay = RATING_LABEL_DISPLAY[ayahLabel];
+              const ayahDisplay = resolveRatingLabelDisplay(ayahLabel, tRatingLabel);
               return (
                 <li
                   key={ayahKey}
@@ -98,7 +104,7 @@ export function UnveilResultCard({
           onClick={onDone}
           className="w-full rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500"
         >
-          Selesai
+          {tOverlays("done")}
         </button>
       </div>
     </div>

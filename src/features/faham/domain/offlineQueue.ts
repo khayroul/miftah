@@ -104,9 +104,9 @@ function buildSourceLinks(
 
     if (signal.sourceType === "reading_page" && signal.pageNumber) {
       links.push({
-        detail: `Buka semula halaman ${signal.pageNumber} dalam mushaf.`,
         href: `/read/${signal.pageNumber}`,
-        label: `Baca · Halaman ${signal.pageNumber}`,
+        origin: "offline",
+        pageNumber: signal.pageNumber,
         type: "reading_page",
       });
       continue;
@@ -118,9 +118,10 @@ function buildSourceLinks(
       signal.themeChunkIndex
     ) {
       links.push({
-        detail: `Buka semula bacaan bertema surah ${signal.surahId}, bahagian ${signal.themeChunkIndex}.`,
         href: `/read/surah/${signal.surahId}/themes?chunk=${signal.themeChunkIndex}`,
-        label: `Tema · Surah ${signal.surahId}, Bahagian ${signal.themeChunkIndex}`,
+        origin: "offline",
+        surahId: signal.surahId,
+        themeChunkIndex: signal.themeChunkIndex,
         type: "theme_chunk",
       });
       continue;
@@ -128,9 +129,8 @@ function buildSourceLinks(
 
     if (signal.sourceType === "hifz_ayah") {
       links.push({
-        detail: "Kembali ke mod hafal untuk ulang semula ayat terkini.",
         href: "/hifz",
-        label: "Hafal · Sesi terkini",
+        origin: "offline",
         type: "hifz_ayah",
       });
       continue;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { PageGridEntry, PageGridStatus } from "../domain/types";
 
 interface HifzPageGridProps {
@@ -16,16 +17,19 @@ const STATUS_COLORS: Record<PageGridStatus, string> = {
   overdue: "bg-red-500 dark:bg-red-400",
 };
 
-const STATUS_LABELS: Record<PageGridStatus, string> = {
-  "not-started": "Belum mula",
-  sabak: "Sabak",
-  sabqi: "Sabqi",
-  manzil: "Manzil",
-  due: "Perlu ulang",
-  overdue: "Tertunggak",
-};
+const TOTAL_QURAN_PAGES = 604;
 
 export function HifzPageGrid({ entries }: HifzPageGridProps) {
+  const t = useTranslations("hifz.pageGrid");
+  const tStatus = useTranslations("hifz.status");
+  const STATUS_LABELS: Record<PageGridStatus, string> = {
+    "not-started": tStatus("notStarted"),
+    sabak: tStatus("sabak"),
+    sabqi: tStatus("sabqi"),
+    manzil: tStatus("manzil"),
+    due: tStatus("due"),
+    overdue: tStatus("overdue"),
+  };
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -36,10 +40,10 @@ export function HifzPageGrid({ entries }: HifzPageGridProps) {
         className="mb-3 flex w-full items-center justify-between text-left"
       >
         <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">
-          Peta Halaman
+          {t("title")}
         </h3>
         <span className="text-xs text-stone-500 dark:text-stone-400">
-          {expanded ? "Tutup" : "Buka"}
+          {expanded ? t("close") : t("open")}
         </span>
       </button>
 
@@ -61,14 +65,14 @@ export function HifzPageGrid({ entries }: HifzPageGridProps) {
               <a
                 key={entry.page}
                 href={`/read/${entry.page}`}
-                title={`Hal. ${entry.page} — ${STATUS_LABELS[entry.status]}`}
+                title={t("tileTitle", { page: entry.page, status: STATUS_LABELS[entry.status] })}
                 className={`aspect-square rounded-[2px] transition hover:ring-1 hover:ring-stone-400 ${STATUS_COLORS[entry.status]}`}
               />
             ))}
           </div>
 
           <p className="mt-2 text-right text-xs text-stone-400 dark:text-stone-500">
-            604 halaman
+            {t("totalPages", { count: TOTAL_QURAN_PAGES })}
           </p>
         </>
       ) : null}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
 import type { TebukPrompt, TebukRoundResult } from "../../domain/types";
 import {
@@ -55,6 +56,9 @@ export function HifzTebukSession({
   onComplete,
   onExit,
 }: HifzTebukSessionProps) {
+  const t = useTranslations("hifz.tebuk");
+  const tErrors = useTranslations("hifz.errors");
+  const tOverlays = useTranslations("hifz.sessionOverlays");
   // Pick prompts once on mount via useState initializer
   const [prompts] = useState<TebukPrompt[]>(() =>
     pickTebukPrompts(layout, ROUNDS_PER_SESSION),
@@ -161,21 +165,21 @@ export function HifzTebukSession({
 
         if (!configResponse.ok || configPayload?.configured !== true) {
           if (!disposed) {
-            setVadError("Pelayan tasmi' belum dikonfigurasikan.");
+            setVadError(tErrors("tasmiNotConfigured"));
             recitingActiveRef.current = false;
           }
           return;
         }
         if (configPayload.reachable !== true) {
           if (!disposed) {
-            setVadError("Pelayan tasmi' tak dapat dihubungi sekarang.");
+            setVadError(tErrors("tasmiUnreachable"));
             recitingActiveRef.current = false;
           }
           return;
         }
       } catch {
         if (!disposed) {
-          setVadError("Pelayan tasmi' tak dapat dihubungi sekarang.");
+          setVadError(tErrors("tasmiUnreachable"));
           recitingActiveRef.current = false;
         }
         return;
@@ -337,14 +341,14 @@ export function HifzTebukSession({
       <div className="fixed inset-0 z-40 flex items-center justify-center bg-stone-900/80 backdrop-blur-sm">
         <div className="mx-4 w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm dark:border-stone-700 dark:bg-stone-900">
           <p className="text-sm text-stone-600 dark:text-stone-300">
-            Halaman ini tidak cukup ayat untuk tebuk.
+            {t("noPromptsBody")}
           </p>
           <button
             type="button"
             onClick={onExit}
             className="mt-6 w-full rounded-xl bg-stone-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-700"
           >
-            Keluar
+            {tOverlays("exit")}
           </button>
         </div>
       </div>

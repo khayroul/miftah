@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { HifzReportCard } from "./HifzReportCard";
 import { saveQueue } from "../domain/sessionQueue";
 import type {
@@ -55,6 +56,7 @@ export function HifzOverview({
   canStartFresh = false,
 }: HifzOverviewProps) {
   const router = useRouter();
+  const t = useTranslations("hifz.overview");
   const [isPending, startTransition] = useTransition();
   const [loading, setLoading] = useState<"memorize" | "review" | null>(null);
   const [entryPath, setEntryPath] = useState<HifzEntryPath>("fresh");
@@ -124,11 +126,11 @@ export function HifzOverview({
       openReadPage(
         {
           actionLabel:
-            type === "memorize" ? "Membuka sesi hafal" : "Membuka sesi uji hafalan",
+            type === "memorize" ? t("openingMemorizeSession") : t("openingReviewSession"),
           helperText:
             type === "memorize"
-              ? "Kami sedang sediakan halaman pertama untuk sesi baru anda."
-              : "Kami sedang sediakan halaman pertama untuk ulangan hari ini.",
+              ? t("preparingMemorizeHelper")
+              : t("preparingReviewHelper"),
           pageNumber,
         },
         `/read/${pageNumber}?flow=${type}&qi=0`,
@@ -136,7 +138,7 @@ export function HifzOverview({
       );
       return true;
     },
-    [openReadPage],
+    [openReadPage, t],
   );
 
   const loadQueue = useCallback(async (type: HifzFlowType) => {
@@ -153,7 +155,7 @@ export function HifzOverview({
   const handleImport = useCallback(async () => {
     const page = Number.parseInt(importPage, 10);
     if (!Number.isInteger(page) || page < 1 || page > 604) {
-      setImportError("Masukkan nombor halaman antara 1 hingga 604.");
+      setImportError(t("importInvalidPage"));
       return;
     }
 
@@ -172,7 +174,7 @@ export function HifzOverview({
 
       const payload = (await res.json()) as ImportResponse;
       if (!res.ok) {
-        setImportError(payload.error ?? "Tak dapat rekod hafalan sedia ada sekarang.");
+        setImportError(payload.error ?? t("importFailedGeneric"));
         return;
       }
 
@@ -192,16 +194,16 @@ export function HifzOverview({
         router.refresh();
       });
     } catch {
-      setImportError("Tak dapat rekod hafalan sedia ada sekarang. Cuba sekali lagi.");
+      setImportError(t("importFailedRetry"));
     } finally {
       setImporting(false);
     }
-  }, [importPage, router, startTransition]);
+  }, [importPage, router, startTransition, t]);
 
   const handleTestExisting = useCallback(() => {
     const page = Number.parseInt(testPage, 10);
     if (!Number.isInteger(page) || page < 1 || page > 604) {
-      setTestError("Pilih halaman antara 1 hingga 604 untuk diuji.");
+      setTestError(t("testInvalidPage"));
       return;
     }
 
@@ -211,13 +213,13 @@ export function HifzOverview({
 
     openReadPage(
       {
-        actionLabel: "Membuka ujian ingatan",
-        helperText: "Mushaf akan dibuka dengan petunjuk kata pembuka untuk bantu anda menguji hafalan sedia ada tanpa semakan suara.",
+        actionLabel: t("openingTestSession"),
+        helperText: t("testHelper"),
         pageNumber: page,
       },
       `/read/${page}?mode=hifz&from=hifz&intent=test`,
     );
-  }, [openReadPage, testPage]);
+  }, [openReadPage, t, testPage]);
 
   const handleCta = useCallback(
     async (type: "memorize" | "review") => {
@@ -231,7 +233,7 @@ export function HifzOverview({
 
       if (type === "memorize" && importSummary?.queue) {
         if (!openQueue(type, importSummary.queue)) {
-          setQueueError("Pelan hafal anda belum siap lagi. Cuba muat semula dan buka sekali lagi.");
+          setQueueError(t("planNotReady"));
         }
         return;
       }
@@ -244,27 +246,27 @@ export function HifzOverview({
         if (data.pageOrder.length === 0) {
           setQueueError(
             type === "memorize"
-              ? "Belum ada halaman baru untuk dibuka. Cuba pilih “Saya belum mula” atau import hafalan sedia ada dahulu."
-              : "Belum ada ulangan dijadualkan hari ini. Bila ada, butang ini akan terus buka sesi ujian.",
+              ? t("noNewPagesChoice")
+              : t("noReviewScheduled"),
           );
           setLoading(null);
           return;
         }
 
         if (!openQueue(type, data)) {
-          setQueueError("Tak dapat buka sesi sekarang. Cuba sekali lagi.");
+          setQueueError(t("sessionOpenFailed"));
           setLoading(null);
         }
       } catch {
         setQueueError(
           type === "memorize"
-            ? "Tak dapat buka sesi hafal sekarang. Semak sambungan dan cuba lagi."
-            : "Tak dapat buka sesi uji hafalan sekarang. Semak sambungan dan cuba lagi.",
+            ? t("memorizeOpenFailedNetwork")
+            : t("reviewOpenFailedNetwork"),
         );
         setLoading(null);
       }
     },
-    [importSummary?.queue, isGuest, loadQueue, openQueue],
+    [importSummary?.queue, isGuest, loadQueue, openQueue, t],
   );
 
   const showStartFresh = !isGuest && canStartFresh && !effectiveHasProgress;

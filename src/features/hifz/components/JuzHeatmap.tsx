@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { JuzStat } from "../domain/types";
 
 interface JuzHeatmapProps {
@@ -23,13 +24,14 @@ function juzColor(stat: JuzStat): string {
 const TOTAL_QURAN_PAGES = 604;
 
 export function JuzHeatmap({ juzProgress }: JuzHeatmapProps) {
+  const t = useTranslations("hifz.juzHeatmap");
   const totalManzilPages = juzProgress.reduce((sum, stat) => sum + stat.manzilPages, 0);
   const overallPct = (totalManzilPages / TOTAL_QURAN_PAGES) * 100;
 
   return (
     <div>
       <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
-        Kemajuan Juz
+        {t("title")}
       </p>
       <div className="mb-3">
         <div className="h-2 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
@@ -39,14 +41,14 @@ export function JuzHeatmap({ juzProgress }: JuzHeatmapProps) {
           />
         </div>
         <p className="mt-1 text-[10px] text-stone-500 dark:text-stone-400">
-          {Math.round(overallPct)}% liputan halaman manzil
+          {t("coveragePct", { pct: Math.round(overallPct) })}
         </p>
       </div>
       <div className="grid grid-cols-6 gap-1.5">
         {juzProgress.map((stat) => (
           <div
             key={stat.juz}
-            title={`Juz ${stat.juz}: ${Math.round(stat.manzilPagePct)}% liputan halaman manzil`}
+            title={t("tileTitle", { juz: stat.juz, pct: Math.round(stat.manzilPagePct) })}
             className={`flex flex-col items-center justify-center rounded-lg p-1.5 transition-opacity hover:opacity-80 ${juzColor(stat)}`}
           >
             <span className="text-[10px] font-bold leading-none">{stat.juz}</span>
@@ -61,15 +63,15 @@ export function JuzHeatmap({ juzProgress }: JuzHeatmapProps) {
       <div className="mt-2 flex items-center gap-3 text-[10px] text-stone-400 dark:text-stone-500">
         <span className="flex items-center gap-1">
           <span className="inline-block h-2.5 w-2.5 rounded bg-stone-200 dark:bg-stone-700" />
-          Belum mula
+          {t("legendNotStarted")}
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block h-2.5 w-2.5 rounded bg-teal-300 dark:bg-teal-700" />
-          Ada manzil
+          {t("legendHasManzil")}
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block h-2.5 w-2.5 rounded bg-teal-600 dark:bg-teal-500" />
-          Manzil tinggi
+          {t("legendHighManzil")}
         </span>
       </div>
     </div>

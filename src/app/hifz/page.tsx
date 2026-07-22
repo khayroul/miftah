@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { ModeNavigator } from "@/features/read";
 import {
   HifzOverview,
@@ -16,6 +17,10 @@ import { getOptionalAuthUser } from "@/features/auth/server";
 import { getUserStreak } from "@/data/repositories/activity";
 
 export default async function HifzPage() {
+  const [tNav, t] = await Promise.all([
+    getTranslations("nav"),
+    getTranslations("hifz.page"),
+  ]);
   const userPromise = getOptionalAuthUser();
   const jumpTargetsPromise = getReadJumpTargets();
   const user = await userPromise;
@@ -105,14 +110,14 @@ export default async function HifzPage() {
         />
         <LightweightBreadcrumb
           items={[
-            { href: "/", label: "Utama" },
-            { label: "Hafal" },
+            { href: "/", label: tNav("home") },
+            { label: tNav("hifz") },
           ]}
         />
 
         {!userId && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center text-sm text-amber-900 shadow-sm dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
-            <strong>Akaun Diperlukan:</strong> Anda sedang menggunakan mod pratonton. Sila log masuk untuk menyimpan profil memori dan kemajuan hafalan anda.
+            <strong>{t("guestBannerTitle")}</strong> {t("guestBannerBody")}
           </div>
         )}
 

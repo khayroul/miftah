@@ -100,12 +100,10 @@ function buildSourceLinks(
       }
       deduped.add(key);
       links.push({
-        detail:
-          primaryReference && primaryReference.label
-            ? `Kembali ke ayat ${primaryReference.label} dalam mushaf.`
-            : `Kembali ke halaman ${pageNumber} dalam mushaf.`,
+        ayahReferenceLabel: primaryReference?.label ?? null,
         href: `/read/${pageNumber}`,
-        label: `Baca · Halaman ${pageNumber}`,
+        origin: "online",
+        pageNumber,
         type: "reading_page",
       });
       continue;
@@ -124,9 +122,10 @@ function buildSourceLinks(
       }
       deduped.add(key);
       links.push({
-        detail: `Buka semula bacaan bertema surah ${surahId}, bahagian ${chunkIndex}.`,
         href: `/read/surah/${surahId}/themes?chunk=${chunkIndex}`,
-        label: `Tema · Surah ${surahId}, Bahagian ${chunkIndex}`,
+        origin: "online",
+        surahId,
+        themeChunkIndex: chunkIndex,
         type: "theme_chunk",
       });
       continue;
@@ -142,9 +141,9 @@ function buildSourceLinks(
     }
     deduped.add(key);
     links.push({
-      detail: `Buka semula halaman hafalan yang mengandungi ayat ${primaryReference.label}.`,
+      ayahReferenceLabel: primaryReference.label,
       href: `/read/${primaryReference.pageNumber}?mode=hifz&from=dashboard`,
-      label: `Hafal · ${primaryReference.label}`,
+      origin: "online",
       type: "hifz_ayah",
     });
   }

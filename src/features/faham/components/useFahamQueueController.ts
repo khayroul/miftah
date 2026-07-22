@@ -3,6 +3,7 @@
 /* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps -- shared refs and explicit stable setters preserve the original single-controller lifecycle */
 
 import { useCallback, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { loadCachedFahamStats } from "../domain/offlineSync";
 import { buildOfflineFahamQueueSnapshot } from "../domain/offlineQueue";
 import type { FahamMcqDirectionMode } from "../domain/mcq";
@@ -28,6 +29,7 @@ export function useFahamQueueController(
     shouldHydrateInitialQueue: boolean;
   },
 ) {
+  const t = useTranslations("faham.workspace");
   const levelProgressRef = useRef(state.levelProgress);
   useEffect(() => {
     levelProgressRef.current = state.levelProgress;
@@ -125,7 +127,7 @@ export function useFahamQueueController(
           state.setAnswerState(null);
           state.setErrorMessage(
             source === "tier-package"
-              ? "Sesi tempatan: Faham dibuka daripada pakej perkataan yang telah dimuat turun."
+              ? t("tierPackageQueueNotice")
               : null,
           );
           state.setSessionSummary(null);
@@ -138,11 +140,11 @@ export function useFahamQueueController(
         .catch(() => {
           if (
             !restoreCachedQueue(
-              "Sesi tersimpan dibuka supaya anda boleh teruskan tanpa tunggu sambungan pulih.",
+              t("restoredAfterFailureNotice"),
               { clearSessionSummary: true, resetSessionTracking: true },
             )
           )
-            state.setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
+            state.setErrorMessage(t("queueLoadFailed"));
         })
         .finally(() => state.setIsHydratingInitialQueue(false));
     });
@@ -237,7 +239,7 @@ export function useFahamQueueController(
             state.setAnswerState(null);
             state.setErrorMessage(
               source === "tier-package"
-                ? "Sesi tempatan: Faham dibuka daripada pakej perkataan yang telah dimuat turun."
+                ? t("tierPackageQueueNotice")
                 : null,
             );
             state.setSessionSummary(null);
@@ -251,11 +253,11 @@ export function useFahamQueueController(
             if (cancelled) return;
             if (
               !restoreCachedQueue(
-                "Sesi tersimpan dibuka supaya anda boleh teruskan tanpa tunggu sambungan pulih.",
+                t("restoredAfterFailureNotice"),
                 { clearSessionSummary: true, resetSessionTracking: true },
               )
             )
-              state.setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
+              state.setErrorMessage(t("queueLoadFailed"));
           })
           .finally(() => {
             if (!cancelled) state.setIsHydratingInitialQueue(false);

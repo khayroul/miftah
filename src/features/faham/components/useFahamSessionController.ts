@@ -3,6 +3,7 @@
 /* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps -- this controller intentionally owns mutations of shared session refs */
 
 import { useCallback, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import type { FsrsRating } from "@/shared/types/database";
 import { enqueuePendingFahamRating } from "../domain/offlineSync";
 import {
@@ -29,6 +30,7 @@ export function useFahamSessionController(
   queue: FahamQueueController,
   sync: FahamSyncController,
 ) {
+  const t = useTranslations("faham.workspace");
   const moveToNextCard = useCallback(async () => {
     const nextIndex = state.currentIndex + 1;
     if (nextIndex < state.cards.length) {
@@ -66,19 +68,19 @@ export function useFahamSessionController(
       state.setAnswerState(null);
       state.setErrorMessage(
         result.source === "tier-package"
-          ? "Sesi tempatan: sesi seterusnya dibina daripada pakej perkataan yang telah dimuat turun."
+          ? t("tierPackageSessionNotice")
           : null,
       );
       state.setShowPreview(true);
     } catch {
       restored = queue.restoreCachedQueue(
-        "Sesi tersimpan dibuka supaya anda boleh terus sambung tanpa tunggu sambungan pulih.",
+        t("restoredAfterErrorNotice"),
       );
       if (!restored) {
         state.setCurrentIndex(0);
         state.setAnswerState(null);
         state.setShowPreview(true);
-        state.setErrorMessage("Barisan Faham tak dapat dimuat sekarang.");
+        state.setErrorMessage(t("queueLoadFailed"));
       }
     }
     const latest = await latestStatsPromise;
@@ -114,6 +116,7 @@ export function useFahamSessionController(
     state.setSnapshot,
     stats.refreshStats,
     sync.syncPendingRatings,
+    t,
   ]);
 
   const handleAnswer = (selectedIndex: number) => {

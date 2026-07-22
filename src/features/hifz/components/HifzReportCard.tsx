@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { JuzStat, PageGridEntry, PageGridStatus } from "../domain/types";
 import { JUZ_BOUNDARY_PAGES, JUZ_PAGE_COUNTS } from "../domain/constants";
 import { HifzPageActionSheet } from "./HifzPageActionSheet";
@@ -21,14 +22,10 @@ const STATUS_COLORS: Record<PageGridStatus, string> = {
   overdue: "bg-red-500 dark:bg-red-400",
 };
 
-const STATUS_LABELS: Record<PageGridStatus, string> = {
-  "not-started": "Belum mula",
-  sabak: "Sabak",
-  sabqi: "Sabqi",
-  manzil: "Manzil",
-  due: "Perlu ulang",
-  overdue: "Tertunggak",
-};
+type RelativeDateTranslator = (
+  key: "relativeToday" | "relativeYesterday" | "relativeDaysAgo" | "relativeWeeksAgo" | "relativeMonthsAgo",
+  values?: Record<string, number>,
+) => string;
 
 function juzCardColor(stat: JuzStat): string {
   const startedPages = stat.totalPages - stat.notStartedPages;
@@ -44,20 +41,30 @@ function juzCardColor(stat: JuzStat): string {
   return "border-amber-200 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/25";
 }
 
-function formatRelativeDate(isoDate: string): string {
+function formatRelativeDate(isoDate: string, t: RelativeDateTranslator): string {
   const date = new Date(isoDate);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffDays === 0) return "Hari ini";
-  if (diffDays === 1) return "Semalam";
-  if (diffDays < 7) return `${diffDays} hari lalu`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} minggu lalu`;
-  return `${Math.floor(diffDays / 30)} bulan lalu`;
+  if (diffDays === 0) return t("relativeToday");
+  if (diffDays === 1) return t("relativeYesterday");
+  if (diffDays < 7) return t("relativeDaysAgo", { count: diffDays });
+  if (diffDays < 30) return t("relativeWeeksAgo", { count: Math.floor(diffDays / 7) });
+  return t("relativeMonthsAgo", { count: Math.floor(diffDays / 30) });
 }
 
 export function HifzReportCard({ juzProgress, pageGrid }: HifzReportCardProps) {
+  const t = useTranslations("hifz.reportCard");
+  const tStatus = useTranslations("hifz.status");
+  const STATUS_LABELS: Record<PageGridStatus, string> = {
+    "not-started": tStatus("notStarted"),
+    sabak: tStatus("sabak"),
+    sabqi: tStatus("sabqi"),
+    manzil: tStatus("manzil"),
+    due: tStatus("due"),
+    overdue: tStatus("overdue"),
+  };
   const [selectedJuz, setSelectedJuz] = useState<number | null>(null);
   const [actionPage, setActionPage] = useState<PageGridEntry | null>(null);
 
@@ -89,10 +96,10 @@ export function HifzReportCard({ juzProgress, pageGrid }: HifzReportCardProps) {
       <div className="rounded-2xl border border-stone-200/80 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-stone-700/50 dark:bg-stone-900/60 sm:p-6">
         <div className="flex items-baseline justify-between">
           <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100">
-            Kad Laporan Hifz
+            {t("title")}
           </h2>
           <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
-            {totalManzilPages}/{TOTAL_QURAN_PAGES} halaman
+            {t("pagesFraction", { completed: totalManzilPages, total: TOTAL_QURAN_PAGES })}
           </p>
         </div>
         <div className="mt-3">
@@ -103,7 +110,7 @@ export function HifzReportCard({ juzProgress, pageGrid }: HifzReportCardProps) {
             />
           </div>
           <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">
-            {Math.round(overallPct)}% manzil
+            {t("manzilPct", { pct: Math.round(overallPct) })}
           </p>
         </div>
 
@@ -114,7 +121,9 @@ export function HifzReportCard({ juzProgress, pageGrid }: HifzReportCardProps) {
             .map((status) => (
               <span key={status} className="flex items-center gap-1.5">
                 <span className={`inline-block h-2.5 w-2.5 rounded-sm ${STATUS_COLORS[status]}`} />
-                <span className="text-stone-600 dark:text-stone-400">{STATUS_LABELS[status]}</span>
+                <span className="text-stone-600 dark:text-stone-400">
+                  {STATUS_LABELS[status]}
+                </span>
               </span>
             ))}
         </div>
@@ -138,7 +147,7 @@ export function HifzReportCard({ juzProgress, pageGrid }: HifzReportCardProps) {
               }`}
             >
               <p className="text-xs font-bold text-stone-800 dark:text-stone-200">
-                Juz {stat.juz}
+                {t("juzLabel", { juz: stat.juz })}
               </p>
               {/* Mini progress bar */}
               <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-stone-200/80 dark:bg-stone-600">
@@ -168,7 +177,7 @@ export function HifzReportCard({ juzProgress, pageGrid }: HifzReportCardProps) {
                 ) : null}
               </div>
               <p className="mt-1 text-[10px] text-stone-500 dark:text-stone-400">
-                {startedPages}/{stat.totalPages}
+                {t("pagesStarted", { started: startedPages, total: stat.totalPages })}
               </p>
             </button>
           );
@@ -180,11 +189,13 @@ export function HifzReportCard({ juzProgress, pageGrid }: HifzReportCardProps) {
         <div className="animate-[fadeInUp_300ms_ease-out] rounded-2xl border border-stone-200/80 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-stone-700/50 dark:bg-stone-900/60 sm:p-6">
           <div className="mb-4 flex items-baseline justify-between">
             <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
-              Juz {selectedJuz}
+              {t("juzLabel", { juz: selectedJuz })}
             </h3>
             <p className="text-xs text-stone-500 dark:text-stone-400">
-              Halaman {JUZ_BOUNDARY_PAGES[selectedJuz - 1]}–
-              {JUZ_BOUNDARY_PAGES[selectedJuz - 1] + (JUZ_PAGE_COUNTS[selectedJuz] ?? 0) - 1}
+              {t("pageRangeLabel", {
+                start: JUZ_BOUNDARY_PAGES[selectedJuz - 1],
+                end: JUZ_BOUNDARY_PAGES[selectedJuz - 1] + (JUZ_PAGE_COUNTS[selectedJuz] ?? 0) - 1,
+              })}
             </p>
           </div>
 
@@ -216,7 +227,7 @@ export function HifzReportCard({ juzProgress, pageGrid }: HifzReportCardProps) {
                 />
                 {entry.lastReviewedAt ? (
                   <span className="mt-1 text-[9px] leading-tight text-stone-400 dark:text-stone-500">
-                    {formatRelativeDate(entry.lastReviewedAt)}
+                    {formatRelativeDate(entry.lastReviewedAt, t)}
                   </span>
                 ) : (
                   <span className="mt-1 text-[9px] leading-tight text-stone-300 dark:text-stone-600">
@@ -229,7 +240,7 @@ export function HifzReportCard({ juzProgress, pageGrid }: HifzReportCardProps) {
         </div>
       ) : (
         <p className="text-center text-sm text-stone-400 dark:text-stone-500">
-          Ketuk mana-mana juz untuk lihat halaman
+          {t("tapToView")}
         </p>
       )}
 

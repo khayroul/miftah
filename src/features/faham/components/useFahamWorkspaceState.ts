@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import type { FahamMcqDirectionMode } from "../domain/mcq";
 import type { FahamSourcePreset } from "../domain/presets";
 import type { FahamQueueSnapshot } from "../domain/queue";
@@ -84,6 +85,7 @@ export function useFahamWorkspaceState({
   const levelProgress = stats?.levelProgress ?? snapshot.levelProgress;
   const foundCount = stats?.wordBank ?? 0;
   const masteredCount = stats?.mastered ?? 0;
+  const t = useTranslations("faham.workspace");
   const syncBadge = useMemo(() => {
     if (pendingSyncCount <= 0) return null;
     const styles = {
@@ -93,13 +95,13 @@ export function useFahamWorkspaceState({
       idle: "border-teal-200 bg-teal-50 text-teal-800 dark:border-teal-500/30 dark:bg-teal-900/30 dark:text-teal-200",
     };
     const labels = {
-      syncing: `Sync Faham ${pendingSyncCount}`,
-      offline: `Luar talian ${pendingSyncCount}`,
-      error: `Sync tertangguh ${pendingSyncCount}`,
-      idle: `Menunggu sync ${pendingSyncCount}`,
+      syncing: t("syncBadgeSyncing", { count: pendingSyncCount }),
+      offline: t("syncBadgeOffline", { count: pendingSyncCount }),
+      error: t("syncBadgeError", { count: pendingSyncCount }),
+      idle: t("syncBadgeIdle", { count: pendingSyncCount }),
     };
     return { className: styles[syncState], label: labels[syncState] };
-  }, [pendingSyncCount, syncState]);
+  }, [pendingSyncCount, syncState, t]);
 
   return {
     activeAudioRef, answerState, audioEnabled, cards, correctAdvanceMode,
