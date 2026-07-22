@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { TasmiSession, type TasmiEvent, type TasmiSessionResult } from "../domain/tasmi-session";
 import { TasmiRecorder, type TasmiRecorderError } from "../domain/tasmi-recorder";
 import { TasmiStreamClient } from "../domain/tasmi-stream-client";
@@ -101,14 +102,16 @@ function resolveAyahFromWordIndex(
   return { surah: fallbackSurah, ayah: fallbackAyah, localWordIndex: 0 };
 }
 
-function micErrorMessage(error: TasmiRecorderError): string {
+type TasmiUiTranslator = (key: string, values?: Record<string, string | number>) => string;
+
+function micErrorMessage(error: TasmiRecorderError, tRecorder: TasmiUiTranslator): string {
   switch (error.kind) {
     case "permission-denied":
-      return "Akses mikrofon ditolak. Benarkan mikrofon untuk aplikasi ini dalam tetapan pelayar atau telefon anda, kemudian cuba lagi.";
+      return tRecorder("permissionDenied");
     case "no-mic":
-      return "Tiada mikrofon dikesan pada peranti ini.";
+      return tRecorder("noMic");
     default:
-      return "Mikrofon tidak dapat dimulakan. Muat semula halaman dan cuba lagi.";
+      return tRecorder("genericError");
   }
 }
 
@@ -124,6 +127,8 @@ export function TasmiSessionUI({
   sessionMode = "practice",
   startPromptAyah,
 }: TasmiSessionUIProps) {
+  const t = useTranslations("tasmi.session");
+  const tRecorder = useTranslations("tasmi.recorder");
   const [status, setStatus] = useState<TasmiStatus>("checking");
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<TasmiSessionResult | null>(null);
@@ -212,8 +217,8 @@ export function TasmiSessionUI({
       } else {
         setErrorMsg(
           verdict === "unconfigured"
-            ? "Pelayan tasmi' belum dikonfigurasikan."
-            : "Pelayan tasmi' tidak dapat dihubungi sekarang. Cuba sebentar lagi.",
+            ? t("serverUnconfigured")
+            : t("serverUnreachable"),
         );
         setStatus("unavailable");
       }
@@ -225,7 +230,7 @@ export function TasmiSessionUI({
       // close it on route change/unmount, including during admission.
       teardown();
     };
-  }, [checkServer, teardown]);
+  }, [checkServer, teardown, t]);
 
   const handleEvent = useCallback((event: TasmiEvent) => {
     switch (event.type) {
@@ -262,7 +267,7 @@ export function TasmiSessionUI({
         // Whisper heard nothing usable — NOT a mistake. Gentle nudge only.
         setHint(
           sessionModeRef.current === "practice"
-            ? "Saya belum mendengar bacaan dengan jelas. Teruskan membaca."
+            ? t("noSpeechHint")
             : null,
         );
         setStatus("listening");
@@ -274,7 +279,7 @@ export function TasmiSessionUI({
         deferredSilenceRef.current = false;
         recorderRef.current?.pause();
         setMidSessionOutage(true);
-        setErrorMsg("Pelayan tasmi' terputus. Bacaan anda tidak dikira salah — sambung bila pelayan kembali.");
+        setErrorMsg(t("midSessionOutageMsg"));
         setStatus("unavailable");
         break;
       case "error":
@@ -342,7 +347,7 @@ export function TasmiSessionUI({
         }
         break;
     }
-  }, []);
+  }, [t]);
 
   /**
    * Start (or restart) a live session. MUST be invoked from a user tap —
@@ -450,7 +455,7 @@ export function TasmiSessionUI({
           return;
         }
         setStreamMode("fallback");
-        setHint("Sambungan pantas terputus — semakan diteruskan selepas jeda.");
+        setHint(t("streamFallbackHint"));
         for (const utteranceId of pendingUtteranceIds) {
           const fallbackBlob = pendingStreamFallbacksRef.current.get(utteranceId);
           if (fallbackBlob) {
@@ -532,12 +537,12 @@ export function TasmiSessionUI({
       onSilenceNudge: () => {
         if (sessionRef.current !== session || recorderRef.current !== recorder) return;
         if (effectiveTalqinEnabled && pendingRecognitionCountRef.current === 0) {
-          setHint("Perlukan bantuan? Perkataan seterusnya sedang diserlahkan.");
+          setHint(t("silenceNudgeHint"));
         }
       },
       onError: (err) => {
         if (sessionRef.current !== session || recorderRef.current !== recorder) return;
-        setErrorMsg(micErrorMessage(err));
+        setErrorMsg(micErrorMessage(err, tRecorder));
         setStatus("intro");
       },
     });
@@ -606,6 +611,8 @@ export function TasmiSessionUI({
     expectedText,
     handleEvent,
     startPromptAyah,
+    t,
+    tRecorder,
     teardown,
   ]);
 
@@ -620,10 +627,10 @@ export function TasmiSessionUI({
       recorderRef.current?.resume();
       setStatus("listening");
     } else {
-      setErrorMsg("Pelayan tasmi' masih tidak dapat dihubungi. Cuba sebentar lagi.");
+      setErrorMsg(t("serverStillUnreachable"));
       setStatus("unavailable");
     }
-  }, [checkServer]);
+  }, [checkServer, t]);
 
   /** Pre-session unavailable → re-probe and enter intro when healthy. */
   const recheckServer = useCallback(async () => {
@@ -636,12 +643,12 @@ export function TasmiSessionUI({
     } else {
       setErrorMsg(
         verdict === "unconfigured"
-          ? "Pelayan tasmi' belum dikonfigurasikan."
-          : "Pelayan tasmi' tidak dapat dihubungi sekarang. Cuba sebentar lagi.",
+          ? t("serverUnconfigured")
+          : t("serverUnreachable"),
       );
       setStatus("unavailable");
     }
-  }, [checkServer]);
+  }, [checkServer, t]);
 
   const stopSession = useCallback(() => {
     const stoppedBeforeEnd = progressRef.current < 1;
@@ -692,16 +699,14 @@ export function TasmiSessionUI({
           typeof payload?.error === "string" ? payload.error : null;
         setSaveError(
           response.status === 401
-            ? "Log masuk diperlukan sebelum keputusan boleh disimpan."
-            : serverMessage ?? "Keputusan belum dapat disimpan. Cuba sekali lagi.",
+            ? t("saveAuthRequired")
+            : serverMessage ?? t("saveGenericError"),
         );
         setSaveState("error");
         return;
       }
     } catch {
-      setSaveError(
-        "Sambungan terputus semasa menyimpan. Keputusan masih ada di skrin ini — cuba simpan semula.",
-      );
+      setSaveError(t("saveNetworkError"));
       setSaveState("error");
       return;
     }
@@ -715,6 +720,7 @@ export function TasmiSessionUI({
     saveState,
     startAyah,
     surahNumber,
+    t,
   ]);
 
   // ---------- Render ----------

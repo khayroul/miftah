@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { TasmiSessionUI } from "./TasmiSessionUI";
 import { buildExamRound, type JuzukExamRoundContract } from "../domain/juzuk-exam";
 
@@ -35,6 +36,10 @@ const JUZ_OPTIONS = Array.from({ length: 30 }, (_, i) => i + 1);
 const RECENT_LIMIT = 20;
 
 export function TasmiJuzukExam() {
+  const t = useTranslations("tasmi.juzukExam");
+  const strong = (chunks: ReactNode) => (
+    <strong className="font-semibold text-foreground">{chunks}</strong>
+  );
   const [juz, setJuz] = useState(1);
   const [mode, setMode] = useState<ExamMode>("exam");
   const [round, setRound] = useState<RoundState | null>(null);
@@ -56,8 +61,8 @@ export function TasmiJuzukExam() {
       if (!response.ok || !payload?.round) {
         setErrorMsg(
           response.status === 401
-            ? "Log masuk diperlukan untuk ujian juzuk."
-            : payload?.error ?? "Ujian tidak dapat dimulakan sekarang.",
+            ? t("authRequired")
+            : payload?.error ?? t("genericStartError"),
         );
         setRound(null);
         return;
@@ -65,7 +70,7 @@ export function TasmiJuzukExam() {
 
       const contract = buildExamRound(payload.round.ayahs);
       if (!contract) {
-        setErrorMsg("Tiada ayat ditemui untuk juzuk ini.");
+        setErrorMsg(t("noAyahFound"));
         setRound(null);
         return;
       }
@@ -82,12 +87,12 @@ export function TasmiJuzukExam() {
         roundKey: roundCounterRef.current,
       });
     } catch {
-      setErrorMsg("Ujian tidak dapat dimulakan sekarang. Semak sambungan anda.");
+      setErrorMsg(t("connectionError"));
       setRound(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const handleSessionEnd = useCallback(() => {
     // NEXT loop: result saved (via the session UI) -> new random test ayah.
@@ -103,11 +108,10 @@ export function TasmiJuzukExam() {
     return (
       <div className="ui-surface-solid flex flex-col items-center gap-5 rounded-3xl p-5 sm:p-6">
         <p className="ui-eyebrow">
-          Ujian Juzuk — Tasmi&apos;
+          {t("eyebrow")}
         </p>
         <p className="max-w-sm text-center text-sm leading-6 text-muted">
-          Saya akan bacakan <span className="font-semibold text-foreground">satu ayat permulaan secara rawak</span> daripada
-          juzuk pilihan anda. Sambung bacaan sehingga habis halaman.
+          {t.rich("introText", { strong })}
         </p>
 
         {errorMsg ? (
@@ -117,20 +121,20 @@ export function TasmiJuzukExam() {
         ) : null}
 
         <label className="flex w-full max-w-sm items-center justify-between gap-3 text-sm font-semibold text-foreground">
-          Pilih juzuk
+          {t("chooseJuzukLabel")}
           <select
             value={juz}
             onChange={e => setJuz(Number(e.target.value))}
             className="ui-touch-target cursor-pointer rounded-xl border border-border-strong bg-surface-solid px-3 py-2 text-foreground"
           >
             {JUZ_OPTIONS.map(j => (
-              <option key={j} value={j}>Juzuk {j}</option>
+              <option key={j} value={j}>{t("juzukOption", { juz: j })}</option>
             ))}
           </select>
         </label>
 
         <fieldset className="w-full max-w-sm">
-          <legend className="mb-2 text-sm font-semibold text-foreground">Pilih cara sesi</legend>
+          <legend className="mb-2 text-sm font-semibold text-foreground">{t("chooseModeLegend")}</legend>
           <div className="grid grid-cols-2 gap-2 rounded-2xl bg-surface-muted p-1.5">
             <button
               type="button"
@@ -142,7 +146,7 @@ export function TasmiJuzukExam() {
                   : "text-muted hover:bg-surface-solid"
               }`}
             >
-              Ujian
+              {t("modeExamButton")}
             </button>
             <button
               type="button"
@@ -154,14 +158,14 @@ export function TasmiJuzukExam() {
                   : "text-muted hover:bg-surface-solid"
               }`}
             >
-              Latihan
+              {t("modePracticeButton")}
             </button>
           </div>
         </fieldset>
         <div className="w-full max-w-sm rounded-2xl border border-border-subtle bg-surface px-4 py-3 text-sm leading-6 text-muted">
           {mode === "exam"
-            ? "Ujian: teks, tanda kesilapan dan talqin disembunyikan sehingga sesi tamat."
-            : "Latihan: teks diikuti secara langsung dan saya beri talqin apabila anda tersekat."}
+            ? t("examModeDescription")
+            : t("practiceModeDescription")}
         </div>
 
         <button
@@ -171,10 +175,10 @@ export function TasmiJuzukExam() {
           className="ui-touch-target w-full max-w-sm cursor-pointer rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading
-            ? "Menyediakan..."
+            ? t("preparingButton")
             : mode === "exam"
-              ? "Mula Ujian"
-              : "Mula Latihan"}
+              ? t("startExamButton")
+              : t("startPracticeButton")}
         </button>
       </div>
     );
@@ -184,9 +188,9 @@ export function TasmiJuzukExam() {
   return (
     <div className="flex flex-col gap-3">
       <p className="ui-eyebrow text-center">
-        Juzuk {juz} · Halaman {round.pageNumber}
-        {mode === "practice" ? ` · Bermula ${round.surahNumber}:${round.startAyah}` : ""}
-        {" · "}{mode === "exam" ? "Mod Ujian" : "Mod Latihan"}
+        {t("roundHeader", { juz, page: round.pageNumber })}
+        {mode === "practice" ? ` · ${t("roundHeaderStarted", { surah: round.surahNumber, ayah: round.startAyah })}` : ""}
+        {" · "}{mode === "exam" ? t("modeExamLabel") : t("modePracticeLabel")}
       </p>
       <TasmiSessionUI
         key={round.roundKey}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { normalizeArabic } from "../domain/arabic-normalizer";
 
 /**
@@ -91,6 +92,7 @@ export function TasmiTextFollow({
   errorPositions,
   tentativeErrorPositions = new Set<number>(),
 }: TasmiTextFollowProps) {
+  const t = useTranslations("tasmi.textFollow");
   const words = useMemo(() => buildDisplayWords(expectedText), [expectedText]);
   const currentRef = useRef<HTMLSpanElement | null>(null);
 
@@ -110,7 +112,7 @@ export function TasmiTextFollow({
       <div
         dir="rtl"
         lang="ar"
-        aria-label="Teks bacaan yang sedang diikuti"
+        aria-label={t("textAriaLabel")}
         className="max-h-52 w-full overflow-y-auto rounded-2xl border border-border-subtle bg-surface px-4 py-3 text-center text-2xl leading-[2.4]"
         style={{ fontFamily: "var(--font-arabic)" }}
       >
@@ -133,11 +135,11 @@ export function TasmiTextFollow({
       </div>
       <div
         className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted"
-        aria-label="Petunjuk warna teks"
+        aria-label={t("legendAriaLabel")}
       >
-        <span><span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full bg-teal-500" />Disahkan</span>
-        <span><span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-500" />Sedang disemak</span>
-        <span><span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full bg-rose-500" />Perlu diulang</span>
+        <span><span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full bg-teal-500" />{t("legendConfirmed")}</span>
+        <span><span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-500" />{t("legendChecking")}</span>
+        <span><span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full bg-rose-500" />{t("legendNeedsRepeat")}</span>
       </div>
     </div>
   );

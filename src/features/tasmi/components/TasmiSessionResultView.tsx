@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import type { TasmiSessionResult } from "../domain/tasmi-session";
 import { tasmiResultToLabel, type TasmiRatingLabel } from "../domain/fsrs-bridge";
 import type { AyahRange } from "./TasmiSessionUI";
@@ -57,13 +60,6 @@ const LABEL_COLORS: Record<TasmiRatingLabel, string> = {
   mantap: "text-emerald-500",
 };
 
-const LABEL_TEXT: Record<TasmiRatingLabel, string> = {
-  ulang: "Ulang",
-  tersangkut: "Tersangkut",
-  lancar: "Lancar",
-  mantap: "Mantap",
-};
-
 export function TasmiSessionResultView({
   result,
   onRetry,
@@ -73,56 +69,61 @@ export function TasmiSessionResultView({
   endedEarly = false,
   ayahRanges,
 }: TasmiSessionResultViewProps) {
+  const t = useTranslations("tasmi.results");
+  const tRatingLabel = useTranslations("hifz.ratingLabel");
   const label = tasmiResultToLabel(result);
   const errorLocations =
     ayahRanges && result.errorPositions.length > 0
       ? describeErrorLocations(result.errorPositions, ayahRanges)
       : [];
+  const truncatedErrorLocations = errorLocations.length > MAX_ERROR_LOCATIONS
+    ? t("errorLocationsMore", { remaining: errorLocations.length - MAX_ERROR_LOCATIONS })
+    : "";
 
   return (
     <div className="ui-surface-solid flex flex-col items-center gap-5 rounded-3xl p-5 sm:p-6">
       <p className="ui-eyebrow">
-        Keputusan Tasmi&apos;
+        {t("title")}
       </p>
       <p className={`text-3xl font-bold ${LABEL_COLORS[label]}`}>
-        {LABEL_TEXT[label]}
+        {tRatingLabel(label)}
       </p>
       <div className="grid w-full max-w-md grid-cols-2 gap-3 text-center text-sm text-muted sm:grid-cols-4">
         <div className="rounded-2xl bg-surface-muted px-3 py-3">
           <p className="text-lg font-bold">{Math.round(result.accuracy)}%</p>
-          <p>Ketepatan</p>
+          <p>{t("accuracyLabel")}</p>
         </div>
         <div className="rounded-2xl bg-surface-muted px-3 py-3">
           <p className="text-lg font-bold">{result.wordsCorrect}/{result.totalWords}</p>
-          <p>Perkataan</p>
+          <p>{t("wordsLabel")}</p>
         </div>
         <div
           className="rounded-2xl bg-surface-muted px-3 py-3"
-          title="Bilangan kali app membacakan perkataan panduan ketika anda tersekat"
+          title={t("talqinTooltip")}
         >
           <p className="text-lg font-bold">{result.talqinCount}</p>
-          <p>Talqin</p>
+          <p>{t("talqinLabel")}</p>
         </div>
         <div className="rounded-2xl bg-surface-muted px-3 py-3">
           <p className="text-lg font-bold">{formatDuration(result.durationSeconds)}</p>
-          <p>Masa</p>
+          <p>{t("durationLabel")}</p>
         </div>
       </div>
       {errorLocations.length > 0 ? (
         <p className="max-w-xs text-center text-xs text-stone-500 dark:text-stone-400">
-          Perlu perhatian:{" "}
+          {t("attentionLabel")}{" "}
           <span className="font-medium text-rose-600 dark:text-rose-400">
-            ayat {errorLocations.slice(0, MAX_ERROR_LOCATIONS).join("، ")}
-            {errorLocations.length > MAX_ERROR_LOCATIONS
-              ? ` (+${errorLocations.length - MAX_ERROR_LOCATIONS} lagi)`
-              : ""}
+            {t("errorLocations", {
+              count: errorLocations.length,
+              list: errorLocations.slice(0, MAX_ERROR_LOCATIONS).join(t("listSeparator")),
+              more: truncatedErrorLocations,
+            })}
           </span>
         </p>
       ) : null}
       {endedEarly ? (
         <p className="max-w-sm text-center text-sm text-muted">
-          Sesi dihentikan sebelum tamat — keputusan ini tidak disimpan supaya
-          rekod hafalan anda tidak terjejas. Cuba lagi bila bersedia.
+          {t("endedEarlyNote")}
         </p>
       ) : null}
       {!endedEarly && saveState !== "idle" ? (
@@ -138,10 +139,10 @@ export function TasmiSessionResultView({
           }`}
         >
           {saveState === "saving"
-            ? "Sedang menyimpan keputusan..."
+            ? t("savingStatus")
             : saveState === "saved"
-              ? "Keputusan telah disimpan. Menyediakan langkah seterusnya..."
-              : saveError ?? "Keputusan belum dapat disimpan. Cuba sekali lagi."}
+              ? t("savedStatus")
+              : saveError ?? t("saveErrorFallback")}
         </div>
       ) : null}
       <div className="flex w-full max-w-md flex-col gap-3 sm:flex-row">
@@ -153,12 +154,12 @@ export function TasmiSessionResultView({
             className="ui-touch-target flex-1 cursor-pointer rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saveState === "saving"
-              ? "Menyimpan..."
+              ? t("savingButton")
               : saveState === "saved"
-                ? "Sudah Disimpan"
+                ? t("savedButton")
                 : saveState === "error"
-                  ? "Cuba Simpan Semula"
-                  : "Simpan & Teruskan"}
+                  ? t("retrySaveButton")
+                  : t("saveButton")}
           </button>
         ) : null}
         <button
@@ -167,7 +168,7 @@ export function TasmiSessionResultView({
           disabled={saveState === "saving" || saveState === "saved"}
           className="ui-touch-target flex-1 cursor-pointer rounded-xl border border-border-strong bg-surface-solid px-5 py-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Cuba Lagi
+          {t("retryButton")}
         </button>
       </div>
     </div>

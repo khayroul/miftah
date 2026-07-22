@@ -1,16 +1,23 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 import { TasmiJuzukExam } from "@/features/tasmi";
 import { requireAuthUser } from "@/features/auth/server";
 
-export const metadata: Metadata = {
-  title: "Ujian Juzuk — Tasmi' | Miftah",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("tasmi.juzukPage");
+  return { title: t("metaTitle") };
+}
 
 export default async function TasmiJuzukPage() {
   // The whole flow (round picker, transcription, session save) is
   // authenticated — gate the page instead of failing per-request inside.
   await requireAuthUser("/tasmi/juzuk");
+
+  const [tNav, t] = await Promise.all([
+    getTranslations("nav"),
+    getTranslations("tasmi.juzukPage"),
+  ]);
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 px-4 py-8">
@@ -34,17 +41,17 @@ export default async function TasmiJuzukPage() {
               strokeLinejoin="round"
             />
           </svg>
-          Hafal
+          {tNav("hifz")}
         </OfflineAwareLink>
         <div className="min-w-0 text-right">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-teal-800 dark:text-teal-200">
-            Tasmi&apos;
+            {t("eyebrow")}
           </p>
           <h1 className="mt-1 text-2xl font-bold text-stone-900 dark:text-stone-50">
-            Ujian Juzuk
+            {t("pageTitle")}
           </h1>
           <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-            Semak hafalan anda juzuk demi juzuk
+            {t("pageSubtitle")}
           </p>
         </div>
       </header>

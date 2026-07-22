@@ -1,3 +1,4 @@
+import { NextIntlClientProvider } from "next-intl";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -5,6 +6,7 @@ import {
   TasmiBusyView,
   type TasmiActiveViewProps,
 } from "./TasmiSessionViews";
+import messages from "../../../../messages/ms.json";
 
 const EXPECTED_TEXT = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ";
 const FIRST_EXPECTED_WORD = "بِسْمِ";
@@ -13,22 +15,24 @@ function renderActive(
   overrides: Partial<TasmiActiveViewProps> = {},
 ): string {
   return renderToStaticMarkup(
-    <TasmiActiveView
-      errorMsg={null}
-      hint={null}
-      sessionMode="practice"
-      streamMode="live"
-      status="listening"
-      expectedText={EXPECTED_TEXT}
-      followIndex={-1}
-      tentativeFollowIndex={null}
-      errorPositions={new Set()}
-      tentativeErrorPositions={new Set()}
-      progress={0}
-      onStop={vi.fn()}
-      onCancel={vi.fn()}
-      {...overrides}
-    />,
+    <NextIntlClientProvider locale="ms" messages={messages}>
+      <TasmiActiveView
+        errorMsg={null}
+        hint={null}
+        sessionMode="practice"
+        streamMode="live"
+        status="listening"
+        expectedText={EXPECTED_TEXT}
+        followIndex={-1}
+        tentativeFollowIndex={null}
+        errorPositions={new Set()}
+        tentativeErrorPositions={new Set()}
+        progress={0}
+        onStop={vi.fn()}
+        onCancel={vi.fn()}
+        {...overrides}
+      />
+    </NextIntlClientProvider>,
   );
 }
 
@@ -59,7 +63,9 @@ describe("TasmiActiveView session-mode integrity", () => {
 describe("TasmiBusyView", () => {
   it("explains that capacity is full without grading the recitation", () => {
     const markup = renderToStaticMarkup(
-      <TasmiBusyView onRetry={vi.fn()} onCancel={vi.fn()} />,
+      <NextIntlClientProvider locale="ms" messages={messages}>
+        <TasmiBusyView onRetry={vi.fn()} onCancel={vi.fn()} />
+      </NextIntlClientProvider>,
     );
 
     expect(markup).toContain("Tasmi&#x27; sedang penuh");

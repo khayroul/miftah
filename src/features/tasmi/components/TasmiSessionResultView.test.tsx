@@ -1,7 +1,9 @@
+import { NextIntlClientProvider } from "next-intl";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import type { TasmiSessionResult } from "../domain/tasmi-session";
 import { TasmiSessionResultView } from "./TasmiSessionResultView";
+import messages from "../../../../messages/ms.json";
 
 const RESULT: TasmiSessionResult = {
   totalWords: 20,
@@ -16,12 +18,14 @@ function renderResult(
   overrides: Partial<Parameters<typeof TasmiSessionResultView>[0]> = {},
 ): string {
   return renderToStaticMarkup(
-    <TasmiSessionResultView
-      result={RESULT}
-      onRetry={vi.fn()}
-      onSave={vi.fn()}
-      {...overrides}
-    />,
+    <NextIntlClientProvider locale="ms" messages={messages}>
+      <TasmiSessionResultView
+        result={RESULT}
+        onRetry={vi.fn()}
+        onSave={vi.fn()}
+        {...overrides}
+      />
+    </NextIntlClientProvider>,
   );
 }
 

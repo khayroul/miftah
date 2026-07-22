@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { TasmiTextFollow } from "./TasmiTextFollow";
 
 export type TasmiStatus =
@@ -19,57 +21,46 @@ export type TasmiStatus =
 export type TasmiStreamMode = "connecting" | "live" | "fallback";
 export type TasmiSessionMode = "practice" | "exam";
 
-const STATUS_LABELS: Record<TasmiStatus, string> = {
-  checking: "Menyemak pelayan tasmi'...",
-  intro: "Sedia untuk mula",
-  busy: "Tasmi' sedang penuh",
-  unavailable: "Pelayan tidak tersedia",
-  idle: "Sedia untuk mula",
-  ready: "Menyediakan mikrofon...",
-  prompt: "Dengar ayat permulaan",
-  listening: "Saya sedang mendengar",
-  processing: "Sebentar, saya sedang menyemak",
-  error: "Ada bahagian yang perlu diperbetulkan",
-  talqin: "Saya bantu dengan tiga perkataan",
-  complete: "Bacaan selesai",
-};
+type SessionViewsTranslator = (key: string, values?: Record<string, string | number>) => string;
 
-const STATUS_DESCRIPTIONS: Partial<Record<TasmiStatus, string>> = {
-  ready: "Kekal di halaman ini sementara mikrofon diaktifkan.",
-  prompt: "Selepas audio berhenti, teruskan bacaan tanpa menekan apa-apa.",
-  listening: "Baca secara semula jadi. Saya akan mengikuti bacaan anda.",
-  processing: "Bacaan anda sudah diterima dan sedang diperiksa.",
-  error: "Ulang dari bahagian terakhir yang betul, kemudian teruskan.",
-  talqin: "Dengar panduan, kemudian sambung sendiri.",
-  complete: "Mikrofon telah dihentikan.",
-};
+// Statuses with a "statusDescription.<status>" key — mirrors the old
+// STATUS_DESCRIPTIONS Partial<Record<...>> shape without embedding text here.
+const STATUSES_WITH_DESCRIPTION = new Set<TasmiStatus>([
+  "ready", "prompt", "listening", "processing", "error", "talqin", "complete",
+]);
 
-function getStatusLabel(status: TasmiStatus, sessionMode: TasmiSessionMode): string {
+function getStatusLabel(
+  status: TasmiStatus,
+  sessionMode: TasmiSessionMode,
+  t: SessionViewsTranslator,
+): string {
   if (sessionMode === "exam" && status === "error") {
-    return STATUS_LABELS.listening;
+    return t("statusLabel.listening");
   }
-  return STATUS_LABELS[status];
+  return t(`statusLabel.${status}`);
 }
 
 function getStatusDescription(
   status: TasmiStatus,
   sessionMode: TasmiSessionMode,
+  t: SessionViewsTranslator,
 ): string | null {
   if (sessionMode === "exam" && status === "error") {
-    return "Teruskan bacaan sehingga tamat. Keputusan akan ditunjukkan selepas sesi.";
+    return t("examErrorDescription");
   }
   if (sessionMode === "exam" && status === "listening") {
-    return "Teruskan bacaan sehingga tamat. Teks dan bantuan kekal disembunyikan.";
+    return t("examListeningDescription");
   }
-  return STATUS_DESCRIPTIONS[status] ?? null;
+  return STATUSES_WITH_DESCRIPTION.has(status) ? t(`statusDescription.${status}`) : null;
 }
 
 export function TasmiCheckingView() {
+  const t = useTranslations("tasmi.sessionViews");
   return (
     <div className="ui-surface flex flex-col items-center gap-4 rounded-3xl p-6">
       <div className="h-3 w-3 animate-pulse rounded-full bg-brand" />
       <p role="status" aria-live="polite" className="text-center text-sm font-semibold text-foreground">
-        {STATUS_LABELS.checking}
+        {t("statusLabel.checking")}
       </p>
     </div>
   );
@@ -81,6 +72,7 @@ interface TasmiBusyViewProps {
 }
 
 export function TasmiBusyView({ onRetry, onCancel }: TasmiBusyViewProps) {
+  const t = useTranslations("tasmi.sessionViews");
   return (
     <div className="ui-surface-solid flex flex-col items-center gap-4 rounded-3xl p-5 sm:p-6">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
@@ -89,9 +81,9 @@ export function TasmiBusyView({ onRetry, onCancel }: TasmiBusyViewProps) {
         </svg>
       </div>
       <div className="max-w-sm space-y-2 text-center">
-        <h2 className="text-base font-semibold text-foreground">Tasmi&apos; sedang penuh</h2>
+        <h2 className="text-base font-semibold text-foreground">{t("busyTitle")}</h2>
         <p role="status" aria-live="assertive" className="text-sm leading-6 text-muted">
-          Semua tempat sedang digunakan oleh pembaca lain. Sesi anda belum bermula dan bacaan tidak dinilai. Cuba semula sebentar lagi.
+          {t("busyDescription")}
         </p>
       </div>
       <div className="flex w-full max-w-sm flex-col gap-3 sm:flex-row">
@@ -100,14 +92,14 @@ export function TasmiBusyView({ onRetry, onCancel }: TasmiBusyViewProps) {
           onClick={onRetry}
           className="ui-touch-target flex-1 cursor-pointer rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700"
         >
-          Cuba Semula
+          {t("busyRetryButton")}
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="ui-touch-target flex-1 cursor-pointer rounded-xl border border-border-strong bg-surface-solid px-5 py-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
         >
-          Kembali
+          {t("busyBackButton")}
         </button>
       </div>
     </div>
@@ -127,6 +119,7 @@ export function TasmiUnavailableView({
   onRetry,
   onCancel,
 }: TasmiUnavailableViewProps) {
+  const t = useTranslations("tasmi.sessionViews");
   return (
     <div className="ui-surface-solid flex flex-col items-center gap-4 rounded-3xl p-5 sm:p-6">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
@@ -135,7 +128,7 @@ export function TasmiUnavailableView({
         </svg>
       </div>
       <p role="status" aria-live="assertive" className="max-w-sm text-center text-sm text-rose-700 dark:text-rose-300">
-        {errorMsg ?? "Pelayan tasmi' tidak tersedia sekarang."}
+        {errorMsg ?? t("unavailableFallbackMsg")}
       </p>
       <div className="flex w-full max-w-sm flex-col gap-3 sm:flex-row">
         <button
@@ -143,14 +136,14 @@ export function TasmiUnavailableView({
           onClick={onRetry}
           className="ui-touch-target flex-1 cursor-pointer rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700"
         >
-          {midSessionOutage ? "Sambung Semula" : "Semak Semula"}
+          {midSessionOutage ? t("resumeButton") : t("recheckButton")}
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="ui-touch-target flex-1 cursor-pointer rounded-xl border border-border-strong bg-surface-solid px-5 py-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
         >
-          Keluar
+          {t("unavailableExitButton")}
         </button>
       </div>
     </div>
@@ -174,6 +167,10 @@ export function TasmiIntroView({
   onStart,
   onCancel,
 }: TasmiIntroViewProps) {
+  const t = useTranslations("tasmi.sessionViews");
+  const strong = (chunks: ReactNode) => (
+    <strong className="font-semibold text-foreground">{chunks}</strong>
+  );
   return (
     <div className="ui-surface-solid flex flex-col items-center gap-5 rounded-3xl p-5 sm:p-6">
       {errorMsg ? (
@@ -181,29 +178,29 @@ export function TasmiIntroView({
       ) : null}
       <div className="text-center">
         <p className="ui-eyebrow">
-          {sessionMode === "exam" ? "Tasmi' · Mod Ujian" : "Tasmi' · Mod Latihan"}
+          {sessionMode === "exam" ? t("introEyebrowExam") : t("introEyebrowPractice")}
         </p>
         <h2 className="mt-2 text-xl font-bold text-foreground">
           {sessionMode === "exam"
-            ? "Baca seperti di hadapan guru"
-            : "Saya akan dengar dan membantu"}
+            ? t("introTitleExam")
+            : t("introTitlePractice")}
         </h2>
       </div>
       <ol className="max-w-sm list-decimal space-y-2 pl-5 text-sm leading-6 text-muted">
         {hasStartPrompt ? (
-          <li>Saya akan <span className="font-semibold text-foreground">bacakan ayat permulaan</span>. Dengar, kemudian sambung hingga habis halaman.</li>
+          <li>{t.rich("introStepStartPrompt", { strong })}</li>
         ) : (
-          <li>Baca dengan suara yang jelas, dari perkataan pertama.</li>
+          <li>{t("introStepNoPrompt")}</li>
         )}
-        <li>Baca secara semula jadi dan berterusan. Tidak perlu berhenti selepas setiap ayat.</li>
+        <li>{t("introStepContinuous")}</li>
         {talqinEnabled ? (
-          <li>Jika tersilap atau tersekat, saya akan <span className="font-semibold text-foreground">beri talqin tiga perkataan</span>, kemudian tunggu anda menyambung.</li>
+          <li>{t.rich("introStepTalqinEnabled", { strong })}</li>
         ) : (
-          <li><span className="font-semibold text-foreground">Teks dan bantuan disembunyikan.</span> Kesilapan hanya ditunjukkan dalam keputusan selepas sesi.</li>
+          <li>{t.rich("introStepTalqinDisabled", { strong })}</li>
         )}
       </ol>
       <p className="max-w-sm text-center text-xs leading-5 text-muted">
-        Audio diproses sementara semasa sesi ini dan tidak disimpan oleh pelayan tasmi&apos;.
+        {t("audioPrivacyNote")}
       </p>
       <div className="flex w-full max-w-sm flex-col gap-3 sm:flex-row">
         <button
@@ -211,14 +208,14 @@ export function TasmiIntroView({
           onClick={onStart}
           className="ui-touch-target flex-1 cursor-pointer rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700"
         >
-          {sessionMode === "exam" ? "Mula Ujian" : "Mula Tasmi'"}
+          {sessionMode === "exam" ? t("startButtonExam") : t("startButtonPractice")}
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="ui-touch-target flex-1 cursor-pointer rounded-xl border border-border-strong bg-surface-solid px-5 py-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
         >
-          Kembali
+          {t("introBackButton")}
         </button>
       </div>
     </div>
@@ -256,7 +253,8 @@ export function TasmiActiveView({
   onStop,
   onCancel,
 }: TasmiActiveViewProps) {
-  const statusDescription = getStatusDescription(status, sessionMode);
+  const t = useTranslations("tasmi.sessionViews");
+  const statusDescription = getStatusDescription(status, sessionMode, t);
   const progressPercent = Math.round(progress * 100);
 
   return (
@@ -288,10 +286,9 @@ export function TasmiActiveView({
               <path strokeLinecap="round" d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v4m-3 0h6" />
             </svg>
           </div>
-          <p className="font-semibold text-foreground">Teks disembunyikan semasa ujian</p>
+          <p className="font-semibold text-foreground">{t("examHiddenTitle")}</p>
           <p className="max-w-xs text-sm leading-6 text-muted">
-            Teruskan dari ayat yang dibacakan. Bantuan dan tanda kesilapan hanya
-            muncul selepas sesi tamat.
+            {t("examHiddenDescription")}
           </p>
         </div>
       )}
@@ -306,10 +303,10 @@ export function TasmiActiveView({
         }`}
       >
         {streamMode === "connecting"
-          ? "Menghubungkan maklum balas masa nyata..."
+          ? t("streamConnecting")
           : streamMode === "live"
-            ? "Maklum balas masa nyata aktif"
-            : "Masih mendengar — semakan mungkin mengambil sedikit masa"}
+            ? t("streamLive")
+            : t("streamFallback")}
       </p>
 
       <div
@@ -341,7 +338,7 @@ export function TasmiActiveView({
           />
           <div>
             <p className="text-sm font-bold text-foreground">
-              {getStatusLabel(status, sessionMode)}
+              {getStatusLabel(status, sessionMode, t)}
             </p>
             {statusDescription ? (
               <p className="mt-1 text-sm leading-5 text-muted">{statusDescription}</p>
@@ -352,12 +349,12 @@ export function TasmiActiveView({
 
       <div className="w-full max-w-md">
         <div className="mb-2 flex items-center justify-between text-xs font-medium text-muted">
-          <span>Kemajuan bacaan</span>
+          <span>{t("progressLabel")}</span>
           <span>{progressPercent}%</span>
         </div>
         <div
           role="progressbar"
-          aria-label="Kemajuan bacaan Tasmi'"
+          aria-label={t("progressAriaLabel")}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={progressPercent}
@@ -377,7 +374,7 @@ export function TasmiActiveView({
             onClick={onStop}
             className="ui-touch-target flex-1 cursor-pointer rounded-xl bg-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-rose-700"
           >
-            Tamatkan Sesi
+            {t("stopButton")}
           </button>
         ) : null}
         <button
@@ -385,7 +382,7 @@ export function TasmiActiveView({
           onClick={onCancel}
           className="ui-touch-target flex-1 cursor-pointer rounded-xl border border-border-strong bg-surface-solid px-5 py-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
         >
-          Keluar
+          {t("activeExitButton")}
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
+import { useTranslations } from "next-intl";
 
 interface HifzTasmiOverlayProps {
   totalLines: number;
@@ -15,6 +16,7 @@ export function HifzTasmiOverlay({
   onTap,
   onRevealTo,
 }: HifzTasmiOverlayProps) {
+  const t = useTranslations("tasmi.overlay");
   const safeTotal = Math.max(totalLines, 1);
   const revealPct = (revealedLines / safeTotal) * 100;
 
@@ -66,7 +68,7 @@ export function HifzTasmiOverlay({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       className="absolute inset-0 z-30 cursor-pointer touch-none rounded-2xl focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-teal-500"
-      aria-label="Leret ke bawah atau ketik untuk membuka teks. Leret ke atas untuk menutup semula."
+      aria-label={t("ariaLabel")}
     >
       {/* Dark overlay — shrinks from top as lines are revealed */}
       <div
@@ -106,13 +108,13 @@ export function HifzTasmiOverlay({
             </svg>
           </div>
           <p className="text-lg font-semibold text-white/90">
-            Leret ke bawah atau ketik untuk buka
+            {t("tapPrompt")}
           </p>
           <p className="text-sm text-white/60">
-            Baca dari ingatan, kemudian semak
+            {t("recallHint")}
           </p>
           <p className="mt-1 text-xs text-white/50">
-            Baris {revealedLines}/{totalLines}
+            {t("lineProgress", { revealed: revealedLines, total: totalLines })}
           </p>
         </div>
       </div>
