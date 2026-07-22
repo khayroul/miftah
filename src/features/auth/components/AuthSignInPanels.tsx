@@ -1,5 +1,6 @@
 import Link from "next/link";
-import type { FormEventHandler } from "react";
+import { useTranslations } from "next-intl";
+import type { FormEventHandler, ReactNode } from "react";
 import { formatCooldownDuration } from "../domain/navigation";
 
 export type SignInMode = "password" | "magic-link";
@@ -87,12 +88,18 @@ export function AuthSignInPanel({
   onModeChange: (mode: SignInMode) => void;
   onSubmit: FormEventHandler<HTMLFormElement>;
 }) {
+  const t = useTranslations("auth.widget");
+  const tCommon = useTranslations("auth.common");
+  const bold = (chunks: ReactNode) => (
+    <span className="font-medium">{chunks}</span>
+  );
+
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
       <div className="grid grid-cols-2 gap-2 rounded-2xl border border-stone-200 bg-stone-100 p-1 dark:border-stone-700 dark:bg-stone-800">
         {([
-          ["magic-link", "Pautan Email"],
-          ["password", "Password"],
+          ["magic-link", t("modeMagicLink")],
+          ["password", t("modePassword")],
         ] as const).map(([mode, label]) => (
           <button
             key={mode}
@@ -113,33 +120,33 @@ export function AuthSignInPanel({
 
       <p className="rounded-2xl border border-stone-200/80 bg-stone-50 px-4 py-3 text-sm leading-relaxed text-stone-600 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-300">
         {signInMode === "magic-link"
-          ? "Pilihan paling mudah untuk pengguna baru. Kami akan hantar pautan masuk ke email anda. Jika email itu belum pernah digunakan, akaun baru juga akan disediakan."
-          : "Guna password jika anda sudah pernah tetapkan password untuk akaun ini."}
+          ? t("magicLinkModeDescription")
+          : t("passwordModeDescription")}
       </p>
 
       <label className={LABEL_CLASS}>
-        Email
+        {tCommon("emailLabel")}
         <input
           type="email"
           autoComplete="email"
           value={email}
           onChange={(event) => onEmailChange(event.target.value)}
           className={INPUT_CLASS}
-          placeholder="you@example.com"
+          placeholder={tCommon("emailPlaceholder")}
         />
       </label>
 
       {signInMode === "password" ? (
         <>
           <label className={LABEL_CLASS}>
-            Password
+            {t("passwordLabel")}
             <input
               type="password"
               autoComplete="current-password"
               value={password}
               onChange={(event) => onPasswordChange(event.target.value)}
               className={INPUT_CLASS}
-              placeholder="••••••••"
+              placeholder={t("passwordPlaceholder")}
             />
           </label>
           <div className="text-right">
@@ -147,7 +154,7 @@ export function AuthSignInPanel({
               href={`/auth/forgot-password?next=${encodeURIComponent(nextPath)}`}
               className="text-sm font-medium text-amber-700 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300"
             >
-              Lupa password?
+              {t("forgotPasswordLink")}
             </Link>
           </div>
         </>
@@ -159,35 +166,31 @@ export function AuthSignInPanel({
         className="w-full rounded-2xl bg-amber-600 px-4 py-3 text-sm font-medium text-amber-50 transition hover:bg-amber-500 disabled:opacity-60 dark:bg-amber-500 dark:hover:bg-amber-400"
       >
         {isPending
-          ? "Menghantar..."
+          ? t("signInSubmitSending")
           : isMagicLinkCoolingDown
-            ? `Cuba lagi dalam ${formatCooldownDuration(magicLinkCooldownSeconds)}`
+            ? t("signInSubmitCooldown", {
+                duration: formatCooldownDuration(magicLinkCooldownSeconds),
+              })
             : signInMode === "password"
-              ? "Masuk Dengan Password"
-              : "Hantar Pautan Masuk"}
+              ? t("signInSubmitPassword")
+              : t("signInSubmitMagicLink")}
       </button>
 
       {signInMode === "magic-link" ? (
         <div className="rounded-2xl border border-stone-200/80 bg-stone-50 px-4 py-4 text-sm leading-relaxed text-stone-600 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-300">
           <p className="font-medium text-stone-800 dark:text-stone-100">
-            Langkah seterusnya
+            {t("magicLinkNextStepsTitle")}
           </p>
           <div className="mt-3 space-y-2">
-            <p>
-              Semak <span className="font-medium">Inbox</span>, kemudian lihat{" "}
-              <span className="font-medium">Spam</span> atau{" "}
-              <span className="font-medium">Promotions</span> jika email belum
-              muncul.
-            </p>
+            <p>{t.rich("magicLinkCheckInbox", { b: bold })}</p>
             <p>
               {isMagicLinkCoolingDown
-                ? `Sistem sedang menyejukkan percubaan baharu. Anda boleh cuba lagi dalam ${formatCooldownDuration(magicLinkCooldownSeconds)}.`
-                : "Jika email belum sampai, tunggu sekitar 1-2 minit sebelum cuba semula."}
+                ? t("magicLinkCooldownHint", {
+                    duration: formatCooldownDuration(magicLinkCooldownSeconds),
+                  })
+                : t("magicLinkArrivalHint")}
             </p>
-            <p>
-              Jika anda sudah pernah tetapkan password, tukar ke mod
-              <span className="font-medium"> Password</span> untuk masuk terus.
-            </p>
+            <p>{t.rich("magicLinkSwitchToPasswordHint", { b: bold })}</p>
           </div>
           <div className="mt-4 flex flex-wrap gap-3">
             <button
@@ -195,13 +198,13 @@ export function AuthSignInPanel({
               onClick={() => onModeChange("password")}
               className="rounded-full border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
             >
-              Guna Password
+              {t("switchToPasswordButton")}
             </button>
             <Link
               href={PREVIEW_PATH}
               className="rounded-full border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
             >
-              Lihat Pratonton
+              {t("previewLinkButton")}
             </Link>
           </div>
         </div>
@@ -239,53 +242,64 @@ export function AuthSignUpPanel({
   onConfirmPasswordChange: (value: string) => void;
   onSubmit: FormEventHandler<HTMLFormElement>;
 }) {
+  const t = useTranslations("auth.widget");
+  const tCommon = useTranslations("auth.common");
+  const previewLink = (chunks: ReactNode) => (
+    <Link
+      href={PREVIEW_PATH}
+      className="font-medium text-amber-700 underline dark:text-amber-300"
+    >
+      {chunks}
+    </Link>
+  );
+
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
       <label className={LABEL_CLASS}>
-        Nama Paparan
+        {t("displayNameLabel")}
         <input
           type="text"
           autoComplete="name"
           value={displayName}
           onChange={(event) => onDisplayNameChange(event.target.value)}
           className={INPUT_CLASS}
-          placeholder="Nama anda"
+          placeholder={t("displayNamePlaceholder")}
         />
       </label>
 
       <label className={LABEL_CLASS}>
-        Email
+        {tCommon("emailLabel")}
         <input
           type="email"
           autoComplete="email"
           value={email}
           onChange={(event) => onEmailChange(event.target.value)}
           className={INPUT_CLASS}
-          placeholder="you@example.com"
+          placeholder={tCommon("emailPlaceholder")}
         />
       </label>
 
       <label className={LABEL_CLASS}>
-        Password
+        {t("passwordLabel")}
         <input
           type="password"
           autoComplete="new-password"
           value={password}
           onChange={(event) => onPasswordChange(event.target.value)}
           className={INPUT_CLASS}
-          placeholder="Min. 6 aksara"
+          placeholder={t("newPasswordPlaceholder")}
         />
       </label>
 
       <label className={LABEL_CLASS}>
-        Sahkan Password
+        {t("confirmPasswordLabel")}
         <input
           type="password"
           autoComplete="new-password"
           value={confirmPassword}
           onChange={(event) => onConfirmPasswordChange(event.target.value)}
           className={INPUT_CLASS}
-          placeholder="Ulang password"
+          placeholder={t("confirmPasswordPlaceholder")}
         />
       </label>
 
@@ -294,19 +308,11 @@ export function AuthSignUpPanel({
         disabled={isPending}
         className="w-full rounded-2xl bg-amber-600 px-4 py-3 text-sm font-medium text-amber-50 transition hover:bg-amber-500 disabled:opacity-60 dark:bg-amber-500 dark:hover:bg-amber-400"
       >
-        {isPending ? "Mendaftar..." : "Buat Akaun"}
+        {isPending ? t("signUpSubmitSending") : t("signUpSubmitDefault")}
       </button>
 
       <p className="rounded-2xl border border-stone-200/80 bg-stone-50 px-4 py-3 text-sm leading-relaxed text-stone-600 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-300">
-        Selepas daftar, semak email anda untuk pengesahan. Jika anda hanya mahu
-        melihat rupa dashboard dahulu, anda masih boleh buka{" "}
-        <Link
-          href={PREVIEW_PATH}
-          className="font-medium text-amber-700 underline dark:text-amber-300"
-        >
-          pratonton
-        </Link>
-        .
+        {t.rich("signUpFooterNote", { link: previewLink })}
       </p>
 
       <AuthMessages feedback={feedback} errorMessage={errorMessage} />

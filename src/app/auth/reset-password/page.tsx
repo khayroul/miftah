@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Suspense, useEffect, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/data/repositories/auth-browser";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 function ResetPasswordForm() {
+  const t = useTranslations("auth.resetPasswordPage");
+  const tWidget = useTranslations("auth.widget");
+  const tErrors = useTranslations("auth.errors");
   const searchParams = useSearchParams();
   const hasError = searchParams.get("error") === "callback";
 
@@ -14,9 +18,7 @@ function ResetPasswordForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(
-    hasError
-      ? "Pautan reset tidak sah atau sudah tamat tempoh. Minta pautan baru."
-      : null,
+    hasError ? t("errorExpiredLink") : null,
   );
   const [isPending, startTransition] = useTransition();
   const [hasSession, setHasSession] = useState(false);
@@ -49,11 +51,11 @@ function ResetPasswordForm() {
     event.preventDefault();
 
     if (password.length < 6) {
-      setErrorMessage("Password sekurang-kurangnya 6 aksara.");
+      setErrorMessage(tErrors("passwordTooShort"));
       return;
     }
     if (password !== confirmPassword) {
-      setErrorMessage("Password tidak sepadan.");
+      setErrorMessage(tErrors("passwordMismatch"));
       return;
     }
 
@@ -61,13 +63,13 @@ function ResetPasswordForm() {
       const supabase = createSupabaseBrowserClient();
       void supabase.auth.updateUser({ password }).then(({ error }) => {
         if (error) {
-          setErrorMessage(`Gagal tukar password: ${error.message}`);
+          setErrorMessage(t("errorWithMessage", { message: error.message }));
           setFeedback(null);
           return;
         }
 
         setErrorMessage(null);
-        setFeedback("Password berjaya ditukar! Anda boleh masuk sekarang.");
+        setFeedback(t("feedback"));
       });
     });
   }
@@ -87,7 +89,7 @@ function ResetPasswordForm() {
             href="/auth/sign-in"
             className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
           >
-            &larr; Masuk
+            &larr; {t("backToSignIn")}
           </Link>
           <ThemeToggle />
         </header>
@@ -95,14 +97,14 @@ function ResetPasswordForm() {
         <section className="mx-auto w-full max-w-2xl">
           <div className="rounded-[32px] border border-stone-200/90 bg-white/82 p-6 shadow-[0_28px_90px_-48px_rgba(28,25,23,0.55)] backdrop-blur-sm sm:p-8 dark:border-stone-700 dark:bg-stone-900/78">
             <div className="inline-flex items-center rounded-full border border-amber-900/15 bg-amber-100/75 px-3 py-1 text-xs font-medium tracking-wide text-amber-900 dark:border-amber-300/20 dark:bg-amber-900/35 dark:text-amber-100">
-              Reset Password
+              {t("badge")}
             </div>
 
             <h1 className="mt-6 text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-50">
-              Tetapkan password baru.
+              {t("title")}
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-stone-600 dark:text-stone-300">
-              Masukkan password baru untuk akaun anda.
+              {t("description")}
             </p>
 
             {feedback ? (
@@ -114,32 +116,32 @@ function ResetPasswordForm() {
                   href="/auth/sign-in"
                   className="inline-flex rounded-2xl bg-amber-600 px-6 py-3 text-sm font-medium text-amber-50 transition hover:bg-amber-500 dark:bg-amber-500 dark:hover:bg-amber-400"
                 >
-                  Masuk Sekarang
+                  {t("signInNowButton")}
                 </Link>
               </div>
             ) : hasSession ? (
               <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
                 <label className={labelCls}>
-                  Password Baru
+                  {t("newPasswordLabel")}
                   <input
                     type="password"
                     autoComplete="new-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className={inputCls}
-                    placeholder="Min. 6 aksara"
+                    placeholder={tWidget("newPasswordPlaceholder")}
                   />
                 </label>
 
                 <label className={labelCls}>
-                  Sahkan Password Baru
+                  {t("confirmNewPasswordLabel")}
                   <input
                     type="password"
                     autoComplete="new-password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className={inputCls}
-                    placeholder="Ulang password"
+                    placeholder={tWidget("confirmPasswordPlaceholder")}
                   />
                 </label>
 
@@ -148,7 +150,7 @@ function ResetPasswordForm() {
                   disabled={isPending}
                   className="w-full rounded-2xl bg-amber-600 px-4 py-3 text-sm font-medium text-amber-50 transition hover:bg-amber-500 disabled:opacity-60 dark:bg-amber-500 dark:hover:bg-amber-400"
                 >
-                  {isPending ? "Menukar..." : "Tukar Password"}
+                  {isPending ? t("submitSending") : t("submitDefault")}
                 </button>
 
                 {errorMessage ? (
@@ -165,14 +167,14 @@ function ResetPasswordForm() {
                   </p>
                 ) : (
                   <p className="text-sm text-stone-600 dark:text-stone-300">
-                    Sedang memproses pautan reset...
+                    {t("processingMessage")}
                   </p>
                 )}
                 <Link
                   href="/auth/forgot-password"
                   className="inline-flex rounded-2xl border border-stone-300 px-6 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
                 >
-                  Minta Pautan Baru
+                  {t("requestNewLinkButton")}
                 </Link>
               </div>
             )}

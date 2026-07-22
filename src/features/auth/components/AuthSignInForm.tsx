@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 import {
   buildMagicLinkPath,
@@ -18,38 +19,51 @@ import {
 
 type AuthTab = "sign-in" | "sign-up";
 
+/** Narrow shape of the `auth.errors` translator — mirrors the manual-translator-type
+ * precedent in `src/features/hifz/domain/exercise-labels.ts` (RatingLabelTranslator). */
+type ErrorTranslator = (
+  key: string,
+  values?: Record<string, string | number>,
+) => string;
+
 const MAGIC_LINK_COOLDOWN_STORAGE_KEY = "miftah.auth.magic-link-cooldown-until";
 
 function buildEmailAuthRedirectUrl(nextPath: string): string {
   return `${window.location.origin}${buildMagicLinkPath(nextPath)}`;
 }
 
-function formatMagicLinkError(error: AuthErrorLike | null): string {
+function formatMagicLinkError(
+  error: AuthErrorLike | null,
+  t: ErrorTranslator,
+): string {
   if (!error) {
-    return "Kami belum dapat hantar pautan masuk sekarang.";
+    return t("magicLinkGenericError");
   }
 
   if (error.code === "email_address_invalid") {
-    return "Alamat email nampak tidak sah. Semak semula dan cuba lagi.";
+    return t("magicLinkInvalidEmailError");
   }
 
   if (error.message) {
-    return `Kami belum dapat hantar pautan masuk: ${error.message}`;
+    return t("magicLinkErrorWithMessage", { message: error.message });
   }
 
-  return "Kami belum dapat hantar pautan masuk sekarang.";
+  return t("magicLinkGenericError");
 }
 
-function formatPasswordError(error: AuthErrorLike | null): string {
+function formatPasswordError(
+  error: AuthErrorLike | null,
+  t: ErrorTranslator,
+): string {
   if (error?.message === "Invalid login credentials") {
-    return "Email atau password tidak sepadan.";
+    return t("passwordInvalidCredentials");
   }
 
   if (error?.message) {
-    return `Masuk dengan password belum berjaya: ${error.message}`;
+    return t("passwordErrorWithMessage", { message: error.message });
   }
 
-  return "Masuk dengan password belum berjaya. Cuba lagi sebentar lagi.";
+  return t("passwordGenericError");
 }
 
 export function AuthSignInForm({
@@ -57,6 +71,8 @@ export function AuthSignInForm({
 }: {
   nextPath: string;
 }) {
+  const t = useTranslations("auth.widget");
+  const tErrors = useTranslations("auth.errors");
   const [tab, setTab] = useState<AuthTab>("sign-in");
   const [signInMode, setSignInMode] = useState<SignInMode>("magic-link");
 
@@ -174,19 +190,21 @@ export function AuthSignInForm({
     event.preventDefault();
 
     if (!email.trim()) {
-      setErrorMessage("Masukkan email dahulu.");
+      setErrorMessage(tErrors("enterEmailFirst"));
       return;
     }
 
     if (signInMode === "password" && !password) {
-      setErrorMessage("Masukkan password dahulu.");
+      setErrorMessage(tErrors("enterPasswordFirst"));
       return;
     }
 
     if (signInMode === "magic-link" && isMagicLinkCoolingDown) {
       setFeedback(null);
       setErrorMessage(
-        `Tunggu ${formatCooldownDuration(magicLinkCooldownSeconds)} lagi sebelum minta pautan baru.`,
+        tErrors("magicLinkCooldownWait", {
+          duration: formatCooldownDuration(magicLinkCooldownSeconds),
+        }),
       );
       return;
     }
@@ -199,7 +217,7 @@ export function AuthSignInForm({
           .signInWithPassword({ email: email.trim(), password })
           .then(({ error }) => {
             if (error) {
-              setErrorMessage(formatPasswordError(error));
+              setErrorMessage(formatPasswordError(error, tErrors));
               setFeedback(null);
               return;
             }
@@ -220,10 +238,12 @@ export function AuthSignInForm({
               if (cooldownSeconds !== null) {
                 startMagicLinkCooldown(cooldownSeconds);
                 setErrorMessage(
-                  `Terlalu banyak percubaan sebentar tadi. Cuba lagi dalam ${formatCooldownDuration(cooldownSeconds)}, atau guna password jika akaun anda sudah ada.`,
+                  tErrors("magicLinkRateLimited", {
+                    duration: formatCooldownDuration(cooldownSeconds),
+                  }),
                 );
               } else {
-                setErrorMessage(formatMagicLinkError(error));
+                setErrorMessage(formatMagicLinkError(error, tErrors));
               }
               setFeedback(null);
               return;
@@ -231,9 +251,7 @@ export function AuthSignInForm({
 
             clearMagicLinkCooldown();
             setErrorMessage(null);
-            setFeedback(
-              "Pautan masuk sudah dihantar. Semak Inbox, Spam, atau Promotions, kemudian tekan pautan itu untuk masuk ke Miftah.",
-            );
+            setFeedback(tErrors("magicLinkSentFeedback"));
           });
       }
     });
@@ -244,19 +262,19 @@ export function AuthSignInForm({
     event.preventDefault();
 
     if (!displayName.trim()) {
-      setErrorMessage("Masukkan nama paparan anda.");
+      setErrorMessage(tErrors("enterDisplayName"));
       return;
     }
     if (!email.trim()) {
-      setErrorMessage("Masukkan email anda.");
+      setErrorMessage(tErrors("enterEmail"));
       return;
     }
     if (password.length < 6) {
-      setErrorMessage("Password sekurang-kurangnya 6 aksara.");
+      setErrorMessage(tErrors("passwordTooShort"));
       return;
     }
     if (password !== confirmPassword) {
-      setErrorMessage("Password tidak sepadan.");
+      setErrorMessage(tErrors("passwordMismatch"));
       return;
     }
 
@@ -274,7 +292,7 @@ export function AuthSignInForm({
         })
         .then(({ data, error }) => {
           if (error) {
-            setErrorMessage(`Gagal daftar: ${error.message}`);
+            setErrorMessage(tErrors("signUpFailed", { message: error.message }));
             setFeedback(null);
             return;
           }
@@ -282,9 +300,7 @@ export function AuthSignInForm({
           // If email confirmation is required, user will be null
           if (!data.session) {
             setErrorMessage(null);
-            setFeedback(
-              "Akaun berjaya dicipta! Semak email anda untuk sahkan akaun, kemudian sign in.",
-            );
+            setFeedback(tErrors("signUpConfirmEmailFeedback"));
             return;
           }
 
@@ -304,32 +320,32 @@ export function AuthSignInForm({
         className="flex w-full items-center justify-center gap-3 rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
       >
         <GoogleIcon />
-        Masuk dengan Google
+        {t("googleSignIn")}
       </button>
 
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-stone-200 dark:bg-stone-700" />
-        <span className="text-xs text-stone-400 dark:text-stone-500">atau</span>
+        <span className="text-xs text-stone-400 dark:text-stone-500">{t("dividerOr")}</span>
         <div className="h-px flex-1 bg-stone-200 dark:bg-stone-700" />
       </div>
 
       {/* Tab switcher */}
       <div className="flex rounded-2xl border border-stone-200 bg-stone-100 p-1 dark:border-stone-700 dark:bg-stone-800">
-        {(["sign-in", "sign-up"] as AuthTab[]).map((t) => (
+        {(["sign-in", "sign-up"] as AuthTab[]).map((tabOption) => (
           <button
-            key={t}
+            key={tabOption}
             type="button"
-            onClick={() => switchTab(t)}
+            onClick={() => switchTab(tabOption)}
             className={[
               SEGMENTED_BUTTON_CLASS,
               "flex-1",
-              tab === t
+              tab === tabOption
                 ? "bg-white shadow-sm dark:bg-stone-700 text-stone-900 dark:text-stone-50"
                 : "text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200",
             ].join(" ")}
-            aria-pressed={tab === t}
+            aria-pressed={tab === tabOption}
           >
-            {t === "sign-in" ? "Masuk" : "Daftar"}
+            {tabOption === "sign-in" ? t("tabSignIn") : t("tabSignUp")}
           </button>
         ))}
       </div>
