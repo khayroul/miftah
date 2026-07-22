@@ -9,6 +9,7 @@ import {
   buildTemaRoutePath,
 } from "./offlineBundle";
 import { buildPageAssetUrls, type PwaConfig } from "./downloadConfig";
+import { DownloadError } from "./downloadErrors";
 
 async function fetchAndCache(
   url: string,
@@ -135,7 +136,7 @@ export async function prepareStorage(): Promise<void> {
     const estimate = await navigator.storage.estimate();
     const available = (estimate.quota ?? 0) - (estimate.usage ?? 0);
     if (available < REQUIRED_BYTES) {
-      throw new Error("Ruang storan tidak mencukupi (~260 MB diperlukan)");
+      throw new DownloadError("quota_exceeded");
     }
   }
   if (navigator.storage?.persist) await navigator.storage.persist();

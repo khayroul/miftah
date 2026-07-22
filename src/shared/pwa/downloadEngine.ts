@@ -26,7 +26,9 @@ import {
   type ProgressCallback,
 } from "./downloadPackages";
 import type { OptionalOfflineCacheHooks } from "./optionalCacheHooks";
+import { DownloadError } from "./downloadErrors";
 
+export { DownloadError, type DownloadErrorCode } from "./downloadErrors";
 export {
   buildPageAssetUrls,
   loadPwaConfig,
@@ -127,7 +129,7 @@ async function finalizeDownload(
     appBuildId,
   );
   if (finalStatus.state !== "complete") {
-    throw new Error("Muat turun belum lengkap. Cuba semula semasa sambungan stabil.");
+    throw new DownloadError("incomplete");
   }
 
   markMushafDownloaded(config.cdnAssetVersion, temaDataVersion, appBuildId);
@@ -227,7 +229,7 @@ export async function downloadMushaf(
     );
   } catch (error) {
     if (error instanceof DOMException && error.name === "QuotaExceededError") {
-      throw new Error("Ruang storan tidak mencukupi (~260 MB diperlukan)");
+      throw new DownloadError("quota_exceeded");
     }
     throw error;
   } finally {

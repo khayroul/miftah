@@ -9,6 +9,7 @@ import {
   useState,
   type TouchEvent,
 } from "react";
+import { useTranslations } from "next-intl";
 import {
   calculateHifzRevealStageByAyahKeys,
   getDifficultAyahs,
@@ -49,10 +50,13 @@ interface MushafPageViewProps {
   onPlayableAyahKeysChange?: (ayahKeys: string[] | null) => void;
 }
 
-function revealStageLabel(stage: HifzRevealStage): string {
-  if (stage === 1) return "1/3";
-  if (stage === 2) return "2/3";
-  return "Penuh";
+function revealStageLabel(
+  stage: HifzRevealStage,
+  tHifz: (key: string) => string,
+): string {
+  if (stage === 1) return tHifz("revealStageOneThird");
+  if (stage === 2) return tHifz("revealStageTwoThirds");
+  return tHifz("revealStageFull");
 }
 
 function trackHifzUiEvent(
@@ -90,6 +94,8 @@ export function MushafPageView({
   isAudioDockVisible = false,
   onPlayableAyahKeysChange,
 }: MushafPageViewProps) {
+  const t = useTranslations("mushaf");
+  const tHifz = useTranslations("mushaf.hifz");
   const [selectedWordLocation, setSelectedWordLocation] = useState<string | null>(null);
   const [selectedWordElement, setSelectedWordElement] = useState<HTMLElement | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -282,30 +288,33 @@ export function MushafPageView({
       ? Math.min(hifzTargetStage, 3)
       : null;
   const hifzStages = [
-    { label: "1/3", step: 1 },
-    { label: "2/3", step: 2 },
-    { label: "Penuh", step: 3 },
+    { label: tHifz("revealStageOneThird"), step: 1 },
+    { label: tHifz("revealStageTwoThirds"), step: 2 },
+    { label: tHifz("revealStageFull"), step: 3 },
   ] as const;
   const hifzActionHint = hifzRevealSessionActive
-    ? "Tekan sekali untuk buka bahagian seterusnya."
-    : "Semua ayat pada halaman ini akan ditanda sebagai hafal.";
+    ? tHifz("actionHintSession")
+    : tHifz("actionHintDefault");
   const hifzProgressHint =
     pageAyahKeys.length > 0
-      ? `${memorizedOnPageCount}/${pageAyahKeys.length} ayat sudah ditanda hafal`
-      : "Tiada ayat ditemui pada halaman ini";
+      ? tHifz("progressHint", {
+          completed: memorizedOnPageCount,
+          total: pageAyahKeys.length,
+        })
+      : tHifz("progressHintEmpty");
   const hifzHafalButtonLabel = allAyatMemorized
-    ? "Halaman Sudah Hafal"
+    ? tHifz("buttonAllMemorized")
     : markingMemorized
-      ? "Menyimpan..."
+      ? tHifz("buttonSaving")
       : !canMarkHifz
-        ? "Tiada Ayat Untuk Ditanda"
+        ? tHifz("buttonNoAyahs")
         : !hifzRevealSessionActive
-          ? "Sahkan Hafal Halaman"
+          ? tHifz("buttonConfirmPage")
           : hifzRevealContext?.stage === 1
-            ? "Sahkan Hafal 1/3 Pertama"
+            ? tHifz("buttonConfirmFirstThird")
             : hifzRevealContext?.stage === 2
-              ? "Sahkan Hafal 1/3 Kedua"
-              : "Sahkan Hafal Baki Halaman";
+              ? tHifz("buttonConfirmSecondThird")
+              : tHifz("buttonConfirmRemainder");
 
   // Effects
   useEffect(() => {
@@ -369,12 +378,12 @@ export function MushafPageView({
       setDifficultAyahSet(getDifficultAyahs());
       setDifficultToast(
         nowDifficult
-          ? `${wordRef.ayahKey} ditanda susah`
-          : `${wordRef.ayahKey} tanda dibuang`,
+          ? tHifz("difficultMarked", { ayahKey: wordRef.ayahKey })
+          : tHifz("difficultUnmarked", { ayahKey: wordRef.ayahKey }),
       );
       setTimeout(() => setDifficultToast(null), 2000);
     },
-    [],
+    [tHifz],
   );
 
   const handleMarkHifzMemorized = async () => {
@@ -384,24 +393,24 @@ export function MushafPageView({
     const targetAyahKeys =
       hifzStageTargetAyahKeys.length > 0 ? hifzStageTargetAyahKeys : fallbackKeys;
     if (targetAyahKeys.length === 0) {
-      setMarkMemorizedError("Ayat sasaran tidak dijumpai untuk ditanda hafal.");
+      setMarkMemorizedError(tHifz("noTargetAyahs"));
       return;
     }
     const targetAyahIds = targetAyahKeys
       .map((key) => ayahDetailsMap.get(key)?.id ?? null)
       .filter((v): v is number => typeof v === "number");
     if (targetAyahIds.length === 0) {
-      setMarkMemorizedError("Ayat sasaran tidak dijumpai untuk ditanda hafal.");
+      setMarkMemorizedError(tHifz("noTargetAyahs"));
       return;
     }
 
     const completedStageLabel = !hifzRevealSessionActive
-      ? "Halaman selesai ditanda hafal."
+      ? tHifz("stageCompletePage")
       : hifzRevealContext?.stage === 1
-        ? "1/3 pertama selesai."
+        ? tHifz("stageCompleteFirstThird")
         : hifzRevealContext?.stage === 2
-          ? "2/3 selesai."
-          : "Baki halaman selesai.";
+          ? tHifz("stageCompleteSecondThird")
+          : tHifz("stageCompleteRemainder");
 
     setMarkingMemorized(true);
     setMarkMemorizedError(null);
@@ -419,7 +428,7 @@ export function MushafPageView({
         body: JSON.stringify({ ayahIds: targetAyahIds }),
       });
       if (!response.ok) {
-        setMarkMemorizedError("Gagal simpan status hafal. Cuba lagi.");
+        setMarkMemorizedError(tHifz("saveFailed"));
         trackHifzUiEvent("hafal_fail", {
           pageNumber,
           stage: hifzRevealContext?.stage ?? null,
@@ -439,7 +448,7 @@ export function MushafPageView({
         targetCount: targetAyahIds.length,
       });
     } catch {
-      setMarkMemorizedError("Gagal simpan status hafal. Cuba lagi.");
+      setMarkMemorizedError(tHifz("saveFailed"));
       trackHifzUiEvent("hafal_fail", {
         pageNumber,
         stage: hifzRevealContext?.stage ?? null,
@@ -640,7 +649,7 @@ export function MushafPageView({
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
             </svg>
-            Tip: Klik halaman atau buka Audio untuk dengar bacaan
+            {t("discoveryHint")}
           </div>
         </div>
       )}
@@ -775,7 +784,7 @@ export function MushafPageView({
             />
             <div className="absolute inset-0 bg-stone-950/8 dark:bg-stone-950/25" />
             <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-white/85 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-stone-700 shadow-sm dark:bg-stone-900/80 dark:text-stone-200">
-              Halaman {swipePreviewPage}
+              {t("swipePreviewPage", { page: swipePreviewPage ?? "" })}
             </div>
           </div>
         ) : null}
@@ -826,7 +835,7 @@ export function MushafPageView({
           {/* Hifz reveal boundary label */}
           {hifzRevealContext && revealBoundaryLineIndex != null && (
             <div className="pointer-events-none absolute left-1/2 bottom-4 z-30 -translate-x-1/2 rounded-full border border-teal-500/40 bg-white/95 px-3 py-1 text-xs font-semibold tracking-wide text-teal-800 sm:text-sm dark:border-teal-300/40 dark:bg-stone-900/95 dark:text-teal-200">
-              HIFZ REVEAL · {revealStageLabel(hifzRevealContext.stage)}
+              {t("hifzRevealBadge", { stage: revealStageLabel(hifzRevealContext.stage, tHifz) })}
             </div>
           )}
         </div>
@@ -835,20 +844,19 @@ export function MushafPageView({
       {/* Status text */}
       {mode === "read" ? (
         <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
-          Mod Baca: Leret untuk tukar halaman. <strong>Klik ayat untuk mula bacaan dari situ, atau gunakan butang Audio.</strong>
+          {t.rich("statusTextRead", { strong: (chunks) => <strong>{chunks}</strong> })}
         </p>
       ) : mode === "hifz" && hifzRevealContext && revealBoundaryLineIndex != null ? (
         <p className="text-[15px] text-teal-700 sm:text-base dark:text-teal-300">
-          Hifz reveal aktif: paparan {revealStageLabel(hifzRevealContext.stage)} halaman (sempadan ikut hujung ayat).
+          {t("statusTextHifzWithBoundary", { stage: revealStageLabel(hifzRevealContext.stage, tHifz) })}
         </p>
       ) : mode === "hifz" ? (
         <p className="text-[15px] text-teal-700 sm:text-base dark:text-teal-300">
-          {"Gunakan butang Hafal untuk membuka 1/3 → 2/3 → penuh. "}
-          <strong>Tekan ayat untuk dengar murattal.</strong>
+          {t.rich("statusTextHifzDefault", { strong: (chunks) => <strong>{chunks}</strong> })}
         </p>
       ) : mode === "faham" ? (
         <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
-          Klik perkataan untuk melihat makna segera.
+          {t("statusTextFaham")}
         </p>
       ) : null}
     </section>

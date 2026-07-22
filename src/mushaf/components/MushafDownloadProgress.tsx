@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import {
   DOWNLOAD_PACKAGES,
   TOTAL_ITEMS,
@@ -69,18 +70,19 @@ export function ProgressSummary({
   readonly progress: OfflineBundleProgress;
   readonly compact?: boolean;
 }) {
+  const t = useTranslations("mushaf.download");
   const containerClass = compact
     ? "mt-3 grid gap-2 sm:grid-cols-2"
     : "mt-4 grid gap-2 sm:grid-cols-2";
 
   return (
     <div className={containerClass}>
-      {formatProgressLine("Halaman", progress.images, 604)}
-      {formatProgressLine("Data halaman", progress.data, 1812)}
-      {formatProgressLine("Tema", progress.tema, 114)}
-      {formatProgressLine("Laluan luar talian", progress.routes, 719)}
-      {formatProgressLine("Font Mushaf", progress.fonts, 606)}
-      {formatProgressLine("Shell PWA", progress.shell, 10)}
+      {formatProgressLine(t("progressLabelPages"), progress.images, 604)}
+      {formatProgressLine(t("progressLabelPageData"), progress.data, 1812)}
+      {formatProgressLine(t("progressLabelTema"), progress.tema, 114)}
+      {formatProgressLine(t("progressLabelRoutes"), progress.routes, 719)}
+      {formatProgressLine(t("progressLabelFonts"), progress.fonts, 606)}
+      {formatProgressLine(t("progressLabelShell"), progress.shell, 10)}
     </div>
   );
 }
@@ -96,6 +98,7 @@ export function MushafOfflineReadyStatus({
   readonly onToggle: () => void;
   readonly progress: OfflineBundleProgress;
 }) {
+  const t = useTranslations("mushaf.download");
   return (
     <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top,0px)+4.5rem)] z-40 flex justify-center px-4 sm:justify-end sm:px-6">
       <div className="pointer-events-auto w-full max-w-[22rem] sm:w-auto sm:min-w-[18rem]">
@@ -103,17 +106,17 @@ export function MushafOfflineReadyStatus({
           onClick={onToggle}
           className="inline-flex w-full items-center justify-between gap-2 rounded-full border border-stone-200 bg-white/95 px-4 py-2 text-sm font-medium text-stone-700 shadow-sm backdrop-blur transition hover:bg-white dark:border-stone-700 dark:bg-stone-900/92 dark:text-stone-100 dark:hover:bg-stone-900"
           aria-expanded={expanded}
-          aria-label="Buka atau tutup status luar talian"
+          aria-label={t("statusAriaLabel")}
         >
           <span className="flex min-w-0 items-center gap-2">
             <span
               className="inline-flex h-2.5 w-2.5 rounded-full bg-teal-500"
               aria-hidden
             />
-            <span className="truncate">Luar talian sedia</span>
+            <span className="truncate">{t("readyLabel")}</span>
           </span>
           <span className="shrink-0 text-xs text-stone-500 dark:text-stone-400">
-            {expanded ? "Tutup" : "Butiran"}
+            {expanded ? t("readyToggleClose") : t("readyToggleOpen")}
           </span>
         </button>
 
@@ -121,13 +124,13 @@ export function MushafOfflineReadyStatus({
           <div className="mt-2 rounded-2xl border border-stone-200/80 bg-white/90 p-4 shadow-sm backdrop-blur-sm dark:border-stone-700/50 dark:bg-stone-900/70">
             <div className="flex flex-col gap-3">
               <p className="text-sm text-stone-700 dark:text-stone-200">
-                Semakan ini pastikan fail Mushaf, tema, font, dan laluan PWA sudah ada dalam cache.
+                {t("readyDescription")}
               </p>
               <button
                 onClick={onRefresh}
                 className="inline-flex w-fit items-center rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
               >
-                Semak semula
+                {t("readyRefreshButton")}
               </button>
             </div>
 

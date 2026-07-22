@@ -7,6 +7,7 @@ import {
   useState,
   type TouchEvent,
 } from "react";
+import { useTranslations } from "next-intl";
 import type { MushafLayoutPage } from "@/mushaf/types/mushafLayout";
 import { MushafLivePage, type MushafLiveWordRef } from "@/mushaf/components/MushafLivePage";
 
@@ -35,6 +36,7 @@ export function ReadOnlyMushafPageView({
   onReadyChange,
   activePlaybackAyahKey = null,
 }: ReadOnlyMushafPageViewProps) {
+  const t = useTranslations("mushaf");
   const [isReady, setIsReady] = useState(false);
   const [hintDismissed, setHintDismissed] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -98,7 +100,7 @@ export function ReadOnlyMushafPageView({
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
             </svg>
-            Tip: Klik halaman atau buka Audio untuk dengar bacaan
+            {t("discoveryHint")}
           </div>
         </div>
       ) : null}
@@ -123,7 +125,7 @@ export function ReadOnlyMushafPageView({
       </div>
 
       <p className="text-[15px] text-stone-600 sm:text-base dark:text-stone-300">
-        Mod Baca: Leret untuk tukar halaman. <strong>Klik ayat untuk mula bacaan dari situ, atau gunakan butang Audio.</strong>
+        {t.rich("statusTextRead", { strong: (chunks) => <strong>{chunks}</strong> })}
       </p>
     </section>
   );

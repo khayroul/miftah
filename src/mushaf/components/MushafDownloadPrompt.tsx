@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   type MushafStatus,
   type OfflineBundleProgress,
@@ -11,6 +12,7 @@ import {
   setDownloadStarted,
 } from "@/shared/pwa/download";
 import {
+  DownloadError,
   downloadMushaf,
   getDownloadCheckpointPackage,
   loadPwaConfig,
@@ -30,16 +32,32 @@ type UIState =
   | { readonly kind: "downloading"; readonly progress: MushafDownloadProgress }
   | { readonly kind: "complete" }
   | { readonly kind: "ready"; readonly progress: OfflineBundleProgress }
-  | { readonly kind: "error"; readonly message: string }
+  | { readonly kind: "error"; readonly messageKey: string }
   | { readonly kind: "hidden" };
 
 const TOTAL_TEMA_ITEMS = 114;
+
+/**
+ * Maps a caught error to a `mushaf.download.*` translation key at the call
+ * site's classification boundary. Engines throw coded `DownloadError`s for
+ * known failure modes; everything else (network errors, unexpected throws)
+ * resolves to the caller-supplied generic fallback key so no raw/untranslated
+ * message ever reaches the UI. Resolution to display text happens only at
+ * render time via `t(messageKey)`.
+ */
+function resolveErrorMessageKey(error: unknown, fallbackKey: string): string {
+  if (error instanceof DownloadError) {
+    return error.code === "incomplete" ? "errorIncomplete" : "errorQuotaExceeded";
+  }
+  return fallbackKey;
+}
 
 export function MushafDownloadPrompt({
   optionalCache,
 }: {
   readonly optionalCache?: OptionalOfflineCacheHooks;
 }) {
+  const t = useTranslations("mushaf.download");
   const pathname = usePathname();
   const [ui, setUi] = useState<UIState>({ kind: "loading" });
   const [minimized, setMinimized] = useState(false);
@@ -110,9 +128,7 @@ export function MushafDownloadPrompt({
         );
 
         if (status.state !== "complete") {
-          throw new Error(
-            "Muat turun belum lengkap. Cuba semula semasa sambungan stabil.",
-          );
+          throw new DownloadError("incomplete");
         }
 
         setUi({ kind: "complete" });
@@ -124,9 +140,7 @@ export function MushafDownloadPrompt({
           );
         }, 2200);
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Muat turun gagal";
-        setUi({ kind: "error", message });
+        setUi({ kind: "error", messageKey: resolveErrorMessageKey(error, "errorGeneric") });
       }
     },
     [optionalCache, pathname],
@@ -174,9 +188,8 @@ export function MushafDownloadPrompt({
         setUi({ kind: "hidden" });
       } catch (error) {
         if (cancelled) return;
-        const message =
-          error instanceof Error ? error.message : "Cek luar talian gagal";
-        setUi(pathname === "/" ? { kind: "error", message } : { kind: "hidden" });
+        const messageKey = resolveErrorMessageKey(error, "errorOfflineCheckFailed");
+        setUi(pathname === "/" ? { kind: "error", messageKey } : { kind: "hidden" });
       }
     }
 
@@ -196,9 +209,7 @@ export function MushafDownloadPrompt({
       const config = await loadPwaConfig();
       await startDownload(config);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Muat turun gagal";
-      setUi({ kind: "error", message });
+      setUi({ kind: "error", messageKey: resolveErrorMessageKey(error, "errorGeneric") });
     }
   }, [startDownload]);
 
@@ -225,9 +236,7 @@ export function MushafDownloadPrompt({
       const config = await loadPwaConfig();
       await startDownload(config);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Muat turun gagal";
-      setUi({ kind: "error", message });
+      setUi({ kind: "error", messageKey: resolveErrorMessageKey(error, "errorGeneric") });
     }
   }, [checkStatus, resolveReadyUi, startDownload]);
 
@@ -237,9 +246,7 @@ export function MushafDownloadPrompt({
       const status = await checkStatus();
       setUi(resolveReadyUi(status));
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Cek luar talian gagal";
-      setUi({ kind: "error", message });
+      setUi({ kind: "error", messageKey: resolveErrorMessageKey(error, "errorOfflineCheckFailed") });
     }
   }, [checkStatus, resolveReadyUi]);
 
@@ -259,10 +266,10 @@ export function MushafDownloadPrompt({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-xl">
             <p className="text-sm font-semibold text-amber-950 dark:text-amber-100">
-              Muat turun Mushaf, tema, font, dan laluan PWA untuk bacaan luar talian
+              {t("promptTitle")}
             </p>
             <p className="mt-1 text-sm text-amber-900/90 dark:text-amber-200/90">
-              Status ini semak cache sebenar, bukan hanya flag tempatan.
+              {t("promptSubtitle")}
             </p>
           </div>
           <div className="flex gap-3">
@@ -270,13 +277,13 @@ export function MushafDownloadPrompt({
               onClick={handleStart}
               className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600"
             >
-              Muat turun
+              {t("promptStartButton")}
             </button>
             <button
               onClick={handleDismiss}
               className="rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-600 transition-colors hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
             >
-              Nanti
+              {t("promptLaterButton")}
             </button>
           </div>
         </div>
@@ -292,7 +299,7 @@ export function MushafDownloadPrompt({
         <button
           onClick={() => setMinimized(false)}
           className="fixed bottom-[env(safe-area-inset-bottom,0px)] right-4 z-50 mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-teal-600 text-white shadow-lg"
-          aria-label="Tunjukkan kemajuan muat turun"
+          aria-label={t("minimizedAriaLabel")}
         >
           <span className="text-xs font-bold">
             {Math.round((ui.progress.completedItems / TOTAL_ITEMS) * 100)}%
@@ -310,12 +317,16 @@ export function MushafDownloadPrompt({
         aria-valuemin={0}
         aria-valuenow={ui.progress.completedItems}
         aria-valuemax={TOTAL_ITEMS}
-        aria-label="Memuat turun data Miftah"
+        aria-label={t("progressBarAriaLabel")}
       >
         <div className="mx-auto max-w-md">
           <div className="mb-1 flex items-center justify-between text-[11px] text-stone-600 dark:text-stone-300">
             <span className="font-medium">
-              Pakej {ui.progress.packageIndex}/{ui.progress.packageCount}: {ui.progress.packageLabel}
+              {t("packageProgressLabel", {
+                index: ui.progress.packageIndex,
+                count: ui.progress.packageCount,
+                label: ui.progress.packageLabel,
+              })}
             </span>
             <span>
               {ui.progress.packageCompletedItems}/{ui.progress.packageTotalItems}
@@ -336,7 +347,7 @@ export function MushafDownloadPrompt({
             <button
               onClick={handleMinimize}
               className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
-              aria-label="Kecilkan bar kemajuan"
+              aria-label={t("minimizeAriaLabel")}
             >
               ×
             </button>
@@ -350,7 +361,7 @@ export function MushafDownloadPrompt({
     return (
       <div className="fixed inset-x-0 bottom-[env(safe-area-inset-bottom,0px)] z-50 border-t border-teal-200 bg-teal-50/95 px-4 py-2 text-center backdrop-blur-sm dark:border-teal-800 dark:bg-teal-950/95">
         <span className="text-sm text-teal-700 dark:text-teal-300">
-          Mushaf, tema, font, dan laluan luar talian telah disimpan
+          {t("completeMessage")}
         </span>
       </div>
     );
@@ -375,21 +386,21 @@ export function MushafDownloadPrompt({
     <div className="fixed inset-x-0 bottom-[env(safe-area-inset-bottom,0px)] z-50 border-t border-red-200 bg-red-50/95 px-4 py-2 backdrop-blur-sm dark:border-red-800 dark:bg-red-950/95">
       <div className="mx-auto flex max-w-3xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <span className="text-sm text-red-700 dark:text-red-300">
-          {ui.message}
+          {t(ui.messageKey)}
         </span>
         <div className="flex gap-2">
           <button
             onClick={handleRetry}
             className="rounded-lg bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
           >
-            Cuba semula
+            {t("retryButton")}
           </button>
           {pathname === "/" ? (
             <button
               onClick={handleRefreshStatus}
               className="rounded-lg border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
             >
-              Semak status
+              {t("checkStatusButton")}
             </button>
           ) : null}
         </div>
