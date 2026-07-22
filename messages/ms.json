@@ -192,6 +192,205 @@
       "chipAudioRepeat": "Audio repeat"
     }
   },
+  "read": {
+    "breadcrumb": {
+      "ariaLabel": "Breadcrumb"
+    },
+    "page": {
+      "breadcrumbMushaf": "Mushaf p.{page}",
+      "breadcrumbRead": "Baca p.{page}",
+      "badgeNewMemorize": "Hafal Baru",
+      "badgeReviewMemorize": "Uji Hafalan",
+      "badgeTebuk": "Tebuk",
+      "badgeUnveil": "Buka Tabir",
+      "badgeNewSabak": "BARU · SABAK · Mushaf terbuka",
+      "badgeTestMemoryHint": "UJI INGATAN · Petunjuk kata pertama",
+      "newFlowEyebrow": "Aliran Baru",
+      "newFlowDescription": "Lihat mushaf penuh, dengar bacaan, ulang beberapa kali, kemudian semak tanpa melihat.",
+      "reviewFlowEyebrow": "Aliran Uji Hafalan",
+      "reviewFlowDescription": "Mulakan tanpa melihat, guna kata pembuka bila perlu, dan buka reveal 1/3 hanya jika tersangkut.",
+      "surahPrefix": "Surah",
+      "subtitle": "Surah {surah} • Halaman {page} / 604"
+    },
+    "hifzOverlays": {
+      "signInButton": "Log Masuk",
+      "backToHifzButton": "Kembali ke Hafal",
+      "resumingReviewSession": "Menyambung sesi uji hafalan...",
+      "rebuildingReviewMessage": "Kami sedang bina semula susunan halaman semasa.",
+      "sessionStalledTitle": "Sesi tergendala",
+      "resumingMemorizeSession": "Menyambung sesi hafalan...",
+      "rebuildingMemorizeMessage": "Kami sedang bina semula chunk dan susunan halaman semasa.",
+      "mushafPageAlt": "Mushaf halaman {page}"
+    },
+    "jumpControls": {
+      "loadFailed": "Senarai surah dan juz belum dapat dimuatkan.",
+      "title": "Lompat Ke",
+      "pageRangeError": "Halaman mesti antara 1 hingga 604.",
+      "pageLabel": "Halaman",
+      "openButton": "Buka",
+      "surahListLoadingNotice": "Senarai surah sedang dimuatkan.",
+      "surahRangeError": "Surah mesti antara 1 hingga 114.",
+      "surahPageNotFound": "Tidak jumpa halaman untuk surah itu.",
+      "surahLabel": "Surah",
+      "surahListLoadingOption": "Memuatkan senarai surah...",
+      "juzListLoadingNotice": "Senarai juz sedang dimuatkan.",
+      "juzRangeError": "Juz mesti antara 1 hingga 30.",
+      "juzPageNotFound": "Tidak jumpa halaman untuk juz itu.",
+      "juzLabel": "Juz",
+      "juzListLoadingOption": "Memuatkan senarai juz...",
+      "juzOptionLabel": "Juz {juz} (p. {page})"
+    },
+    "modeTools": {
+      "audioOpenLabel": "Audio Terbuka",
+      "audioLabel": "Audio",
+      "closePageButton": "Tutup Halaman",
+      "choosePageButton": "Pilih Halaman",
+      "thirdsRevealActive": "Paparan 1/3 aktif",
+      "thirdsRevealInactive": "Paparan 1/3 tidak aktif"
+    },
+    "pageCanvas": {
+      "jumpSheetTitle": "Lompat di luar mushaf",
+      "jumpSheetDescription": "Pilih halaman, surah, atau juz tanpa menyesakkan bacaan.",
+      "closeButton": "Tutup",
+      "nextPageAria": "Halaman Seterusnya",
+      "prevPageAria": "Halaman Sebelum",
+      "hiddenMushafHint": "Cuba baca tanpa melihat"
+    },
+    "sessionActions": {
+      "continueReadingLink": "Sambung Baca"
+    },
+    "hifzQueue": {
+      "queueChangedError": "Sesi hafalan semasa sudah berubah. Kembali ke Hafal untuk buka semula susunan hari ini.",
+      "signInRequiredError": "Sesi hafalan perlukan akaun aktif. Log masuk dahulu kemudian buka semula dari Hafal.",
+      "recoveryFailedError": "Sesi hafalan tak dapat dipulihkan sekarang. Kembali ke Hafal dan cuba buka semula."
+    },
+    "toolsPage": {
+      "backToMushaf": "← Kembali ke Mushaf",
+      "eyebrow": "Utiliti Baca",
+      "heading": "Lompat dan audio berada di luar mushaf.",
+      "description": "Halaman baca kekal bersih. Gunakan ruang ini untuk lompat ke halaman, surah, atau juz, kemudian jalankan audio tanpa mengganggu permukaan mushaf.",
+      "pageLabel": "Halaman",
+      "currentSurahLabel": "Surah semasa",
+      "surahFallbackValue": "Surah {id}",
+      "currentJuzLabel": "Juz semasa",
+      "juzValue": "Juz {juz}",
+      "relatedPathsLabel": "Laluan berkaitan",
+      "continueReadingLink": "Sambung Baca",
+      "openThemeLink": "Buka Tema",
+      "enterFahamLink": "Masuk Faham",
+      "openHifzLink": "Buka Hafal"
+    },
+    "toolsAudio": {
+      "audioLabel": "Audio",
+      "noAudioUrl": "Tiada audio URL untuk ayat pada halaman ini.",
+      "repeatUnlimited": "Ulang ayat semasa tanpa henti",
+      "repeatsRemaining": "{count} ulangan lagi",
+      "noRepeatsPending": "Tiada ulangan tertunda",
+      "rangeStatusFormat": "{start} -> {end} ({count} ayat)",
+      "nowPlaying": "Sedang dimainkan: {label}",
+      "noBmTranslation": "Tiada terjemahan BM",
+      "prevAyah": "Ayat Sebelum",
+      "pauseLabel": "Jeda",
+      "playLabel": "Main",
+      "nextAyah": "Ayat Seterusnya",
+      "repeatInfinite": "∞ (ulang)",
+      "speedLabel": "Kelajuan",
+      "defaultRepeatLabel": "Ulangan asal",
+      "loopSelectedRangeLabel": "Ulang julat pilihan",
+      "rangeStartLabel": "Mula Julat",
+      "rangeEndLabel": "Akhir Julat",
+      "activeRangeLabel": "Julat aktif: {status}",
+      "perAyahRepeatLabel": "Ulangan Setiap Ayat",
+      "resetRangeButton": "Tetapkan Semula Julat Kepada Ulangan Asal"
+    },
+    "audioDock": {
+      "rangePreset": {
+        "page": "Halaman",
+        "surah": "Surah",
+        "juz": "Juz"
+      },
+      "rangePresetShort": {
+        "page": "Hlm",
+        "surah": "Surah",
+        "juz": "Juz"
+      },
+      "repeat": {
+        "unlimited": "ulang tanpa henti",
+        "count": "{count} kali"
+      },
+      "pauseAudioAria": "Jeda audio",
+      "playAudioAria": "Mainkan audio",
+      "nextVerseAria": "Ayat seterusnya",
+      "changeRangeAria": "Tukar tetapan julat",
+      "rangeButtonLabel": "Julat {preset}",
+      "changeSpeedAria": "Tukar kelajuan audio",
+      "nowPlayingAyah": "Ayat {label}",
+      "followingHifzChunkSuffix": " · ikut bahagian Hafal",
+      "noAudioForOpenVerse": "Tiada audio untuk ayat terbuka",
+      "openAdvancedControlsAria": "Buka kawalan lanjut audio",
+      "settingsTitle": "Tetapan Audio",
+      "closeButton": "Tutup",
+      "adjustRangeLabel": "Laraskan julat hingga hujung",
+      "fromLabel": "Dari",
+      "toLabel": "Hingga",
+      "loadingFullAudio": "Memuatkan audio {scope} penuh…",
+      "nowPlayingSummary": "Sedang dimainkan: {summary}",
+      "hifzModeActiveNotice": "Mod Hafal aktif: audio dihadkan kepada ayat yang sudah dibuka.",
+      "repeatEachVerseLabel": "Ulang setiap ayat",
+      "repeatSetLabel": "Ulang set ayat",
+      "audioSpeedLabel": "Kelajuan audio",
+      "prevVerseButton": "Ayat Sebelum",
+      "nextVerseButton": "Ayat Seterusnya",
+      "noVersesInRange": "Tiada ayat dalam julat sekarang.",
+      "rangeSummaryFormat": "{start} → {end} ({count} ayat)"
+    }
+  },
+  "tema": {
+    "actionPanel": {
+      "synopsisEyebrow": "Sinopsis Tema",
+      "verseRangeLabel": "Ayat {range}",
+      "sourceLabel": "Sumber: {source}"
+    },
+    "ayahMarker": {
+      "ariaLabel": "Ayat {number}"
+    },
+    "dataFetcher": {
+      "loadError": "Tema tidak dapat dimuatkan.",
+      "retryButton": "Cuba semula"
+    },
+    "chunkAyahList": {
+      "verseLabel": "Ayat {ref}",
+      "noWbwData": "Data kata demi kata belum tersedia untuk ayat ini.",
+      "translationHeading": "Terjemahan BM",
+      "noTranslationYet": "Terjemahan BM belum tersedia."
+    },
+    "jumpControls": {
+      "title": "Lompat Tema",
+      "selectSurahLabel": "Pilih Surah",
+      "currentStatus": "Sekarang: Surah {surah}, Tema {chunk} daripada {total}."
+    },
+    "pageContent": {
+      "noThemesYet": "Tema untuk surah ini belum tersedia lagi.",
+      "sourceSynopsis": "sinopsis tema",
+      "sourceDescription": "deskripsi tema",
+      "sourceVerseExcerpt": "petikan terjemahan ayat",
+      "sourceChunkTitle": "tajuk chunk",
+      "synopsisFromVerses": "Tema {title} muncul melalui rangkaian ayat yang menekankan: {excerpt}",
+      "genericSynopsisFallback": "Bahagian ini menghimpunkan ayat-ayat yang bergerak di bawah satu fokus makna yang sama. Baca ayat-ayat di bawah untuk melihat bagaimana tema ini dibina secara beransur-ansur dalam susunan surah.",
+      "themeCounterBadge": "Tema {current} daripada {total}",
+      "verseRangeLabel": "Ayat {range}",
+      "prevSurahNav": "← {surah}",
+      "prevThemeNav": "← Tema",
+      "prevSurahFallbackName": "Surah",
+      "nextSurahNav": "{surah} →",
+      "nextThemeNav": "Tema →",
+      "endOfQuranLabel": "Tamat Quran"
+    },
+    "page": {
+      "surahPrefix": "Surah",
+      "subtitle": "Surah {id} • Bacaan bertema"
+    }
+  },
   "faham": {
     "workspace": {
       "celebrationEyebrow": "Tahniah! +1 Dikuasai",

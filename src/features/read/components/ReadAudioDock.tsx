@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { ReadAudioTrack } from "../domain/audio/pageAudioTracks";
 import {
   fetchJuzAudioTracks,
@@ -32,6 +33,7 @@ export function ReadAudioDock({
   onPanelOpenChange,
   onAllTracksEnded,
 }: ReadAudioDockProps) {
+  const t = useTranslations("read.audioDock");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const shouldAutoplayRef = useRef(false);
   const wasPanelVisibleRef = useRef(false);
@@ -261,8 +263,12 @@ export function ReadAudioDock({
       return null;
     }
     const count = normalizedRangeEnd - normalizedRangeStart + 1;
-    return `${formatTrackLabel(startTrack)} → ${formatTrackLabel(endTrack)} (${count} ayat)`;
-  }, [normalizedRangeEnd, normalizedRangeStart, tracks]);
+    return t("rangeSummaryFormat", {
+      start: formatTrackLabel(startTrack),
+      end: formatTrackLabel(endTrack),
+      count,
+    });
+  }, [normalizedRangeEnd, normalizedRangeStart, t, tracks]);
 
   const actions = useReadAudioDockActions({
     audioRef,

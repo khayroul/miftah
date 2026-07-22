@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type {
   JuzJumpTarget,
   ReadJumpTargets,
@@ -30,6 +31,7 @@ export function ReadJumpControls({
   juzOptions: initialJuzOptions,
 }: ReadJumpControlsProps) {
   const router = useRouter();
+  const t = useTranslations("read.jumpControls");
   const hasFallbackTargets =
     FALLBACK_READ_JUMP_TARGETS.surahs.length > 0 &&
     FALLBACK_READ_JUMP_TARGETS.juzs.length > 0;
@@ -92,7 +94,7 @@ export function ReadJumpControls({
           return;
         }
 
-        setLoadError("Senarai surah dan juz belum dapat dimuatkan.");
+        setLoadError(t("loadFailed"));
       })
       .finally(() => {
         if (!abortController.signal.aborted) {
@@ -103,7 +105,7 @@ export function ReadJumpControls({
     return () => {
       abortController.abort();
     };
-  }, [hasFallbackTargets, initialJuzOptions, initialSurahOptions]);
+  }, [hasFallbackTargets, initialJuzOptions, initialSurahOptions, t]);
 
   const surahMarkers = useMemo(
     () =>
@@ -130,7 +132,7 @@ export function ReadJumpControls({
   return (
     <section className="rounded-2xl border border-stone-300 bg-white px-4 py-4 shadow-sm sm:px-5 dark:border-stone-600 dark:bg-stone-900">
       <p className="mb-3 text-[13px] font-bold uppercase tracking-wide text-stone-700 sm:text-sm dark:text-stone-300">
-        Lompat Ke
+        {t("title")}
       </p>
       <div className="grid gap-3 sm:grid-cols-3">
         <form
@@ -139,14 +141,14 @@ export function ReadJumpControls({
             event.preventDefault();
             const targetPage = parseBoundedIntegerInput(pageInput, 1, 604);
             if (!targetPage) {
-              setErrorMessage("Halaman mesti antara 1 hingga 604.");
+              setErrorMessage(t("pageRangeError"));
               return;
             }
             jumpToPage(targetPage);
           }}
         >
           <label className="min-w-0 flex-1 text-sm font-semibold text-stone-700 dark:text-stone-200">
-            Halaman
+            {t("pageLabel")}
             <input
               value={pageInput}
               onChange={(event) => setPageInput(event.target.value)}
@@ -160,7 +162,7 @@ export function ReadJumpControls({
             type="submit"
             className="rounded-lg border border-teal-600 bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:border-teal-700 hover:bg-teal-700 sm:text-base dark:border-teal-500 dark:bg-teal-500 dark:hover:bg-teal-600"
           >
-            Buka
+            {t("openButton")}
           </button>
         </form>
 
@@ -169,18 +171,18 @@ export function ReadJumpControls({
           onSubmit={(event) => {
             event.preventDefault();
             if (isLoadingTargets || surahOptions.length === 0) {
-              setErrorMessage("Senarai surah sedang dimuatkan.");
+              setErrorMessage(t("surahListLoadingNotice"));
               return;
             }
             const surahId = parseBoundedIntegerInput(surahInput, 1, 114);
             if (!surahId) {
-              setErrorMessage("Surah mesti antara 1 hingga 114.");
+              setErrorMessage(t("surahRangeError"));
               return;
             }
 
             const targetPage = getMarkerPageById(surahMarkers, surahId);
             if (!targetPage) {
-              setErrorMessage("Tidak jumpa halaman untuk surah itu.");
+              setErrorMessage(t("surahPageNotFound"));
               return;
             }
 
@@ -188,7 +190,7 @@ export function ReadJumpControls({
           }}
         >
           <label className="min-w-0 flex-1 text-sm font-medium text-stone-600 dark:text-stone-300">
-            Surah
+            {t("surahLabel")}
             <select
               value={surahInput}
               onChange={(event) => {
@@ -207,7 +209,7 @@ export function ReadJumpControls({
               className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-stone-500 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
             >
               {isLoadingTargets ? (
-                <option value={surahInput}>Memuatkan senarai surah...</option>
+                <option value={surahInput}>{t("surahListLoadingOption")}</option>
               ) : null}
               {surahOptions.map((option) => (
                 <option key={option.surah} value={option.surah}>
@@ -223,18 +225,18 @@ export function ReadJumpControls({
           onSubmit={(event) => {
             event.preventDefault();
             if (isLoadingTargets || juzOptions.length === 0) {
-              setErrorMessage("Senarai juz sedang dimuatkan.");
+              setErrorMessage(t("juzListLoadingNotice"));
               return;
             }
             const juzNumber = parseBoundedIntegerInput(juzInput, 1, 30);
             if (!juzNumber) {
-              setErrorMessage("Juz mesti antara 1 hingga 30.");
+              setErrorMessage(t("juzRangeError"));
               return;
             }
 
             const targetPage = getMarkerPageById(juzMarkers, juzNumber);
             if (!targetPage) {
-              setErrorMessage("Tidak jumpa halaman untuk juz itu.");
+              setErrorMessage(t("juzPageNotFound"));
               return;
             }
 
@@ -242,7 +244,7 @@ export function ReadJumpControls({
           }}
         >
           <label className="min-w-0 flex-1 text-sm font-medium text-stone-600 dark:text-stone-300">
-            Juz
+            {t("juzLabel")}
             <select
               value={juzInput}
               onChange={(event) => {
@@ -261,11 +263,11 @@ export function ReadJumpControls({
               className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-stone-500 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
             >
               {isLoadingTargets ? (
-                <option value={juzInput}>Memuatkan senarai juz...</option>
+                <option value={juzInput}>{t("juzListLoadingOption")}</option>
               ) : null}
               {juzOptions.map((option) => (
                 <option key={option.juz} value={option.juz}>
-                  Juz {option.juz} (p. {option.page})
+                  {t("juzOptionLabel", { juz: option.juz, page: option.page })}
                 </option>
               ))}
             </select>

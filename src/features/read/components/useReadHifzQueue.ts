@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect -- preserves queue reset semantics from the pre-wave workspace */
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   buildRecoveredRatedProgressIds,
   findQueuePageIndex,
@@ -53,6 +54,7 @@ interface UseReadHifzQueueInput {
 }
 
 export function useReadHifzQueue({ flow, pageNumber, queueIndex }: UseReadHifzQueueInput) {
+  const t = useTranslations("read.hifzQueue");
   const [nextPage, setNextPage] = useState<HifzQueuePagePointer | null>(null);
   const [previousPage, setPreviousPage] = useState<HifzQueuePagePointer | null>(null);
   const [isRecovering, setIsRecovering] = useState(false);
@@ -99,7 +101,7 @@ export function useReadHifzQueue({ flow, pageNumber, queueIndex }: UseReadHifzQu
         if (responseIndex === null) {
           setPreviousPage(null);
           setNextPage(null);
-          setRecoveryError({ message: "Sesi hafalan semasa sudah berubah. Kembali ke Hafal untuk buka semula susunan hari ini." });
+          setRecoveryError({ message: t("queueChangedError") });
           return;
         }
         const recovered = saveQueueState(
@@ -117,14 +119,14 @@ export function useReadHifzQueue({ flow, pageNumber, queueIndex }: UseReadHifzQu
         setNextPage(null);
         const status = typeof error === "object" && error !== null && "status" in error && typeof error.status === "number" ? error.status : null;
         setRecoveryError(status === 401
-          ? { message: "Sesi hafalan perlukan akaun aktif. Log masuk dahulu kemudian buka semula dari Hafal.", requiresSignIn: true }
-          : { message: "Sesi hafalan tak dapat dipulihkan sekarang. Kembali ke Hafal dan cuba buka semula." });
+          ? { message: t("signInRequiredError"), requiresSignIn: true }
+          : { message: t("recoveryFailedError") });
       })
       .finally(() => {
         if (!abortController.signal.aborted) setIsRecovering(false);
       });
     return () => abortController.abort();
-  }, [applyQueuePointers, flow, pageNumber, queueIndex]);
+  }, [applyQueuePointers, flow, pageNumber, queueIndex, t]);
 
   return { isRecovering, nextPage, previousPage, recoveryError, totalPages };
 }

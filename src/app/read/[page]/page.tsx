@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import {
   LightweightBreadcrumb,
   ReadAudioProvider,
@@ -45,6 +46,10 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
     notFound();
   }
 
+  const [tNav, t] = await Promise.all([
+    getTranslations("nav"),
+    getTranslations("read.page"),
+  ]);
   const pageData = await getReadPageStaticData(pageNumber);
   const preloadSurahNameFont = pageData.layout.lines.some(
     (line) => line.type === "surah-header",
@@ -87,13 +92,13 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
     hifzFlow !== null || query.from === "dashboard" || query.from === "hifz";
   const breadcrumbItems = fromHifzFlow
     ? [
-        { href: "/", label: "Utama" },
-        { href: "/hifz", label: "Hafal" },
-        { label: `Mushaf p.${pageNumber}` },
+        { href: "/", label: tNav("home") },
+        { href: "/hifz", label: tNav("hifz") },
+        { label: t("breadcrumbMushaf", { page: pageNumber }) },
       ]
     : [
-        { href: "/", label: "Utama" },
-        { label: `Baca p.${pageNumber}` },
+        { href: "/", label: tNav("home") },
+        { label: t("breadcrumbRead", { page: pageNumber }) },
       ];
 
   return (
@@ -111,50 +116,50 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
                 <LightweightBreadcrumb items={breadcrumbItems} />
                 {hifzFlow === "memorize" ? (
                   <div className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold tracking-wide text-amber-900 dark:border-amber-700/50 dark:bg-amber-900/30 dark:text-amber-100">
-                    Hafal Baru
+                    {t("badgeNewMemorize")}
                   </div>
                 ) : hifzFlow === "review" ? (
                   <div className="inline-flex items-center rounded-full border border-teal-300 bg-teal-50 px-3 py-1 text-xs font-semibold tracking-wide text-teal-900 dark:border-teal-700/50 dark:bg-teal-900/30 dark:text-teal-100">
-                    Uji Hafalan
+                    {t("badgeReviewMemorize")}
                   </div>
                 ) : hifzExercise === "tebuk" ? (
                   <div className="inline-flex items-center rounded-full border border-purple-300 bg-purple-50 px-3 py-1 text-xs font-semibold tracking-wide text-purple-900 dark:border-purple-700/50 dark:bg-purple-900/30 dark:text-purple-100">
-                    Tebuk
+                    {t("badgeTebuk")}
                   </div>
                 ) : hifzExercise === "unveil" ? (
                   <div className="inline-flex items-center rounded-full border border-rose-300 bg-rose-50 px-3 py-1 text-xs font-semibold tracking-wide text-rose-900 dark:border-rose-700/50 dark:bg-rose-900/30 dark:text-rose-100">
-                    Buka Tabir
+                    {t("badgeUnveil")}
                   </div>
                 ) : hifzIntent === "new" ? (
                   <div className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold tracking-wide text-amber-900 dark:border-amber-700/50 dark:bg-amber-900/30 dark:text-amber-100">
-                    BARU · SABAK · Mushaf terbuka
+                    {t("badgeNewSabak")}
                   </div>
                 ) : hifzIntent === "test" ? (
                   <div className="inline-flex items-center rounded-full border border-indigo-300 bg-indigo-50 px-3 py-1 text-xs font-semibold tracking-wide text-indigo-900 dark:border-indigo-700/50 dark:bg-indigo-900/30 dark:text-indigo-100">
-                    UJI INGATAN · Petunjuk kata pertama
+                    {t("badgeTestMemoryHint")}
                   </div>
                 ) : null}
                 {!hifzFlow && hifzIntent === "new" ? (
                   <div className="w-full max-w-2xl rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-left text-sm text-amber-900 dark:border-amber-700/45 dark:bg-amber-900/20 dark:text-amber-100">
                     <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
-                      Aliran Baru
+                      {t("newFlowEyebrow")}
                     </p>
                     <p className="mt-1">
-                      Lihat mushaf penuh, dengar bacaan, ulang beberapa kali, kemudian semak tanpa melihat.
+                      {t("newFlowDescription")}
                     </p>
                   </div>
                 ) : !hifzFlow && hifzIntent === "test" ? (
                   <div className="w-full max-w-2xl rounded-2xl border border-indigo-200 bg-indigo-50/90 px-4 py-3 text-left text-sm text-indigo-900 dark:border-indigo-700/45 dark:bg-indigo-900/20 dark:text-indigo-100">
                     <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
-                      Aliran Uji Hafalan
+                      {t("reviewFlowEyebrow")}
                     </p>
                     <p className="mt-1">
-                      Mulakan tanpa melihat, guna kata pembuka bila perlu, dan buka reveal 1/3 hanya jika tersangkut.
+                      {t("reviewFlowDescription")}
                     </p>
                   </div>
                 ) : null}
                 <h1 className="flex flex-wrap items-center justify-center gap-2 text-[1.75rem] font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:gap-3 sm:text-3xl">
-                  Surah {pageData.surahMeta?.name_en ?? "Al-Fatihah"}
+                  {t("surahPrefix")} {pageData.surahMeta?.name_en ?? "Al-Fatihah"}
                   {pageData.surahMeta?.name_arabic && (
                     <span className="font-arabic mt-0.5 text-[1.65rem] font-normal opacity-80 sm:mt-1 sm:text-2xl" lang="ar">
                       {pageData.surahMeta.name_arabic}
@@ -162,7 +167,7 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
                   )}
                 </h1>
                 <p className="text-sm font-medium text-stone-500 sm:text-base dark:text-stone-400">
-                  Surah {pageData.themeSurahId} • Halaman {pageNumber} / 604
+                  {t("subtitle", { surah: pageData.themeSurahId, page: pageNumber })}
                 </p>
               </div>
             }

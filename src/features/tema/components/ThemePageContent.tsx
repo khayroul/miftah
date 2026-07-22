@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { FahamExposureTracker } from "@/features/faham";
 import { OfflineAwareLink } from "@/components/OfflineAwareLink";
 import { ThemeActionPanel } from "./ThemeActionPanel";
@@ -70,7 +73,15 @@ function truncateText(value: string, maxLength: number): string {
   return `${truncated}...`;
 }
 
-function buildThemeSynopsis(chunk: ThemeAppearanceChunk): {
+type PageContentTranslator = (
+  key: string,
+  values?: Record<string, string | number>,
+) => string;
+
+function buildThemeSynopsis(
+  chunk: ThemeAppearanceChunk,
+  t: PageContentTranslator,
+): {
   sourceLabel: string;
   synopsis: string;
 } {
@@ -80,14 +91,14 @@ function buildThemeSynopsis(chunk: ThemeAppearanceChunk): {
 
   if (curatedSynopsis) {
     return {
-      sourceLabel: "sinopsis tema",
+      sourceLabel: t("sourceSynopsis"),
       synopsis: curatedSynopsis,
     };
   }
 
   if (description) {
     return {
-      sourceLabel: "deskripsi tema",
+      sourceLabel: t("sourceDescription"),
       synopsis: description,
     };
   }
@@ -100,18 +111,17 @@ function buildThemeSynopsis(chunk: ThemeAppearanceChunk): {
   if (translationSnippets.length > 0) {
     const combined = translationSnippets.join(" ");
     return {
-      sourceLabel: "petikan terjemahan ayat",
+      sourceLabel: t("sourceVerseExcerpt"),
       synopsis: truncateText(
-        `Tema ${title} muncul melalui rangkaian ayat yang menekankan: ${combined}`,
+        t("synopsisFromVerses", { title, excerpt: combined }),
         320,
       ),
     };
   }
 
   return {
-    sourceLabel: "tajuk chunk",
-    synopsis:
-      "Bahagian ini menghimpunkan ayat-ayat yang bergerak di bawah satu fokus makna yang sama. Baca ayat-ayat di bawah untuk melihat bagaimana tema ini dibina secara beransur-ansur dalam susunan surah.",
+    sourceLabel: t("sourceChunkTitle"),
+    synopsis: t("genericSynopsisFallback"),
   };
 }
 
@@ -123,6 +133,7 @@ export function ThemePageContent({
   selectedChunkIndex,
   prevSurahChunkCount,
 }: ThemePageContentProps) {
+  const t = useTranslations("tema.pageContent");
   const selectedChunk = chunks[selectedChunkIndex - 1] ?? null;
   const hasNextThemeInSurah = selectedChunkIndex < chunks.length;
   const isFirstChunkInSurah = selectedChunkIndex <= 1;
@@ -155,7 +166,7 @@ export function ThemePageContent({
       ? buildThemeHref(nextSurah.id, 1)
       : null;
   const selectedChunkSynopsis = selectedChunk
-    ? buildThemeSynopsis(selectedChunk)
+    ? buildThemeSynopsis(selectedChunk, t)
     : null;
 
   // Extract wbw entries only for the selected chunk's ayah IDs
@@ -174,7 +185,7 @@ export function ThemePageContent({
     <>
       {chunks.length === 0 ? (
         <section className="rounded-2xl border border-amber-100 bg-amber-50 p-6 text-center text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-400">
-          Tema untuk surah ini belum tersedia lagi.
+          {t("noThemesYet")}
         </section>
       ) : null}
 
@@ -213,18 +224,19 @@ export function ThemePageContent({
               >
                 <header className="border-b border-stone-200 pb-4 dark:border-stone-800">
                   <span className="mb-2 inline-block rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-stone-600 dark:bg-stone-800 dark:text-stone-300">
-                    Tema {selectedChunkIndex} daripada {chunks.length}
+                    {t("themeCounterBadge", { current: selectedChunkIndex, total: chunks.length })}
                   </span>
                   <h2 className="mt-2 text-2xl font-serif text-stone-900 dark:text-stone-50 md:text-3xl">
                     {chunkTitleBm(selectedChunk)}
                   </h2>
                   <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
-                    Ayat{" "}
-                    {rangeLabel(
-                      surahNumber,
-                      selectedChunk.start_ayah,
-                      selectedChunk.end_ayah,
-                    )}
+                    {t("verseRangeLabel", {
+                      range: rangeLabel(
+                        surahNumber,
+                        selectedChunk.start_ayah,
+                        selectedChunk.end_ayah,
+                      ),
+                    })}
                   </p>
                 </header>
 
@@ -234,7 +246,7 @@ export function ThemePageContent({
                     selectedChunk.start_ayah,
                     selectedChunk.end_ayah,
                   )}
-                  sourceLabel={selectedChunkSynopsis?.sourceLabel ?? "tajuk chunk"}
+                  sourceLabel={selectedChunkSynopsis?.sourceLabel ?? t("sourceChunkTitle")}
                   synopsis={selectedChunkSynopsis?.synopsis ?? ""}
                   themeTitle={chunkTitleBm(selectedChunk)}
                 />
@@ -253,12 +265,14 @@ export function ThemePageContent({
                 className="flex h-10 items-center justify-center whitespace-nowrap rounded-full border border-stone-200 bg-stone-50 px-4 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700 sm:text-sm"
               >
                 {isFirstChunkInSurah && prevSurahNumber !== null
-                  ? `\u2190 ${allSurahs.find((s) => s.id === prevSurahNumber)?.name_bm ?? "Surah"}`
-                  : "\u2190 Tema"}
+                  ? t("prevSurahNav", {
+                      surah: allSurahs.find((s) => s.id === prevSurahNumber)?.name_bm ?? t("prevSurahFallbackName"),
+                    })
+                  : t("prevThemeNav")}
               </OfflineAwareLink>
             ) : (
               <span className="flex h-10 items-center justify-center whitespace-nowrap rounded-full border border-stone-100 bg-stone-50/50 px-4 text-xs font-medium text-stone-400 dark:border-stone-800 dark:bg-stone-800/30 dark:text-stone-600 sm:text-sm">
-                &larr; Tema
+                {t("prevThemeNav")}
               </span>
             )}
 
@@ -279,12 +293,12 @@ export function ThemePageContent({
                 className="flex h-10 items-center justify-center whitespace-nowrap rounded-full bg-stone-900 px-4 text-xs font-medium text-white shadow-sm transition hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white sm:text-sm"
               >
                 {nextSurah
-                  ? `${nextSurah.name_bm} \u2192`
-                  : "Tema \u2192"}
+                  ? t("nextSurahNav", { surah: nextSurah.name_bm })
+                  : t("nextThemeNav")}
               </OfflineAwareLink>
             ) : (
               <span className="flex h-10 items-center justify-center whitespace-nowrap rounded-full bg-stone-100 px-4 text-xs font-medium text-stone-400 dark:bg-stone-800 dark:text-stone-600 sm:text-sm">
-                Tamat Quran
+                {t("endOfQuranLabel")}
               </span>
             )}
           </nav>

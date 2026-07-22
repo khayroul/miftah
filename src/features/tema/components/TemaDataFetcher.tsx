@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { ThemePageContent } from "./ThemePageContent";
 import type { Surah } from "@/shared/types/database";
@@ -32,6 +33,7 @@ export function TemaDataFetcher({
   allSurahs,
 }: TemaDataFetcherProps) {
   const searchParams = useSearchParams();
+  const t = useTranslations("tema.dataFetcher");
   const [fetchState, setFetchState] = useState<FetchState>({ kind: "loading" });
   const cacheRef = useRef<Record<number, TemaApiResponse>>({});
 
@@ -49,7 +51,7 @@ export function TemaDataFetcher({
       if (!response.ok) {
         setFetchState({
           kind: "error",
-          message: "Tema tidak dapat dimuatkan.",
+          message: t("loadError"),
         });
         return;
       }
@@ -60,10 +62,10 @@ export function TemaDataFetcher({
     } catch {
       setFetchState({
         kind: "error",
-        message: "Tema tidak dapat dimuatkan.",
+        message: t("loadError"),
       });
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void fetchTemaData(surahNumber);
@@ -82,7 +84,7 @@ export function TemaDataFetcher({
           onClick={() => void fetchTemaData(surahNumber)}
           className="rounded-full border border-red-200 bg-white px-4 py-2 text-xs font-medium text-red-700 transition hover:bg-red-50 dark:border-red-800 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60"
         >
-          Cuba semula
+          {t("retryButton")}
         </button>
       </section>
     );

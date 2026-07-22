@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { rememberLastReadPage } from "../domain/readingProgressStorage";
 import { useReadingProgressState } from "../domain/useReadingProgressState";
 import { OfflineAwareLink } from "@/components/OfflineAwareLink";
@@ -10,6 +11,7 @@ interface ReadSessionActionsProps {
 }
 
 export function ReadSessionActions({ currentPage }: ReadSessionActionsProps) {
+  const t = useTranslations("read.sessionActions");
   const state = useReadingProgressState();
 
   useEffect(() => {
@@ -24,7 +26,7 @@ export function ReadSessionActions({ currentPage }: ReadSessionActionsProps) {
           prefetch={false}
           className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
         >
-          Sambung Baca
+          {t("continueReadingLink")}
         </OfflineAwareLink>
       </div>
     </section>

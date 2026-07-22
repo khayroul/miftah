@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { getWordByWordForAyahIds } from "@/lib/queries";
 import type { AyahWordByWordEntry } from "@/lib/queries";
 import type { ThemeAppearanceAyah } from "@/data/repositories/tema";
@@ -18,6 +19,8 @@ export async function ThemeChunkAyahListAsync({
     wbwByAyahId = {};
   }
 
+  const t = await getTranslations("tema.chunkAyahList");
+
   return (
     <div className="space-y-14 pb-8">
       {ayat.map((ayah) => {
@@ -31,7 +34,7 @@ export async function ThemeChunkAyahListAsync({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
-                    Ayat {ayah.surah_id}:{ayah.ayah_number}
+                    {t("verseLabel", { ref: `${ayah.surah_id}:${ayah.ayah_number}` })}
                   </p>
                 </div>
               </div>
@@ -75,7 +78,7 @@ export async function ThemeChunkAyahListAsync({
                       className="shrink-0"
                     />
                     <p className="text-right text-sm text-stone-500 dark:text-stone-400">
-                      Data kata demi kata belum tersedia untuk ayat ini.
+                      {t("noWbwData")}
                     </p>
                   </div>
                 </div>
@@ -84,10 +87,10 @@ export async function ThemeChunkAyahListAsync({
               <div>
                 <div className="rounded-[1.4rem] border border-stone-100/90 bg-stone-50/75 p-4 dark:border-stone-800/80 dark:bg-stone-800/20 sm:p-5">
                   <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
-                    Terjemahan BM
+                    {t("translationHeading")}
                   </p>
                   <p className="mt-3 text-[15px] leading-relaxed text-stone-700 dark:text-stone-300">
-                    {ayah.display_bm ?? "Terjemahan BM belum tersedia."}
+                    {ayah.display_bm ?? t("noTranslationYet")}
                   </p>
                 </div>
               </div>

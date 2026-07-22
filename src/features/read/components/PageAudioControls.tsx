@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { ReadAudioTrack } from "../domain/audio/pageAudioTracks";
 import { PageAudioRangeSettings } from "./PageAudioRangeSettings";
 
@@ -19,6 +20,7 @@ export function PageAudioControls({
   tracks,
   onPlaybackAyahChange,
 }: PageAudioControlsProps) {
+  const t = useTranslations("read.toolsAudio");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const shouldAutoplayRef = useRef(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -110,13 +112,13 @@ export function PageAudioControls({
 
   const repeatStatus = useMemo(() => {
     if (currentRepeatCount === -1) {
-      return "Ulang ayat semasa tanpa henti";
+      return t("repeatUnlimited");
     }
 
     return repeatsRemaining > 0
-      ? `${repeatsRemaining} ulangan lagi`
-      : "Tiada ulangan tertunda";
-  }, [currentRepeatCount, repeatsRemaining]);
+      ? t("repeatsRemaining", { count: repeatsRemaining })
+      : t("noRepeatsPending");
+  }, [currentRepeatCount, repeatsRemaining, t]);
 
   const rangeStatus = useMemo(() => {
     const startTrack = tracks[normalizedRangeStart];
@@ -124,17 +126,21 @@ export function PageAudioControls({
     if (!startTrack || !endTrack) {
       return null;
     }
-    return `${startTrack.label} -> ${endTrack.label} (${tracksInRange.length} ayat)`;
-  }, [normalizedRangeEnd, normalizedRangeStart, tracks, tracksInRange.length]);
+    return t("rangeStatusFormat", {
+      start: startTrack.label,
+      end: endTrack.label,
+      count: tracksInRange.length,
+    });
+  }, [normalizedRangeEnd, normalizedRangeStart, t, tracks, tracksInRange.length]);
 
   if (!canPlayAudio || !currentTrack) {
     return (
       <section className="rounded-2xl border border-stone-300 bg-white px-3 py-3 shadow-sm sm:px-4 dark:border-stone-600 dark:bg-stone-900">
         <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
-          Audio
+          {t("audioLabel")}
         </p>
         <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">
-          Tiada audio URL untuk ayat pada halaman ini.
+          {t("noAudioUrl")}
         </p>
       </section>
     );
@@ -223,7 +229,7 @@ export function PageAudioControls({
   return (
     <section className="rounded-2xl border border-stone-300 bg-white px-3 py-3 shadow-sm sm:px-4 dark:border-stone-600 dark:bg-stone-900">
       <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
-        Audio
+        {t("audioLabel")}
       </p>
 
       <audio
@@ -271,9 +277,9 @@ export function PageAudioControls({
       />
 
       <div className="mt-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-700 dark:bg-stone-800/50">
-        <p className="text-sm font-medium text-stone-900 dark:text-stone-100">Sedang dimainkan: {currentTrack.label}</p>
+        <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{t("nowPlaying", { label: currentTrack.label })}</p>
         <p className="mt-1 text-xs text-stone-600 line-clamp-2 dark:text-stone-300">
-          {currentTrack.bm ?? "Tiada terjemahan BM"}
+          {currentTrack.bm ?? t("noBmTranslation")}
         </p>
       </div>
 
@@ -284,14 +290,14 @@ export function PageAudioControls({
           disabled={!canPrev}
           className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
         >
-          Ayat Sebelum
+          {t("prevAyah")}
         </button>
         <button
           type="button"
           onClick={togglePlayback}
           className="rounded-lg bg-stone-900 px-3 py-1.5 text-sm text-stone-50 transition hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
         >
-          {isPlaying ? "Jeda" : "Main"}
+          {isPlaying ? t("pauseLabel") : t("playLabel")}
         </button>
         <button
           type="button"
@@ -299,7 +305,7 @@ export function PageAudioControls({
           disabled={!canNext}
           className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-700 transition enabled:hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:text-stone-200 dark:enabled:hover:bg-stone-800"
         >
-          Ayat Seterusnya
+          {t("nextAyah")}
         </button>
       </div>
 

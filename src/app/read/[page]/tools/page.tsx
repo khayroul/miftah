@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import {
   findMarkerForPage,
   mapAyatToPageAudioTracks,
@@ -24,7 +25,8 @@ export default async function ReadToolsPage({ params }: ReadToolsPageProps) {
     notFound();
   }
 
-  const [jumpTargets, ayatOnPage] = await Promise.all([
+  const [t, jumpTargets, ayatOnPage] = await Promise.all([
+    getTranslations("read.toolsPage"),
     getReadJumpTargets(),
     getAyatByPage(pageNumber).catch(() => []),
   ]);
@@ -54,7 +56,7 @@ export default async function ReadToolsPage({ params }: ReadToolsPageProps) {
             href={`/read/${pageNumber}`}
             className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
           >
-            &larr; Kembali ke Mushaf
+            {t("backToMushaf")}
           </Link>
           <ThemeToggle />
         </header>
@@ -63,64 +65,62 @@ export default async function ReadToolsPage({ params }: ReadToolsPageProps) {
           <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
             <div className="space-y-5">
               <div className="inline-flex items-center rounded-full border border-teal-900/15 bg-teal-950/6 px-3 py-1 text-xs font-medium tracking-wide text-teal-900 dark:border-teal-300/20 dark:bg-teal-900/35 dark:text-teal-100">
-                Utiliti Baca
+                {t("eyebrow")}
               </div>
 
               <div>
                 <h1 className="text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-50">
-                  Lompat dan audio berada di luar mushaf.
+                  {t("heading")}
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600 dark:text-stone-300">
-                  Halaman baca kekal bersih. Gunakan ruang ini untuk lompat ke
-                  halaman, surah, atau juz, kemudian jalankan audio tanpa
-                  mengganggu permukaan mushaf.
+                  {t("description")}
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <SummaryCard
-                  label="Halaman"
+                  label={t("pageLabel")}
                   value={`p. ${pageNumber}`}
                 />
                 <SummaryCard
-                  label="Surah semasa"
-                  value={surahMeta?.name_transliteration ?? `Surah ${currentSurahId}`}
+                  label={t("currentSurahLabel")}
+                  value={surahMeta?.name_transliteration ?? t("surahFallbackValue", { id: currentSurahId })}
                 />
                 <SummaryCard
-                  label="Juz semasa"
-                  value={`Juz ${currentJuzNumber}`}
+                  label={t("currentJuzLabel")}
+                  value={t("juzValue", { juz: currentJuzNumber })}
                 />
               </div>
             </div>
 
             <aside className="rounded-[26px] border border-stone-200/80 bg-stone-50/90 p-4 dark:border-stone-700 dark:bg-stone-950/60">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
-                Laluan berkaitan
+                {t("relatedPathsLabel")}
               </p>
               <div className="mt-4 grid gap-2">
                 <Link
                   href={`/read/${pageNumber}`}
                   className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-200 dark:hover:bg-stone-900"
                 >
-                  Sambung Baca
+                  {t("continueReadingLink")}
                 </Link>
                 <Link
                   href={`/read/surah/${themeSurahId}/themes`}
                   className="rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-900 transition hover:bg-indigo-100 dark:border-indigo-700/40 dark:bg-indigo-900/25 dark:text-indigo-100 dark:hover:bg-indigo-900/40"
                 >
-                  Buka Tema
+                  {t("openThemeLink")}
                 </Link>
                 <Link
                   href="/faham"
                   className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 transition hover:bg-amber-100 dark:border-amber-700/40 dark:bg-amber-900/25 dark:text-amber-100 dark:hover:bg-amber-900/40"
                 >
-                  Masuk Faham
+                  {t("enterFahamLink")}
                 </Link>
                 <Link
                   href="/hifz"
                   className="rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-900 transition hover:bg-teal-100 dark:border-teal-700/40 dark:bg-teal-900/25 dark:text-teal-100 dark:hover:bg-teal-900/40"
                 >
-                  Buka Hafal
+                  {t("openHifzLink")}
                 </Link>
               </div>
             </aside>

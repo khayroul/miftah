@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 interface ThemeAyahMarkerProps {
   ayahNumber: number;
   className?: string;
@@ -15,11 +19,13 @@ export function ThemeAyahMarker({
   ayahNumber,
   className = "",
 }: ThemeAyahMarkerProps) {
+  const t = useTranslations("tema.ayahMarker");
+  const label = t("ariaLabel", { number: ayahNumber });
   return (
     <span
       className={`relative inline-flex h-11 w-11 items-center justify-center text-[#004D40] dark:text-[#039F85] sm:h-12 sm:w-12 ${className}`.trim()}
-      aria-label={`Ayat ${ayahNumber}`}
-      title={`Ayat ${ayahNumber}`}
+      aria-label={label}
+      title={label}
       lang="ar"
       dir="rtl"
     >

@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 import type { MushafLayoutPage, MushafPageManifest } from "@/mushaf";
 import type { HifzExerciseFlow, HifzFlowType } from "@/features/hifz/read-runtime";
 import { buildSignInPath } from "@/features/auth/navigation";
@@ -44,19 +45,21 @@ interface ReadHifzOverlaysProps {
 }
 
 function RecoveryPanel({ title, message, bottomOffsetPx = 0, requiresSignIn = false }: { title: string; message: string; bottomOffsetPx?: number; requiresSignIn?: boolean }) {
+  const t = useTranslations("read.hifzOverlays");
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white/95 px-4 py-5 text-center shadow-lg backdrop-blur-md dark:border-stone-700 dark:bg-stone-900/95" style={{ bottom: bottomOffsetPx }}>
       <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{title}</p>
       <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{message}</p>
       <div className="mt-4 flex justify-center gap-3">
-        {requiresSignIn ? <a href={buildSignInPath("/hifz")} className="inline-flex items-center rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500">Log Masuk</a> : null}
-        <a href="/hifz" className="inline-flex items-center rounded-xl border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700">Kembali ke Hafal</a>
+        {requiresSignIn ? <a href={buildSignInPath("/hifz")} className="inline-flex items-center rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500">{t("signInButton")}</a> : null}
+        <a href="/hifz" className="inline-flex items-center rounded-xl border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700">{t("backToHifzButton")}</a>
       </div>
     </div>
   );
 }
 
 export function ReadHifzOverlays(props: ReadHifzOverlaysProps) {
+  const t = useTranslations("read.hifzOverlays");
   const bottomOffsetPx = props.isAudioVisible ? 112 : 0;
   const recovery = (title: string, message: string, offset = bottomOffsetPx) => (
     <RecoveryPanel title={title} message={message} bottomOffsetPx={offset} requiresSignIn={props.recoveryError?.requiresSignIn} />
@@ -71,16 +74,16 @@ export function ReadHifzOverlays(props: ReadHifzOverlaysProps) {
       ) : null}
       {props.flow === "review" ? (
         props.isRecovering
-          ? recovery("Menyambung sesi uji hafalan...", "Kami sedang bina semula susunan halaman semasa.", 0)
+          ? recovery(t("resumingReviewSession"), t("rebuildingReviewMessage"), 0)
           : props.recoveryError
-            ? recovery("Sesi tergendala", props.recoveryError.message, 0)
+            ? recovery(t("sessionStalledTitle"), props.recoveryError.message, 0)
             : <HifzInlineRating flowType="review" pageNumber={props.pageNumber} queueIndex={props.queueIndex} visible={props.tasmiAllRevealed} bottomOffsetPx={bottomOffsetPx} onTasmiSuccess={props.onTasmiRevealAll} onSessionComplete={props.onSessionComplete} onPageComplete={props.onPageComplete} />
       ) : null}
       {props.flow === "memorize" ? (
         props.isRecovering
-          ? recovery("Menyambung sesi hafalan...", "Kami sedang bina semula chunk dan susunan halaman semasa.")
+          ? recovery(t("resumingMemorizeSession"), t("rebuildingMemorizeMessage"))
           : props.recoveryError
-            ? recovery("Sesi tergendala", props.recoveryError.message)
+            ? recovery(t("sessionStalledTitle"), props.recoveryError.message)
             : <HifzMemorizeStepper bottomOffsetPx={bottomOffsetPx} pageNumber={props.pageNumber} queueIndex={props.queueIndex} audioFinishedSignal={props.audioFinishedSignal} onChunkAyahKeysChange={props.onChunkAyahKeysChange} onChunkListen={props.onChunkListen} onChunkPause={props.onChunkPause} onMushafHide={props.onMushafHide} onViewportInsetChange={props.onViewportInsetChange} onSessionComplete={props.onSessionComplete} onPageComplete={props.onPageComplete} />
       ) : null}
       {props.exercise === "tebuk" ? (
@@ -89,7 +92,7 @@ export function ReadHifzOverlays(props: ReadHifzOverlaysProps) {
       {props.exercise === "unveil" && props.pageManifest ? (
         <HifzUnveilSession layout={props.layout} manifest={props.pageManifest} pageNumber={props.pageNumber} alignData={props.alignData} onComplete={() => console.info("[ReadPageWorkspace] unveil complete — FSRS rate-batch pending progressId wiring")} onExit={props.onExerciseExit}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/api/mushaf/page/${props.pageNumber}?v=qcfv2`} alt={`Mushaf halaman ${props.pageNumber}`} width={props.pageManifest.image_width} height={props.pageManifest.image_height} className="w-full" />
+          <img src={`/api/mushaf/page/${props.pageNumber}?v=qcfv2`} alt={t("mushafPageAlt", { page: props.pageNumber })} width={props.pageManifest.image_width} height={props.pageManifest.image_height} className="w-full" />
         </HifzUnveilSession>
       ) : null}
     </>

@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { MushafPageView, ReadOnlyMushafPageView, type MushafAyahDetail, type MushafLayoutPage, type MushafPageManifest, type MushafWordTranslationMap } from "@/mushaf";
 import type { HifzExerciseFlow, HifzFlowType } from "@/features/hifz/read-runtime";
@@ -91,6 +92,7 @@ function PageArrow({ direction, href, label }: { direction: "<" | ">"; href: str
 }
 
 export function ReadPageCanvas(props: ReadPageCanvasProps) {
+  const t = useTranslations("read.pageCanvas");
   const jumpControls = <ReadJumpControls currentPage={props.pageNumber} currentSurahId={props.currentSurahId} currentJuzNumber={props.currentJuzNumber} />;
   return (
     <div className="mx-auto max-w-lg" style={{ paddingBottom: props.contentBottomPadding, paddingTop: props.flow && props.queueTotalPages > 0 && !props.sessionComplete ? 44 : undefined }}>
@@ -98,12 +100,12 @@ export function ReadPageCanvas(props: ReadPageCanvasProps) {
       {props.shouldTrackExposure ? <FahamExposureTracker payload={{ ayahIds: props.readingAyahIds, pageNumber: props.pageNumber, sourceType: "reading_page", surahId: props.currentSurahId }} /> : null}
       {!props.flow ? <ReadModeTools themeSurahId={props.themeSurahId} hifzRevealByThirdsEnabled={props.hifzRevealByThirdsEnabled} onHifzRevealByThirdsChange={props.setHifzRevealByThirdsEnabled} showJumpControls={props.showJumpControls} onToggleJumpControls={() => props.setShowJumpControls((current) => !current)} audioEnabled={props.audioEnabled} isAudioVisible={props.isAudioVisible} onToggleAudio={props.onToggleAudio} /> : null}
       <div className="hidden sm:block"><div className={`overflow-hidden transition-[max-height,opacity,transform] duration-300 ${props.showJumpControls ? "max-h-[420px] translate-y-0 opacity-100" : "pointer-events-none max-h-0 -translate-y-1 opacity-0"}`} aria-hidden={!props.showJumpControls}><div className="pt-1">{props.showJumpControls ? jumpControls : null}</div></div></div>
-      <div className="sm:hidden">{props.showJumpControls ? <div className="fixed inset-0 z-[55] bg-black/30" onClick={() => props.setShowJumpControls(false)}><section className="absolute inset-x-0 bottom-0 max-h-[78vh] overflow-y-auto rounded-t-[28px] border border-b-0 border-stone-200 bg-white/98 px-4 pb-[calc(env(safe-area-inset-bottom)+18px)] pt-4 shadow-[0_-18px_48px_rgba(0,0,0,0.18)] backdrop-blur dark:border-stone-700 dark:bg-stone-900/97" onClick={(event) => event.stopPropagation()}><div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-sm font-semibold text-stone-900 dark:text-stone-100">Lompat di luar mushaf</p><p className="text-xs text-stone-500 dark:text-stone-400">Pilih halaman, surah, atau juz tanpa menyesakkan bacaan.</p></div><button type="button" onClick={() => props.setShowJumpControls(false)} className="inline-flex min-h-10 items-center rounded-full border border-stone-300 px-3 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800">Tutup</button></div>{jumpControls}</section></div> : null}</div>
+      <div className="sm:hidden">{props.showJumpControls ? <div className="fixed inset-0 z-[55] bg-black/30" onClick={() => props.setShowJumpControls(false)}><section className="absolute inset-x-0 bottom-0 max-h-[78vh] overflow-y-auto rounded-t-[28px] border border-b-0 border-stone-200 bg-white/98 px-4 pb-[calc(env(safe-area-inset-bottom)+18px)] pt-4 shadow-[0_-18px_48px_rgba(0,0,0,0.18)] backdrop-blur dark:border-stone-700 dark:bg-stone-900/97" onClick={(event) => event.stopPropagation()}><div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{t("jumpSheetTitle")}</p><p className="text-xs text-stone-500 dark:text-stone-400">{t("jumpSheetDescription")}</p></div><button type="button" onClick={() => props.setShowJumpControls(false)} className="inline-flex min-h-10 items-center rounded-full border border-stone-300 px-3 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800">{t("closeButton")}</button></div>{jumpControls}</section></div> : null}</div>
       {props.mushafHeader}
-      <div className="mb-1 flex w-full justify-end gap-2"><PageArrow direction="<" href={props.nextPageHref} label="Halaman Seterusnya" /><PageArrow direction=">" href={props.previousPageHref} label="Halaman Sebelum" /></div>
+      <div className="mb-1 flex w-full justify-end gap-2"><PageArrow direction="<" href={props.nextPageHref} label={t("nextPageAria")} /><PageArrow direction=">" href={props.previousPageHref} label={t("prevPageAria")} /></div>
       <div className="relative w-full">
         {props.showTasmiOverlay ? <HifzTasmiOverlay totalLines={props.totalLineCount} revealedLines={props.tasmiRevealedLines} onTap={props.onTasmiTap} onRevealTo={props.setTasmiRevealedLines} /> : null}
-        {props.memorizeHideMushaf ? <div className="absolute inset-0 z-30 flex items-center justify-center rounded-2xl bg-stone-900/80 backdrop-blur-md"><p className="text-center text-lg font-semibold text-white/90">Cuba baca tanpa melihat</p></div> : null}
+        {props.memorizeHideMushaf ? <div className="absolute inset-0 z-30 flex items-center justify-center rounded-2xl bg-stone-900/80 backdrop-blur-md"><p className="text-center text-lg font-semibold text-white/90">{t("hiddenMushafHint")}</p></div> : null}
         {props.useLightweightViewer ? (
           <ReadOnlyMushafPageView key={props.pageNumber} pageNumber={props.pageNumber} layout={props.layout} onNavigatePrevPage={props.onNavigatePreviousPage} onNavigateNextPage={props.onNavigateNextPage} onCanvasTap={props.onCanvasTap} onAyahAudioTap={props.audioEnabled ? props.onAyahAudioTap : undefined} audioDiscovered={props.audioDiscovered} onAudioDiscovered={props.onAudioDiscovered} onReadyChange={props.onReadyChange} activePlaybackAyahKey={props.activePlaybackAyahKey} />
         ) : (

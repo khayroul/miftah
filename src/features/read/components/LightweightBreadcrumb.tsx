@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export interface BreadcrumbItem {
   href?: string;
@@ -14,13 +17,14 @@ export function LightweightBreadcrumb({
   items,
   className = "",
 }: LightweightBreadcrumbProps) {
+  const t = useTranslations("read.breadcrumb");
   if (items.length === 0) {
     return null;
   }
 
   return (
     <nav
-      aria-label="Breadcrumb"
+      aria-label={t("ariaLabel")}
       className={`w-full ${className}`.trim()}
     >
       <ol className="flex flex-wrap items-center gap-1 text-xs font-medium text-stone-500 dark:text-stone-400">

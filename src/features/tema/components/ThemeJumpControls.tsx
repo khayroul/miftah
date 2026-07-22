@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { navigateWithOfflineSupport } from "@/shared/pwa/navigation";
 
 interface ThemeSurahOption {
@@ -24,16 +25,17 @@ export function ThemeJumpControls({
   surahOptions,
 }: ThemeJumpControlsProps) {
   const router = useRouter();
+  const t = useTranslations("tema.jumpControls");
   const [selectedSurah, setSelectedSurah] = useState(String(currentSurahNumber));
 
   return (
     <section className="rounded-2xl border border-stone-300 bg-white px-4 py-4 shadow-sm sm:px-5 dark:border-stone-600 dark:bg-stone-900">
       <p className="mb-3 text-[13px] font-bold uppercase tracking-wide text-stone-700 sm:text-sm dark:text-stone-300">
-        Lompat Tema
+        {t("title")}
       </p>
       <div className="grid gap-3">
         <label className="min-w-0 text-sm font-medium text-stone-600 dark:text-stone-300">
-          Pilih Surah
+          {t("selectSurahLabel")}
           <select
             value={selectedSurah}
             onChange={(event) => {
@@ -57,8 +59,11 @@ export function ThemeJumpControls({
       </div>
 
       <p className="mt-3 text-xs text-stone-500 dark:text-stone-400">
-        Sekarang: Surah {currentSurahNumber}, Tema {currentChunkIndex} daripada{" "}
-        {Math.max(currentChunkCount, 1)}.
+        {t("currentStatus", {
+          surah: currentSurahNumber,
+          chunk: currentChunkIndex,
+          total: Math.max(currentChunkCount, 1),
+        })}
       </p>
     </section>
   );

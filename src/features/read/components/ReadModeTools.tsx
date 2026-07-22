@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useReadMode } from "../domain/useReadMode";
 import type { ReadMode } from "../domain/readMode";
 import { ModeNavigator } from "./ModeNavigator";
@@ -28,6 +29,7 @@ export function ReadModeTools({
   onToggleAudio,
 }: ReadModeToolsProps) {
   const router = useRouter();
+  const t = useTranslations("read.modeTools");
   const { mode, setMode } = useReadMode();
 
   const handleModeChange = (nextMode: ReadMode, e: React.MouseEvent) => {
@@ -80,7 +82,7 @@ export function ReadModeTools({
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
             </svg>
-            {isAudioVisible ? "Audio Terbuka" : "Audio"}
+            {isAudioVisible ? t("audioOpenLabel") : t("audioLabel")}
           </button>
         ) : null}
 
@@ -93,7 +95,7 @@ export function ReadModeTools({
               : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
           }`}
         >
-          {showJumpControls ? "Tutup Halaman" : "Pilih Halaman"}
+          {showJumpControls ? t("closePageButton") : t("choosePageButton")}
         </button>
 
         {mode === "hifz" ? (
@@ -109,8 +111,8 @@ export function ReadModeTools({
             }`}
           >
             {hifzRevealByThirdsEnabled
-              ? "Paparan 1/3 aktif"
-              : "Paparan 1/3 tidak aktif" }
+              ? t("thirdsRevealActive")
+              : t("thirdsRevealInactive") }
           </button>
         ) : null}
       </div>

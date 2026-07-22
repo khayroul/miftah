@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { ModeNavigator } from "@/features/read";
 import { TemaDataFetcher } from "@/features/tema";
@@ -38,6 +39,8 @@ export default async function SurahThemeAppearancePage({
     notFound();
   }
 
+  const t = await getTranslations("tema.page");
+
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 sm:px-6 md:py-12">
       <header className="flex flex-col gap-6">
@@ -50,7 +53,7 @@ export default async function SurahThemeAppearancePage({
 
         <div className="mt-2 flex flex-col items-center gap-2 text-center">
           <h1 className="flex items-center justify-center gap-3 text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
-            Surah {surahMeta.name_en}
+            {t("surahPrefix")} {surahMeta.name_en}
             <span
               className="font-arabic mt-1 text-2xl font-normal opacity-80"
               lang="ar"
@@ -60,7 +63,7 @@ export default async function SurahThemeAppearancePage({
           </h1>
 
           <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
-            Surah {surahMeta.id} &bull; Bacaan bertema
+            {t("subtitle", { id: surahMeta.id })}
           </p>
         </div>
       </header>

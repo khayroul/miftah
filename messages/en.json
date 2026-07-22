@@ -192,6 +192,205 @@
       "chipAudioRepeat": "Audio repeat"
     }
   },
+  "read": {
+    "breadcrumb": {
+      "ariaLabel": "Breadcrumb"
+    },
+    "page": {
+      "breadcrumbMushaf": "Mushaf p.{page}",
+      "breadcrumbRead": "Read p.{page}",
+      "badgeNewMemorize": "New Memorization",
+      "badgeReviewMemorize": "Test Memorization",
+      "badgeTebuk": "Tebuk",
+      "badgeUnveil": "Unveil",
+      "badgeNewSabak": "NEW · SABAK · Mushaf open",
+      "badgeTestMemoryHint": "MEMORY TEST · First word hint",
+      "newFlowEyebrow": "New Flow",
+      "newFlowDescription": "View the full mushaf, listen to the recitation, repeat a few times, then test without looking.",
+      "reviewFlowEyebrow": "Memorization Test Flow",
+      "reviewFlowDescription": "Start without looking, use the opening-word hint when needed, and only open the 1/3 reveal if you get stuck.",
+      "surahPrefix": "Surah",
+      "subtitle": "Surah {surah} • Page {page} / 604"
+    },
+    "hifzOverlays": {
+      "signInButton": "Sign In",
+      "backToHifzButton": "Back to Hifz",
+      "resumingReviewSession": "Resuming memorization test session...",
+      "rebuildingReviewMessage": "We're rebuilding the current page order.",
+      "sessionStalledTitle": "Session interrupted",
+      "resumingMemorizeSession": "Resuming memorization session...",
+      "rebuildingMemorizeMessage": "We're rebuilding the chunk and current page order.",
+      "mushafPageAlt": "Mushaf page {page}"
+    },
+    "jumpControls": {
+      "loadFailed": "The list of surahs and juz couldn't be loaded.",
+      "title": "Jump To",
+      "pageRangeError": "Page must be between 1 and 604.",
+      "pageLabel": "Page",
+      "openButton": "Open",
+      "surahListLoadingNotice": "The surah list is still loading.",
+      "surahRangeError": "Surah must be between 1 and 114.",
+      "surahPageNotFound": "Couldn't find a page for that surah.",
+      "surahLabel": "Surah",
+      "surahListLoadingOption": "Loading the surah list...",
+      "juzListLoadingNotice": "The juz list is still loading.",
+      "juzRangeError": "Juz must be between 1 and 30.",
+      "juzPageNotFound": "Couldn't find a page for that juz.",
+      "juzLabel": "Juz",
+      "juzListLoadingOption": "Loading the juz list...",
+      "juzOptionLabel": "Juz {juz} (p. {page})"
+    },
+    "modeTools": {
+      "audioOpenLabel": "Audio Open",
+      "audioLabel": "Audio",
+      "closePageButton": "Close Page",
+      "choosePageButton": "Choose Page",
+      "thirdsRevealActive": "1/3 reveal active",
+      "thirdsRevealInactive": "1/3 reveal inactive"
+    },
+    "pageCanvas": {
+      "jumpSheetTitle": "Jump outside the mushaf",
+      "jumpSheetDescription": "Choose a page, surah, or juz without crowding your reading.",
+      "closeButton": "Close",
+      "nextPageAria": "Next Page",
+      "prevPageAria": "Previous Page",
+      "hiddenMushafHint": "Try reading without looking"
+    },
+    "sessionActions": {
+      "continueReadingLink": "Continue Reading"
+    },
+    "hifzQueue": {
+      "queueChangedError": "The current memorization session has changed. Go back to Hifz to reopen today's order.",
+      "signInRequiredError": "This memorization session needs an active account. Sign in, then reopen it from Hifz.",
+      "recoveryFailedError": "The memorization session couldn't be recovered right now. Go back to Hifz and try reopening it."
+    },
+    "toolsPage": {
+      "backToMushaf": "← Back to Mushaf",
+      "eyebrow": "Reading Utilities",
+      "heading": "Jump and audio live outside the mushaf.",
+      "description": "The reading page stays clean. Use this space to jump to a page, surah, or juz, then run audio without disturbing the mushaf surface.",
+      "pageLabel": "Page",
+      "currentSurahLabel": "Current surah",
+      "surahFallbackValue": "Surah {id}",
+      "currentJuzLabel": "Current juz",
+      "juzValue": "Juz {juz}",
+      "relatedPathsLabel": "Related paths",
+      "continueReadingLink": "Continue Reading",
+      "openThemeLink": "Open Themes",
+      "enterFahamLink": "Enter Faham",
+      "openHifzLink": "Open Hifz"
+    },
+    "toolsAudio": {
+      "audioLabel": "Audio",
+      "noAudioUrl": "No audio URL for the verses on this page.",
+      "repeatUnlimited": "Repeat the current verse endlessly",
+      "repeatsRemaining": "{count, plural, one {# repeat left} other {# repeats left}}",
+      "noRepeatsPending": "No repeats pending",
+      "rangeStatusFormat": "{start} -> {end} ({count, plural, one {# ayah} other {# ayahs}})",
+      "nowPlaying": "Now playing: {label}",
+      "noBmTranslation": "No BM translation",
+      "prevAyah": "Previous Verse",
+      "pauseLabel": "Pause",
+      "playLabel": "Play",
+      "nextAyah": "Next Verse",
+      "repeatInfinite": "∞ (repeat)",
+      "speedLabel": "Speed",
+      "defaultRepeatLabel": "Default repeat",
+      "loopSelectedRangeLabel": "Loop selected range",
+      "rangeStartLabel": "Range Start",
+      "rangeEndLabel": "Range End",
+      "activeRangeLabel": "Active range: {status}",
+      "perAyahRepeatLabel": "Repeat Per Verse",
+      "resetRangeButton": "Reset Range To Default Repeat"
+    },
+    "audioDock": {
+      "rangePreset": {
+        "page": "Page",
+        "surah": "Surah",
+        "juz": "Juz"
+      },
+      "rangePresetShort": {
+        "page": "Pg",
+        "surah": "Surah",
+        "juz": "Juz"
+      },
+      "repeat": {
+        "unlimited": "repeat endlessly",
+        "count": "{count, plural, one {# time} other {# times}}"
+      },
+      "pauseAudioAria": "Pause audio",
+      "playAudioAria": "Play audio",
+      "nextVerseAria": "Next verse",
+      "changeRangeAria": "Change range setting",
+      "rangeButtonLabel": "Range {preset}",
+      "changeSpeedAria": "Change audio speed",
+      "nowPlayingAyah": "Ayah {label}",
+      "followingHifzChunkSuffix": " · following Hifz chunk",
+      "noAudioForOpenVerse": "No audio for the open verse",
+      "openAdvancedControlsAria": "Open advanced audio controls",
+      "settingsTitle": "Audio Settings",
+      "closeButton": "Close",
+      "adjustRangeLabel": "Adjust the range to the end",
+      "fromLabel": "From",
+      "toLabel": "To",
+      "loadingFullAudio": "Loading the full {scope} audio…",
+      "nowPlayingSummary": "Now playing: {summary}",
+      "hifzModeActiveNotice": "Hifz mode active: audio is limited to verses already unlocked.",
+      "repeatEachVerseLabel": "Repeat each verse",
+      "repeatSetLabel": "Repeat verse set",
+      "audioSpeedLabel": "Audio speed",
+      "prevVerseButton": "Previous Verse",
+      "nextVerseButton": "Next Verse",
+      "noVersesInRange": "No verses in range right now.",
+      "rangeSummaryFormat": "{start} → {end} ({count, plural, one {# ayah} other {# ayahs}})"
+    }
+  },
+  "tema": {
+    "actionPanel": {
+      "synopsisEyebrow": "Theme Synopsis",
+      "verseRangeLabel": "Verse {range}",
+      "sourceLabel": "Source: {source}"
+    },
+    "ayahMarker": {
+      "ariaLabel": "Verse {number}"
+    },
+    "dataFetcher": {
+      "loadError": "The theme couldn't be loaded.",
+      "retryButton": "Try again"
+    },
+    "chunkAyahList": {
+      "verseLabel": "Ayah {ref}",
+      "noWbwData": "Word-by-word data isn't available for this verse yet.",
+      "translationHeading": "BM Translation",
+      "noTranslationYet": "BM translation isn't available yet."
+    },
+    "jumpControls": {
+      "title": "Jump Theme",
+      "selectSurahLabel": "Select Surah",
+      "currentStatus": "Now: Surah {surah}, Theme {chunk} of {total}."
+    },
+    "pageContent": {
+      "noThemesYet": "Themes for this surah aren't available yet.",
+      "sourceSynopsis": "theme synopsis",
+      "sourceDescription": "theme description",
+      "sourceVerseExcerpt": "verse translation excerpt",
+      "sourceChunkTitle": "chunk title",
+      "synopsisFromVerses": "The theme {title} emerges through a series of verses emphasizing: {excerpt}",
+      "genericSynopsisFallback": "This section gathers verses that move under one shared focus of meaning. Read the verses below to see how this theme builds gradually through the surah.",
+      "themeCounterBadge": "Theme {current} of {total}",
+      "verseRangeLabel": "Verse {range}",
+      "prevSurahNav": "← {surah}",
+      "prevThemeNav": "← Theme",
+      "prevSurahFallbackName": "Surah",
+      "nextSurahNav": "{surah} →",
+      "nextThemeNav": "Theme →",
+      "endOfQuranLabel": "End of Quran"
+    },
+    "page": {
+      "surahPrefix": "Surah",
+      "subtitle": "Surah {id} • Themed reading"
+    }
+  },
   "faham": {
     "workspace": {
       "celebrationEyebrow": "Congrats! +1 Mastered",

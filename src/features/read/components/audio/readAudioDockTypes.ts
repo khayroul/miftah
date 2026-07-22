@@ -27,17 +27,23 @@ export interface ReadAudioLoopState {
   repeatSetStep: number;
 }
 
-export const RANGE_PRESETS: Array<{ value: RangePreset; label: string }> = [
-  { value: "page", label: "Halaman" },
-  { value: "surah", label: "Surah" },
-  { value: "juz", label: "Juz" },
-];
+export const RANGE_PRESET_VALUES: RangePreset[] = ["page", "surah", "juz"];
 
-export const RANGE_PRESET_SHORT_LABEL: Record<RangePreset, string> = {
-  page: "Hlm",
-  surah: "Surah",
-  juz: "Juz",
-};
+type RangePresetTranslator = (key: string) => string;
+
+export function rangePresetLabel(
+  preset: RangePreset,
+  t: RangePresetTranslator,
+): string {
+  return t(`rangePreset.${preset}`);
+}
+
+export function rangePresetShortLabel(
+  preset: RangePreset,
+  t: RangePresetTranslator,
+): string {
+  return t(`rangePresetShort.${preset}`);
+}
 
 export const REPEAT_OPTIONS: RepeatOption[] = [1, 2, 3, -1];
 export const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5] as const;
@@ -48,12 +54,6 @@ export function speedLabel(rate: number): string {
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
-}
-
-export function repeatLabel(value: RepeatOption): string {
-  if (value === -1) return "ulang tanpa henti";
-  if (value === 1) return "1 kali";
-  return `${value} kali`;
 }
 
 export function formatTrackLabel(track: ReadAudioTrack): string {
