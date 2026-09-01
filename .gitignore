@@ -84,3 +84,8 @@ public/sw.js
 !.claude/rules/
 !.claude/commands/
 !.claude/settings.json
+
+# Local design-audit and knowledge-graph outputs
+.impeccable/
+graphify-out/
+supabase/migrations/graphify-out/
