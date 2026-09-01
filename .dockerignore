@@ -1,0 +1,14 @@
+.git
+.next
+.vercel
+.env.local
+node_modules
+assets/*
+!assets/fonts/
+assets/fonts/*
+!assets/fonts/UthmanicHafs_V22.woff2
+data/qul/mini_quran_dev.sql
+data/seed/*
+!data/seed/surahs.json
+!data/seed/ayat.json
+test

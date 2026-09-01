@@ -5,7 +5,7 @@ import type { NextConfig } from "next";
 const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: "standalone",
   outputFileTracingIncludes: {
     "/**": [
       "./data/bm_wbw_complete.json",
@@ -23,6 +23,24 @@ const nextConfig: NextConfig = {
         },
       ],
     },
+    {
+      source: "/layouts/:path*",
+      headers: [
+        {
+          key: "Cache-Control",
+          value: "public, max-age=86400, stale-while-revalidate=604800",
+        },
+      ],
+    },
+    {
+      source: "/translations/:path*",
+      headers: [
+        {
+          key: "Cache-Control",
+          value: "public, max-age=86400, stale-while-revalidate=604800",
+        },
+      ],
+    },
   ],
 };
 
@@ -35,6 +53,4 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   org: "miftah",
   project: "javascript-nextjs",
 });
-
-
 

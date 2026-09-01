@@ -1,0 +1,12 @@
+services:
+  miftah:
+    build:
+      context: .
+      args:
+        MIFTAH_BUILD_SHA: ${MIFTAH_BUILD_SHA}
+    container_name: miftah
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    ports:
+      - "127.0.0.1:3001:3000"
