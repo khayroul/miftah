@@ -25,4 +25,11 @@ describe("resolvePassageLocation", () => {
       endPage: 43,
     });
   });
+
+  it("resolves the Al-Mulk range used by free practice", async () => {
+    await expect(resolvePassageLocation(67, 1, 10)).resolves.toEqual({
+      startPage: 562,
+      endPage: 562,
+    });
+  });
 });

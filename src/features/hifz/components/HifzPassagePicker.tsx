@@ -46,7 +46,6 @@ export interface HifzPassageSelection {
 
 interface PassageLocationResponse {
   endPage?: number;
-  error?: string;
   startPage?: number;
 }
 
@@ -362,7 +361,7 @@ export function HifzPassagePicker({
         typeof endPage !== "number" ||
         !Number.isInteger(endPage)
       ) {
-        setErrorMessage(payload.error ?? t("resolveError"));
+        setErrorMessage(t("resolveError"));
         return;
       }
 

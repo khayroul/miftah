@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     "/**": [
       "./data/bm_wbw_complete.json",
       "./data/qul/english-wbw-translation.json",
+      "./data/seed/verse_metadata.json",
       "./data/mushaf-layout/mushaf/**",
     ],
   },
@@ -53,4 +54,3 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   org: "miftah",
   project: "javascript-nextjs",
 });
-

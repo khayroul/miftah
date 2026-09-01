@@ -26,6 +26,7 @@ data/*
 data/seed/*
 !data/seed/ayat.json
 !data/seed/surahs.json
+!data/seed/verse_metadata.json
 
 data/qul/*
 !data/qul/english-wbw-translation.json
