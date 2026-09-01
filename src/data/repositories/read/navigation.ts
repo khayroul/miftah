@@ -8,6 +8,7 @@ export interface AyahNavigationRow {
 
 export interface SurahNavigationName {
   id: number;
+  ayah_count: number;
   name_transliteration: string | null;
 }
 
@@ -58,7 +59,7 @@ export async function fetchReadNavigationDataset(): Promise<ReadNavigationDatase
     fetchAllAyahNavigationRows(),
     supabaseBrowser
       .from("surahs")
-      .select("id,name_transliteration")
+      .select("id,name_transliteration,ayah_count")
       .order("id", { ascending: true }),
   ]);
 
@@ -72,6 +73,7 @@ export async function fetchReadNavigationDataset(): Promise<ReadNavigationDatase
       ? []
       : (surahResponse.data ?? []).map((row) => ({
           id: row.id,
+          ayah_count: row.ayah_count,
           name_transliteration: row.name_transliteration,
         })),
   };

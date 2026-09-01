@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { buildSignInPath } from "@/features/auth";
+import type { JuzJumpTarget, SurahJumpTarget } from "@/lib/readNavigation";
 import { HifzReportCard } from "./HifzReportCard";
 import { saveQueue } from "../domain/sessionQueue";
 import type {
@@ -27,6 +29,10 @@ import {
   HifzFirstRunPanel,
   type HifzEntryPath,
 } from "./HifzFirstRunPanel";
+import {
+  HifzPassagePicker,
+  type HifzPassageSelection,
+} from "./HifzPassagePicker";
 
 interface ImportResponse extends HifzImportSummary {
   error?: string;
@@ -42,6 +48,8 @@ interface HifzOverviewProps {
   isGuest: boolean;
   hasProgress: boolean;
   canStartFresh?: boolean;
+  juzTargets: JuzJumpTarget[];
+  surahTargets: SurahJumpTarget[];
 }
 
 export function HifzOverview({
@@ -54,6 +62,8 @@ export function HifzOverview({
   isGuest,
   hasProgress,
   canStartFresh = false,
+  juzTargets,
+  surahTargets,
 }: HifzOverviewProps) {
   const router = useRouter();
   const t = useTranslations("hifz.overview");
@@ -221,6 +231,41 @@ export function HifzOverview({
     );
   }, [openReadPage, t, testPage]);
 
+  const handlePracticeSelection = useCallback(
+    (selection: HifzPassageSelection) => {
+      const params = new URLSearchParams({
+        mode: "hifz",
+        from: "hifz",
+        intent: "test",
+        view: selection.view,
+      });
+
+      if (
+        selection.surah &&
+        selection.startAyah &&
+        selection.endAyah &&
+        selection.startPage &&
+        selection.endPage
+      ) {
+        params.set("surah", String(selection.surah));
+        params.set("startAyah", String(selection.startAyah));
+        params.set("endAyah", String(selection.endAyah));
+        params.set("startPage", String(selection.startPage));
+        params.set("endPage", String(selection.endPage));
+      }
+
+      openReadPage(
+        {
+          actionLabel: t("openingSelectedPassage"),
+          helperText: selection.label,
+          pageNumber: selection.pageNumber,
+        },
+        `/read/${selection.pageNumber}?${params.toString()}`,
+      );
+    },
+    [openReadPage, t],
+  );
+
   const handleCta = useCallback(
     async (type: "memorize" | "review") => {
       if (isGuest) {
@@ -275,6 +320,7 @@ export function HifzOverview({
 
   return (
     <>
+      <h1 className="sr-only">{t("pageTitle")}</h1>
       {pendingJourney ? <HifzPendingJourneyOverlay journey={pendingJourney} /> : null}
 
       <div className="flex flex-col gap-8">
@@ -333,14 +379,27 @@ export function HifzOverview({
           newPages={effectiveNewPages}
           onMemorize={() => handleCta("memorize")}
           onReview={() => handleCta("review")}
+          passagePicker={
+            <HifzPassagePicker
+              isPending={isPending}
+              juzTargets={juzTargets}
+              onSelect={handlePracticeSelection}
+              surahTargets={surahTargets}
+            />
+          }
           reviewPages={effectiveReviewPages}
+          signInHref={buildSignInPath("/hifz")}
           showStartFresh={showStartFresh}
         />
 
-        <HifzReportCard
-          juzProgress={effectiveJuzProgress}
-          pageGrid={pageGrid ?? []}
-        />
+        {!isGuest ? (
+          <HifzReportCard
+            globalStreak={effectiveGlobalStreak}
+            juzProgress={effectiveJuzProgress}
+            pageGrid={pageGrid ?? []}
+            stats={effectiveStats}
+          />
+        ) : null}
       </div>
     </>
   );

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { navigateWithOfflineSupport } from "@/shared/pwa/navigation";
 
 interface ThemeSurahOption {
@@ -25,6 +25,7 @@ export function ThemeJumpControls({
   surahOptions,
 }: ThemeJumpControlsProps) {
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("tema.jumpControls");
   const [selectedSurah, setSelectedSurah] = useState(String(currentSurahNumber));
 
@@ -47,11 +48,11 @@ export function ThemeJumpControls({
                 `/read/surah/${nextValue}/themes?${params.toString()}`,
               );
             }}
-            className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-stone-500 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
+            className="mt-1.5 min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-stone-500 sm:text-base dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-400"
           >
             {surahOptions.map((option) => (
               <option key={option.surah} value={option.surah}>
-                {option.surah}. {option.nameBm} ({option.nameEn})
+                {option.surah}. {locale === "en" ? option.nameEn : option.nameBm}
               </option>
             ))}
           </select>

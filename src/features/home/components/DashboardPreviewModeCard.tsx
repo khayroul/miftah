@@ -61,7 +61,7 @@ function toneClasses(tone: CardTone) {
   };
 }
 
-function shouldPrefetch(href: string): boolean {
+function shouldPrefetch(): boolean {
   return false;
 }
 
@@ -133,7 +133,7 @@ export function DashboardPreviewModeCard({
 
       <Link
         href={card.href}
-        prefetch={shouldPrefetch(card.href)}
+        prefetch={shouldPrefetch()}
         className="mt-6 inline-flex rounded-xl border border-stone-900/10 bg-white/80 px-4 py-2 text-sm font-medium text-stone-800 transition hover:bg-white dark:border-white/10 dark:bg-stone-950/60 dark:text-stone-100 dark:hover:bg-stone-950"
       >
         {card.ctaLabel}

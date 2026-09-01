@@ -5,6 +5,7 @@ import { sanitizeNextPath } from "@/features/auth";
 import { getOptionalAuthUser } from "@/features/auth/server";
 import { AuthSignInForm } from "@/features/auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LanguageToggle } from "@/components/LanguageToggle";
 
 interface SignInPageProps {
   searchParams: Promise<{
@@ -31,11 +32,14 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
         <header className="flex items-center justify-between gap-3">
           <Link
             href={nextPath}
-            className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+            className="ui-touch-target inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-4 text-sm font-medium text-stone-700 shadow-sm transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
           >
             &larr; {t("back")}
           </Link>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <LanguageToggle />
+          </div>
         </header>
 
         <section className="mx-auto w-full max-w-2xl">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { AyahWordByWordEntry } from "@/lib/queries";
 import type { ThemeAppearanceAyah } from "@/data/repositories/tema";
 import { ThemeAyahMarker } from "./ThemeAyahMarker";
@@ -15,6 +15,8 @@ export function ThemeChunkAyahList({
   wbwByAyahId,
 }: ThemeChunkAyahListProps) {
   const t = useTranslations("tema.chunkAyahList");
+  const locale = useLocale();
+  const isEnglish = locale === "en";
   return (
     <div className="space-y-14 pb-8">
       {ayat.map((ayah) => {
@@ -42,7 +44,7 @@ export function ThemeChunkAyahList({
                     {wbwByAyahId[ayah.id].map((word) => (
                       <div
                         key={`${ayah.id}-${word.position}`}
-                        className="group/word flex min-w-[5.6rem] max-w-[8.5rem] flex-none flex-col items-center justify-start rounded-[1.25rem] border border-stone-200/80 bg-white/92 px-3 py-3 text-center shadow-[0_14px_30px_-24px_rgba(28,25,23,0.35)] transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-[0_18px_34px_-24px_rgba(5,150,105,0.28)] dark:border-stone-700/70 dark:bg-stone-900/80 dark:hover:border-emerald-700/50 dark:hover:bg-stone-900"
+                        className="group/word flex min-w-[6.4rem] max-w-[9.5rem] flex-none flex-col items-center justify-start rounded-[1.25rem] border border-stone-200/80 bg-white/92 px-3 py-3 text-center shadow-[0_14px_30px_-24px_rgba(28,25,23,0.35)] transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-[0_18px_34px_-24px_rgba(5,150,105,0.28)] dark:border-stone-700/70 dark:bg-stone-900/80 dark:hover:border-emerald-700/50 dark:hover:bg-stone-900"
                       >
                         <span
                           className="font-arabic mb-2 block text-center text-[2.25rem] leading-[1.55] text-stone-900 dark:text-stone-100 sm:text-[2.8rem]"
@@ -52,9 +54,11 @@ export function ThemeChunkAyahList({
                         </span>
                         <span
                           dir="ltr"
-                          className="block text-center text-[11px] leading-snug text-stone-600 transition-colors line-clamp-2 group-hover/word:text-stone-800 dark:text-stone-400 dark:group-hover/word:text-stone-200 sm:text-xs"
+                          className="block text-center text-sm leading-snug text-stone-600 transition-colors line-clamp-2 group-hover/word:text-stone-800 dark:text-stone-300 dark:group-hover/word:text-stone-100"
                         >
-                          {word.translation_bm ?? word.translation_en ?? "—"}
+                          {isEnglish
+                            ? word.translation_en ?? "—"
+                            : word.translation_bm ?? "—"}
                         </span>
                       </div>
                     ))}
@@ -80,11 +84,13 @@ export function ThemeChunkAyahList({
 
               <div>
                 <div className="rounded-[1.4rem] border border-stone-100/90 bg-stone-50/75 p-4 dark:border-stone-800/80 dark:bg-stone-800/20 sm:p-5">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
                     {t("translationHeading")}
                   </p>
-                  <p className="mt-3 text-[15px] leading-relaxed text-stone-700 dark:text-stone-300">
-                    {ayah.display_bm ?? t("noTranslationYet")}
+                  <p className="mt-3 text-base leading-relaxed text-stone-700 dark:text-stone-300">
+                    {isEnglish
+                      ? ayah.translation_en ?? t("noTranslationYet")
+                      : ayah.display_bm ?? t("noTranslationYet")}
                   </p>
                 </div>
               </div>

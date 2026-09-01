@@ -1,10 +1,13 @@
 import { cookies } from "next/headers";
 import { getRequestConfig } from "next-intl/server";
+import {
+  DEFAULT_LOCALE,
+  LOCALE_COOKIE,
+  LOCALES,
+  type AppLocale,
+} from "./config";
 
-export const LOCALES = ["ms", "en"] as const;
-export type AppLocale = (typeof LOCALES)[number];
-export const DEFAULT_LOCALE: AppLocale = "ms";
-export const LOCALE_COOKIE = "NEXT_LOCALE";
+export { DEFAULT_LOCALE, LOCALE_COOKIE, LOCALES, type AppLocale } from "./config";
 
 function isAppLocale(value: string | undefined): value is AppLocale {
   return LOCALES.includes(value as AppLocale);

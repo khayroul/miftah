@@ -16,6 +16,7 @@ interface ReadModeToolsProps {
   audioEnabled: boolean;
   isAudioVisible: boolean;
   onToggleAudio: () => void;
+  showHifzRevealControl?: boolean;
 }
 
 export function ReadModeTools({
@@ -27,6 +28,7 @@ export function ReadModeTools({
   audioEnabled,
   isAudioVisible,
   onToggleAudio,
+  showHifzRevealControl = true,
 }: ReadModeToolsProps) {
   const router = useRouter();
   const t = useTranslations("read.modeTools");
@@ -73,7 +75,7 @@ export function ReadModeTools({
           <button
             type="button"
             onClick={onToggleAudio}
-            className={`flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition-all shadow-sm sm:px-4 sm:text-base ${
+            className={`ui-touch-target flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border px-3 py-2 text-sm font-medium shadow-sm transition-colors sm:px-4 sm:text-base ${
               isAudioVisible
                 ? "border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500 dark:text-emerald-950"
                 : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
@@ -89,7 +91,7 @@ export function ReadModeTools({
         <button
           type="button"
           onClick={onToggleJumpControls}
-          className={`min-h-10 shrink-0 rounded-full border px-3 py-2 text-sm font-medium transition-all shadow-sm sm:px-4 sm:text-base ${
+          className={`ui-touch-target min-h-11 shrink-0 rounded-full border px-3 py-2 text-sm font-medium shadow-sm transition-colors sm:px-4 sm:text-base ${
             showJumpControls
               ? "border-stone-900 bg-stone-900 text-stone-50 dark:border-stone-100 dark:bg-stone-100 dark:text-stone-900"
               : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
@@ -98,13 +100,13 @@ export function ReadModeTools({
           {showJumpControls ? t("closePageButton") : t("choosePageButton")}
         </button>
 
-        {mode === "hifz" ? (
+        {mode === "hifz" && showHifzRevealControl ? (
           <button
             type="button"
             onClick={() =>
               onHifzRevealByThirdsChange(!hifzRevealByThirdsEnabled)
             }
-            className={`min-h-10 shrink-0 rounded-full border px-3 py-2 text-sm font-medium transition-all shadow-sm sm:px-4 sm:text-base ${
+            className={`ui-touch-target min-h-11 shrink-0 rounded-full border px-3 py-2 text-sm font-medium shadow-sm transition-colors sm:px-4 sm:text-base ${
               hifzRevealByThirdsEnabled
                 ? "border-teal-900 bg-teal-900 text-teal-50 dark:border-teal-300 dark:bg-teal-300 dark:text-teal-950"
                 : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"

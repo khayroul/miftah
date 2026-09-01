@@ -38,7 +38,7 @@ export function LightweightBreadcrumb({
               {item.href && !isLast ? (
                 <Link
                   href={item.href}
-                  className="rounded px-1 py-0.5 transition hover:bg-stone-100 hover:text-stone-800 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                  className="ui-touch-target inline-flex min-h-11 min-w-11 items-center justify-center rounded px-1 transition-colors hover:bg-stone-100 hover:text-stone-800 dark:hover:bg-stone-800 dark:hover:text-stone-100"
                 >
                   {item.label}
                 </Link>

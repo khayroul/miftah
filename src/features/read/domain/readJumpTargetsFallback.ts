@@ -34,8 +34,27 @@ function buildSurahNameMap(): Map<number, string> {
   return names;
 }
 
+function buildSurahAyahCountMap(): Map<number, number> {
+  const counts = new Map<number, number>();
+
+  for (const row of surahSeedData) {
+    if (
+      typeof row.id === "number" &&
+      Number.isInteger(row.id) &&
+      typeof row.ayah_count === "number" &&
+      Number.isInteger(row.ayah_count) &&
+      row.ayah_count > 0
+    ) {
+      counts.set(row.id, row.ayah_count);
+    }
+  }
+
+  return counts;
+}
+
 function buildFallbackSurahTargets(): SurahJumpTarget[] {
   const namesBySurahId = buildSurahNameMap();
+  const ayahCountsBySurahId = buildSurahAyahCountMap();
   const targets: SurahJumpTarget[] = [];
 
   for (let surah = 1; surah <= 114; surah += 1) {
@@ -44,6 +63,7 @@ function buildFallbackSurahTargets(): SurahJumpTarget[] {
       surah,
       page: typeof startPage === "number" ? startPage : 1,
       name: namesBySurahId.get(surah) ?? `Surah ${surah}`,
+      ayahCount: ayahCountsBySurahId.get(surah) ?? 1,
     });
   }
 

@@ -152,7 +152,7 @@ export function AuthSignInPanel({
           <div className="text-right">
             <Link
               href={`/auth/forgot-password?next=${encodeURIComponent(nextPath)}`}
-              className="text-sm font-medium text-amber-700 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300"
+              className="ui-touch-target inline-flex min-h-11 items-center text-sm font-medium text-amber-700 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300"
             >
               {t("forgotPasswordLink")}
             </Link>
@@ -196,13 +196,13 @@ export function AuthSignInPanel({
             <button
               type="button"
               onClick={() => onModeChange("password")}
-              className="rounded-full border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+              className="ui-touch-target inline-flex min-h-11 items-center rounded-full border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
             >
               {t("switchToPasswordButton")}
             </button>
             <Link
               href={PREVIEW_PATH}
-              className="rounded-full border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
+              className="ui-touch-target inline-flex min-h-11 items-center rounded-full border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
             >
               {t("previewLinkButton")}
             </Link>

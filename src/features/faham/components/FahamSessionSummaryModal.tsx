@@ -51,7 +51,7 @@ export function FahamSessionSummaryModal({
         aria-modal="true"
         aria-labelledby="faham-session-summary-title"
         aria-describedby="faham-session-summary-guidance"
-        className="ui-surface-solid animate-bounce-in relative w-full max-w-sm rounded-[2rem] p-6"
+        className="ui-surface-solid animate-fade-in-up relative w-full max-w-sm rounded-[2rem] p-6"
         onClick={(event) => event.stopPropagation()}
       >
         <button

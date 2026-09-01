@@ -77,7 +77,7 @@ export function ThemeToggle({
         aria-pressed={theme === "light"}
         aria-label={t("lightTheme")}
         title={t("lightTheme")}
-        className={`flex min-h-9 items-center justify-center gap-1.5 rounded-full ${iconOnly ? "w-9 px-0" : "px-3"} py-1 text-xs font-semibold transition-all duration-300 ${
+        className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full ${iconOnly ? "w-11 px-0" : "px-3"} py-1 text-xs font-semibold transition-colors ${
           theme === "light"
             ? "bg-amber-100 text-amber-900 shadow-sm dark:bg-amber-900/30 dark:text-amber-300"
             : "text-stone-500 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200"
@@ -94,7 +94,7 @@ export function ThemeToggle({
         aria-pressed={theme === "dark"}
         aria-label={t("darkTheme")}
         title={t("darkTheme")}
-        className={`flex min-h-9 items-center justify-center gap-1.5 rounded-full ${iconOnly ? "w-9 px-0" : "px-3"} py-1 text-xs font-semibold transition-all duration-300 ${
+        className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full ${iconOnly ? "w-11 px-0" : "px-3"} py-1 text-xs font-semibold transition-colors ${
           theme === "dark"
             ? "bg-indigo-100 text-indigo-900 shadow-sm dark:bg-indigo-900/40 dark:text-indigo-300"
             : "text-stone-500 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200"

@@ -2,24 +2,36 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import type { JuzStat, PageGridEntry, PageGridStatus } from "../domain/types";
+import type {
+  HifzStats,
+  JuzStat,
+  PageGridEntry,
+  PageGridStatus,
+} from "../domain/types";
+import {
+  matchesHifzProgressFilter,
+  summarizeHifzPageGrid,
+  type HifzProgressFilter,
+} from "../domain/progressExplorer";
 import { JUZ_BOUNDARY_PAGES, JUZ_PAGE_COUNTS } from "../domain/constants";
 import { HifzPageActionSheet } from "./HifzPageActionSheet";
 
 interface HifzReportCardProps {
+  globalStreak: number;
   juzProgress: JuzStat[];
   pageGrid: PageGridEntry[];
+  stats: HifzStats;
 }
 
 const TOTAL_QURAN_PAGES = 604;
 
 const STATUS_COLORS: Record<PageGridStatus, string> = {
-  "not-started": "bg-stone-200 dark:bg-stone-700",
-  sabak: "bg-amber-400 dark:bg-amber-500",
-  sabqi: "bg-sky-400 dark:bg-sky-500",
-  manzil: "bg-emerald-500 dark:bg-emerald-400",
-  due: "bg-yellow-400 dark:bg-yellow-500",
-  overdue: "bg-red-500 dark:bg-red-400",
+  "not-started": "bg-stone-300 dark:bg-slate-600",
+  sabak: "bg-amber-500 dark:bg-amber-400",
+  sabqi: "bg-sky-500 dark:bg-sky-400",
+  manzil: "bg-emerald-600 dark:bg-emerald-400",
+  due: "bg-yellow-500 dark:bg-yellow-400",
+  overdue: "bg-rose-600 dark:bg-rose-400",
 };
 
 type RelativeDateTranslator = (
@@ -30,15 +42,15 @@ type RelativeDateTranslator = (
 function juzCardColor(stat: JuzStat): string {
   const startedPages = stat.totalPages - stat.notStartedPages;
   if (startedPages <= 0) {
-    return "border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800/60";
+    return "border-border-subtle bg-surface-muted";
   }
   if (stat.manzilPagePct >= 75) {
-    return "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-900/30";
+    return "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/35";
   }
   if (stat.manzilPagePct >= 25) {
-    return "border-teal-200 bg-teal-50 dark:border-teal-700 dark:bg-teal-900/25";
+    return "border-teal-300 bg-teal-50 dark:border-teal-700 dark:bg-teal-950/30";
   }
-  return "border-amber-200 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/25";
+  return "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/30";
 }
 
 function formatRelativeDate(isoDate: string, t: RelativeDateTranslator): string {
@@ -54,10 +66,19 @@ function formatRelativeDate(isoDate: string, t: RelativeDateTranslator): string 
   return t("relativeMonthsAgo", { count: Math.floor(diffDays / 30) });
 }
 
-export function HifzReportCard({ juzProgress, pageGrid }: HifzReportCardProps) {
+export function HifzReportCard({
+  globalStreak,
+  juzProgress,
+  pageGrid,
+  stats,
+}: HifzReportCardProps) {
   const t = useTranslations("hifz.reportCard");
   const tStatus = useTranslations("hifz.status");
-  const STATUS_LABELS: Record<PageGridStatus, string> = {
+  const [selectedJuz, setSelectedJuz] = useState<number | null>(null);
+  const [filter, setFilter] = useState<HifzProgressFilter>("all");
+  const [actionPage, setActionPage] = useState<PageGridEntry | null>(null);
+
+  const statusLabels: Record<PageGridStatus, string> = {
     "not-started": tStatus("notStarted"),
     sabak: tStatus("sabak"),
     sabqi: tStatus("sabqi"),
@@ -65,192 +86,168 @@ export function HifzReportCard({ juzProgress, pageGrid }: HifzReportCardProps) {
     due: tStatus("due"),
     overdue: tStatus("overdue"),
   };
-  const [selectedJuz, setSelectedJuz] = useState<number | null>(null);
-  const [actionPage, setActionPage] = useState<PageGridEntry | null>(null);
+  const filterOptions: Array<{ label: string; value: HifzProgressFilter }> = [
+    { label: t("filterAll"), value: "all" },
+    { label: t("filterLearning"), value: "learning" },
+    { label: t("filterDue"), value: "due" },
+    { label: t("filterStrong"), value: "strong" },
+    { label: t("filterNotStarted"), value: "not-started" },
+  ];
 
-  const totalManzilPages = juzProgress.reduce((sum, s) => sum + s.manzilPages, 0);
-  const overallPct = (totalManzilPages / TOTAL_QURAN_PAGES) * 100;
-
-  const pagesByJuz = useMemo(() => {
-    const map = new Map<number, PageGridEntry[]>();
-    for (const entry of pageGrid) {
-      const existing = map.get(entry.juz);
-      if (existing) {
-        map.set(entry.juz, [...existing, entry]);
-      } else {
-        map.set(entry.juz, [entry]);
-      }
-    }
-    return map;
-  }, [pageGrid]);
+  const pageSummary = useMemo(() => summarizeHifzPageGrid(pageGrid), [pageGrid]);
+  const overallPct = (stats.totalManzilPages / TOTAL_QURAN_PAGES) * 100;
+  const selectedPages = useMemo(() => {
+    if (selectedJuz === null) return [];
+    return pageGrid.filter(
+      (entry) =>
+        entry.juz === selectedJuz &&
+        matchesHifzProgressFilter(entry, filter),
+    );
+  }, [filter, pageGrid, selectedJuz]);
 
   const handleJuzClick = useCallback((juz: number) => {
-    setSelectedJuz((prev) => (prev === juz ? null : juz));
+    setSelectedJuz((current) => (current === juz ? null : juz));
   }, []);
 
-  const selectedPages = selectedJuz ? (pagesByJuz.get(selectedJuz) ?? []) : [];
+  const summaryItems = [
+    { label: t("summaryStrong"), value: stats.totalManzilPages, detail: t("summaryPages"), color: "text-success" },
+    { label: t("summaryLearning"), value: pageSummary.learningPages, detail: t("summaryPages"), color: "text-accent" },
+    { label: t("summaryDue"), value: Math.max(stats.dueTodayPages, pageSummary.duePages), detail: t("summaryNow"), color: "text-warning" },
+    { label: t("summaryStreak"), value: globalStreak, detail: t("summaryDays"), color: "text-brand-strong" },
+  ];
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Overall progress bar */}
-      <div className="rounded-2xl border border-stone-200/80 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-stone-700/50 dark:bg-stone-900/60 sm:p-6">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100">
-            {t("title")}
-          </h2>
-          <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
-            {t("pagesFraction", { completed: totalManzilPages, total: TOTAL_QURAN_PAGES })}
-          </p>
-        </div>
-        <div className="mt-3">
-          <div className="h-2.5 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
-            <div
-              className="h-full rounded-full bg-emerald-500 transition-all duration-500 dark:bg-emerald-400"
-              style={{ width: `${Math.max(0, Math.min(overallPct, 100))}%` }}
-            />
-          </div>
-          <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">
-            {t("manzilPct", { pct: Math.round(overallPct) })}
-          </p>
-        </div>
-
-        {/* Legend */}
-        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-xs">
-          {(Object.keys(STATUS_COLORS) as PageGridStatus[])
-            .filter((s) => s !== "overdue")
-            .map((status) => (
-              <span key={status} className="flex items-center gap-1.5">
-                <span className={`inline-block h-2.5 w-2.5 rounded-sm ${STATUS_COLORS[status]}`} />
-                <span className="text-stone-600 dark:text-stone-400">
-                  {STATUS_LABELS[status]}
-                </span>
-              </span>
-            ))}
+    <section className="rounded-2xl bg-surface-solid p-5 shadow-[0_18px_55px_-38px_rgba(41,37,36,0.45)] sm:p-7">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold tracking-[-0.02em] text-foreground">{t("title")}</h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted">{t("description")}</p>
         </div>
       </div>
 
-      {/* Juz grid — all 30 visible */}
-      <div className="grid grid-cols-5 gap-2 sm:grid-cols-6">
-        {juzProgress.map((stat) => {
-          const isSelected = selectedJuz === stat.juz;
-          const startedPages = stat.totalPages - stat.notStartedPages;
+      <div className="mt-6 grid grid-cols-2 overflow-hidden rounded-xl bg-surface-muted sm:grid-cols-4">
+        {summaryItems.map((item, index) => (
+          <div
+            key={item.label}
+            className={`px-4 py-4 ${index % 2 === 1 ? "border-l border-border-subtle" : ""} ${index >= 2 ? "border-t border-border-subtle sm:border-t-0" : ""} ${index > 0 ? "sm:border-l sm:border-border-subtle" : ""}`}
+          >
+            <p className="text-xs font-semibold text-muted">{item.label}</p>
+            <p className={`mt-1 text-2xl font-bold tabular-nums tracking-[-0.02em] ${item.color}`}>{item.value}</p>
+            <p className="mt-0.5 text-xs text-muted">{item.detail}</p>
+          </div>
+        ))}
+      </div>
 
-          return (
-            <button
-              key={stat.juz}
-              type="button"
-              onClick={() => handleJuzClick(stat.juz)}
-              className={`rounded-xl border p-2.5 text-left transition-all sm:p-3 ${juzCardColor(stat)} ${
-                isSelected
-                  ? "ring-2 ring-teal-500 ring-offset-1 dark:ring-teal-400 dark:ring-offset-stone-900"
-                  : "hover:shadow-sm"
-              }`}
-            >
-              <p className="text-xs font-bold text-stone-800 dark:text-stone-200">
-                {t("juzLabel", { juz: stat.juz })}
-              </p>
-              {/* Mini progress bar */}
-              <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-stone-200/80 dark:bg-stone-600">
-                {startedPages > 0 ? (
-                  <div className="flex h-full">
-                    <div
-                      className="h-full bg-emerald-500 dark:bg-emerald-400"
-                      style={{ width: `${stat.manzilPagePct}%` }}
-                    />
-                    {stat.sabqiPages > 0 ? (
-                      <div
-                        className="h-full bg-sky-400 dark:bg-sky-500"
-                        style={{
-                          width: `${(stat.sabqiPages / stat.totalPages) * 100}%`,
-                        }}
-                      />
-                    ) : null}
-                    {stat.sabakPages > 0 ? (
-                      <div
-                        className="h-full bg-amber-400 dark:bg-amber-500"
-                        style={{
-                          width: `${(stat.sabakPages / stat.totalPages) * 100}%`,
-                        }}
-                      />
+      <div className="mt-5">
+        <div className="flex items-center justify-between gap-3 text-sm">
+          <span className="font-semibold text-foreground">{t("manzilProgress")}</span>
+          <span className="tabular-nums text-muted">{t("pagesFraction", { completed: stats.totalManzilPages, total: TOTAL_QURAN_PAGES })}</span>
+        </div>
+        <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-surface-strong">
+          <div className="h-full rounded-full bg-success transition-[width] duration-500" style={{ width: `${Math.max(0, Math.min(overallPct, 100))}%` }} />
+        </div>
+        <p className="mt-1.5 text-xs text-muted">{t("manzilPct", { pct: Math.round(overallPct) })}</p>
+      </div>
+
+      <>
+          <div className="mt-7 border-t border-border-subtle pt-6">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-foreground">{t("mapTitle")}</h3>
+                <p className="mt-1 text-sm text-muted">{t("mapDescription")}</p>
+              </div>
+              <div className="flex flex-wrap gap-2" role="group" aria-label={t("filterLabel")}>
+                {filterOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    aria-pressed={filter === option.value}
+                    onClick={() => setFilter(option.value)}
+                    className={`ui-touch-target min-h-10 rounded-lg px-3 text-xs font-semibold transition-colors ${filter === option.value ? "bg-foreground text-background" : "bg-surface-muted text-muted hover:bg-surface-strong hover:text-foreground"}`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs">
+              {(Object.keys(STATUS_COLORS) as PageGridStatus[]).map((status) => (
+                <span key={status} className="flex items-center gap-1.5">
+                  <span className={`inline-block h-2.5 w-2.5 rounded-sm ${STATUS_COLORS[status]}`} />
+                  <span className="text-muted">{statusLabels[status]}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-5 gap-2 sm:grid-cols-6">
+            {juzProgress.map((stat) => {
+              const isSelected = selectedJuz === stat.juz;
+              const startedPages = stat.totalPages - stat.notStartedPages;
+              const matchCount = pageGrid.filter((entry) => entry.juz === stat.juz && matchesHifzProgressFilter(entry, filter)).length;
+
+              return (
+                <button
+                  key={stat.juz}
+                  type="button"
+                  onClick={() => handleJuzClick(stat.juz)}
+                  className={`ui-touch-target rounded-xl border p-2.5 text-left transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-sm sm:p-3 ${juzCardColor(stat)} ${isSelected ? "ring-2 ring-brand ring-offset-2 ring-offset-background" : ""}`}
+                >
+                  <p className="text-xs font-bold text-foreground">{t("juzLabel", { juz: stat.juz })}</p>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-background/70">
+                    {startedPages > 0 ? (
+                      <div className="flex h-full">
+                        <div className="h-full bg-emerald-600 dark:bg-emerald-400" style={{ width: `${stat.manzilPagePct}%` }} />
+                        {stat.sabqiPages > 0 ? <div className="h-full bg-sky-500 dark:bg-sky-400" style={{ width: `${(stat.sabqiPages / stat.totalPages) * 100}%` }} /> : null}
+                        {stat.sabakPages > 0 ? <div className="h-full bg-amber-500 dark:bg-amber-400" style={{ width: `${(stat.sabakPages / stat.totalPages) * 100}%` }} /> : null}
+                      </div>
                     ) : null}
                   </div>
-                ) : null}
+                  <p className="mt-1.5 text-xs text-muted">
+                    {filter === "all" ? t("pagesStarted", { started: startedPages, total: stat.totalPages }) : t("filterMatches", { count: matchCount })}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          {selectedJuz !== null ? (
+            <div className="mt-5 rounded-xl bg-surface-muted p-4 sm:p-5">
+              <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+                <h3 className="text-base font-bold text-foreground">{t("juzLabel", { juz: selectedJuz })}</h3>
+                <p className="text-xs text-muted">{t("pageRangeLabel", { start: JUZ_BOUNDARY_PAGES[selectedJuz - 1], end: JUZ_BOUNDARY_PAGES[selectedJuz - 1] + (JUZ_PAGE_COUNTS[selectedJuz] ?? 0) - 1 })}</p>
               </div>
-              <p className="mt-1 text-[10px] text-stone-500 dark:text-stone-400">
-                {t("pagesStarted", { started: startedPages, total: stat.totalPages })}
-              </p>
-            </button>
-          );
-        })}
-      </div>
 
-      {/* Level 2 — Page detail for selected juz */}
-      {selectedJuz !== null ? (
-        <div className="animate-[fadeInUp_300ms_ease-out] rounded-2xl border border-stone-200/80 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-stone-700/50 dark:bg-stone-900/60 sm:p-6">
-          <div className="mb-4 flex items-baseline justify-between">
-            <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
-              {t("juzLabel", { juz: selectedJuz })}
-            </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
-              {t("pageRangeLabel", {
-                start: JUZ_BOUNDARY_PAGES[selectedJuz - 1],
-                end: JUZ_BOUNDARY_PAGES[selectedJuz - 1] + (JUZ_PAGE_COUNTS[selectedJuz] ?? 0) - 1,
-              })}
-            </p>
-          </div>
+              {selectedPages.length > 0 ? (
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-7">
+                  {selectedPages.map((entry) => (
+                    <button
+                      key={entry.page}
+                      type="button"
+                      onClick={() => setActionPage(entry)}
+                      className="ui-touch-target flex min-h-16 flex-col items-center justify-center rounded-lg bg-background px-2 py-2.5 transition-colors hover:bg-surface-solid"
+                    >
+                      <span className="text-sm font-semibold tabular-nums text-foreground">{entry.page}</span>
+                      <span className={`mt-1 inline-block h-1.5 w-7 rounded-full ${STATUS_COLORS[entry.status]}`} />
+                      {entry.lastReviewedAt ? (
+                        <span className="mt-1 text-xs leading-tight text-muted">{formatRelativeDate(entry.lastReviewedAt, t)}</span>
+                      ) : (
+                        <span className="mt-1 text-xs leading-tight text-muted/60">—</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-lg bg-background px-4 py-5 text-center text-sm text-muted">{t("noFilterMatches")}</p>
+              )}
+            </div>
+          ) : (
+            <p className="mt-4 text-center text-sm text-muted">{t("tapToView")}</p>
+          )}
+      </>
 
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-7">
-            {selectedPages.map((entry) => (
-              <button
-                key={entry.page}
-                type="button"
-                onClick={() => setActionPage(entry)}
-                className={`flex flex-col items-center rounded-lg border px-2 py-2.5 transition hover:shadow-sm ${
-                  entry.status === "not-started"
-                    ? "border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800/50"
-                    : entry.status === "manzil"
-                      ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/30"
-                      : entry.status === "sabqi"
-                        ? "border-sky-200 bg-sky-50 dark:border-sky-800 dark:bg-sky-900/30"
-                        : entry.status === "sabak"
-                          ? "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/30"
-                          : entry.status === "due"
-                            ? "border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/30"
-                            : "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/30"
-                }`}
-              >
-                <span className="text-sm font-semibold text-stone-800 dark:text-stone-200">
-                  {entry.page}
-                </span>
-                <span
-                  className={`mt-1 inline-block h-1.5 w-6 rounded-full ${STATUS_COLORS[entry.status]}`}
-                />
-                {entry.lastReviewedAt ? (
-                  <span className="mt-1 text-[9px] leading-tight text-stone-400 dark:text-stone-500">
-                    {formatRelativeDate(entry.lastReviewedAt, t)}
-                  </span>
-                ) : (
-                  <span className="mt-1 text-[9px] leading-tight text-stone-300 dark:text-stone-600">
-                    —
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <p className="text-center text-sm text-stone-400 dark:text-stone-500">
-          {t("tapToView")}
-        </p>
-      )}
-
-      {/* Action sheet */}
-      {actionPage ? (
-        <HifzPageActionSheet
-          entry={actionPage}
-          onClose={() => setActionPage(null)}
-        />
-      ) : null}
-    </div>
+      {actionPage ? <HifzPageActionSheet entry={actionPage} onClose={() => setActionPage(null)} /> : null}
+    </section>
   );
 }

@@ -6,6 +6,7 @@ export interface ThemeAppearanceAyah {
   ayah_number: number;
   text_uthmani: string;
   display_bm: string | null;
+  translation_en?: string | null;
   page_number: number;
   theme: Theme | null;
   theme_relevance: "primary" | "secondary" | null;
@@ -59,6 +60,7 @@ export interface AyahThemeBaseRow {
   ayah_number: number;
   text_uthmani: string;
   display_bm: string | null;
+  translation_en?: string | null;
   page_number: number;
 }
 

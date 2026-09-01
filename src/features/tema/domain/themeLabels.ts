@@ -6,6 +6,14 @@ interface ResolveThemeChunkLabelParams {
   themeNameBm?: string | null;
 }
 
+interface ResolveThemeChunkLabelEnParams {
+  surahId: number;
+  startAyah: number;
+  endAyah: number;
+  labelEn?: string | null;
+  themeNameEn?: string | null;
+}
+
 const PLACEHOLDER_LABELS = new Set([
   "tanpa tema",
   "unthemed",
@@ -21,6 +29,13 @@ const BM_NORMALIZATION_RULES: Array<[RegExp, string]> = [
   [/\s*&\s*/g, " dan "],
   [/\band\b/gi, "dan"],
 ];
+
+const EN_LABEL_OVERRIDES = new Map<string, string>([
+  [
+    "supplication to allah for guidance taught by allah himself",
+    "A prayer for guidance",
+  ],
+]);
 
 function collapseWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
@@ -79,4 +94,20 @@ export function resolveThemeChunkLabelBm(
     params.startAyah,
     params.endAyah,
   )}`;
+}
+
+export function resolveThemeChunkLabelEn(
+  params: ResolveThemeChunkLabelEnParams,
+): string | null {
+  const candidate = params.labelEn ?? params.themeNameEn;
+  if (!candidate) {
+    return null;
+  }
+
+  const normalized = collapseWhitespace(candidate);
+  if (!normalized || PLACEHOLDER_LABELS.has(normalized.toLowerCase())) {
+    return null;
+  }
+
+  return EN_LABEL_OVERRIDES.get(normalized.toLowerCase()) ?? normalized;
 }

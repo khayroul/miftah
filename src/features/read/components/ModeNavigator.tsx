@@ -42,7 +42,7 @@ const LanguageToggle = dynamic(
 );
 
 interface ModeNavigatorProps {
-  activeMode: ReadMode;
+  activeMode: ReadMode | null;
   fallbackReadPage?: number;
   fallbackThemeSurahId?: number;
   surahTargets?: Array<{
@@ -88,7 +88,9 @@ export function ModeNavigator({
   const readingState = useReadingProgressState();
 
   useEffect(() => {
-    saveReadMode(activeMode);
+    if (activeMode) {
+      saveReadMode(activeMode);
+    }
   }, [activeMode]);
 
   const readPage = readingState.lastPage ?? fallbackReadPage;
@@ -103,24 +105,22 @@ export function ModeNavigator({
     return marker?.id ?? fallbackThemeSurahId;
   }, [fallbackThemeSurahId, readPage, surahTargets]);
 
-  const utilitiesPill = showUtilities ? (
-    <div className="inline-flex shrink-0 items-center gap-0.5 rounded-[26px] border border-stone-200 bg-white/92 p-1 shadow-sm backdrop-blur-sm sm:gap-1 dark:border-stone-700 dark:bg-stone-900/88">
-      <ThemeToggle iconOnly embedded />
-      <LanguageToggle />
-    </div>
-  ) : null;
-
   const navigator = (
     <nav
       aria-label={t("ariaLabel")}
-      className="inline-flex max-w-full items-center gap-0.5 overflow-x-auto overscroll-x-contain rounded-[26px] border border-stone-200 bg-white/92 p-1 shadow-sm backdrop-blur-sm sm:gap-1 dark:border-stone-700 dark:bg-stone-900/88"
+      className="grid min-h-[52px] w-full items-center rounded-[26px] border border-stone-200 bg-white/92 p-1 shadow-sm backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/88"
+      style={{
+        gridTemplateColumns: showUtilities
+          ? "2.75rem repeat(4, minmax(0, 1fr)) 1px 2.75rem 2.75rem"
+          : "2.75rem repeat(4, minmax(0, 1fr))",
+      }}
     >
       <OfflineAwareLink
         href="/"
         prefetch={false}
         aria-current={highlightHome ? "page" : undefined}
         aria-label={t("home")}
-        className={`mr-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 sm:mr-1 sm:text-base dark:focus-visible:ring-teal-300 dark:focus-visible:ring-offset-stone-900 ${
+        className={`flex h-11 w-full items-center justify-center rounded-full text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 sm:text-base dark:focus-visible:ring-teal-300 dark:focus-visible:ring-offset-stone-900 ${
           highlightHome
             ? "bg-stone-900 text-stone-50 shadow-sm dark:bg-stone-100 dark:text-stone-900"
             : "text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
@@ -158,7 +158,7 @@ export function ModeNavigator({
                 onModeClick(mode, e);
               }
             }}
-            className={`flex min-h-11 shrink-0 items-center rounded-full px-2 py-1.5 text-[13px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 sm:px-4 sm:py-2 sm:text-base dark:focus-visible:ring-teal-300 dark:focus-visible:ring-offset-stone-900 ${
+            className={`flex min-h-11 min-w-0 items-center justify-center rounded-full px-1 py-1.5 text-center text-xs font-medium leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 sm:px-2 sm:text-sm dark:focus-visible:ring-teal-300 dark:focus-visible:ring-offset-stone-900 ${
               active
                 ? "bg-stone-900 text-stone-50 shadow-sm dark:bg-stone-100 dark:text-stone-900"
                 : "text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
@@ -168,19 +168,32 @@ export function ModeNavigator({
           </OfflineAwareLink>
         );
       })}
+      {showUtilities ? (
+        <>
+          <span
+            aria-hidden="true"
+            className="h-6 w-px justify-self-center bg-stone-200 dark:bg-stone-700"
+          />
+          <div className="flex h-11 w-11 items-center justify-center">
+            <ThemeToggle iconOnly embedded />
+          </div>
+          <div className="flex h-11 w-11 items-center justify-center">
+            <LanguageToggle />
+          </div>
+        </>
+      ) : null}
     </nav>
   );
 
-  if (!showUtilities) {
-    return <div className="flex w-full justify-start sm:justify-center">{navigator}</div>;
-  }
-
   const navigatorRow = (
-    <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:justify-center">
+    <div className="relative left-1/2 flex w-[min(calc(100vw-2rem),69rem)] -translate-x-1/2 self-start justify-start sm:w-[min(calc(100vw-3rem),69rem)] sm:justify-center">
       {navigator}
-      {utilitiesPill}
     </div>
   );
+
+  if (!showUtilities) {
+    return navigatorRow;
+  }
 
   if (!showAuthStatus) {
     return navigatorRow;

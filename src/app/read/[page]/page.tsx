@@ -7,6 +7,7 @@ import {
 } from "@/features/read";
 import { getReadPageStaticData } from "@/features/read/server";
 import { parseReadPage } from "@/lib/readNavigation";
+import { z } from "zod";
 
 interface ReadPageProps {
   params: Promise<{ page: string }>;
@@ -17,8 +18,28 @@ interface ReadPageProps {
     intent?: string;
     flow?: string;
     qi?: string;
+    view?: string;
+    surah?: string;
+    startAyah?: string;
+    endAyah?: string;
+    startPage?: string;
+    endPage?: string;
   }>;
 }
+
+const freePracticePassageSchema = z
+  .object({
+    surah: z.coerce.number().int().min(1).max(114),
+    startAyah: z.coerce.number().int().min(1).max(286),
+    endAyah: z.coerce.number().int().min(1).max(286),
+    startPage: z.coerce.number().int().min(1).max(604),
+    endPage: z.coerce.number().int().min(1).max(604),
+  })
+  .refine(
+    (value) =>
+      value.endAyah >= value.startAyah &&
+      value.endPage >= value.startPage,
+  );
 
 function FontPreloadLinks({
   pageNumber,
@@ -65,6 +86,22 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
           ? "test"
           : null
       : null;
+  const parsedFreePracticePassage = freePracticePassageSchema.safeParse({
+    surah: query.surah,
+    startAyah: query.startAyah,
+    endAyah: query.endAyah,
+    startPage: query.startPage,
+    endPage: query.endPage,
+  });
+  const freePracticePassage = parsedFreePracticePassage.success
+    ? parsedFreePracticePassage.data
+    : null;
+  const initialHifzPracticeView =
+    query.view === "mushaf"
+      ? ("mushaf" as const)
+      : query.view === "ayah"
+        ? ("ayah" as const)
+        : null;
   const hifzFlow =
     query.flow === "memorize"
       ? ("memorize" as const)
@@ -87,6 +124,16 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
   if (query.intent === "new" || query.intent === "test") {
     preservedHifzParams.set("intent", query.intent);
   }
+  if (initialHifzPracticeView) {
+    preservedHifzParams.set("view", initialHifzPracticeView);
+  }
+  if (freePracticePassage) {
+    preservedHifzParams.set("surah", String(freePracticePassage.surah));
+    preservedHifzParams.set("startAyah", String(freePracticePassage.startAyah));
+    preservedHifzParams.set("endAyah", String(freePracticePassage.endAyah));
+    preservedHifzParams.set("startPage", String(freePracticePassage.startPage));
+    preservedHifzParams.set("endPage", String(freePracticePassage.endPage));
+  }
   const hifzNavigationSearch = preservedHifzParams.toString() || null;
   const fromHifzFlow =
     hifzFlow !== null || query.from === "dashboard" || query.from === "hifz";
@@ -108,7 +155,7 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
         preloadSurahNameFont={preloadSurahNameFont}
       />
       <ReadAudioProvider>
-        <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-8">
+        <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-4 px-4 py-8 sm:gap-6 sm:px-6 lg:py-12">
           <ReadPageWorkspace
             pageNumber={pageNumber}
             mushafHeader={
@@ -134,14 +181,10 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
                   <div className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold tracking-wide text-amber-900 dark:border-amber-700/50 dark:bg-amber-900/30 dark:text-amber-100">
                     {t("badgeNewSabak")}
                   </div>
-                ) : hifzIntent === "test" ? (
-                  <div className="inline-flex items-center rounded-full border border-indigo-300 bg-indigo-50 px-3 py-1 text-xs font-semibold tracking-wide text-indigo-900 dark:border-indigo-700/50 dark:bg-indigo-900/30 dark:text-indigo-100">
-                    {t("badgeTestMemoryHint")}
-                  </div>
                 ) : null}
                 {!hifzFlow && hifzIntent === "new" ? (
                   <div className="w-full max-w-2xl rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-left text-sm text-amber-900 dark:border-amber-700/45 dark:bg-amber-900/20 dark:text-amber-100">
-                    <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
+                    <p className="font-semibold">
                       {t("newFlowEyebrow")}
                     </p>
                     <p className="mt-1">
@@ -150,7 +193,7 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
                   </div>
                 ) : !hifzFlow && hifzIntent === "test" ? (
                   <div className="w-full max-w-2xl rounded-2xl border border-indigo-200 bg-indigo-50/90 px-4 py-3 text-left text-sm text-indigo-900 dark:border-indigo-700/45 dark:bg-indigo-900/20 dark:text-indigo-100">
-                    <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
+                    <p className="font-semibold">
                       {t("reviewFlowEyebrow")}
                     </p>
                     <p className="mt-1">
@@ -183,8 +226,10 @@ export default async function ReadPage({ params, searchParams }: ReadPageProps) 
             initialReadMode={hifzFlow || hifzExercise ? "hifz" : initialReadMode}
             forceHifzRevealByThirds={!hifzFlow && forceHifzRevealByThirds}
             hifzFlow={hifzFlow}
+            hifzFreePractice={hifzIntent === "test"}
             hifzExercise={hifzExercise}
             hifzNavigationSearch={hifzNavigationSearch}
+            initialHifzPracticeView={initialHifzPracticeView}
             personalizationPageNumber={pageNumber}
           />
         </main>

@@ -6,6 +6,7 @@ export {
   buildRecoveredRatedProgressIds,
   findQueuePageIndex,
   getAdjacentQueuePageFromQueue,
+  getItemsForPage,
   loadQueue,
   recoverQueueState,
   saveQueueState,

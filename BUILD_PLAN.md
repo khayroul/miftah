@@ -202,6 +202,8 @@ CLAUDE.md in repo root is the primary context file for Claude Code sessions. It 
 
 ## 3.5 Hifz Scheduling — Sabak/Sabqi/Manzil Model
 
+Implementation and future practice-engine upgrades are tracked in `docs/HIFZ_PRACTICE_UPGRADE_PATH.md`. That document preserves the one-engine/two-renderer contract and the staged path from self-check to recording and speech feedback.
+
 The Sabak-Sabqi-Manzil system is the traditional hifz methodology. Miftah implements it as follows:
 
 ### Definitions

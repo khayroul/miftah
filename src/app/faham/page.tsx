@@ -149,7 +149,7 @@ export default async function FahamPage(props: FahamPageProps) {
           textSimple: "bis'mi",
           textUthmani: "بِسْمِ",
           translationBm: "Dengan nama",
-          translationEn: null,
+          translationEn: "In the name of",
           transliteration: null,
         },
       },
@@ -197,7 +197,7 @@ export default async function FahamPage(props: FahamPageProps) {
           textSimple: "al-dini",
           textUthmani: "ٱلدِّينِ",
           translationBm: "Agama/Pembalasan",
-          translationEn: null,
+          translationEn: "Judgment / requital",
           transliteration: null,
         },
       }

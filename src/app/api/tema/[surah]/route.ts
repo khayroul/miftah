@@ -66,7 +66,9 @@ export async function GET(
     };
 
     return NextResponse.json(response, {
-      headers: { "Cache-Control": "no-transform" },
+      headers: {
+        "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+      },
     });
   } catch (error) {
     console.error(`Failed to load tema for surah ${surahId}:`, error);

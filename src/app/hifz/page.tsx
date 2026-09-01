@@ -17,10 +17,7 @@ import { getOptionalAuthUser } from "@/features/auth/server";
 import { getUserStreak } from "@/data/repositories/activity";
 
 export default async function HifzPage() {
-  const [tNav, t] = await Promise.all([
-    getTranslations("nav"),
-    getTranslations("hifz.page"),
-  ]);
+  const tNav = await getTranslations("nav");
   const userPromise = getOptionalAuthUser();
   const jumpTargetsPromise = getReadJumpTargets();
   const user = await userPromise;
@@ -70,13 +67,14 @@ export default async function HifzPage() {
       pageGrid = emptyPageGrid();
     }
   } else {
-    // Guest preview data — simplified counts only
+    // Guests can explore free practice, but do not have a saved plan yet.
     plan = { sabqi: [], sabak: [], manzil: [] } as unknown as DailyPlanWithDetails;
     stats = {
-      totalManzilPages: 68,
-      dueTodayPages: 8,
-      streak: 9,
+      totalManzilPages: 0,
+      dueTodayPages: 0,
+      streak: 0,
     };
+    globalStreak = 0;
     juzProgress = Array.from({ length: 30 }, (_, i) => ({
       juz: i + 1,
       totalPages: 20,
@@ -89,10 +87,10 @@ export default async function HifzPage() {
     pageGrid = emptyPageGrid();
   }
 
-  const newPageCount = userId ? countUniquePlanItemPages(plan.sabak) : 4;
+  const newPageCount = userId ? countUniquePlanItemPages(plan.sabak) : 0;
   const reviewPageCount = userId
     ? countUniquePlanItemPages([...plan.sabqi, ...plan.manzil])
-    : 8;
+    : 0;
   const hasProgress = userId
     ? plan.sabak.length + plan.sabqi.length + plan.manzil.length > 0 ||
       stats.totalManzilPages > 0
@@ -115,12 +113,6 @@ export default async function HifzPage() {
           ]}
         />
 
-        {!userId && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center text-sm text-amber-900 shadow-sm dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
-            <strong>{t("guestBannerTitle")}</strong> {t("guestBannerBody")}
-          </div>
-        )}
-
         <HifzOverview
           newPages={newPageCount}
           reviewPages={reviewPageCount}
@@ -131,6 +123,8 @@ export default async function HifzPage() {
           isGuest={!userId}
           hasProgress={hasProgress}
           canStartFresh={canStartFresh}
+          juzTargets={jumpTargets.juzs}
+          surahTargets={jumpTargets.surahs}
         />
       </main>
     </div>

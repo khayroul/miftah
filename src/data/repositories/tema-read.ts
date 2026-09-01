@@ -46,7 +46,7 @@ async function fetchThemeAppearanceChunksBySurah(
 ): Promise<ThemeAppearanceChunk[]> {
   const { data, error: ayatError } = await supabase
     .from("ayat")
-    .select("id, surah_id, ayah_number, text_uthmani, display_bm, page_number")
+    .select("id, surah_id, ayah_number, text_uthmani, display_bm, translation_en, page_number")
     .eq("surah_id", surahId)
     .order("ayah_number");
 
@@ -101,6 +101,7 @@ async function fetchThemeAppearanceChunksBySurah(
       ayah_number: ayah.ayah_number,
       text_uthmani: ayah.text_uthmani,
       display_bm: ayah.display_bm,
+      translation_en: ayah.translation_en ?? null,
       page_number: ayah.page_number,
       theme: selectedTheme.theme,
       theme_relevance: selectedTheme.relevance,

@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { LOCALE_COOKIE, type AppLocale } from "@/i18n/request";
+import { LOCALE_COOKIE, type AppLocale } from "@/i18n/config";
 
 export function LanguageToggle() {
   const locale = useLocale();
@@ -22,7 +22,7 @@ export function LanguageToggle() {
       }}
       aria-label={label}
       title={label}
-      className="ui-touch-target inline-flex w-11 shrink-0 items-center justify-center rounded-full text-[11px] font-bold uppercase tracking-wider text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100 dark:focus-visible:ring-teal-300 dark:focus-visible:ring-offset-stone-900"
+      className="ui-touch-target inline-flex w-11 shrink-0 items-center justify-center rounded-full text-xs font-bold uppercase tracking-wider text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100 dark:focus-visible:ring-teal-300 dark:focus-visible:ring-offset-stone-900"
     >
       {nextLocale === "en" ? "EN" : "BM"}
     </button>

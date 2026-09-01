@@ -58,7 +58,7 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
         style={bottomStyle}
         role="status"
       >
-        <p className="ui-eyebrow">{t("savedEyebrow")}</p>
+        <p className="text-sm font-semibold text-muted">{t("savedEyebrow")}</p>
         <p className="mt-2 text-xl font-bold text-foreground">{t("savedHeading")}</p>
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted">
           {t("savedBody", {
@@ -67,7 +67,7 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
         </p>
         <a
           href="/hifz"
-          className="ui-touch-target mt-4 inline-flex items-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-strong dark:text-slate-950"
+          className="ui-touch-target mt-4 inline-flex items-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-strong dark:text-teal-950"
         >
           {t("viewNextCta")}
         </a>
@@ -90,7 +90,7 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
           {props.error.continueHref ? (
             <a
               href={props.error.continueHref}
-              className="ui-touch-target inline-flex items-center rounded-xl bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-strong dark:text-slate-950"
+              className="ui-touch-target inline-flex items-center rounded-xl bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-strong dark:text-teal-950"
             >
               {props.error.continueLabel ?? tErrors("continueSessionDefault")}
             </a>
@@ -98,7 +98,7 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
           {props.error.requiresSignIn ? (
             <a
               href={buildSignInPath("/hifz")}
-              className="ui-touch-target inline-flex items-center rounded-xl bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-strong dark:text-slate-950"
+              className="ui-touch-target inline-flex items-center rounded-xl bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-strong dark:text-teal-950"
             >
               {tAuth("signIn")}
             </a>
@@ -118,7 +118,7 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
     return (
       <div className={panelClasses} style={bottomStyle}>
         <div className="mx-auto max-w-3xl">
-          <p className="ui-eyebrow mb-3 text-center">{t("tasmiEyebrow")}</p>
+          <p className="mb-3 text-center text-sm font-semibold text-muted">{t("tasmiEyebrow")}</p>
           <TasmiSessionUI
             expectedText={props.tasmiExpectedText}
             surahNumber={props.tasmiSurahNumber}
@@ -138,7 +138,7 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
     <div className={panelClasses} style={bottomStyle}>
       <div className="mx-auto max-w-2xl">
         <div className="text-center">
-          <p className="ui-eyebrow">
+          <p className="text-sm font-semibold text-muted">
             {tasmiOnly ? t("testOnlyEyebrow") : t("rateEyebrow")}
           </p>
           <p className="mt-2 text-sm font-semibold text-foreground">
@@ -159,7 +159,7 @@ export function HifzInlineRatingView(props: HifzInlineRatingViewProps) {
               type="button"
               disabled={props.submitting}
               onClick={() => props.handleRate(3)}
-              className="ui-touch-target touch-manipulation rounded-xl bg-brand px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-brand-strong disabled:cursor-wait disabled:opacity-60 dark:text-slate-950"
+              className="ui-touch-target touch-manipulation rounded-xl bg-brand px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-brand-strong disabled:cursor-wait disabled:opacity-60 dark:text-teal-950"
             >
               {props.submitting ? t("rateFluentSaving") : t("rateFluentCta")}
             </button>

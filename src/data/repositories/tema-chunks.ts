@@ -101,6 +101,7 @@ export function buildBaseThemeAppearanceAyat(
     ayah_number: ayah.ayah_number,
     text_uthmani: ayah.text_uthmani,
     display_bm: ayah.display_bm,
+    translation_en: ayah.translation_en ?? null,
     page_number: ayah.page_number,
     theme: null,
     theme_relevance: null,

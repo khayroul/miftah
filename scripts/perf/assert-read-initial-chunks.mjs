@@ -48,7 +48,8 @@ let rawBytes = 0;
 let gzipBytes = 0;
 const violations = [];
 for (const chunkPath of chunkPaths) {
-  const absolutePath = path.join(buildRoot, decodeURIComponent(chunkPath));
+  const relativeChunkPath = decodeURIComponent(chunkPath).replace(/^\/_next\//, "");
+  const absolutePath = path.join(buildRoot, relativeChunkPath);
   const source = fs.readFileSync(absolutePath);
   const gzipSize = zlib.gzipSync(source).length;
   const markers = forbiddenMarkers.filter((marker) => source.includes(marker));

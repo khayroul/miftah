@@ -17,7 +17,7 @@ const mockLocalStorage = {
   get length() {
     return Object.keys(store).length;
   },
-  key: (_index: number): string | null => null,
+  key: (): string | null => null,
 };
 (globalThis as unknown as Record<string, unknown>).localStorage = mockLocalStorage;
 

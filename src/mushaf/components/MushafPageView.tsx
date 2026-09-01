@@ -38,6 +38,7 @@ interface MushafPageViewProps {
   ayahDetails: MushafAyahDetail[];
   memorizedAyahKeys: string[];
   hifzRevealByThirdsEnabled?: boolean;
+  hideHifzStatusText?: boolean;
   onNavigatePrevPage?: () => void;
   onNavigateNextPage?: () => void;
   onCanvasTap?: () => void;
@@ -83,6 +84,7 @@ export function MushafPageView({
   ayahDetails,
   memorizedAyahKeys,
   hifzRevealByThirdsEnabled = false,
+  hideHifzStatusText = false,
   onNavigatePrevPage,
   onNavigateNextPage,
   onCanvasTap,
@@ -850,7 +852,7 @@ export function MushafPageView({
         <p className="text-[15px] text-teal-700 sm:text-base dark:text-teal-300">
           {t("statusTextHifzWithBoundary", { stage: revealStageLabel(hifzRevealContext.stage, tHifz) })}
         </p>
-      ) : mode === "hifz" ? (
+      ) : mode === "hifz" && !hideHifzStatusText ? (
         <p className="text-[15px] text-teal-700 sm:text-base dark:text-teal-300">
           {t.rich("statusTextHifzDefault", { strong: (chunks) => <strong>{chunks}</strong> })}
         </p>

@@ -58,7 +58,7 @@ export function HifzFirstRunPanel({
           active={entryPath === "fresh"}
           activeClass="border-amber-400 bg-amber-50 text-amber-950 shadow-sm dark:border-amber-500/70 dark:bg-amber-900/25 dark:text-amber-50"
           description={t("freshDescription")}
-          inactiveClass="border-stone-200 bg-white/75 text-stone-700 hover:border-amber-200 hover:bg-amber-50/60 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-200 dark:hover:border-amber-500/40 dark:hover:bg-amber-900/15"
+          inactiveClass="border-stone-200 bg-white/75 text-stone-700 hover:border-amber-200 hover:bg-amber-50/60 hover:text-amber-950 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-200 dark:hover:border-amber-500/40 dark:hover:bg-amber-900/15 dark:hover:text-amber-100"
           label={t("freshLabel")}
           onClick={() => onEntryPathChange("fresh")}
         />
@@ -66,7 +66,7 @@ export function HifzFirstRunPanel({
           active={entryPath === "import"}
           activeClass="border-indigo-400 bg-indigo-50 text-indigo-950 shadow-sm dark:border-indigo-500/70 dark:bg-indigo-900/25 dark:text-indigo-50"
           description={t("importDescription")}
-          inactiveClass="border-stone-200 bg-white/75 text-stone-700 hover:border-indigo-200 hover:bg-indigo-50/60 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-200 dark:hover:border-indigo-500/40 dark:hover:bg-indigo-900/15"
+          inactiveClass="border-stone-200 bg-white/75 text-stone-700 hover:border-indigo-200 hover:bg-indigo-50/60 hover:text-indigo-950 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-200 dark:hover:border-indigo-500/40 dark:hover:bg-indigo-900/15 dark:hover:text-indigo-100"
           label={t("importLabel")}
           onClick={() => onEntryPathChange("import")}
         />
@@ -74,7 +74,7 @@ export function HifzFirstRunPanel({
           active={entryPath === "test"}
           activeClass="border-teal-400 bg-teal-50 text-teal-950 shadow-sm dark:border-teal-500/70 dark:bg-teal-900/25 dark:text-teal-50"
           description={t("testDescription")}
-          inactiveClass="border-stone-200 bg-white/75 text-stone-700 hover:border-teal-200 hover:bg-teal-50/60 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-200 dark:hover:border-teal-500/40 dark:hover:bg-teal-900/15"
+          inactiveClass="border-stone-200 bg-white/75 text-stone-700 hover:border-teal-200 hover:bg-teal-50/60 hover:text-teal-950 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-200 dark:hover:border-teal-500/40 dark:hover:bg-teal-900/15 dark:hover:text-teal-100"
           label={t("testLabel")}
           onClick={() => onEntryPathChange("test")}
         />

@@ -2,7 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { buildQueuePageHref, type HifzExerciseFlow, type HifzFlowType } from "@/features/hifz/read-runtime";
+import {
+  buildQueuePageHref,
+  getItemsForPage,
+  loadQueue,
+  type HifzExerciseFlow,
+  type HifzFlowType,
+} from "@/features/hifz/read-runtime";
+import type { HifzPracticeViewMode } from "@/features/hifz";
 import type { MushafAyahDetail, MushafLayoutPage, MushafWordTranslationMap } from "@/mushaf";
 import { navigateWithOfflineSupport, prefetchWithOfflineSupport } from "@/shared/pwa/navigation";
 import type { ReadAudioTrack } from "../domain/audio/pageAudioTracks";
@@ -28,13 +35,16 @@ interface ReadPageWorkspaceProps {
   initialReadMode?: ReadMode | null;
   forceHifzRevealByThirds?: boolean;
   hifzFlow?: HifzFlowType | null;
+  hifzFreePractice?: boolean;
   hifzExercise?: HifzExerciseFlow | null;
   hifzNavigationSearch?: string | null;
+  initialHifzPracticeView?: HifzPracticeViewMode | null;
   personalizationPageNumber?: number | null;
 }
 
 const HIFZ_REVEAL_STORAGE_KEY = "miftah:read:hifz-reveal-by-thirds";
 const AUDIO_DISCOVERY_STORAGE_KEY = "miftah:audio:discovered";
+const HIFZ_PRACTICE_VIEW_STORAGE_KEY = "miftah:hifz:practice-view:v1";
 
 function subscribeAudioDiscovery(callback: () => void): () => void {
   window.addEventListener("miftah:audio-discovery", callback);
@@ -64,8 +74,10 @@ export function ReadPageWorkspace({
   initialReadMode = null,
   forceHifzRevealByThirds = false,
   hifzFlow = null,
+  hifzFreePractice = false,
   hifzExercise = null,
   hifzNavigationSearch = null,
+  initialHifzPracticeView = null,
   personalizationPageNumber = null,
 }: ReadPageWorkspaceProps) {
   const router = useRouter();
@@ -80,6 +92,10 @@ export function ReadPageWorkspace({
   const [memorizeHideMushaf, setMemorizeHideMushaf] = useState(false);
   const [memorizeViewportInset, setMemorizeViewportInset] = useState(0);
   const [memorizeChunkAyahKeys, setMemorizeChunkAyahKeys] = useState<string[] | null>(null);
+  const [hifzPracticeView, setHifzPracticeView] = useState<HifzPracticeViewMode>(
+    initialHifzPracticeView ?? (hifzFlow === "review" ? "mushaf" : "ayah"),
+  );
+  const [freePracticeRevealed, setFreePracticeRevealed] = useState(false);
   const [sessionStartTime] = useState(() => Date.now());
   const [sessionPagesCompleted, setSessionPagesCompleted] = useState(0);
   const [sessionComplete, setSessionComplete] = useState(false);
@@ -92,7 +108,40 @@ export function ReadPageWorkspace({
     const parsed = Number.parseInt(searchParams.get("qi") ?? "", 10);
     return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
   }, [searchParams]);
+  const freePracticePassage = useMemo(() => {
+    const passageParams = new URLSearchParams(hifzNavigationSearch ?? "");
+    const surah = Number.parseInt(passageParams.get("surah") ?? "", 10);
+    const startAyah = Number.parseInt(passageParams.get("startAyah") ?? "", 10);
+    const endAyah = Number.parseInt(passageParams.get("endAyah") ?? "", 10);
+    const startPage = Number.parseInt(passageParams.get("startPage") ?? "", 10);
+    const endPage = Number.parseInt(passageParams.get("endPage") ?? "", 10);
+    const isValid =
+      Number.isInteger(surah) && surah >= 1 && surah <= 114 &&
+      Number.isInteger(startAyah) && startAyah >= 1 && startAyah <= 286 &&
+      Number.isInteger(endAyah) && endAyah >= startAyah && endAyah <= 286 &&
+      Number.isInteger(startPage) && startPage >= 1 && startPage <= 604 &&
+      Number.isInteger(endPage) && endPage >= startPage && endPage <= 604;
+
+    if (!isValid) return null;
+
+    return {
+      ayahKeys: Array.from(
+        { length: endAyah - startAyah + 1 },
+        (_, index) => `${surah}:${startAyah + index}`,
+      ),
+      endPage,
+      startPage,
+    };
+  }, [hifzNavigationSearch]);
   const queue = useReadHifzQueue({ flow: hifzFlow, pageNumber, queueIndex: hifzQueueIndex });
+  const reviewSessionQueue = hifzFlow === "review" ? loadQueue("review") : null;
+  const hifzTargetAyahKeys = hifzFlow === "memorize"
+    ? (memorizeChunkAyahKeys ?? [])
+    : reviewSessionQueue
+      ? getItemsForPage(reviewSessionQueue, pageNumber).map((item) => item.ayahKey)
+      : hifzFreePractice
+        ? (freePracticePassage?.ayahKeys ?? [])
+        : [];
   const hydration = useReadPageHydration({
     audioEnabled,
     audioTracks,
@@ -119,6 +168,30 @@ export function ReadPageWorkspace({
     window.localStorage.setItem(HIFZ_REVEAL_STORAGE_KEY, hifzRevealByThirdsEnabled ? "1" : "0");
   }, [hifzRevealByThirdsEnabled]);
   useEffect(() => {
+    if (initialHifzPracticeView) return;
+    try {
+      const saved = window.localStorage.getItem(HIFZ_PRACTICE_VIEW_STORAGE_KEY);
+      if (saved === "ayah" || saved === "mushaf") {
+        const timer = window.setTimeout(() => setHifzPracticeView(saved), 0);
+        return () => window.clearTimeout(timer);
+      }
+    } catch {
+      // Storage may be unavailable in private browsing; keep the flow default.
+    }
+  }, [initialHifzPracticeView]);
+  useEffect(() => {
+    if (!hifzFreePractice || !freePracticePassage) return;
+    audio.setPlayableAyahKeys(freePracticePassage.ayahKeys);
+  }, [audio, freePracticePassage, hifzFreePractice]);
+  const handleHifzPracticeViewChange = useCallback((nextView: HifzPracticeViewMode) => {
+    setHifzPracticeView(nextView);
+    try {
+      window.localStorage.setItem(HIFZ_PRACTICE_VIEW_STORAGE_KEY, nextView);
+    } catch {
+      // The view still changes for this session when persistence is unavailable.
+    }
+  }, []);
+  useEffect(() => {
     if (appliedInitialModeRef.current) return;
     setMode(initialReadMode ?? "read");
     appliedInitialModeRef.current = true;
@@ -130,20 +203,24 @@ export function ReadPageWorkspace({
       return;
     }
     if (!hifzNavigationSearch) return;
-    if (pageNumber > 1) prefetchWithOfflineSupport(router, `/read/${pageNumber - 1}?${hifzNavigationSearch}`);
-    if (pageNumber < 604) prefetchWithOfflineSupport(router, `/read/${pageNumber + 1}?${hifzNavigationSearch}`);
-  }, [hifzFlow, hifzNavigationSearch, pageNumber, queue.nextPage, queue.previousPage, router]);
+    const minPage = freePracticePassage?.startPage ?? 1;
+    const maxPage = freePracticePassage?.endPage ?? 604;
+    if (pageNumber > minPage) prefetchWithOfflineSupport(router, `/read/${pageNumber - 1}?${hifzNavigationSearch}`);
+    if (pageNumber < maxPage) prefetchWithOfflineSupport(router, `/read/${pageNumber + 1}?${hifzNavigationSearch}`);
+  }, [freePracticePassage?.endPage, freePracticePassage?.startPage, hifzFlow, hifzNavigationSearch, pageNumber, queue.nextPage, queue.previousPage, router]);
 
   const previousPageHref = useMemo(() => {
     if (hifzFlow !== null) return queue.previousPage ? buildQueuePageHref(hifzFlow, queue.previousPage.pageNumber, queue.previousPage.index) : null;
-    if (pageNumber <= 1) return null;
+    const minPage = freePracticePassage?.startPage ?? 1;
+    if (pageNumber <= minPage) return null;
     return hifzNavigationSearch ? `/read/${pageNumber - 1}?${hifzNavigationSearch}` : `/read/${pageNumber - 1}`;
-  }, [hifzFlow, hifzNavigationSearch, pageNumber, queue.previousPage]);
+  }, [freePracticePassage?.startPage, hifzFlow, hifzNavigationSearch, pageNumber, queue.previousPage]);
   const nextPageHref = useMemo(() => {
     if (hifzFlow !== null) return queue.nextPage ? buildQueuePageHref(hifzFlow, queue.nextPage.pageNumber, queue.nextPage.index) : null;
-    if (pageNumber >= 604) return null;
+    const maxPage = freePracticePassage?.endPage ?? 604;
+    if (pageNumber >= maxPage) return null;
     return hifzNavigationSearch ? `/read/${pageNumber + 1}?${hifzNavigationSearch}` : `/read/${pageNumber + 1}`;
-  }, [hifzFlow, hifzNavigationSearch, pageNumber, queue.nextPage]);
+  }, [freePracticePassage?.endPage, hifzFlow, hifzNavigationSearch, pageNumber, queue.nextPage]);
 
   const markAudioDiscovered = useCallback(() => {
     if (audioDiscovered) return;
@@ -186,6 +263,10 @@ export function ReadPageWorkspace({
       exercise={hifzExercise}
       flow={hifzFlow}
       hifzRevealByThirdsEnabled={hifzRevealByThirdsEnabled}
+      hifzPracticeView={hifzPracticeView}
+      hifzFreePractice={hifzFreePractice}
+      freePracticeRevealed={freePracticeRevealed}
+      hifzTargetAyahKeys={hifzTargetAyahKeys}
       isAudioVisible={audio.isAudioVisible}
       isRecovering={queue.isRecovering}
       layout={layout}
@@ -215,6 +296,7 @@ export function ReadPageWorkspace({
       useLightweightViewer={hifzFlow === null && initialReadMode !== "hifz"}
       wordTranslations={wordTranslations}
       setHifzRevealByThirdsEnabled={setHifzRevealByThirdsEnabled}
+      setFreePracticeRevealed={setFreePracticeRevealed}
       setMemorizeChunkAyahKeys={setMemorizeChunkAyahKeys}
       setMemorizeHideMushaf={setMemorizeHideMushaf}
       setMemorizeViewportInset={setMemorizeViewportInset}
@@ -225,6 +307,7 @@ export function ReadPageWorkspace({
       setShowJumpControls={setShowJumpControls}
       setTasmiRevealedLines={setTasmiRevealedLines}
       onAudioDiscovered={markAudioDiscovered}
+      onHifzPracticeViewChange={handleHifzPracticeViewChange}
       onAyahAudioTap={handleAyahAudioTap}
       onCanvasTap={handleCanvasTap}
       onChunkListen={handleChunkListen}

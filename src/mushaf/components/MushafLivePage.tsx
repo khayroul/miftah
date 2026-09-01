@@ -8,7 +8,6 @@ import {
   useMushafFont,
   ensureGlobalMushafFonts,
   preloadMushafFont,
-  getFontFamily,
 } from "@/mushaf/lib/mushafFonts";
 
 export interface MushafLiveWordRef {

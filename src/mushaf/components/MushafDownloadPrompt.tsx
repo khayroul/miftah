@@ -275,13 +275,13 @@ export function MushafDownloadPrompt({
           <div className="flex gap-3">
             <button
               onClick={handleStart}
-              className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600"
+              className="ui-touch-target inline-flex items-center justify-center rounded-xl bg-teal-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 dark:bg-teal-500 dark:hover:bg-teal-600 dark:focus-visible:ring-teal-300 dark:focus-visible:ring-offset-stone-950"
             >
               {t("promptStartButton")}
             </button>
             <button
               onClick={handleDismiss}
-              className="rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-600 transition-colors hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
+              className="ui-touch-target inline-flex items-center justify-center rounded-xl border border-stone-300 px-4 text-sm font-semibold text-stone-700 transition-colors hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800 dark:focus-visible:ring-teal-300 dark:focus-visible:ring-offset-stone-950"
             >
               {t("promptLaterButton")}
             </button>
@@ -298,7 +298,7 @@ export function MushafDownloadPrompt({
       return (
         <button
           onClick={() => setMinimized(false)}
-          className="fixed bottom-[env(safe-area-inset-bottom,0px)] right-4 z-50 mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-teal-600 text-white shadow-lg"
+          className="fixed bottom-[env(safe-area-inset-bottom,0px)] right-4 z-50 mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-teal-600 text-white shadow-lg"
           aria-label={t("minimizedAriaLabel")}
         >
           <span className="text-xs font-bold">
@@ -346,7 +346,7 @@ export function MushafDownloadPrompt({
             </span>
             <button
               onClick={handleMinimize}
-              className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
+              className="ui-touch-target inline-flex items-center justify-center text-stone-400 transition hover:text-stone-600 dark:hover:text-stone-200"
               aria-label={t("minimizeAriaLabel")}
             >
               ×
@@ -391,14 +391,14 @@ export function MushafDownloadPrompt({
         <div className="flex gap-2">
           <button
             onClick={handleRetry}
-            className="rounded-lg bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
+            className="ui-touch-target inline-flex items-center justify-center rounded-xl bg-red-600 px-3 text-sm font-semibold text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
           >
             {t("retryButton")}
           </button>
           {pathname === "/" ? (
             <button
               onClick={handleRefreshStatus}
-              className="rounded-lg border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
+              className="ui-touch-target inline-flex items-center justify-center rounded-xl border border-red-300 px-3 text-sm font-semibold text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
             >
               {t("checkStatusButton")}
             </button>

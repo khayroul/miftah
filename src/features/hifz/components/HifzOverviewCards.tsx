@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 import type { HifzQueueResponse } from "../domain/queue";
 import type { HifzResumePoint } from "../domain/resumePoint";
 import type { HifzStats, JuzStat } from "../domain/types";
@@ -200,15 +202,53 @@ export function HifzTodayCard(props: {
   newPages: number;
   onMemorize: () => void;
   onReview: () => void;
+  passagePicker: ReactNode;
   reviewPages: number;
+  signInHref: string;
   showStartFresh: boolean;
 }) {
   const t = useTranslations("hifz.overviewCards");
   const hasNew = props.newPages > 0;
   const hasReview = props.reviewPages > 0;
+
+  if (props.isGuest) {
+    return (
+      <section className="rounded-2xl bg-surface-solid p-6 shadow-[0_18px_46px_rgba(15,23,42,0.10)] sm:p-8">
+        <h2 className="text-2xl font-bold tracking-[-0.02em] text-foreground">
+          {t("guestPracticeTitle")}
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
+          {t("guestPracticeBody")}
+        </p>
+        <div className="mt-5">{props.passagePicker}</div>
+
+        <div className="mt-6 border-t border-border-subtle pt-5">
+          <Link
+            href={props.signInHref}
+            className="ui-touch-target inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-brand px-5 text-sm font-bold text-surface-solid transition-colors hover:bg-brand-strong"
+          >
+            {t("guestSignInCta")}
+          </Link>
+          <p className="mt-2 text-center text-xs leading-5 text-muted">
+            {t("guestSignInHint")}
+          </p>
+        </div>
+
+        <p className="mt-5 text-center text-sm">
+          <a
+            href="/tasmi/juzuk"
+            className="ui-touch-target inline-flex min-h-11 items-center font-medium text-teal-700 underline-offset-4 hover:underline dark:text-teal-300"
+          >
+            {t("juzukLink")}
+          </a>
+        </p>
+      </section>
+    );
+  }
+
   return (
-    <div className="rounded-2xl border border-stone-200/80 bg-white/80 p-6 shadow-sm backdrop-blur-sm dark:border-stone-700/50 dark:bg-stone-900/60 sm:p-8">
-      <h2 className="mb-4 text-2xl font-bold text-stone-900 dark:text-stone-100">{t("todayTitle")}</h2>
+    <section className="rounded-2xl bg-surface-solid p-6 shadow-[0_18px_46px_rgba(15,23,42,0.10)] sm:p-8">
+      <h2 className="text-2xl font-bold tracking-[-0.02em] text-foreground">{t("todayTitle")}</h2>
       <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-base text-stone-600 dark:text-stone-400">
         {hasNew ? <span><span className="font-semibold text-amber-600 dark:text-amber-400">{props.newPages}</span>{" "}{t("newPagesSuffix", { count: props.newPages })}</span> : null}
         {hasNew && hasReview ? <span aria-hidden="true">&middot;</span> : null}
@@ -219,25 +259,60 @@ export function HifzTodayCard(props: {
         {props.globalStreak > 0 ? <p className="text-sm text-stone-500 dark:text-stone-400">{t("streakLabel", { count: props.globalStreak })}</p> : null}
         {props.difficultCount > 0 ? <p className="text-sm text-red-500 dark:text-red-400">{t("difficultAyahCount", { count: props.difficultCount })}</p> : null}
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <button type="button" disabled={!props.canOpenMemorizeFlow || props.loading !== null || props.isGuest || props.isPending} onClick={props.onMemorize} className="flex-1 rounded-xl bg-amber-500 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition-all hover:bg-amber-600 active:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-amber-600 dark:hover:bg-amber-500">
-          {props.loading === "memorize" ? t("loadingCta") : props.showStartFresh ? t("memorizeStartFresh") : t("memorizeNew")}
+      <div className="space-y-3">
+        <button
+          type="button"
+          disabled={!hasReview || props.loading !== null || props.isPending}
+          onClick={props.onReview}
+          className="ui-touch-target flex min-h-16 w-full items-center justify-between gap-4 rounded-xl bg-[#0f766e] px-5 text-left text-white shadow-[0_10px_26px_rgba(15,118,110,0.24)] transition-colors hover:bg-[#115e59] active:bg-[#134e4a] disabled:cursor-not-allowed disabled:bg-teal-950/60 disabled:text-teal-50/90 disabled:shadow-none"
+        >
+          <span>
+            <span className="block text-base font-bold">
+              {props.loading === "review" ? t("loadingCta") : t("reviewCta")}
+            </span>
+            <span className="mt-0.5 block text-sm text-teal-50/85">
+              {t("reviewFirstHint")}
+            </span>
+          </span>
+          <svg aria-hidden="true" className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
-        <button type="button" disabled={!hasReview || props.loading !== null || props.isGuest || props.isPending} onClick={props.onReview} className="flex-1 rounded-xl bg-teal-600 px-6 py-3.5 text-base font-semibold text-white shadow-sm transition-all hover:bg-teal-700 active:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-teal-600 dark:hover:bg-teal-500">
-          {props.loading === "review" ? t("loadingCta") : t("reviewCta")}
+        <button
+          type="button"
+          disabled={!props.canOpenMemorizeFlow || props.loading !== null || props.isPending}
+          onClick={props.onMemorize}
+          className="ui-touch-target flex min-h-14 w-full items-center justify-between gap-4 rounded-xl border border-amber-300 bg-amber-50 px-5 text-left text-amber-950 transition-colors hover:bg-amber-100 active:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-40 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-100 dark:hover:bg-amber-950/50"
+        >
+          <span>
+            <span className="block text-sm font-bold">
+              {props.loading === "memorize" ? t("loadingCta") : props.showStartFresh ? t("memorizeStartFresh") : t("memorizeNew")}
+            </span>
+            <span className="mt-0.5 block text-xs opacity-75">
+              {t("continueHint")}
+            </span>
+          </span>
+          <svg aria-hidden="true" className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
       </div>
       {!hasNew && hasReview ? <p className="mt-3 text-center text-sm text-stone-400 dark:text-stone-500">{t("noNewToday")}</p> : null}
       {hasNew && !hasReview ? <p className="mt-3 text-center text-sm text-stone-400 dark:text-stone-500">{t("noReviewToday")}</p> : null}
       {props.showStartFresh ? <p className="mt-3 text-center text-sm text-stone-500 dark:text-stone-400">{t("noPlanYet")}</p> : null}
-      <p className="mt-4 text-center text-sm">
+      <div className="mt-7 border-t border-border-subtle pt-6">
+        <h3 className="text-base font-bold text-foreground">{t("freePracticeTitle")}</h3>
+        <p className="mt-1 text-sm leading-6 text-muted">{t("freePracticeBody")}</p>
+        <div className="mt-4">{props.passagePicker}</div>
+      </div>
+      <p className="mt-5 text-center text-sm">
         <a
           href="/tasmi/juzuk"
-          className="font-medium text-teal-700 underline-offset-4 hover:underline dark:text-teal-300"
+          className="ui-touch-target inline-flex min-h-11 items-center font-medium text-teal-700 underline-offset-4 hover:underline dark:text-teal-300"
         >
           {t("juzukLink")}
         </a>
       </p>
-    </div>
+    </section>
   );
 }

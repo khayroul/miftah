@@ -68,6 +68,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Vendored dataset transformation source (kept as external reference code).
     "data/mushaf-layout/src/**",
+    // Vendored browser runtimes copied into public assets.
+    "public/ort-wasm-*.mjs",
+    "public/vad.worklet.bundle.min.js",
   ]),
 
   // ── Phase-1 boundary: features/** ──────────────────────────────────────────

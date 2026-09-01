@@ -46,7 +46,7 @@ const mockLocalStorage = {
   get length(): number {
     return Object.keys(localStorageStore).length;
   },
-  key: (_index: number): string | null => null,
+  key: (): string | null => null,
 };
 
 function toAbsoluteUrl(request: RequestInfo | URL, origin: string): string {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { SerializedFahamCard } from "../domain/queue";
 
 function cardKindConfig(
@@ -27,21 +27,21 @@ function cardKindConfig(
       return {
         label: t("kindDue"),
         classes:
-          "bg-sky-100 text-sky-700 dark:bg-sky-400/20 dark:text-sky-300",
+          "bg-teal-100 text-teal-800 dark:bg-teal-400/20 dark:text-teal-200",
         rowClasses:
-          "border-sky-200 bg-sky-50/60 dark:border-sky-400/25 dark:bg-sky-900/30",
+          "border-teal-200 bg-teal-50/60 dark:border-teal-400/25 dark:bg-teal-900/30",
         numberClasses:
-          "bg-sky-200 text-sky-800 dark:bg-sky-400/30 dark:text-sky-200",
+          "bg-teal-200 text-teal-900 dark:bg-teal-400/30 dark:text-teal-100",
       };
     case "new":
       return {
         label: t("kindNew"),
         classes:
-          "bg-violet-100 text-violet-700 dark:bg-violet-400/20 dark:text-violet-300",
+          "bg-amber-100 text-amber-800 dark:bg-amber-400/20 dark:text-amber-200",
         rowClasses:
-          "border-violet-200 bg-violet-50/60 dark:border-violet-400/25 dark:bg-violet-900/30",
+          "border-amber-200 bg-amber-50/60 dark:border-amber-400/25 dark:bg-amber-900/25",
         numberClasses:
-          "bg-violet-200 text-violet-800 dark:bg-violet-400/30 dark:text-violet-200",
+          "bg-amber-200 text-amber-900 dark:bg-amber-400/30 dark:text-amber-100",
       };
   }
 }
@@ -54,6 +54,7 @@ export function FahamQueuePreview({
   onStart: () => void;
 }) {
   const t = useTranslations("faham.preview");
+  const locale = useLocale();
   const newCount = cards.filter((card) => card.kind === "new").length;
   const dueCount = cards.filter((card) => card.kind === "due").length;
   const masteredCount = cards.filter(
@@ -67,13 +68,12 @@ export function FahamQueuePreview({
     >
       <div className="flex flex-col gap-4 border-b border-border-subtle pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="ui-eyebrow">{t("readyEyebrow")}</p>
-          <h3
+          <h2
             id="faham-preview-title"
-            className="mt-2 text-xl font-semibold text-foreground"
+            className="text-xl font-semibold text-foreground"
           >
             {t("cardCountTitle", { count: cards.length })}
-          </h3>
+          </h2>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
             {t("previewSubtitle")}
           </p>
@@ -83,12 +83,12 @@ export function FahamQueuePreview({
           className="flex flex-wrap gap-2 text-xs font-semibold"
         >
           {newCount > 0 ? (
-            <span className="rounded-full bg-violet-100 px-3 py-1.5 text-violet-700 dark:bg-violet-400/20 dark:text-violet-200">
+            <span className="rounded-full bg-amber-100 px-3 py-1.5 text-amber-800 dark:bg-amber-400/20 dark:text-amber-200">
               {t("newChip", { count: newCount })}
             </span>
           ) : null}
           {dueCount > 0 ? (
-            <span className="rounded-full bg-sky-100 px-3 py-1.5 text-sky-700 dark:bg-sky-400/20 dark:text-sky-200">
+            <span className="rounded-full bg-teal-100 px-3 py-1.5 text-teal-800 dark:bg-teal-400/20 dark:text-teal-200">
               {t("dueChip", { count: dueCount })}
             </span>
           ) : null}
@@ -103,37 +103,54 @@ export function FahamQueuePreview({
         {cards.map((card, index) => {
           const statusConfig = cardKindConfig(card.kind, t);
           const reference = card.sourceContext?.primaryReference?.label;
+          const activeMeaning =
+            locale === "ms"
+              ? (card.word.translationBm ?? t("meaningUnavailable"))
+              : (card.word.translationEn ?? t("meaningUnavailable"));
           return (
             <li
               key={card.progressId}
-              className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 ${statusConfig.rowClasses}`}
+              className={`grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-2xl border px-4 py-4 ${statusConfig.rowClasses}`}
             >
               <span
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${statusConfig.numberClasses}`}
+                className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${statusConfig.numberClasses}`}
               >
                 {index + 1}
               </span>
-              <span className="min-w-0 flex-1">
-                <span
-                  dir={card.mcq.promptDir}
-                  lang={card.mcq.promptLang}
-                  className={`block truncate text-stone-800 dark:text-stone-100 ${
-                    card.mcq.promptLang === "ar"
-                      ? "font-arabic text-xl leading-snug"
-                      : "text-sm font-semibold"
-                  }`}
-                >
-                  {card.mcq.promptPrimary}
-                </span>
-                <span className="mt-0.5 block text-xs text-stone-500 dark:text-stone-400">
+              <div className="min-w-0">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p
+                      dir={card.mcq.promptDir}
+                      lang={card.mcq.promptLang}
+                      className={`truncate text-stone-900 dark:text-stone-50 ${
+                        card.mcq.promptLang === "ar"
+                          ? "font-arabic text-3xl leading-tight sm:text-4xl"
+                          : "text-base font-semibold"
+                      }`}
+                    >
+                      {card.mcq.promptPrimary}
+                    </p>
+                    {card.word.transliteration ? (
+                      <p className="mt-1 text-xs text-muted">
+                        {card.word.transliteration}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span
+                    className={`mt-0.5 shrink-0 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${statusConfig.classes}`}
+                  >
+                    {statusConfig.label}
+                  </span>
+                </div>
+
+                <p className="mt-2 text-base font-semibold leading-relaxed text-foreground">
+                  {activeMeaning}
+                </p>
+                <p className="mt-2 text-xs text-muted">
                   {reference ? t("fromAyah", { label: reference }) : t("mixedSource")}
-                </span>
-              </span>
-              <span
-                className={`shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wider ${statusConfig.classes}`}
-              >
-                {statusConfig.label}
-              </span>
+                </p>
+              </div>
             </li>
           );
         })}

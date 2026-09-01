@@ -207,7 +207,7 @@ export function HifzMemorizePanel(props: HifzMemorizePanelProps) {
                   }`}
                 />
                 <p
-                  className={`mt-1 truncate text-[0.68rem] font-semibold ${
+                  className={`mt-1 truncate text-xs font-semibold ${
                     active ? "text-amber-700 dark:text-amber-300" : "text-muted"
                   }`}
                   aria-current={active ? "step" : undefined}

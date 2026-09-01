@@ -8,6 +8,7 @@ import {
 
 interface LocalSurahSeedRow {
   id?: number;
+  ayah_count?: number;
   name_transliteration?: string;
 }
 
@@ -21,6 +22,7 @@ export interface SurahJumpTarget {
   surah: number;
   name: string;
   page: number;
+  ayahCount: number;
 }
 
 export interface JuzJumpTarget {
@@ -85,6 +87,7 @@ function buildStartPageMap(
 function buildSurahTargets(
   surahStartPages: Map<number, number>,
   namesBySurahId: Map<number, string>,
+  ayahCountsBySurahId: Map<number, number>,
 ): SurahJumpTarget[] {
   const targets: SurahJumpTarget[] = [];
   let carryPage = 1;
@@ -97,6 +100,7 @@ function buildSurahTargets(
       surah,
       page,
       name: namesBySurahId.get(surah) ?? `Surah ${surah}`,
+      ayahCount: ayahCountsBySurahId.get(surah) ?? 1,
     });
   }
 
@@ -121,6 +125,7 @@ async function buildTargetsFromSupabase(): Promise<ReadJumpTargets> {
   const dataset = await fetchReadNavigationDataset();
 
   const namesBySurahId = new Map<number, string>();
+  const ayahCountsBySurahId = new Map<number, number>();
   for (const row of dataset.surahs) {
     if (
       Number.isInteger(row.id) &&
@@ -128,6 +133,9 @@ async function buildTargetsFromSupabase(): Promise<ReadJumpTargets> {
       row.name_transliteration.trim().length > 0
     ) {
       namesBySurahId.set(row.id, row.name_transliteration.trim());
+    }
+    if (Number.isInteger(row.ayah_count) && row.ayah_count > 0) {
+      ayahCountsBySurahId.set(row.id, row.ayah_count);
     }
   }
 
@@ -139,7 +147,11 @@ async function buildTargetsFromSupabase(): Promise<ReadJumpTargets> {
   }
 
   return {
-    surahs: buildSurahTargets(surahStartPages, namesBySurahId),
+    surahs: buildSurahTargets(
+      surahStartPages,
+      namesBySurahId,
+      ayahCountsBySurahId,
+    ),
     juzs: buildJuzTargets(juzStartPages),
   };
 }
@@ -154,6 +166,7 @@ async function buildTargetsFromLocalSeed(): Promise<ReadJumpTargets> {
   const parsedAyat = JSON.parse(ayahRaw) as LocalAyahSeedRow[];
 
   const namesBySurahId = new Map<number, string>();
+  const ayahCountsBySurahId = new Map<number, number>();
   for (const row of parsedSurahs) {
     const surahId = toPositiveInt(typeof row.id === "number" ? row.id : null);
     if (
@@ -163,13 +176,25 @@ async function buildTargetsFromLocalSeed(): Promise<ReadJumpTargets> {
     ) {
       namesBySurahId.set(surahId, row.name_transliteration.trim());
     }
+    if (
+      isValidSurahNumber(surahId) &&
+      typeof row.ayah_count === "number" &&
+      Number.isInteger(row.ayah_count) &&
+      row.ayah_count > 0
+    ) {
+      ayahCountsBySurahId.set(surahId, row.ayah_count);
+    }
   }
 
   const surahStartPages = buildStartPageMap(parsedAyat, "surah_id");
   const juzStartPages = buildStartPageMap(parsedAyat, "juz_number");
 
   return {
-    surahs: buildSurahTargets(surahStartPages, namesBySurahId),
+    surahs: buildSurahTargets(
+      surahStartPages,
+      namesBySurahId,
+      ayahCountsBySurahId,
+    ),
     juzs: buildJuzTargets(juzStartPages),
   };
 }
@@ -182,7 +207,7 @@ export const getReadJumpTargets = unstable_cache(
       return buildTargetsFromSupabase();
     }
   },
-  ["read-jump-targets"],
+  ["read-jump-targets-v2"],
   { revalidate: 3600, tags: ["read-navigation"] },
 );
 

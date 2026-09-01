@@ -43,19 +43,17 @@ export function HomeDashboardSections({
   submittingHifzGoalMigration,
 }: HomeDashboardSectionsProps) {
   const t = useTranslations("home.sections");
+  const isFirstSession = homeHero.isZeroState;
+
   return (
     <div className="flex flex-col gap-6">
       <section
-        className={`animate-fade-in-up relative overflow-hidden rounded-[30px] border p-5 shadow-[0_26px_80px_-48px_rgba(28,25,23,0.5)] backdrop-blur-md sm:p-7 ${heroClasses.border} ${heroClasses.surface}`}
+        className={`animate-fade-in-up relative overflow-hidden rounded-[30px] border p-5 shadow-[0_26px_80px_-48px_rgba(28,25,23,0.5)] sm:p-7 ${heroClasses.border} ${heroClasses.surface}`}
       >
-        <div className="relative z-10 grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+        <div className={`relative z-10 grid gap-5 ${isFirstSession ? "max-w-3xl" : "lg:grid-cols-[1.2fr_0.8fr] lg:items-end"}`}>
           <div className="max-w-3xl">
-            <span
-              className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold tracking-wide ${heroClasses.chip}`}
-            >
-              {homeHero.badge}
-            </span>
-            <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-stone-900 sm:text-4xl dark:text-stone-50">
+            {!isFirstSession ? <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold tracking-wide ${heroClasses.chip}`}>{homeHero.badge}</span> : null}
+            <h1 className={`${isFirstSession ? "" : "mt-3"} text-3xl font-semibold leading-tight tracking-tight text-stone-900 sm:text-4xl dark:text-stone-50`}>
               {homeHero.title}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-stone-600 sm:text-base dark:text-stone-300">
@@ -73,7 +71,16 @@ export function HomeDashboardSections({
               >
                 {homeHero.primaryLabel}
               </OfflineAwareLink>
-              {homeHero.secondaryHref && homeHero.secondaryLabel ? (
+              {isFirstSession ? (
+                <OfflineAwareLink
+                  href="/guide"
+                  prefetch={shouldPrefetch()}
+                  className="ui-touch-target inline-flex items-center justify-center rounded-2xl border border-stone-300/80 bg-white/75 px-5 py-2.5 text-sm font-semibold text-stone-800 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 dark:border-stone-600 dark:bg-stone-900/60 dark:text-stone-100 dark:hover:bg-stone-800 dark:focus-visible:ring-teal-300 dark:focus-visible:ring-offset-stone-900"
+                >
+                  {t("howItWorksCta")}
+                </OfflineAwareLink>
+              ) : null}
+              {!isFirstSession && homeHero.secondaryHref && homeHero.secondaryLabel ? (
                 <OfflineAwareLink
                   href={homeHero.secondaryHref}
                   prefetch={shouldPrefetch()}
@@ -88,13 +95,14 @@ export function HomeDashboardSections({
                 </OfflineAwareLink>
               ) : null}
             </div>
+            {isFirstSession ? <p className="mt-5 max-w-xl border-t border-teal-900/10 pt-4 text-sm leading-relaxed text-stone-600 dark:border-teal-100/15 dark:text-stone-300">{t("firstSessionNote")}</p> : null}
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
+          {!isFirstSession ? <div className="grid grid-cols-2 gap-2.5">
             {homeHero.stats.map((item) => (
               <div
                 key={`${item.label}-${item.value}`}
-                className="min-w-0 rounded-[20px] border border-white/60 bg-white/72 p-3 shadow-[0_18px_52px_-44px_rgba(28,25,23,0.45)] backdrop-blur-sm dark:border-white/8 dark:bg-stone-950/42"
+                className="min-w-0 rounded-[16px] border border-white/60 bg-white/72 p-3 shadow-[0_18px_52px_-44px_rgba(28,25,23,0.45)] dark:border-white/8 dark:bg-stone-950/42"
               >
                 <p className="truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">
                   {item.label}
@@ -104,13 +112,13 @@ export function HomeDashboardSections({
                 </p>
               </div>
             ))}
-          </div>
+          </div> : null}
         </div>
 
         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-stone-300/8 blur-3xl dark:bg-stone-400/6" />
       </section>
 
-      <section
+      {!isFirstSession ? <section
         className="ui-surface animate-fade-in-up grid grid-cols-[auto_1px_minmax(0,1fr)] items-center gap-4 rounded-[24px] px-4 py-3.5 sm:px-5"
         aria-label={t("routineSummaryAriaLabel")}
       >
@@ -161,9 +169,9 @@ export function HomeDashboardSections({
             />
           </div>
         </div>
-      </section>
+      </section> : null}
 
-      {legacyHifzGoalRecommendation ? (
+      {!isFirstSession && legacyHifzGoalRecommendation ? (
         <section className="animate-fade-in-up rounded-[24px] border border-amber-200/80 bg-amber-50/85 p-4 shadow-sm backdrop-blur-sm sm:p-5 dark:border-amber-700/30 dark:bg-amber-950/25">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-3xl">
@@ -201,7 +209,7 @@ export function HomeDashboardSections({
         </section>
       ) : null}
 
-      <section className="space-y-4">
+      {!isFirstSession ? <section className="space-y-4">
         <div className="px-1">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
             {t("choosePathLabel")}
@@ -258,7 +266,7 @@ export function HomeDashboardSections({
             <HomeModeProgressCard key={card.title} card={card} />
           ))}
         </div>
-      </section>
+      </section> : null}
     </div>
   );
 }

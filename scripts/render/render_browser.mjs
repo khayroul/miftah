@@ -167,21 +167,6 @@ function parseVerseRef(ref) {
   return { surah, ayah };
 }
 
-function getPageStartSurah(layout) {
-  for (const line of layout.lines || []) {
-    if (line.type === 'surah-header' && line.surah) {
-      const surah = parseInt(line.surah, 10);
-      if (Number.isFinite(surah)) return surah;
-    }
-    if (line.type === 'text' && line.verseRange) {
-      const startRef = line.verseRange.split('-')[0];
-      const parsed = parseVerseRef(startRef);
-      if (parsed) return parsed.surah;
-    }
-  }
-  return null;
-}
-
 function normalizeLayoutForRender(layout, surahMeta) {
   if (!layout || !Array.isArray(layout.lines)) return layout;
   const lines = layout.lines.map(line => ({ ...line }));

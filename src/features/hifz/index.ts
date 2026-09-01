@@ -23,6 +23,12 @@ export {
   loadHifzUnveilSession,
 } from "./read-loaders";
 export { preCacheAudioUrls } from "./domain/audioPreCache";
+export {
+  HifzAyahPracticeView,
+  HifzPracticeCover,
+  HifzPracticeViewToggle,
+} from "./components/HifzPracticeView";
+export type { HifzPracticeViewMode } from "./components/HifzPracticeView";
 export { JUZ_BOUNDARY_PAGES } from "./domain/constants";
 export {
   getDifficultAyahs,

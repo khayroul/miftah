@@ -111,6 +111,8 @@
       "switchToPagesLabel": "Tukar ke Halaman",
       "choosePathLabel": "Pilih laluan",
       "learnByNeedTitle": "Belajar mengikut keperluan anda",
+      "firstSessionNote": "Selepas halaman pertama, Miftah akan guna progres sebenar anda untuk cadangkan apa yang patut difahami atau diulang seterusnya.",
+      "howItWorksCta": "Cara Miftah berfungsi",
       "tasmiEyebrow": "Tasmi'",
       "tasmiCardTitle": "Uji hafalan dengan bacaan suara",
       "tasmiCardDescription": "Pilih juzuk, baca tanpa melihat mushaf, dan semak keputusan sesi.",
@@ -204,11 +206,11 @@
       "badgeTebuk": "Tebuk",
       "badgeUnveil": "Buka Tabir",
       "badgeNewSabak": "BARU · SABAK · Mushaf terbuka",
-      "badgeTestMemoryHint": "UJI INGATAN · Petunjuk kata pertama",
+      "badgeTestMemoryHint": "UJI INGATAN · Latihan bebas",
       "newFlowEyebrow": "Aliran Baru",
       "newFlowDescription": "Lihat mushaf penuh, dengar bacaan, ulang beberapa kali, kemudian semak tanpa melihat.",
-      "reviewFlowEyebrow": "Aliran Uji Hafalan",
-      "reviewFlowDescription": "Mulakan tanpa melihat, guna kata pembuka bila perlu, dan buka reveal 1/3 hanya jika tersangkut.",
+      "reviewFlowEyebrow": "Latihan ingatan bebas",
+      "reviewFlowDescription": "Pilih Ayat untuk fokus pada makna atau Mushaf untuk ingatan halaman. Buka semula hanya selepas benar-benar mencuba.",
       "surahPrefix": "Surah",
       "subtitle": "Surah {surah} • Halaman {page} / 604"
     },
@@ -348,6 +350,7 @@
   "tema": {
     "actionPanel": {
       "synopsisEyebrow": "Sinopsis Tema",
+      "synopsisTitle": "Maksud utama petikan ini",
       "verseRangeLabel": "Ayat {range}",
       "sourceLabel": "Sumber: {source}"
     },
@@ -365,9 +368,9 @@
       "noTranslationYet": "Terjemahan BM belum tersedia."
     },
     "jumpControls": {
-      "title": "Lompat Tema",
+      "title": "Pilih tema",
       "selectSurahLabel": "Pilih Surah",
-      "currentStatus": "Sekarang: Surah {surah}, Tema {chunk} daripada {total}."
+      "currentStatus": "Surah {surah} · Tema {chunk} daripada {total}"
     },
     "pageContent": {
       "noThemesYet": "Tema untuk surah ini belum tersedia lagi.",
@@ -375,7 +378,8 @@
       "sourceDescription": "deskripsi tema",
       "sourceVerseExcerpt": "petikan terjemahan ayat",
       "sourceChunkTitle": "tajuk chunk",
-      "synopsisFromVerses": "Tema {title} muncul melalui rangkaian ayat yang menekankan: {excerpt}",
+      "fallbackThemeTitle": "Ayat {range}",
+      "synopsisFromVerses": "{title}. Baca ayat di bawah untuk melihat bagaimana idea ini berkembang: {excerpt}",
       "genericSynopsisFallback": "Bahagian ini menghimpunkan ayat-ayat yang bergerak di bawah satu fokus makna yang sama. Baca ayat-ayat di bawah untuk melihat bagaimana tema ini dibina secara beransur-ansur dalam susunan surah.",
       "themeCounterBadge": "Tema {current} daripada {total}",
       "verseRangeLabel": "Ayat {range}",
@@ -393,6 +397,7 @@
   },
   "faham": {
     "workspace": {
+      "pageTitle": "Faham perkataan Quran",
       "celebrationEyebrow": "Tahniah! +1 Dikuasai",
       "celebrationTitle": "Perkataan Baru Dikuasai",
       "dueBacklogNotice": "Kad baharu dijeda sementara kerana baki ulang kaji masih tinggi. Selesaikan kad ulang kaji dahulu, kemudian enjin akan membuka kad baharu semula.",
@@ -465,13 +470,14 @@
       "kindNew": "Baharu",
       "readyEyebrow": "Sedia",
       "cardCountTitle": "{count} kad untuk sesi ini",
-      "previewSubtitle": "Jawapan disembunyikan supaya cubaan pertama benar-benar menguji ingatan anda.",
+      "previewSubtitle": "Semak perkataan, kemudian mula sesi ingatan yang fokus.",
       "summaryAria": "Ringkasan jenis kad",
       "newChip": "{count} baharu",
       "dueChip": "{count} ulang",
       "masteredChip": "{count} mahir",
       "fromAyah": "Daripada ayat {label}",
       "mixedSource": "Sumber campuran",
+      "meaningUnavailable": "Makna belum tersedia.",
       "startAction": "Mula cubaan pertama"
     },
     "summary": {
@@ -636,9 +642,33 @@
       "testDescription": "Uji sendiri tanpa melihat, dengan petunjuk jika anda tersekat"
     },
     "reportCard": {
-      "title": "Kad Laporan Hifz",
+      "title": "Kemajuan hafalan anda",
+      "description": "Lihat bahagian yang sudah kukuh, yang masih dibina, dan ulangan yang sedang menunggu.",
+      "guestTitle": "Kemajuan tersimpan bermula selepas log masuk",
+      "guestDescription": "Latihan bebas tersedia sekarang. Log masuk apabila anda mahu Miftah mengingati sesi dan membina pelan ulangan anda.",
+      "previewBadge": "Pratonton",
+      "summaryStrong": "Kukuh",
+      "summaryLearning": "Sedang belajar",
+      "summaryDue": "Perlu ulang",
+      "summaryStreak": "Streak",
+      "summaryPages": "halaman",
+      "summaryNow": "halaman sekarang",
+      "summaryDays": "hari",
+      "manzilProgress": "Kemajuan manzil",
       "pagesFraction": "{completed}/{total} halaman",
       "manzilPct": "{pct}% manzil",
+      "guestDetailTitle": "Tiada nombor contoh",
+      "guestDetailBody": "Selepas sesi Hafal pertama disimpan, ruang ini akan menunjukkan ulangan yang perlu dibuat, halaman kukuh, streak, dan peta setiap halaman mengikut Juz.",
+      "mapTitle": "Teroka peta halaman anda",
+      "mapDescription": "Tapis mengikut bahagian yang perlu diberi perhatian, kemudian ketuk Juz dan halaman untuk sambung.",
+      "filterLabel": "Tapis kemajuan hafalan",
+      "filterAll": "Semua",
+      "filterLearning": "Sedang belajar",
+      "filterDue": "Perlu ulang",
+      "filterStrong": "Kukuh",
+      "filterNotStarted": "Belum mula",
+      "filterMatches": "{count} halaman",
+      "noFilterMatches": "Tiada halaman dalam Juz ini sepadan dengan tapisan pilihan.",
       "juzLabel": "Juz {juz}",
       "pagesStarted": "{started}/{total}",
       "pageRangeLabel": "Halaman {start}–{end}",
@@ -648,6 +678,49 @@
       "relativeDaysAgo": "{count} hari lalu",
       "relativeWeeksAgo": "{count} minggu lalu",
       "relativeMonthsAgo": "{count} bulan lalu"
+    },
+    "passagePicker": {
+      "openTitle": "Pilih petikan",
+      "openDescription": "Cari mengikut Surah, Juz, halaman, atau julat ayat yang tepat.",
+      "title": "Pilih bahagian untuk dilatih",
+      "description": "Ini membuka latihan kendiri bebas. Pelan ulangan tersimpan anda tidak berubah.",
+      "close": "Tutup pemilih petikan",
+      "stepProgress": "Langkah {current} daripada 2",
+      "passageStepTitle": "Pilih petikan",
+      "viewStepTitle": "Pilih cara latihan",
+      "methodLabel": "Pilih petikan mengikut",
+      "surahTab": "Surah",
+      "juzTab": "Juz",
+      "pageTab": "Halaman",
+      "surahLabel": "Surah",
+      "startAyahLabel": "Ayat mula",
+      "endAyahLabel": "Ayat akhir",
+      "quickRangeLabel": "Julat ayat pantas",
+      "ayahCount": "{count} ayat",
+      "toEnd": "Hingga akhir surah",
+      "surahAyahCount": "Surah ini mempunyai {count} ayat.",
+      "juzLabel": "Juz",
+      "juzOption": "Juz {juz} · bermula pada halaman {page}",
+      "pageLabel": "Halaman Mushaf",
+      "viewLabel": "Paparan latihan",
+      "ayahView": "Ayat",
+      "mushafView": "Mushaf",
+      "ayahViewDescription": "Fokus pada ayat pilihan dan maknanya.",
+      "mushafViewDescription": "Kekalkan kedudukan asal halaman untuk ingatan visual.",
+      "selectionLabel": "Pilihan anda",
+      "surahPreview": "{surah} · Ayat {start}–{end}",
+      "surahFallback": "Surah {surah}",
+      "juzPreview": "Juz {juz} · Halaman {page}",
+      "pagePreview": "Halaman {page}",
+      "pageError": "Pilih halaman antara 1 hingga 604.",
+      "juzError": "Pilih Juz yang sah.",
+      "ayahError": "Pilih julat ayat 1 hingga {max}, dengan ayat akhir selepas ayat mula.",
+      "resolveError": "Petikan itu tidak dapat dibuka. Semak julat dan cuba lagi.",
+      "continue": "Teruskan",
+      "back": "Kembali",
+      "opening": "Mencari petikan...",
+      "start": "Mula latihan bebas",
+      "scheduleNote": "Latihan bebas tidak memberi gred atau mengubah pelan ulangan tersimpan anda."
     },
     "juzHeatmap": {
       "title": "Kemajuan Juz",
@@ -687,7 +760,7 @@
       "importSummaryEyebrow": "Ringkasan Import",
       "importSummaryHeading": "Hafalan sedia ada berjaya direkod",
       "importSummaryBodyWithNext": "Halaman 1 hingga {upToPage} kini ditanda sebagai hafalan sedia ada. Halaman sambungan anda ialah {nextPage}.",
-      "importSummaryBodyComplete": "Semua 604 halaman sudah direkod sebagai hafalan sedia ada. Ulangan akan muncul ikut jadual FSRS anda.",
+      "importSummaryBodyComplete": "Semua 604 halaman sudah direkod sebagai hafalan sedia ada. Ulangan akan muncul apabila tiba masanya.",
       "statUpdated": "Dikemas Kini",
       "statUpdatedDetail": "halaman kini direkod",
       "statNextPage": "Halaman Seterusnya",
@@ -713,18 +786,44 @@
       "loadingCta": "Memuatkan...",
       "memorizeStartFresh": "Mulakan Hafal",
       "memorizeNew": "Hafal Baru",
-      "reviewCta": "Uji Hafalan",
+      "reviewCta": "Ulang yang sudah tiba masa",
+      "reviewFirstHint": "Mulakan dengan ayat yang dijadualkan untuk diberi perhatian hari ini.",
+      "continueHint": "Sambung sabak semasa selepas ulangan yang perlu dibuat.",
+      "signInToStartScheduled": "Log masuk untuk membuka Hifz berjadual dan menyimpan keputusannya.",
+      "guestPracticeTitle": "Latih mana-mana petikan sekarang",
+      "guestPracticeBody": "Pilih Surah, Juz, halaman, atau julat ayat yang tepat untuk latihan kendiri. Latihan ini tidak ditambah kepada pelan ulangan tersimpan.",
+      "guestSignInCta": "Log masuk untuk Hafal berjadual",
+      "guestSignInHint": "Simpan kemajuan, terima ulangan yang tiba masa, dan sambung dari tempat terakhir.",
       "noNewToday": "Tiada halaman baru hari ini",
       "noReviewToday": "Tiada ulangan hari ini",
       "noPlanYet": "Belum ada jadual hafalan. Pilih jalan mula di atas supaya kami boleh buka sesi yang sesuai untuk anda.",
+      "freePracticeTitle": "Latih petikan lain",
+      "freePracticeBody": "Buka mana-mana Surah, Juz, halaman, atau julat ayat untuk latihan kendiri di luar jadual.",
+      "practicePageLabel": "Halaman Mushaf",
+      "practicePagePlaceholder": "cth. 17",
+      "practiceCta": "Buka",
       "juzukLink": "Ujian Juzuk (Tasmi' suara) →"
     },
+    "practiceView": {
+      "viewLabel": "Paparan latihan",
+      "ayahView": "Ayat",
+      "mushafView": "Mushaf",
+      "hiddenTitle": "Ayat sedang ditutup",
+      "hiddenBody": "Baca petikan pilihan daripada ingatan. Buka semula hanya selepas anda benar-benar mencuba.",
+      "revealCta": "Buka dan semak",
+      "ayahLabel": "Ayat {key}",
+      "listenAria": "Dengar ayat {key}",
+      "listen": "Dengar",
+      "playing": "Sedang main"
+    },
     "overview": {
+      "pageTitle": "Latihan hafazan Quran",
       "openingMemorizeSession": "Membuka sesi hafal",
       "openingReviewSession": "Membuka sesi uji hafalan",
       "preparingMemorizeHelper": "Kami sedang sediakan halaman pertama untuk sesi baru anda.",
       "preparingReviewHelper": "Kami sedang sediakan halaman pertama untuk ulangan hari ini.",
       "openingTestSession": "Membuka ujian ingatan",
+      "openingSelectedPassage": "Membuka petikan pilihan anda",
       "testHelper": "Mushaf akan dibuka dengan petunjuk kata pembuka untuk bantu anda menguji hafalan sedia ada tanpa semakan suara.",
       "importInvalidPage": "Masukkan nombor halaman antara 1 hingga 604.",
       "importFailedGeneric": "Tak dapat rekod hafalan sedia ada sekarang.",
@@ -1076,6 +1175,43 @@
       "requestNewLinkButton": "Minta Pautan Baru"
     }
   },
+  "guide": {
+    "title": "Apakah yang dapat membantu anda hari ini?",
+    "description": "Pilih satu jalan masuk. Setiap laluan menyokong matlamat yang sama: memahami dan mengingati al-Quran.",
+    "startAnywhere": "Mulakan di mana-mana. Bertukar apabila perlu.",
+    "modes": {
+      "read": {
+        "title": "Baca",
+        "description": "Paparan Mushaf yang tenang dengan bacaan dan makna perkataan apabila anda memerlukannya.",
+        "outcome": "Biasakan diri dengan halaman Quran.",
+        "action": "Buka Baca"
+      },
+      "learn": {
+        "title": "Faham",
+        "description": "Latih perkataan Quran yang kerap muncul bersama perkataan Arab dan maknanya dalam bahasa pilihan anda.",
+        "outcome": "Kenal lebih banyak perkataan apabila bertemu semula.",
+        "action": "Cuba Faham"
+      },
+      "theme": {
+        "title": "Tema",
+        "description": "Ikuti bagaimana idea utama surah berkembang melalui kumpulan ayat yang saling berkaitan.",
+        "outcome": "Fahami kaitan antara ayat.",
+        "action": "Teroka Tema"
+      },
+      "hifz": {
+        "title": "Hafal",
+        "description": "Rancang hafalan baharu dan ulang kaji. Sabak ialah hafalan baharu; Sabqi dan Manzil mengulang bahagian terdahulu.",
+        "outcome": "Tahu apa yang baru dan apa yang perlu diulang.",
+        "action": "Lihat Hafal"
+      }
+    },
+    "connectionTitle": "Satu matlamat, empat jalan",
+    "connectionDescription": "Kenali perkataan, ikuti maknanya, temuinya pada halaman, dan kekalkannya melalui ulang kaji. Semua mod saling menyokong, tetapi anda memilih tempat bermula.",
+    "unsureTitle": "Belum mahu membuka Mushaf?",
+    "unsureDescription": "Mulakan dengan Faham untuk sesi ringkas berasaskan perkataan. Beralih kepada bacaan apabila anda bersedia.",
+    "tryLearn": "Mula dengan Faham",
+    "backHome": "Kembali ke utama"
+  },
   "feedback": {
     "title": "Hantar Maklum Balas",
     "placeholder": "Ada pepijat atau cadangan?",
@@ -1149,8 +1285,8 @@
       "minimizedAriaLabel": "Tunjukkan kemajuan muat turun",
       "minimizeAriaLabel": "Kecilkan bar kemajuan",
       "progressBarAriaLabel": "Memuat turun data Miftah",
-      "promptTitle": "Muat turun Mushaf, tema, font, dan laluan PWA untuk bacaan luar talian",
-      "promptSubtitle": "Status ini semak cache sebenar, bukan hanya flag tempatan.",
+      "promptTitle": "Baca luar talian",
+      "promptSubtitle": "Simpan halaman Quran, tema, dan font untuk dibaca tanpa sambungan.",
       "promptStartButton": "Muat turun",
       "promptLaterButton": "Nanti",
       "packageProgressLabel": "Pakej {index}/{count}: {label}",
@@ -1162,9 +1298,9 @@
   "themeToggle": {
     "toLight": "Tukar ke tema cerah",
     "toDark": "Tukar ke tema gelap",
-    "lightTheme": "Light theme",
-    "darkTheme": "Dark theme",
-    "light": "Light",
-    "dark": "Dark"
+    "lightTheme": "Tema cerah",
+    "darkTheme": "Tema gelap",
+    "light": "Cerah",
+    "dark": "Gelap"
   }
 }
